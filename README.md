@@ -1,3 +1,5 @@
+![PixelForge](examples/resources/images/PixelForge.png)
+
 # PixelForge
 
 PixelForge is a lightweight software rendering library written in standard C99, designed for versatile rendering without any external dependencies beyond the C standard library.
