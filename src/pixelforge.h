@@ -229,10 +229,9 @@ extern "C" {
 PF_API PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeight, PFpixelformat screenFormat);
 PF_API void pfContextDestroy(PFctx* ctx);
 
-PF_API void pfMakeCurrent(PFctx* ctx);
-
-PF_API PFboolean pfIsCurrent(PFctx* ctx);
 PF_API PFctx* pfGetCurrent(void);
+PF_API void pfMakeCurrent(PFctx* ctx);
+PF_API PFboolean pfIsCurrent(PFctx* ctx);
 
 /* Render API functions */
 
@@ -253,14 +252,14 @@ PF_API void pfMultMatrixMat4f(const PFmat4f* mat);
 PF_API void pfFrustum(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar);
 PF_API void pfOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar);
 
-PF_API void pfViewport(PFuint x, PFuint y, PFuint width, PFuint height);
 PF_API void pfGetViewport(PFuint* x, PFuint* y, PFuint* width, PFuint* height);
+PF_API void pfViewport(PFuint x, PFuint y, PFuint width, PFuint height);
 
 PF_API void pfSetDefaultPixelGetter(PFpixelgetter func);
 PF_API void pfSetDefaultPixelSetter(PFpixelsetter func);
 
-PF_API void pfSetBlendFunction(PFblendfunc func);
 PF_API PFblendfunc pfGetBlendFunction();
+PF_API void pfSetBlendFunction(PFblendfunc func);
 
 PF_API void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer);
 PF_API void pfDrawVertexArray(PFsizei offset, PFsizei count);
@@ -268,9 +267,11 @@ PF_API void pfDrawVertexArray(PFsizei offset, PFsizei count);
 PF_API void pfEnableStatePointer(PFarraytype vertexAttribType, const void* buffer);
 PF_API void pfDisableStatePointer(PFarraytype vertexAttribType);
 
+PF_API PFframebuffer* pfGetActiveFramebuffer(void);
 PF_API void pfEnableFramebuffer(PFframebuffer* framebuffer);
 PF_API void pfDisableFramebuffer(void);
 
+PF_API PFtexture* pfGetActiveTexture(void);
 PF_API void pfEnableTexture(PFtexture* texture);
 PF_API void pfDisableTexture();
 

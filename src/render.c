@@ -51,7 +51,7 @@ struct PFctx {
     PFint stackCounter;                         // Matrix stack counter
 
     PFvertexattribs vertexAttribs;
-    PFtexture *texture;
+    PFtexture *currentTexture;
 
     //PFmat4f projectionStereo[2];                 // VR stereo rendering eyes projection matrices
     //PFmat4f viewOffsetStereo[2];                 // VR stereo rendering eyes view offset matrices
@@ -173,7 +173,7 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     ctx->stackCounter = 0;
 
     ctx->vertexAttribs = (PFvertexattribs) { 0 };
-    ctx->texture = NULL;
+    ctx->currentTexture = NULL;
 
     //ctx->projectionStereo;
     //ctx->viewOffsetStereo;
@@ -202,6 +202,11 @@ void pfContextDestroy(PFctx* ctx)
     }
 }
 
+PFctx* pfGetCurrent(void)
+{
+    return currentCtx;
+}
+
 void pfMakeCurrent(PFctx* ctx)
 {
     currentCtx = ctx;
@@ -212,10 +217,6 @@ PFboolean pfIsCurrent(PFctx* ctx)
     return (PFboolean)(currentCtx == ctx);
 }
 
-PFctx* pfGetCurrent(void)
-{
-    return currentCtx;
-}
 
 /* Render API functions */
 
@@ -318,20 +319,20 @@ void pfOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdou
     *currentCtx->currentMatrix = pfMat4fMul(currentCtx->currentMatrix, &ortho);
 }
 
-void pfViewport(PFuint x, PFuint y, PFuint width, PFuint height)
-{
-    currentCtx->viewportX = x;
-    currentCtx->viewportY = y;
-    currentCtx->viewportW = width - 1;
-    currentCtx->viewportH = height - 1;
-}
-
 void pfGetViewport(PFuint* x, PFuint* y, PFuint* width, PFuint* height)
 {
     *x = currentCtx->viewportX;
     *y = currentCtx->viewportY;
     *width = currentCtx->viewportW + 1;
     *height = currentCtx->viewportH + 1;
+}
+
+void pfViewport(PFuint x, PFuint y, PFuint width, PFuint height)
+{
+    currentCtx->viewportX = x;
+    currentCtx->viewportY = y;
+    currentCtx->viewportW = width - 1;
+    currentCtx->viewportH = height - 1;
 }
 
 void pfSetDefaultPixelGetter(PFpixelgetter func)
@@ -344,14 +345,14 @@ void pfSetDefaultPixelSetter(PFpixelsetter func)
     currentCtx->screenBuffer.texture.pixelSetter = func;
 }
 
-void pfSetBlendFunction(PFblendfunc func)
-{
-    currentCtx->blendFunction = func;
-}
-
 PFblendfunc pfGetBlendFunction()
 {
     return currentCtx->blendFunction;
+}
+
+void pfSetBlendFunction(PFblendfunc func)
+{
+    currentCtx->blendFunction = func;
 }
 
 void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer)
@@ -466,6 +467,11 @@ void pfDisableStatePointer(PFarraytype vertexAttribType)
     }
 }
 
+PFframebuffer* pfGetActiveFramebuffer(void)
+{
+    return currentCtx->currentFramebuffer;
+}
+
 void pfEnableFramebuffer(PFframebuffer* framebuffer)
 {
     if (!framebuffer) { pfDisableFramebuffer(); return; }
@@ -477,17 +483,22 @@ void pfDisableFramebuffer(void)
     currentCtx->currentFramebuffer = &currentCtx->screenBuffer;
 }
 
+PFtexture* pfGetActiveTexture(void)
+{
+    return currentCtx->currentTexture;
+}
+
 void pfEnableTexture(PFtexture* texture)
 {
     if (!texture) { pfDisableTexture(); return; }
     currentCtx->renderState |= PF_TEXTURE_MODE;
-    currentCtx->texture = texture;
+    currentCtx->currentTexture = texture;
 }
 
 void pfDisableTexture()
 {
     currentCtx->renderState &= ~PF_TEXTURE_MODE;
-    currentCtx->texture = NULL;
+    currentCtx->currentTexture = NULL;
 }
 
 void pfEnableWireMode(void)
@@ -1284,7 +1295,7 @@ void Rasterize_TriangleTextureFlat2D(const PFvertex* v1, const PFvertex* v2, con
                 const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
 
                 const PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
-                PFcolor texel = pfTextureGetFragment(currentCtx->texture, texcoord.x, texcoord.y);
+                PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
 
                 PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
                 srcCol = pfBlendMultiplicative(texel, srcCol);
@@ -1350,7 +1361,7 @@ void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex* v2, co
                 if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
                 {
                     const PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
-                    PFcolor texel = pfTextureGetFragment(currentCtx->texture, texcoord.x, texcoord.y);
+                    PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
 
                     PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
                     srcCol = pfBlendMultiplicative(texel, srcCol);
@@ -1538,7 +1549,7 @@ void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* v2, con
                 const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
 
                 const PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
-                PFcolor texel = pfTextureGetFragment(currentCtx->texture, texcoord.x, texcoord.y);
+                PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
 
                 PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
                 srcCol = pfBlendMultiplicative(texel, srcCol);
@@ -1608,7 +1619,7 @@ void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex* v2, co
                     texcoord = pfVec2fScale(&texcoord, z); // Perspective correct
 
                     PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                    PFcolor texel = pfTextureGetFragment(currentCtx->texture, texcoord.x, texcoord.y);
+                    PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
                     srcCol = pfBlendMultiplicative(texel, srcCol);
 
                     const PFcolor dstCol = currentCtx->currentFramebuffer->texture.pixelGetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset);
