@@ -30,40 +30,40 @@ typedef struct {
 
 struct PFctx {
 
-    PFframebuffer screenBuffer;
-    PFframebuffer *currentFramebuffer;
+    PFframebuffer screenBuffer;                // Screen buffer for rendering
+    PFframebuffer *currentFramebuffer;         // Pointer to the current framebuffer
 
-    PFuint viewportX, viewportY;
-    PFuint viewportW, viewportH;
+    PFuint viewportX, viewportY;               // X and Y coordinates of the viewport
+    PFuint viewportW, viewportH;               // Width and height of the viewport
 
-    PFdrawmode currentDrawMode;
-    PFblendfunc blendFunction;
-    PFcolor clearColor;
+    PFdrawmode currentDrawMode;                // Current drawing mode (e.g., lines, triangles)
+    PFblendfunc blendFunction;                 // Blend function for alpha blending
+    PFcolor clearColor;                        // Color used to clear the screen
 
-    PFvec3f currentNormal;
-    PFvec2f currentTexcoord;
-    PFcolor currentColor;
+    PFvec3f currentNormal;                     // Current normal vector for lighting calculations
+    PFvec2f currentTexcoord;                   // Current texture coordinates
+    PFcolor currentColor;                      // Current color for vertex rendering
 
-    PFvertex vertexBuffer[6];
-    PFuint vertexCount;
+    PFvertex vertexBuffer[6];                  // Vertex buffer for geometry
+    PFuint vertexCount;                        // Number of vertices in the buffer
 
-    PFint currentMatrixMode;                    // Current matrix mode
-    PFmat4f *currentMatrix;                     // Current matrix pointer
-    PFmat4f modelview;                          // Default modelview matrix
-    PFmat4f projection;                         // Default projection matrix
-    PFmat4f transform;                          // Transform matrix to be used with pfTranslate, pfRotate, pfScale
-    PFboolean transformRequired;                // Require transform matrix application to current draw-call vertex (if required)
-    PFmat4f stack[PF_MAX_MATRIX_STACK_SIZE];    // Matrix stack for push/pop
-    PFint stackCounter;                         // Matrix stack counter
+    PFmatrixmode currentMatrixMode;            // Current matrix mode (e.g., PF_MODELVIEW, PF_PROJECTION)
+    PFmat4f *currentMatrix;                    // Pointer to the current matrix
+    PFmat4f modelview;                         // Default modelview matrix
+    PFmat4f projection;                        // Default projection matrix
+    PFmat4f transform;                         // Transformation matrix for translation, rotation, and scaling
+    PFboolean transformRequired;               // Flag indicating whether transformation is required for vertices
+    PFmat4f stack[PF_MAX_MATRIX_STACK_SIZE];   // Matrix stack for push/pop operations
+    PFint stackCounter;                        // Counter for matrix stack operations
 
-    PFvertexattribs vertexAttribs;
-    PFtexture *currentTexture;
+    PFvertexattribs vertexAttribs;             // Vertex attributes (e.g., normal, texture coordinates)
+    PFtexture *currentTexture;                 // Pointer to the current texture
 
-    PFushort vertexAttribState;
-    PFushort renderState;
+    PFushort vertexAttribState;                // State of vertex attributes
+    PFushort renderState;                      // Current rendering state
 
-    PFboolean depthTest;
-    PFboolean wireMode;
+    PFboolean depthTest;                       // Flag indicating whether depth testing is enabled
+    PFboolean wireMode;                        // Flag indicating whether wireframe rendering mode is enabled
 
 };
 
