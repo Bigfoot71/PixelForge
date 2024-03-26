@@ -689,10 +689,10 @@ PFcolor Helper_InterpolateColor(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, 
     // REVIEW: Normalization necessary here ?
 
     return (PFcolor) {
-        (PFubyte)((w1*v1.r + w2*v2.r + w3*v3.r)),
-        (PFubyte)((w1*v1.g + w2*v2.g + w3*v3.g)),
-        (PFubyte)((w1*v1.b + w2*v2.b + w3*v3.b)),
-        (PFubyte)((w1*v1.a + w2*v2.a + w3*v3.a))
+        (PFubyte)(w1*v1.r + w2*v2.r + w3*v3.r),
+        (PFubyte)(w1*v1.g + w2*v2.g + w3*v3.g),
+        (PFubyte)(w1*v1.b + w2*v2.b + w3*v3.b),
+        (PFubyte)(w1*v1.a + w2*v2.a + w3*v3.a)
     };
 }
 
