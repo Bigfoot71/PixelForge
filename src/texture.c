@@ -174,9 +174,9 @@ static PFcolor GetR5G6B5(const void* pixels, PFsizei offset)
     PFushort pixel = ((PFushort*)pixels)[offset];
 
     return (PFcolor) {
-        (PFubyte)((PFfloat)((pixel & 0b1111100000000000) >> 11)*(255/31)),
-        (PFubyte)((PFfloat)((pixel & 0b0000011111100000) >> 5)*(255/63)),
-        (PFubyte)((PFfloat)(pixel & 0b0000000000011111)*(255/31)),
+        (PFubyte)((PFfloat)((pixel & 0xF800) >> 11)*(255/31)),              // 0b1111100000000000
+        (PFubyte)((PFfloat)((pixel & 0x7E0) >> 5)*(255/63)),                // 0b0000011111100000
+        (PFubyte)((PFfloat)(pixel & 0x1F)*(255/31)),                        // 0b0000000000011111
         255
     };
 }
@@ -196,10 +196,10 @@ static PFcolor GetR5G5B5A1(const void* pixels, PFsizei offset)
     PFushort pixel = ((PFushort*)pixels)[offset];
 
     return (PFcolor) {
-        (PFubyte)((PFfloat)((pixel & 0b1111100000000000) >> 11)*(255/31)),
-        (PFubyte)((PFfloat)((pixel & 0b0000011111000000) >> 6)*(255/31)),
-        (PFubyte)((PFfloat)((pixel & 0b0000000000111110) >> 1)*(255/31)),
-        (PFubyte)((pixel & 0b0000000000000001)*255)
+        (PFubyte)((PFfloat)((pixel & 0xF800) >> 11)*(255/31)),              // 0b1111100000000000
+        (PFubyte)((PFfloat)((pixel & 0x7C0) >> 6)*(255/31)),                // 0b0000011111000000
+        (PFubyte)((PFfloat)((pixel & 0x3E) >> 1)*(255/31)),                 // 0b0000000000111110
+        (PFubyte)((pixel & 0x1)*255)                                        // 0b0000000000000001
     };
 }
 
@@ -208,10 +208,10 @@ static PFcolor GetR4G4B4A4(const void* pixels, PFsizei offset)
     PFushort pixel = ((PFushort*)pixels)[offset];
 
     return (PFcolor) {
-        (PFubyte)((PFfloat)((pixel & 0b1111000000000000) >> 12)*(255/15)),
-        (PFubyte)((PFfloat)((pixel & 0b0000111100000000) >> 8)*(255/15)),
-        (PFubyte)((PFfloat)((pixel & 0b0000000011110000) >> 4)*(255/15)),
-        (PFubyte)((PFfloat)(pixel & 0b0000000000001111)*(255/15))
+        (PFubyte)((PFfloat)((pixel & 0xF000) >> 12)*(255/15)),              // 0b1111000000000000
+        (PFubyte)((PFfloat)((pixel & 0xF00) >> 8)*(255/15)),                // 0b0000111100000000
+        (PFubyte)((PFfloat)((pixel & 0xF0) >> 4)*(255/15)),                 // 0b0000000011110000
+        (PFubyte)((PFfloat)(pixel & 0xF)*(255/15))                          // 0b0000000000001111
     };
 }
 
