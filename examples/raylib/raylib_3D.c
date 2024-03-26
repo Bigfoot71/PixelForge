@@ -33,7 +33,7 @@ int main(void)
         timer += GetFrameTime();
 
         // Clear the destination buffer (RAM)
-        pfClear();
+        pfClear(PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT);
 
         // Draw something on each iteration of the main loop
         PF_Begin3D(SCREEN_WIDTH, SCREEN_HEIGHT, 60.0);

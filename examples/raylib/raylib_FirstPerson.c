@@ -87,7 +87,7 @@ int main(void)
 
         // Draw
 
-        pfClear();
+        pfClear(PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT);
         PF_BeginMode3D(camera);
             pfEnableTexture(&texMap);
             PF_DrawModel(model, mapPosition, 1.0f, WHITE);

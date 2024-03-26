@@ -521,9 +521,40 @@ void pfDisableDepthTest(void)
     currentCtx->renderState &= ~PF_DEPTH_TEST;
 }
 
-void pfClear(void)
+void pfClear(PFbufferclearflag flag)
 {
-    pfFramebufferClear(currentCtx->currentFramebuffer, currentCtx->clearColor);
+    if (!flag) return;
+
+    PFframebuffer *framebuffer = currentCtx->currentFramebuffer;
+    PFsizei size = framebuffer->texture.width*framebuffer->texture.height;
+
+    if (flag & (PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT))
+    {
+        PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+        PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
+        PFcolor color = currentCtx->clearColor;
+
+        for (PFsizei i = 0; i < size; i++)
+        {
+            texture->pixelSetter(texture->pixels, i, color);
+            zbuffer[i] = FLT_MAX;
+        }
+    }
+    else if (flag & PF_COLOR_BUFFER_BIT)
+    {
+        PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+        PFcolor color = currentCtx->clearColor;
+
+        for (PFsizei i = 0; i < size; i++)
+        {
+            texture->pixelSetter(texture->pixels, i, color);
+        }
+    }
+    else if (flag & PF_DEPTH_BUFFER_BIT)
+    {
+        PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
+        for (PFsizei i = 0; i < size; i++) zbuffer[i] = FLT_MAX;
+    }
 }
 
 void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a)

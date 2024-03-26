@@ -127,7 +127,7 @@ int main(void)
         timer += 2.0f * clock.deltaTime;
 
         // Clear the destination buffer
-        pfClear();
+        pfClear(PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT);
 
         // Draw something on each iteration of the main loop
         PF_Begin3D(surface->w, surface->h, 60.0);

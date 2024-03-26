@@ -38,12 +38,12 @@ int main(void)
 
         // Clear the destination buffer (RAM)
         pfClearColor(0, 0, 0, 255);
-        pfClear();
+        pfClear(PF_COLOR_BUFFER_BIT);
 
         // Renders the cube in the framebuffer
         pfEnableFramebuffer(&target);
             pfClearColor(255, 255, 255, 255);
-            pfClear();
+            pfClear(PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT);
             PF_Begin3D(SCREEN_WIDTH, SCREEN_HEIGHT, 60.0);
             PF_Update3D(camPos.x, camPos.y, camPos.z, 0, 0, 0);
             PF_DrawCube(1.0f);

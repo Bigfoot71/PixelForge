@@ -154,6 +154,11 @@ typedef struct {
 /* Render definitions */
 
 typedef enum {
+    PF_COLOR_BUFFER_BIT = 0x01,
+    PF_DEPTH_BUFFER_BIT = 0x02
+} PFbufferclearflag;
+
+typedef enum {
     PF_VERTEX_ARRAY         = 0x01,
     PF_NORMAL_ARRAY         = 0x02,
     PF_COLOR_ARRAY          = 0x04,
@@ -285,7 +290,7 @@ PF_API void pfDisableWireMode(void);
 PF_API void pfEnableDepthTest(void);
 PF_API void pfDisableDepthTest(void);
 
-PF_API void pfClear(void);
+PF_API void pfClear(PFbufferclearflag flag);
 PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
 
 PF_API void pfBegin(PFdrawmode mode);
@@ -322,6 +327,7 @@ PF_API PFcolor pfBlendMultiplicative(PFcolor source, PFcolor destination);
 PFframebuffer pfFramebufferGenBuffer(PFuint width, PFuint height, PFpixelformat format);
 PF_API void pfFramebufferDestroy(PFframebuffer* framebuffer);
 
+// NOTE: This function clears the color as well as depth buffer
 PF_API void pfFramebufferClear(PFframebuffer* framebuffer, PFcolor color);
 
 PF_API void pfFramebufferSetPixelDepth(PFframebuffer* framebuffer, PFuint x, PFuint y, PFfloat z, PFcolor color);

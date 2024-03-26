@@ -72,7 +72,7 @@ int main(void)
         Arrow_Update(&arrow);
 
         // Clear the destination buffer (RAM)
-        pfClear();
+        pfClear(PF_COLOR_BUFFER_BIT);
 
         // Draw something on each iteration of the main loop
         PF_DrawTexture(&texBG, 0, SCREEN_HEIGHT - 400, 800, 400);

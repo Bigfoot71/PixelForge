@@ -142,7 +142,7 @@ int main()
         if (windowClosed) break;
 
         // Clear the destination buffer
-        pfClear();
+        pfClear(PF_COLOR_BUFFER_BIT);
 
         // Draw something on each iteration of the main loop
         pfBegin(PF_TRIANGLES);
