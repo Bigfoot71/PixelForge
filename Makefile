@@ -49,3 +49,7 @@ install:
 	# Installing header files
 	cp $(HDRS) /usr/local/include/
 endif
+
+# Clean
+clean:
+	rm -f *.o libpixelforge.a libpixelforge.$(SHARED_EXT)
