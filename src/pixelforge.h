@@ -156,7 +156,7 @@ typedef struct {
 typedef enum {
     PF_COLOR_BUFFER_BIT = 0x01,
     PF_DEPTH_BUFFER_BIT = 0x02
-} PFbufferclearflag;
+} PFclearflag;
 
 typedef enum {
     PF_VERTEX_ARRAY         = 0x01,
@@ -179,13 +179,6 @@ typedef enum {
 typedef struct {
     PFubyte r, g, b, a;
 } PFcolor;
-
-typedef struct {
-    PFvec4f position;
-    PFvec3f normal;
-    PFvec2f texcoord;
-    PFcolor color;
-} PFvertex;
 
 typedef PFcolor (*PFblendfunc)(PFcolor, PFcolor);
 
@@ -290,7 +283,7 @@ PF_API void pfDisableWireMode(void);
 PF_API void pfEnableDepthTest(void);
 PF_API void pfDisableDepthTest(void);
 
-PF_API void pfClear(PFbufferclearflag flag);
+PF_API void pfClear(PFclearflag flag);
 PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
 
 PF_API void pfBegin(PFdrawmode mode);

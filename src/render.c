@@ -21,6 +21,13 @@ typedef struct {
     const void *texcoords;
 } PFvertexattribs;
 
+typedef struct {
+    PFvec4f position;
+    PFvec3f normal;
+    PFvec2f texcoord;
+    PFcolor color;
+} PFvertex;
+
 struct PFctx {
 
     PFframebuffer screenBuffer;
@@ -33,13 +40,12 @@ struct PFctx {
     PFblendfunc blendFunction;
     PFcolor clearColor;
 
-    PFvertex vertexBuffer[6];
-    PFuint vertexCount;
-
     PFvec3f currentNormal;
     PFvec2f currentTexcoord;
     PFcolor currentColor;
-    PFfloat currentDepth;
+
+    PFvertex vertexBuffer[6];
+    PFuint vertexCount;
 
     PFint currentMatrixMode;                    // Current matrix mode
     PFmat4f *currentMatrix;                     // Current matrix pointer
@@ -53,16 +59,11 @@ struct PFctx {
     PFvertexattribs vertexAttribs;
     PFtexture *currentTexture;
 
-    //PFmat4f projectionStereo[2];                 // VR stereo rendering eyes projection matrices
-    //PFmat4f viewOffsetStereo[2];                 // VR stereo rendering eyes view offset matrices
-
     PFushort vertexAttribState;
     PFushort renderState;
 
     PFboolean depthTest;
     PFboolean wireMode;
-
-    PFboolean renderBeginned;
 
 };
 
@@ -146,10 +147,6 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     ctx->screenBuffer.zbuffer = (PFfloat*)PF_MALLOC(bufferSize*sizeof(PFctx));
     for (PFsizei i = 0; i < bufferSize; i++) ctx->screenBuffer.zbuffer[i] = FLT_MAX;
 
-    ctx->currentDrawMode = 0;
-    ctx->blendFunction = pfBlendAlpha;
-    ctx->clearColor = (PFcolor) { 0 };
-
     ctx->currentFramebuffer = &ctx->screenBuffer;
 
     ctx->viewportX = 0;
@@ -157,12 +154,15 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     ctx->viewportW = screenWidth - 1;
     ctx->viewportH = screenHeight - 1;
 
-    ctx->vertexCount = 0;
+    ctx->currentDrawMode = 0;
+    ctx->blendFunction = pfBlendAlpha;
+    ctx->clearColor = (PFcolor) { 0 };
 
     ctx->currentNormal = (PFvec3f) { 0 };
     ctx->currentTexcoord = (PFvec2f) { 0 };
     ctx->currentColor = (PFcolor) { 255, 255, 255, 255 };
-    ctx->currentDepth = 0.0f;
+
+    ctx->vertexCount = 0;
 
     ctx->currentMatrixMode = PF_MODELVIEW;
     ctx->currentMatrix = NULL;
@@ -175,15 +175,11 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     ctx->vertexAttribs = (PFvertexattribs) { 0 };
     ctx->currentTexture = NULL;
 
-    //ctx->projectionStereo;
-    //ctx->viewOffsetStereo;
-
     ctx->vertexAttribState = 0x00;
     ctx->renderState = 0x00;
 
+    ctx->depthTest = PF_FALSE;
     ctx->wireMode = PF_FALSE;
-
-    ctx->renderBeginned = PF_FALSE;
 
     return ctx;
 }
@@ -521,7 +517,7 @@ void pfDisableDepthTest(void)
     currentCtx->renderState &= ~PF_DEPTH_TEST;
 }
 
-void pfClear(PFbufferclearflag flag)
+void pfClear(PFclearflag flag)
 {
     if (!flag) return;
 
@@ -564,32 +560,30 @@ void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
 
 void pfBegin(PFdrawmode mode)
 {
-    currentCtx->vertexCount = 0;
     currentCtx->currentDrawMode = mode;
-    currentCtx->renderBeginned = PF_TRUE;
+    currentCtx->vertexCount = 0;
 }
 
 void pfEnd(void)
 {
-    currentCtx->renderBeginned = PF_FALSE;
     currentCtx->vertexCount = 0;
 }
 
 void pfVertex2i(PFint x, PFint y)
 {
-    PFvec3f v = (PFvec3f) { (PFfloat)x, (PFfloat)y, currentCtx->currentDepth };
+    PFvec3f v = (PFvec3f) { (PFfloat)x, (PFfloat)y, 0.0f };
     pfVertexVec3f(&v);
 }
 
 void pfVertex2f(PFfloat x, PFfloat y)
 {
-    PFvec3f v = (PFvec3f) { x, y, currentCtx->currentDepth };
+    PFvec3f v = (PFvec3f) { x, y, 0.0f };
     pfVertexVec3f(&v);
 }
 
 void pfVertexVec2f(const PFvec2f* v)
 {
-    PFvec3f v3 = (PFvec3f) { v->x, v->y, currentCtx->currentDepth };
+    PFvec3f v3 = (PFvec3f) { v->x, v->y, 0.0f };
     pfVertexVec3f(&v3);
 }
 
