@@ -32,3 +32,8 @@ target_include_directories(raylib_ModelAnimation PRIVATE ${PF_ROOT_PATH}/src)
 add_executable(raylib_ModelWires ${PF_ROOT_PATH}/examples/raylib/raylib_ModelWires.c)
 target_link_libraries(raylib_ModelWires PRIVATE pixelforge_static raylib m)
 target_include_directories(raylib_ModelWires PRIVATE ${PF_ROOT_PATH}/src)
+
+# First Person 3D example
+add_executable(raylib_FirstPerson ${PF_ROOT_PATH}/examples/raylib/raylib_FirstPerson.c)
+target_link_libraries(raylib_FirstPerson PRIVATE pixelforge_static raylib m)
+target_include_directories(raylib_FirstPerson PRIVATE ${PF_ROOT_PATH}/src)
