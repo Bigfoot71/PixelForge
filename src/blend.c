@@ -52,3 +52,33 @@ PFcolor pfBlendMultiplicative(PFcolor source, PFcolor destination)
         (PFubyte)((source.a*destination.a)/255)
     };
 }
+
+PFcolor pfBlendScreen(PFcolor source, PFcolor destination)
+{
+    return (PFcolor) {
+        (PFubyte)MIN(destination.r * (255 - source.r) / 255 + source.r, 255),
+        (PFubyte)MIN(destination.g * (255 - source.g) / 255 + source.g, 255),
+        (PFubyte)MIN(destination.b * (255 - source.b) / 255 + source.b, 255),
+        (PFubyte)MIN(destination.a * (255 - source.a) / 255 + source.a, 255)
+    };
+}
+
+PFcolor pfBlendLighten(PFcolor source, PFcolor destination)
+{
+    return (PFcolor) {
+        (PFubyte)(MAX(source.r, destination.r)),
+        (PFubyte)(MAX(source.g, destination.g)),
+        (PFubyte)(MAX(source.b, destination.b)),
+        (PFubyte)(MAX(source.a, destination.a))
+    };
+}
+
+PFcolor pfBlendDarken(PFcolor source, PFcolor destination)
+{
+    return (PFcolor) {
+        (PFubyte)(MIN(source.r, destination.r)),
+        (PFubyte)(MIN(source.g, destination.g)),
+        (PFubyte)(MIN(source.b, destination.b)),
+        (PFubyte)(MIN(source.a, destination.a))
+    };
+}
