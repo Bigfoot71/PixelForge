@@ -840,7 +840,7 @@ PFboolean Process_ClipLine3D(PFvertex* v1, PFvertex* v2)
 
 PFboolean Process_ClipPolygonW(PFvertex* polygon, PFubyte* vertexCounter)
 {
-    PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTEX];
+    PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
     memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
 
     PFubyte inputCounter = *vertexCounter;
@@ -877,7 +877,7 @@ PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, PFubyte* vertexCounter)
     {
         if (*vertexCounter == 0) return PF_FALSE;
 
-        PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTEX];
+        PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
         const PFvertex *prevVt;
         PFubyte inputCounter;
         PFbyte prevDot;
@@ -1702,7 +1702,7 @@ void ProcessRasterize(const PFmat4f* mvp)
         {
             PFubyte processedCounter = 3;
 
-            PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTEX] = {
+            PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES] = {
                 currentCtx->vertexBuffer[0],
                 currentCtx->vertexBuffer[1],
                 currentCtx->vertexBuffer[2]
@@ -1781,7 +1781,7 @@ void ProcessRasterize(const PFmat4f* mvp)
             {
                 PFubyte processedCounter = 3;
 
-                PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTEX] = {
+                PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES] = {
                     currentCtx->vertexBuffer[0],
                     currentCtx->vertexBuffer[i + 1],
                     currentCtx->vertexBuffer[i + 2]
