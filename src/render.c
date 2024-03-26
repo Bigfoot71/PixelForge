@@ -840,23 +840,23 @@ PFboolean Process_ClipLine3D(PFvertex* v1, PFvertex* v2)
 
 PFboolean Process_ClipPolygonW(PFvertex* polygon, PFubyte* vertexCounter)
 {
-    PFvertex input[12];
-    memcpy(input, polygon, sizeof(input));
+    PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTEX];
+    memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
 
     PFubyte inputCounter = *vertexCounter;
     *vertexCounter = 0;
 
     const PFvertex *prevVt = &input[inputCounter-1];
-    PFbyte currDot, prevDot = (prevVt->position.w < PF_CLIP_EPSILON) ? -1 : 1;
+    PFbyte prevDot = (prevVt->position.w < PF_CLIP_EPSILON) ? -1 : 1;
 
     for (PFubyte i = 0; i < inputCounter; i++)
     {
-        currDot = (input[i].position.w < PF_CLIP_EPSILON) ? -1 : 1;
+        PFbyte currDot = (input[i].position.w < PF_CLIP_EPSILON) ? -1 : 1;
 
         if (prevDot * currDot < 0)
         {
             polygon[(*vertexCounter)++] = Helper_LerpVertex(prevVt, &input[i], 
-                (PF_CLIP_EPSILON - prevVt->position.w) / (prevVt->position.w - input[i].position.w));
+                (PF_CLIP_EPSILON - prevVt->position.w) / (input[i].position.w - prevVt->position.w));
         }
 
         if (currDot > 0)
@@ -877,40 +877,70 @@ PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, PFubyte* vertexCounter)
     {
         if (*vertexCounter == 0) return PF_FALSE;
 
-        PFvertex input[12];
-        memcpy(input, polygon, sizeof(input));
+        PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTEX];
+        const PFvertex *prevVt;
+        PFubyte inputCounter;
+        PFbyte prevDot;
 
-        PFubyte inputCounter = *vertexCounter;
+        // Clip against first plane
+
+        memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
+        inputCounter = *vertexCounter;
         *vertexCounter = 0;
 
-        const PFvertex *prevVt = &input[inputCounter-1];
-        PFbyte prevDotHigh = (((PFfloat*)(&prevVt->position))[iAxis] <= prevVt->position.w) ? 1 : -1;
-        PFbyte prevDotLow = (-((PFfloat*)(&prevVt->position))[iAxis] <= prevVt->position.w) ? 1 : -1;
+        prevVt = &input[inputCounter-1];
+        prevDot = (((PFfloat*)(&prevVt->position))[iAxis] <= prevVt->position.w) ? 1 : -1;
 
         for (PFubyte i = 0; i < inputCounter; i++)
         {
-            const PFbyte currDotHigh = (((PFfloat*)(&input[i].position))[iAxis] <= input[i].position.w) ? 1 : -1;
-            const PFbyte currDotLow = (-((PFfloat*)(&input[i].position))[iAxis] <= input[i].position.w) ? 1 : -1;
+            PFbyte currDot = (((PFfloat*)(&input[i].position))[iAxis] <= input[i].position.w) ? 1 : -1;
 
-            if (prevDotHigh * currDotHigh < 0)
+            if (prevDot * currDot <= 0)
             {
                 polygon[(*vertexCounter)++] = Helper_LerpVertex(prevVt, &input[i], 
-                    (prevVt->position.w - ((PFfloat*)(&prevVt->position))[iAxis]) / ((prevVt->position.w - ((PFfloat*)(&prevVt->position))[iAxis]) - (input[i].position.w - ((PFfloat*)(&input[i].position))[iAxis])));
+                    (prevVt->position.w - ((PFfloat*)(&prevVt->position))[iAxis]) /
+                    ((prevVt->position.w - ((PFfloat*)(&prevVt->position))[iAxis]) -
+                    (input[i].position.w - ((PFfloat*)(&input[i].position))[iAxis])));
             }
 
-            if (prevDotLow * currDotLow < 0)
-            {
-                polygon[(*vertexCounter)++] = Helper_LerpVertex(prevVt, &input[i], 
-                    (prevVt->position.w + ((PFfloat*)(&prevVt->position))[iAxis]) / ((prevVt->position.w + ((PFfloat*)(&prevVt->position))[iAxis]) - (input[i].position.w + ((PFfloat*)(&input[i].position))[iAxis])));
-            }
-
-            if (currDotHigh > 0 && currDotLow > 0)
+            if (currDot > 0)
             {
                 polygon[(*vertexCounter)++] = input[i];
             }
 
-            prevDotHigh = currDotHigh;
-            prevDotLow = currDotLow;
+            prevDot = currDot;
+            prevVt = &input[i];
+        }
+
+        if (*vertexCounter == 0) return PF_FALSE;
+
+        // Clip against opposite plane
+
+        memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
+        inputCounter = *vertexCounter;
+        *vertexCounter = 0;
+
+        prevVt = &input[inputCounter-1];
+        prevDot = (-((PFfloat*)(&prevVt->position))[iAxis] <= prevVt->position.w) ? 1 : -1;
+
+        for (PFubyte i = 0; i < inputCounter; i++)
+        {
+            PFbyte currDot = (-((PFfloat*)(&input[i].position))[iAxis] <= input[i].position.w) ? 1 : -1;
+
+            if (prevDot * currDot <= 0)
+            {
+                polygon[(*vertexCounter)++] = Helper_LerpVertex(prevVt, &input[i], 
+                    (prevVt->position.w + ((PFfloat*)(&prevVt->position))[iAxis]) /
+                    ((prevVt->position.w + ((PFfloat*)(&prevVt->position))[iAxis]) -
+                    (input[i].position.w + ((PFfloat*)(&input[i].position))[iAxis])));
+            }
+
+            if (currDot > 0)
+            {
+                polygon[(*vertexCounter)++] = input[i];
+            }
+
+            prevDot = currDot;
             prevVt = &input[i];
         }
     }
@@ -1672,7 +1702,7 @@ void ProcessRasterize(const PFmat4f* mvp)
         {
             PFubyte processedCounter = 3;
 
-            PFvertex processed[12] = {
+            PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTEX] = {
                 currentCtx->vertexBuffer[0],
                 currentCtx->vertexBuffer[1],
                 currentCtx->vertexBuffer[2]
@@ -1751,7 +1781,7 @@ void ProcessRasterize(const PFmat4f* mvp)
             {
                 PFubyte processedCounter = 3;
 
-                PFvertex processed[12] = {
+                PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTEX] = {
                     currentCtx->vertexBuffer[0],
                     currentCtx->vertexBuffer[i + 1],
                     currentCtx->vertexBuffer[i + 2]
