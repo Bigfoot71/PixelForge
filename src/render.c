@@ -686,11 +686,13 @@ PFvec2f Helper_InterpolateVec2f(const PFvec2f* v1, const PFvec2f* v2, const PFve
 
 PFcolor Helper_InterpolateColor(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
 {
+    // REVIEW: Normalization necessary here ?
+
     return (PFcolor) {
-        (PFubyte)((w1*v1.r*INV_255 + w2*v2.r*INV_255 + w3*v3.r*INV_255)*255),
-        (PFubyte)((w1*v1.g*INV_255 + w2*v2.g*INV_255 + w3*v3.g*INV_255)*255),
-        (PFubyte)((w1*v1.b*INV_255 + w2*v2.b*INV_255 + w3*v3.b*INV_255)*255),
-        (PFubyte)((w1*v1.a*INV_255 + w2*v2.a*INV_255 + w3*v3.a*INV_255)*255)
+        (PFubyte)((w1*v1.r + w2*v2.r + w3*v3.r)),
+        (PFubyte)((w1*v1.g + w2*v2.g + w3*v3.g)),
+        (PFubyte)((w1*v1.b + w2*v2.b + w3*v3.b)),
+        (PFubyte)((w1*v1.a + w2*v2.a + w3*v3.a))
     };
 }
 
