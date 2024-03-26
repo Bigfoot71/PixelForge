@@ -98,16 +98,16 @@ static PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* 
 
 /* Internal vertex processing function declarations */
 
-static void Process_HomogeneousToScreen(PFvec4f* homogeneous);
+static void Process_HomogeneousToScreen(PFvec4f* restrict homogeneous);
 
-static PFboolean Process_ClipLine2D(PFvertex* v1, PFvertex* v2);
-static PFboolean Process_ClipLine3D(PFvertex* v1, PFvertex* v2);
+static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2);
+static PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2);
 
-static PFboolean Process_ClipPolygonW(PFvertex* polygon, PFubyte* vertexCounter);
-static PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, PFubyte* vertexCounter);
+static PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, PFubyte* restrict vertexCounter);
+static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, PFubyte* restrict vertexCounter);
 
-static void Process_ProjectAndClipLine(PFvertex* line, PFubyte* vertexCounter, const PFmat4f* mvp);
-static PFboolean Process_ProjectAndClipTriangle(PFvertex* polygon, PFubyte* vertexCounter, const PFmat4f* mvp);
+static void Process_ProjectAndClipLine(PFvertex* restrict line, PFubyte* restrict vertexCounter, const PFmat4f* mvp);
+static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, PFubyte* restrict vertexCounter, const PFmat4f* mvp);
 
 /* Internal line rasterizer function declarations */
 
@@ -773,13 +773,13 @@ PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* t2)
 
 /* Internal vertex processing function definitions */
 
-void Process_HomogeneousToScreen(PFvec4f* homogeneous)
+void Process_HomogeneousToScreen(PFvec4f* restrict homogeneous)
 {
     homogeneous->x = currentCtx->viewportX + (homogeneous->x + 1.0f) * 0.5f * currentCtx->viewportW;
     homogeneous->y = currentCtx->viewportY + (1.0f - homogeneous->y) * 0.5f * currentCtx->viewportH;
 }
 
-PFboolean Process_ClipLine2D(PFvertex* v1, PFvertex* v2)
+PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2)
 {
     PFboolean accept = PF_FALSE;
     PFubyte code0, code1;
@@ -836,7 +836,7 @@ PFboolean Process_ClipLine2D(PFvertex* v1, PFvertex* v2)
     return accept;
 }
 
-PFboolean Process_ClipLine3D(PFvertex* v1, PFvertex* v2)
+PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2)
 {
     PFfloat t1 = 0, t2 = 1;
 
@@ -865,7 +865,7 @@ PFboolean Process_ClipLine3D(PFvertex* v1, PFvertex* v2)
     return PF_TRUE;
 }
 
-PFboolean Process_ClipPolygonW(PFvertex* polygon, PFubyte* vertexCounter)
+PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, PFubyte* restrict vertexCounter)
 {
     PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
     memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
@@ -898,7 +898,7 @@ PFboolean Process_ClipPolygonW(PFvertex* polygon, PFubyte* vertexCounter)
     return *vertexCounter > 0;
 }
 
-PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, PFubyte* vertexCounter)
+PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, PFubyte* restrict vertexCounter)
 {
     for (PFubyte iAxis = 0; iAxis < 3; iAxis++)
     {
@@ -975,7 +975,7 @@ PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, PFubyte* vertexCounter)
     return *vertexCounter > 0;
 }
 
-void Process_ProjectAndClipLine(PFvertex* line, PFubyte* vertexCounter, const PFmat4f* mvp)
+void Process_ProjectAndClipLine(PFvertex* restrict line, PFubyte* restrict vertexCounter, const PFmat4f* mvp)
 {
     line[0].position = pfVec4fTransform(&line[0].position, mvp);
     line[1].position = pfVec4fTransform(&line[1].position, mvp);
@@ -1012,7 +1012,7 @@ void Process_ProjectAndClipLine(PFvertex* line, PFubyte* vertexCounter, const PF
     }
 }
 
-PFboolean Process_ProjectAndClipTriangle(PFvertex* polygon, PFubyte* vertexCounter, const PFmat4f* mvp)
+PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, PFubyte* restrict vertexCounter, const PFmat4f* mvp)
 {
     for (PFubyte i = 0; i < *vertexCounter; i++)
     {
