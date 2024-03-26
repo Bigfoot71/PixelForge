@@ -1,15 +1,14 @@
-#include "pixelforge.h"
-#include "raylib.h"
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
-
 #define PF_COMMON_IMPL
 #include "../common.h"
 
+#include "raylib.h"
+#include "raymath.h"
+
+#include <stdlib.h>
+#include <string.h>
+
 #define SCREEN_WIDTH    800
 #define SCREEN_HEIGHT   600
-
 
 void PF_BeginMode3D(Camera3D camera);
 void PF_EndMode3D(void);
@@ -18,6 +17,7 @@ void PF_DrawMesh(Mesh mesh, Material material, Matrix transform);
 void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rotationAngle, Vector3 scale, Color tint);
 void PF_DrawModel(Model model, Vector3 position, float scale, Color tint);
 
+bool WallCollision(Camera3D* camera, const Image* imMap);
 
 int main(void)
 {
@@ -28,13 +28,15 @@ int main(void)
 
     PFctx *ctx = pfContextCreate(dest.data, dest.width, dest.height, dest.format);
     pfMakeCurrent(ctx);
+
     PF_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     Camera3D camera = {
-        (Vector3) { 0.2f, 0.4f, 0.2f },
-        (Vector3) { 0.185f, 0.4f, 0.0f },
+        (Vector3) { 1.2f, 0.5f, 1.2f },
+        (Vector3) { 1.5f, 0.5f, 1.5f },
         (Vector3) { 0.0f, 1.0f, 0.0f },
-        45.0f
+        60.0f,
+        CAMERA_PERSPECTIVE
     };
 
     Image imMap = LoadImage(RESOURCES_PATH "images/cubicmap.png");
@@ -44,11 +46,6 @@ int main(void)
     Image imTexMap = LoadImage(RESOURCES_PATH "images/cubicmap_atlas.png");
     PFtexture texMap = pfTextureGenFromBuffer(imTexMap.data, imTexMap.width, imTexMap.height, imTexMap.format);
 
-    Color *mapPixels = LoadImageColors(imMap);
-    UnloadImage(imMap);
-
-    Vector3 mapPosition = { -16.0f, 0.0f, -8.0f };
-
     DisableCursor();
     SetTargetFPS(60);
 
@@ -56,33 +53,29 @@ int main(void)
     {
         // Update
 
-        Vector3 oldCamPos = camera.position;
+        Vector3 dir = {
+            IsKeyDown(KEY_W) - IsKeyDown(KEY_S),
+            IsKeyDown(KEY_D) - IsKeyDown(KEY_A),
+            IsKeyDown(KEY_SPACE) - IsKeyDown(KEY_LEFT_SHIFT)
+        };
 
-        UpdateCamera(&camera, CAMERA_FIRST_PERSON);
+        dir = Vector3Scale(Vector3Normalize(dir), 5.0f * GetFrameTime());
 
-        Vector2 playerPos = { camera.position.x, camera.position.z };
-        float playerRadius = 0.1f;
+        UpdateCameraPro(&camera, dir, (Vector3) {
+            .x = GetMouseDelta().x * 0.1f,
+            .y = GetMouseDelta().y * 0.1f,
+            .z = 0.0,
+        }, 0.0f);
 
-        int playerCellX = (int)(playerPos.x - mapPosition.x + 0.5f);
-        int playerCellY = (int)(playerPos.y - mapPosition.z + 0.5f);
-
-        if (playerCellX < 0) playerCellX = 0;
-        else if (playerCellX >= imMap.width) playerCellX = imMap.width - 1;
-
-        if (playerCellY < 0) playerCellY = 0;
-        else if (playerCellY >= imMap.height) playerCellY = imMap.height - 1;
-
-        for (int y = 0; y < imMap.height; y++)
+        if (camera.position.y < 0.5f)
         {
-            for (int x = 0; x < imMap.width; x++)
-            {
-                if ((mapPixels[y*imMap.width + x].r == 255) &&
-                    (CheckCollisionCircleRec(playerPos, playerRadius,
-                    (Rectangle){ mapPosition.x - 0.5f + x*1.0f, mapPosition.z - 0.5f + y*1.0f, 1.0f, 1.0f })))
-                {
-                    camera.position = oldCamPos;
-                }
-            }
+            camera.target.y += 0.5f - camera.position.y;
+            camera.position.y = 0.5;
+        }
+
+        if (WallCollision(&camera, &imMap))
+        {
+            (void)WallCollision(&camera, &imMap);
         }
 
         // Draw
@@ -90,7 +83,7 @@ int main(void)
         pfClear(PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT);
         PF_BeginMode3D(camera);
             pfEnableTexture(&texMap);
-            PF_DrawModel(model, mapPosition, 1.0f, WHITE);
+            PF_DrawModel(model, (Vector3) { 0 }, 1.0f, WHITE);
             pfDisableTexture();
         PF_EndMode3D();
 
@@ -103,10 +96,10 @@ int main(void)
         EndDrawing();
     }
 
-    UnloadImageColors(mapPixels);   // Unload color array
-    UnloadImage(imTexMap);          // Unload map texture
-    UnloadModel(model);             // Unload map model
-    CloseWindow();                  // Close window and OpenGL context
+    UnloadImage(imTexMap);
+    UnloadImage(imMap);
+    UnloadModel(model);
+    CloseWindow();
 
     return 0;
 }
@@ -230,4 +223,68 @@ void PF_DrawModel(Model model, Vector3 position, float scale, Color tint)
     Vector3 vScale = { scale, scale, scale };
     Vector3 rotationAxis = { 0.0f, 1.0f, 0.0f };
     PF_DrawModelEx(model, position, rotationAxis, 0.0f, vScale, tint);
+}
+
+bool WallCollision(Camera3D* camera, const Image* imMap)
+{
+    Vector2 pos2D = { .x = camera->position.x, .y = camera->position.z };
+    Vector2 rdPos2D = { .x = round(pos2D.x), .y = round(pos2D.y) };
+
+    int xMax = MIN(rdPos2D.x + 1, imMap->width - 1);
+    int yMax = MIN(rdPos2D.y + 1, imMap->height - 1);
+
+    Rectangle cam_rect = { .x = pos2D.x - 0.2f, .y = pos2D.y - 0.2f, .width = 0.4f, .height = 0.4f };
+    Vector2 result_disp = { .x = 0, .y = 0 };
+
+    for (int y = fmaxf(rdPos2D.y - 1, 0); y <= yMax; y += 1)
+    {
+        for (int x = fmaxf(rdPos2D.x - 1, 0); x <= xMax; x += 1)
+        {
+            if ((x != rdPos2D.x || y != rdPos2D.y) && ((PFubyte*)imMap->data)[y * imMap->width + x] > 0)
+            {
+                Rectangle tileRec = { .x = x - 0.5f, .y = y - 0.5f, .width = 1.0f, .height = 1.0f };
+
+                Vector2 dist = { .x = pos2D.x - x, .y = pos2D.y - y };
+                Vector2 minDist = { .x = (cam_rect.width + tileRec.width) * 0.5f, .y = (cam_rect.height + tileRec.height) * 0.5f };
+
+                Vector2 collision_vector = { .x = 0, .y = 0 };
+
+                if (fabsf(dist.x) < minDist.x && fabsf(dist.y) < minDist.y)
+                {
+                    Vector2 overlap = {
+                        .x = minDist.x - fabsf(dist.x),
+                        .y = minDist.y - fabsf(dist.y),
+                    };
+
+                    if (overlap.x < overlap.y)
+                    {
+                        collision_vector.x = (dist.x > 0) ? overlap.x : -overlap.x;
+                    }
+                    else
+                    {
+                        collision_vector.y = (dist.y > 0) ? overlap.y : -overlap.y;
+                    }
+                }
+
+                if (fabsf(collision_vector.x) > fabsf(result_disp.x)) result_disp.x = collision_vector.x;
+                if (fabsf(collision_vector.y) > fabsf(result_disp.y)) result_disp.y = collision_vector.y;
+            }
+        }
+    }
+
+    float adx = fabsf(result_disp.x);
+    float ady = fabsf(result_disp.y);
+
+    if (adx > ady)
+    {
+        camera->position.x += result_disp.x;
+        camera->target.x += result_disp.x;
+    }
+    else
+    {
+        camera->position.z += result_disp.y;
+        camera->target.z += result_disp.y;
+    }
+
+    return (adx > 0 && ady > 0);
 }
