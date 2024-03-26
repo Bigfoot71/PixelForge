@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.21)
 # Path to example resources
 add_definitions(-DRESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../resources/")
 
+# Basic 2D example
+add_executable(raylib_2D ${PF_ROOT_PATH}/examples/raylib/raylib_2D.c)
+target_link_libraries(raylib_2D PRIVATE pixelforge_static raylib m)
+target_include_directories(raylib_2D PRIVATE ${PF_ROOT_PATH}/src)
+
 # Basic 3D example
 add_executable(raylib_3D ${PF_ROOT_PATH}/examples/raylib/raylib_3D.c)
 target_link_libraries(raylib_3D PRIVATE pixelforge_static raylib m)
