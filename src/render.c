@@ -1422,10 +1422,13 @@ static void Rasterize_TriangleColorFlat2D(const PFvertex* v1, const PFvertex* v2
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
     const PFcolor emission = currentCtx->frontMaterial.emission;
 
+    // Get target texture pointer
+    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
     {
-        const PFuint yOffset = y*currentCtx->currentFramebuffer->texture.width;
+        const PFuint yOffset = y*texture->width;
         PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
 
         for (PFuint x = xMin; x <= xMax; x++)
@@ -1437,10 +1440,10 @@ static void Rasterize_TriangleColorFlat2D(const PFvertex* v1, const PFvertex* v2
                 const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
 
                 const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                const PFcolor dstCol = currentCtx->currentFramebuffer->texture.pixelGetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset);
+                const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
 
                 const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-                currentCtx->currentFramebuffer->texture.pixelSetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset, finalColor);
+                texture->pixelSetter(texture->pixels, xyOffset, finalColor);
             }
 
             w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
@@ -1483,10 +1486,13 @@ static void Rasterize_TriangleColorDepth2D(const PFvertex* v1, const PFvertex* v
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
     const PFcolor emission = currentCtx->frontMaterial.emission;
 
+    // Get target texture pointer
+    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
     {
-        const PFuint yOffset = y*currentCtx->currentFramebuffer->texture.width;
+        const PFuint yOffset = y*texture->width;
         PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
 
         for (PFuint x = xMin; x <= xMax; x++)
@@ -1501,10 +1507,10 @@ static void Rasterize_TriangleColorDepth2D(const PFvertex* v1, const PFvertex* v
                 if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
                 {
                     const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                    const PFcolor dstCol = currentCtx->currentFramebuffer->texture.pixelGetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset);
+                    const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
 
                     const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-                    currentCtx->currentFramebuffer->texture.pixelSetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset, finalColor);
+                    texture->pixelSetter(texture->pixels, xyOffset, finalColor);
 
                     currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
                 }
@@ -1550,10 +1556,13 @@ static void Rasterize_TriangleTextureFlat2D(const PFvertex* v1, const PFvertex* 
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
     const PFcolor emission = currentCtx->frontMaterial.emission;
 
+    // Get target texture pointer
+    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
     {
-        const PFuint yOffset = y*currentCtx->currentFramebuffer->texture.width;
+        const PFuint yOffset = y*texture->width;
         PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
 
         for (PFuint x = xMin; x <= xMax; x++)
@@ -1567,12 +1576,12 @@ static void Rasterize_TriangleTextureFlat2D(const PFvertex* v1, const PFvertex* 
                 const PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
                 PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
 
-                const PFcolor dstCol = currentCtx->currentFramebuffer->texture.pixelGetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset);
+                const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
                 PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
                 srcCol = pfBlendMultiplicative(texel, srcCol);
 
                 const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-                currentCtx->currentFramebuffer->texture.pixelSetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset, finalColor);
+                texture->pixelSetter(texture->pixels, xyOffset, finalColor);
             }
 
             w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
@@ -1615,10 +1624,13 @@ static void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex*
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
     const PFcolor emission = currentCtx->frontMaterial.emission;
 
+    // Get target texture pointer
+    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
     {
-        const PFuint yOffset = y*currentCtx->currentFramebuffer->texture.width;
+        const PFuint yOffset = y*texture->width;
         PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
 
         for (PFuint x = xMin; x <= xMax; x++)
@@ -1635,12 +1647,12 @@ static void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex*
                     const PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
                     PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
 
-                    const PFcolor dstCol = currentCtx->currentFramebuffer->texture.pixelGetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset);
+                    const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
                     PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
                     srcCol = pfBlendMultiplicative(texel, srcCol);
 
                     const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-                    currentCtx->currentFramebuffer->texture.pixelSetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset, finalColor);
+                    texture->pixelSetter(texture->pixels, xyOffset, finalColor);
 
                     currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
                 }
@@ -1689,10 +1701,13 @@ static void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
     const PFcolor emission = currentCtx->frontMaterial.emission;
 
+    // Get target texture pointer
+    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
     {
-        const PFuint yOffset = y*currentCtx->currentFramebuffer->texture.width;
+        const PFuint yOffset = y*texture->width;
         PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
 
         for (PFuint x = xMin; x <= xMax; x++)
@@ -1705,10 +1720,10 @@ static void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2
                 const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
 
                 const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                const PFcolor dstCol = currentCtx->currentFramebuffer->texture.pixelGetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset);
+                const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
 
                 const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-                currentCtx->currentFramebuffer->texture.pixelSetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset, finalColor);
+                texture->pixelSetter(texture->pixels, xyOffset, finalColor);
 
                 currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
             }
@@ -1753,10 +1768,13 @@ static void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
     const PFcolor emission = currentCtx->frontMaterial.emission;
 
+    // Get target texture pointer
+    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
     {
-        const PFuint yOffset = y*currentCtx->currentFramebuffer->texture.width;
+        const PFuint yOffset = y*texture->width;
         PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
 
         for (PFuint x = xMin; x <= xMax; x++)
@@ -1771,10 +1789,10 @@ static void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v
                 if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
                 {
                     const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                    const PFcolor dstCol = currentCtx->currentFramebuffer->texture.pixelGetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset);
+                    const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
 
                     const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-                    currentCtx->currentFramebuffer->texture.pixelSetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset, finalColor);
+                    texture->pixelSetter(texture->pixels, xyOffset, finalColor);
 
                     currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
                 }
@@ -1820,10 +1838,13 @@ static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* 
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
     const PFcolor emission = currentCtx->frontMaterial.emission;
 
+    // Get target texture pointer
+    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
     {
-        const PFuint yOffset = y*currentCtx->currentFramebuffer->texture.width;
+        const PFuint yOffset = y*texture->width;
         PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
 
         for (PFuint x = xMin; x <= xMax; x++)
@@ -1835,16 +1856,17 @@ static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* 
                 const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
                 const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
 
-                const PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
-                PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
+                PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
+                texcoord = pfVec2fScale(&texcoord, z); // Perspective correct
 
+                const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
                 PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
                 srcCol = pfBlendMultiplicative(texel, srcCol);
 
-                const PFcolor dstCol = currentCtx->currentFramebuffer->texture.pixelGetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset);
+                const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
                 const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
 
-                currentCtx->currentFramebuffer->texture.pixelSetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset, finalColor);
+                texture->pixelSetter(texture->pixels, xyOffset, finalColor);
                 currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
             }
 
@@ -1888,10 +1910,13 @@ static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex*
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
     const PFcolor emission = currentCtx->frontMaterial.emission;
 
+    // Get target texture pointer
+    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
     {
-        const PFuint yOffset = y*currentCtx->currentFramebuffer->texture.width;
+        const PFuint yOffset = y*texture->width;
         PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
 
         for (PFuint x = xMin; x <= xMax; x++)
@@ -1912,10 +1937,10 @@ static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex*
                     PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
                     srcCol = pfBlendMultiplicative(texel, srcCol);
 
-                    const PFcolor dstCol = currentCtx->currentFramebuffer->texture.pixelGetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset);
+                    const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
                     const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
 
-                    currentCtx->currentFramebuffer->texture.pixelSetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset, finalColor);
+                    texture->pixelSetter(texture->pixels, xyOffset, finalColor);
                     currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
                 }
             }
@@ -1988,31 +2013,60 @@ static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFverte
     const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
     const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
 
-    // Fill the triangle with either color or image based on the provided parameters
-    for (PFuint y = yMin; y <= yMax; y++)
+    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
+    const PFcolor emission = currentCtx->frontMaterial.emission;
+
+    // Get target texture pointer
+    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+
+    // Renders for all lights
+    for (int i = 0; i <= currentCtx->lastActiveLight; i++)
     {
-        const PFuint yOffset = y*currentCtx->currentFramebuffer->texture.width;
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+        const PFlight* light = &currentCtx->lights[i];
 
-        for (PFuint x = xMin; x <= xMax; x++)
+        const PFcolor ambient = {
+            (PFubyte)(light->ambient.x*currentCtx->frontMaterial.diffuse.x*255.0f),
+            (PFubyte)(light->ambient.y*currentCtx->frontMaterial.diffuse.y*255.0f),
+            (PFubyte)(light->ambient.z*currentCtx->frontMaterial.diffuse.z*255.0f),
+            255
+        };
+
+        // Skip inactive lights
+        if (!light->active) continue;
+
+        // Fill the triangle with either color or image based on the provided parameters
+        for (PFuint y = yMin; y <= yMax; y++)
         {
-            if ((w1 | w2 | w3) >= 0)
-            {
-                const PFuint xyOffset = yOffset + x;
-                const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
+            const PFuint yOffset = y*texture->width;
+            PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
 
-                const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                const PFcolor dstCol = currentCtx->currentFramebuffer->texture.pixelGetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset);
-                currentCtx->currentFramebuffer->texture.pixelSetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset, currentCtx->blendFunction(srcCol, dstCol));
-                currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
+            for (PFuint x = xMin; x <= xMax; x++)
+            {
+                if ((w1 | w2 | w3) >= 0)
+                {
+                    const PFuint xyOffset = yOffset + x;
+                    const PFfloat invSum = 1.0f/(w1 + w2 + w3);
+                    const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
+                    const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
+
+                    const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+                    const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
+
+                    const PFvec3f normal = Helper_InterpolateVec3f(&v1->normal, &v2->normal, &v3->normal, aW1, aW2, aW3);
+
+                    const PFcolor diffuse = Light_ComputeDiffuse(light, &normal);
+                    const PFcolor specular = Light_ComputeSpecular(light, &normal, viewDir, currentCtx->frontMaterial.shininess);
+
+                    const PFcolor finalColor = pfBlendMultiplicative(pfBlendAdditive(ambient, pfBlendAdditive(diffuse, specular)), currentCtx->blendFunction(srcCol, dstCol));
+                    texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
+                    currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
+                }
+
+                w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
             }
 
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
+            w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
         }
-
-        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
     }
 }
 
@@ -2046,6 +2100,12 @@ static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvert
     const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
     const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
 
+    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
+    const PFcolor emission = currentCtx->frontMaterial.emission;
+
+    // Get target texture pointer
+    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+
     // Renders for all lights
     for (int i = 0; i <= currentCtx->lastActiveLight; i++)
     {
@@ -2064,7 +2124,7 @@ static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvert
         // Fill the triangle with either color or image based on the provided parameters
         for (PFuint y = yMin; y <= yMax; y++)
         {
-            const PFuint yOffset = y*currentCtx->currentFramebuffer->texture.width;
+            const PFuint yOffset = y*texture->width;
             PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
 
             for (PFuint x = xMin; x <= xMax; x++)
@@ -2079,16 +2139,20 @@ static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvert
                     if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
                     {
                         const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                        const PFcolor dstCol = currentCtx->currentFramebuffer->texture.pixelGetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset);
+                        const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
 
-                        PFvec3f normal = Helper_InterpolateVec3f(&v1->normal, &v2->normal, &v3->normal, aW1, aW2, aW3);
+                        const PFvec3f normal = Helper_InterpolateVec3f(&v1->normal, &v2->normal, &v3->normal, aW1, aW2, aW3);
 
                         const PFcolor diffuse = Light_ComputeDiffuse(light, &normal);
                         const PFcolor specular = Light_ComputeSpecular(light, &normal, viewDir, currentCtx->frontMaterial.shininess);
-                        const PFcolor finalColor = pfBlendMultiplicative(pfBlendAdditive(ambient, pfBlendAdditive(diffuse, specular)), currentCtx->blendFunction(srcCol, dstCol));
 
-                        currentCtx->currentFramebuffer->texture.pixelSetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset, finalColor);
-                        if (i == currentCtx->lastActiveLight) currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
+                        const PFcolor finalColor = pfBlendMultiplicative(pfBlendAdditive(ambient, pfBlendAdditive(diffuse, specular)), currentCtx->blendFunction(srcCol, dstCol));
+                        texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
+
+                        if (i == currentCtx->lastActiveLight)
+                        {
+                            currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
+                        }
                     }
                 }
 
@@ -2130,38 +2194,66 @@ static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFver
     const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
     const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
 
-    // Fill the triangle with either color or image based on the provided parameters
-    for (PFuint y = yMin; y <= yMax; y++)
+    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
+    const PFcolor emission = currentCtx->frontMaterial.emission;
+
+    // Get target texture pointer
+    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+
+    // Renders for all lights
+    for (int i = 0; i <= currentCtx->lastActiveLight; i++)
     {
-        const PFuint yOffset = y*currentCtx->currentFramebuffer->texture.width;
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+        const PFlight* light = &currentCtx->lights[i];
 
-        for (PFuint x = xMin; x <= xMax; x++)
+        const PFcolor ambient = {
+            (PFubyte)(light->ambient.x*currentCtx->frontMaterial.diffuse.x*255.0f),
+            (PFubyte)(light->ambient.y*currentCtx->frontMaterial.diffuse.y*255.0f),
+            (PFubyte)(light->ambient.z*currentCtx->frontMaterial.diffuse.z*255.0f),
+            255
+        };
+
+        // Skip inactive lights
+        if (!light->active) continue;
+
+        // Fill the triangle with either color or image based on the provided parameters
+        for (PFuint y = yMin; y <= yMax; y++)
         {
-            if ((w1 | w2 | w3) >= 0)
+            const PFuint yOffset = y*texture->width;
+            PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+
+            for (PFuint x = xMin; x <= xMax; x++)
             {
-                const PFuint xyOffset = yOffset + x;
-                const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
+                if ((w1 | w2 | w3) >= 0)
+                {
+                    const PFuint xyOffset = yOffset + x;
+                    const PFfloat invSum = 1.0f/(w1 + w2 + w3);
+                    const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
+                    const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
 
-                const PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
-                PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
+                    PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
+                    texcoord = pfVec2fScale(&texcoord, z); // Perspective correct
 
-                PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                srcCol = pfBlendMultiplicative(texel, srcCol);
+                    const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
+                    PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+                    srcCol = pfBlendMultiplicative(texel, srcCol);
 
-                const PFcolor dstCol = currentCtx->currentFramebuffer->texture.pixelGetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset);
-                const PFcolor finalColor = currentCtx->blendFunction(srcCol, dstCol);
+                    const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
 
-                currentCtx->currentFramebuffer->texture.pixelSetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset, finalColor);
-                currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
+                    const PFvec3f normal = Helper_InterpolateVec3f(&v1->normal, &v2->normal, &v3->normal, aW1, aW2, aW3);
+
+                    const PFcolor diffuse = Light_ComputeDiffuse(light, &normal);
+                    const PFcolor specular = Light_ComputeSpecular(light, &normal, viewDir, currentCtx->frontMaterial.shininess);
+
+                    const PFcolor finalColor = pfBlendMultiplicative(pfBlendAdditive(ambient, pfBlendAdditive(diffuse, specular)), currentCtx->blendFunction(srcCol, dstCol));
+                    texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
+                    currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
+                }
+
+                w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
             }
 
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
+            w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
         }
-
-        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
     }
 }
 
@@ -2195,42 +2287,73 @@ static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFve
     const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
     const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
 
-    // Fill the triangle with either color or image based on the provided parameters
-    for (PFuint y = yMin; y <= yMax; y++)
+    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
+    const PFcolor emission = currentCtx->frontMaterial.emission;
+
+    // Get target texture pointer
+    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+
+    // Renders for all lights
+    for (int i = 0; i <= currentCtx->lastActiveLight; i++)
     {
-        const PFuint yOffset = y*currentCtx->currentFramebuffer->texture.width;
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+        const PFlight* light = &currentCtx->lights[i];
 
-        for (PFuint x = xMin; x <= xMax; x++)
+        const PFcolor ambient = {
+            (PFubyte)(light->ambient.x*currentCtx->frontMaterial.diffuse.x*255.0f),
+            (PFubyte)(light->ambient.y*currentCtx->frontMaterial.diffuse.y*255.0f),
+            (PFubyte)(light->ambient.z*currentCtx->frontMaterial.diffuse.z*255.0f),
+            255
+        };
+
+        // Skip inactive lights
+        if (!light->active) continue;
+
+        // Fill the triangle with either color or image based on the provided parameters
+        for (PFuint y = yMin; y <= yMax; y++)
         {
-            if ((w1 | w2 | w3) >= 0)
+            const PFuint yOffset = y*texture->width;
+            PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+
+            for (PFuint x = xMin; x <= xMax; x++)
             {
-                const PFuint xyOffset = yOffset + x;
-                const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
-
-                if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
+                if ((w1 | w2 | w3) >= 0)
                 {
-                    PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
-                    texcoord = pfVec2fScale(&texcoord, z); // Perspective correct
+                    const PFuint xyOffset = yOffset + x;
+                    const PFfloat invSum = 1.0f/(w1 + w2 + w3);
+                    const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
+                    const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
 
-                    PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                    PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
-                    srcCol = pfBlendMultiplicative(texel, srcCol);
+                    if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
+                    {
+                        PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
+                        texcoord = pfVec2fScale(&texcoord, z); // Perspective correct
 
-                    const PFcolor dstCol = currentCtx->currentFramebuffer->texture.pixelGetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset);
-                    const PFcolor finalColor = currentCtx->blendFunction(srcCol, dstCol);
+                        const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
+                        PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+                        srcCol = pfBlendMultiplicative(texel, srcCol);
 
-                    currentCtx->currentFramebuffer->texture.pixelSetter(currentCtx->currentFramebuffer->texture.pixels, xyOffset, finalColor);
-                    currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
+                        const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
+
+                        const PFvec3f normal = Helper_InterpolateVec3f(&v1->normal, &v2->normal, &v3->normal, aW1, aW2, aW3);
+
+                        const PFcolor diffuse = Light_ComputeDiffuse(light, &normal);
+                        const PFcolor specular = Light_ComputeSpecular(light, &normal, viewDir, currentCtx->frontMaterial.shininess);
+
+                        const PFcolor finalColor = pfBlendMultiplicative(pfBlendAdditive(ambient, pfBlendAdditive(diffuse, specular)), currentCtx->blendFunction(srcCol, dstCol));
+                        texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
+
+                        if (i == currentCtx->lastActiveLight)
+                        {
+                            currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
+                        }
+                    }
                 }
+
+                w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
             }
 
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
+            w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
         }
-
-        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
     }
 }
 

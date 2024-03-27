@@ -1,4 +1,3 @@
-#include "pixelforge.h"
 #define PF_COMMON_IMPL
 #include "../common.h"
 #include "raylib.h"
