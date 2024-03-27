@@ -41,8 +41,8 @@ static void SetGrayAlpha(void* pixels, PFsizei offset, PFcolor color)
     PFvec3f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
     PFubyte gray = (PFubyte)((nCol.x*0.299f + nCol.y*0.587f + nCol.z*0.114f)*255.0f);
 
-    ((PFubyte*)pixels)[offset*2] = gray;
-    ((PFubyte*)pixels)[offset*2 + 1] = color.a;
+    PFubyte *pixel = (PFubyte*)pixels + offset*2;
+    pixel[0] = gray, pixel[1] = color.a;
 }
 
 static void SetR5G6B5(void* pixels, PFsizei offset, PFcolor color)
@@ -59,9 +59,8 @@ static void SetR5G6B5(void* pixels, PFsizei offset, PFcolor color)
 
 static void SetR8G8B8(void* pixels, PFsizei offset, PFcolor color)
 {
-    ((PFubyte*)pixels)[offset*3] = color.r;
-    ((PFubyte*)pixels)[offset*3 + 1] = color.g;
-    ((PFubyte*)pixels)[offset*3 + 2] = color.b;
+    PFubyte* pixel = (PFubyte*)pixels + offset*3;
+    pixel[0] = color.r, pixel[1] = color.g, pixel[2] = color.b;
 }
 
 static void SetR5G5B5A1(void* pixels, PFsizei offset, PFcolor color)
@@ -108,9 +107,7 @@ static void SetR32G32B32(void* pixels, PFsizei offset, PFcolor color)
     // NOTE: Calculate R32G32B32 equivalent color (normalized to 32bit)
     PFvec3f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
 
-    ((PFfloat*)pixels)[offset*3] = nCol.x;
-    ((PFfloat*)pixels)[offset*3 + 1] = nCol.y;
-    ((PFfloat*)pixels)[offset*3 + 2] = nCol.z;
+    ((PFvec3f*)pixels)[offset] = nCol;
 }
 
 static void SetR32G32B32A32(void* pixels, PFsizei offset, PFcolor color)
@@ -118,10 +115,7 @@ static void SetR32G32B32A32(void* pixels, PFsizei offset, PFcolor color)
     // NOTE: Calculate R32G32B32A32 equivalent color (normalized to 32bit)
     PFvec4f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
 
-    ((PFfloat*)pixels)[offset*4] = nCol.x;
-    ((PFfloat*)pixels)[offset*4 + 1] = nCol.y;
-    ((PFfloat*)pixels)[offset*4 + 2] = nCol.z;
-    ((PFfloat*)pixels)[offset*4 + 3] = nCol.w;
+    ((PFvec4f*)pixels)[offset] = nCol;
 }
 
 static void SetR16(void* pixels, PFsizei offset, PFcolor color)
@@ -137,9 +131,10 @@ static void SetR16G16B16(void* pixels, PFsizei offset, PFcolor color)
     // NOTE: Calculate R32G32B32 equivalent color (normalized to 32bit)
     PFvec3f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
 
-    ((PFushort*)pixels)[offset*3] = FloatToHalf(nCol.x);
-    ((PFushort*)pixels)[offset*3 + 1] = FloatToHalf(nCol.y);
-    ((PFushort*)pixels)[offset*3 + 2] = FloatToHalf(nCol.z);
+    PFushort *pixel = (PFushort*)pixels + offset*3;
+    pixel[0] = FloatToHalf(nCol.x);
+    pixel[1] = FloatToHalf(nCol.y);
+    pixel[2] = FloatToHalf(nCol.z);
 }
 
 static void SetR16G16B16A16(void* pixels, PFsizei offset, PFcolor color)
@@ -147,10 +142,11 @@ static void SetR16G16B16A16(void* pixels, PFsizei offset, PFcolor color)
     // NOTE: Calculate R32G32B32A32 equivalent color (normalized to 32bit)
     PFvec4f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
 
-    ((PFushort*)pixels)[offset*4] = FloatToHalf(nCol.x);
-    ((PFushort*)pixels)[offset*4 + 1] = FloatToHalf(nCol.y);
-    ((PFushort*)pixels)[offset*4 + 2] = FloatToHalf(nCol.z);
-    ((PFushort*)pixels)[offset*4 + 3] = FloatToHalf(nCol.w);
+    PFushort *pixel = (PFushort*)pixels + offset*4;
+    pixel[0] = FloatToHalf(nCol.x);
+    pixel[1] = FloatToHalf(nCol.y);
+    pixel[2] = FloatToHalf(nCol.z);
+    pixel[3] = FloatToHalf(nCol.w);
 }
 
 
@@ -164,9 +160,8 @@ static PFcolor GetGrayscale(const void* pixels, PFsizei offset)
 
 static PFcolor GetGrayAlpha(const void* pixels, PFsizei offset)
 {
-    PFubyte gray = ((PFubyte*)pixels)[offset*2];
-    PFubyte alpha = ((PFubyte*)pixels)[offset*2 + 1];
-    return (PFcolor) { gray, gray, gray, alpha };
+    PFubyte *pixel = (PFubyte*)pixels + offset*2;
+    return (PFcolor) { *pixel, *pixel, *pixel, pixel[1] };
 }
 
 static PFcolor GetR5G6B5(const void* pixels, PFsizei offset)
@@ -183,12 +178,8 @@ static PFcolor GetR5G6B5(const void* pixels, PFsizei offset)
 
 static PFcolor GetR8G8B8(const void* pixels, PFsizei offset)
 {
-    return (PFcolor) {
-        (PFubyte)((PFubyte*)pixels)[offset*3],
-        (PFubyte)((PFubyte*)pixels)[offset*3 + 1],
-        (PFubyte)((PFubyte*)pixels)[offset*3 + 2],
-        255
-    };
+    const PFubyte* pixel = (PFubyte*)pixels + offset*3;
+    return (PFcolor) { pixel[0], pixel[1], pixel[2], 255 };
 }
 
 static PFcolor GetR5G5B5A1(const void* pixels, PFsizei offset)
@@ -217,12 +208,7 @@ static PFcolor GetR4G4B4A4(const void* pixels, PFsizei offset)
 
 static PFcolor GetR8G8B8A8(const void* pixels, PFsizei offset)
 {
-    return (PFcolor) {
-        ((PFubyte*)pixels)[offset*4],
-        ((PFubyte*)pixels)[offset*4 + 1],
-        ((PFubyte*)pixels)[offset*4 + 2],
-        ((PFubyte*)pixels)[offset*4 + 3]
-    };
+    return ((PFcolor*)pixels)[offset];
 }
 
 static PFcolor GetR32(const void* pixels, PFsizei offset)
@@ -235,21 +221,25 @@ static PFcolor GetR32(const void* pixels, PFsizei offset)
 
 static PFcolor GetR32G32B32(const void* pixels, PFsizei offset)
 {
+    const PFvec3f *pixel = (PFvec3f*)pixels + offset;
+
     return (PFcolor) {
-        (PFubyte)(((PFfloat*)pixels)[offset*3]*255.0f),
-        (PFubyte)(((PFfloat*)pixels)[offset*3 + 1]*255.0f),
-        (PFubyte)(((PFfloat*)pixels)[offset*3 + 2]*255.0f),
+        (PFubyte)(pixel->x*255.0f),
+        (PFubyte)(pixel->y*255.0f),
+        (PFubyte)(pixel->z*255.0f),
         255
     };
 }
 
 static PFcolor GetR32G32B32A32(const void* pixels, PFsizei offset)
 {
+    const PFvec4f *pixel = (PFvec4f*)pixels + offset;
+
     return (PFcolor) {
-        (PFubyte)(((PFfloat*)pixels)[offset*4]*255.0f),
-        (PFubyte)(((PFfloat*)pixels)[offset*4]*255.0f),
-        (PFubyte)(((PFfloat*)pixels)[offset*4]*255.0f),
-        (PFubyte)(((PFfloat*)pixels)[offset*4]*255.0f)
+        (PFubyte)(pixel->x*255.0f),
+        (PFubyte)(pixel->y*255.0f),
+        (PFubyte)(pixel->z*255.0f),
+        (PFubyte)(pixel->w*255.0f)
     };
 }
 
@@ -263,21 +253,25 @@ static PFcolor GetR16(const void* pixels, PFsizei offset)
 
 static PFcolor GetR16G16B16(const void* pixels, PFsizei offset)
 {
+    const PFushort *pixel = (PFushort*)pixels + offset*3;
+
     return (PFcolor) {
-        (PFubyte)(HalfToFloat(((PFushort*)pixels)[offset*3])*255.0f),
-        (PFubyte)(HalfToFloat(((PFushort*)pixels)[offset*3 + 1])*255.0f),
-        (PFubyte)(HalfToFloat(((PFushort*)pixels)[offset*3 + 2])*255.0f),
+        (PFubyte)(HalfToFloat(pixel[0]*255.0f)),
+        (PFubyte)(HalfToFloat(pixel[1]*255.0f)),
+        (PFubyte)(HalfToFloat(pixel[2]*255.0f)),
         255
     };
 }
 
 static PFcolor GetR16G16B16A16(const void* pixels, PFsizei offset)
 {
+    const PFushort *pixel = (PFushort*)pixels + offset*4;
+
     return (PFcolor) {
-        (PFubyte)(HalfToFloat(((PFushort*)pixels)[offset*4])*255.0f),
-        (PFubyte)(HalfToFloat(((PFushort*)pixels)[offset*4])*255.0f),
-        (PFubyte)(HalfToFloat(((PFushort*)pixels)[offset*4])*255.0f),
-        (PFubyte)(HalfToFloat(((PFushort*)pixels)[offset*4])*255.0f)
+        (PFubyte)(HalfToFloat(pixel[0]*255.0f)),
+        (PFubyte)(HalfToFloat(pixel[1]*255.0f)),
+        (PFubyte)(HalfToFloat(pixel[2]*255.0f)),
+        (PFubyte)(HalfToFloat(pixel[3]*255.0f))
     };
 }
 
