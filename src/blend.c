@@ -6,10 +6,10 @@
 PFcolor pfBlend(PFcolor source, PFcolor destination)
 {
     return (PFcolor) {
-        (PFubyte)((source.r + destination.r)/2),
-        (PFubyte)((source.g + destination.g)/2),
-        (PFubyte)((source.b + destination.b)/2),
-        (PFubyte)((source.a + destination.a)/2)
+        (PFubyte)((source.r + destination.r) >> 1),
+        (PFubyte)((source.g + destination.g) >> 1),
+        (PFubyte)((source.b + destination.b) >> 1),
+        (PFubyte)((source.a + destination.a) >> 1)
     };
 }
 
@@ -48,21 +48,34 @@ PFcolor pfBlendSubtractive(PFcolor source, PFcolor destination)
 
 PFcolor pfBlendMultiplicative(PFcolor source, PFcolor destination)
 {
+    // NOTE: This function appears to be less precise
+    // in certain cases but more efficient.
+
+    return (PFcolor) {
+        (PFubyte)((source.r*destination.r + 128) >> 8),
+        (PFubyte)((source.g*destination.g + 128) >> 8),
+        (PFubyte)((source.b*destination.b + 128) >> 8),
+        (PFubyte)((source.a*destination.a + 128) >> 8)
+    };
+
+/*
     return (PFcolor) {
         (PFubyte)((source.r*destination.r)/255),
         (PFubyte)((source.g*destination.g)/255),
         (PFubyte)((source.b*destination.b)/255),
         (PFubyte)((source.a*destination.a)/255)
     };
+*/
+
 }
 
 PFcolor pfBlendScreen(PFcolor source, PFcolor destination)
 {
     return (PFcolor) {
-        (PFubyte)MIN_255((PFint)(destination.r * (255 - source.r) / 255 + source.r)),
-        (PFubyte)MIN_255((PFint)(destination.g * (255 - source.g) / 255 + source.g)),
-        (PFubyte)MIN_255((PFint)(destination.b * (255 - source.b) / 255 + source.b)),
-        (PFubyte)MIN_255((PFint)(destination.a * (255 - source.a) / 255 + source.a))
+        (PFubyte)MIN_255((PFint)((destination.r*(255 - source.r) >> 8) + source.r)),
+        (PFubyte)MIN_255((PFint)((destination.g*(255 - source.g) >> 8) + source.g)),
+        (PFubyte)MIN_255((PFint)((destination.b*(255 - source.b) >> 8) + source.b)),
+        (PFubyte)MIN_255((PFint)((destination.a*(255 - source.a) >> 8) + source.a))
     };
 }
 
