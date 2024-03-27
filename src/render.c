@@ -853,7 +853,7 @@ void pfNormalVec3f(const PFvec3f* v)
 
 /* Internal helper function definitions */
 
-PFvertex Helper_LerpVertex(const PFvertex* start, const PFvertex* end, PFfloat t)
+static PFvertex Helper_LerpVertex(const PFvertex* start, const PFvertex* end, PFfloat t)
 {
     PFvertex result;
 
@@ -881,7 +881,7 @@ PFvertex Helper_LerpVertex(const PFvertex* start, const PFvertex* end, PFfloat t
     return result;
 }
 
-PFcolor Helper_LerpColor(PFcolor a, PFcolor b, PFfloat t)
+static PFcolor Helper_LerpColor(PFcolor a, PFcolor b, PFfloat t)
 {
     return (PFcolor) {
         a.r + t*(b.r - a.r),
@@ -891,7 +891,7 @@ PFcolor Helper_LerpColor(PFcolor a, PFcolor b, PFfloat t)
     };
 }
 
-PFvec2f Helper_InterpolateVec2f(const PFvec2f* v1, const PFvec2f* v2, const PFvec2f* v3, PFfloat w1, PFfloat w2, PFfloat w3)
+static PFvec2f Helper_InterpolateVec2f(const PFvec2f* v1, const PFvec2f* v2, const PFvec2f* v3, PFfloat w1, PFfloat w2, PFfloat w3)
 {
     return (PFvec2f) {
         w1*v1->x + w2*v2->x + w3*v3->x,
@@ -899,7 +899,7 @@ PFvec2f Helper_InterpolateVec2f(const PFvec2f* v1, const PFvec2f* v2, const PFve
     };
 }
 
-PFvec3f Helper_InterpolateVec3f(const PFvec3f* v1, const PFvec3f* v2, const PFvec3f* v3, PFfloat w1, PFfloat w2, PFfloat w3)
+static PFvec3f Helper_InterpolateVec3f(const PFvec3f* v1, const PFvec3f* v2, const PFvec3f* v3, PFfloat w1, PFfloat w2, PFfloat w3)
 {
     return (PFvec3f) {
         w1*v1->x + w2*v2->x + w3*v3->x,
@@ -908,7 +908,7 @@ PFvec3f Helper_InterpolateVec3f(const PFvec3f* v1, const PFvec3f* v2, const PFve
     };
 }
 
-PFcolor Helper_InterpolateColor(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
+static PFcolor Helper_InterpolateColor(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
 {
     // REVIEW: Normalization necessary here ?
 
@@ -920,20 +920,20 @@ PFcolor Helper_InterpolateColor(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, 
     };
 }
 
-void Helper_SwapVertex(PFvertex* a, PFvertex* b)
+static void Helper_SwapVertex(PFvertex* a, PFvertex* b)
 {
     PFvertex tmp = *a;
     *a = *b; *b = tmp;
 }
 
-void Helper_SwapByte(PFubyte* a, PFubyte* b)
+static void Helper_SwapByte(PFubyte* a, PFubyte* b)
 {
     PFubyte tmp = *a;
     *a = *b; *b = tmp;
 }
 
 // Used by 'Process_ClipLine2D'
-PFubyte Helper_EncodeClip2D(const PFvec4f* v)
+static PFubyte Helper_EncodeClip2D(const PFvec4f* v)
 {
     PFubyte code = CLIP_INSIDE;
     if (v->x < currentCtx->viewportX) code |= CLIP_LEFT;
@@ -946,7 +946,7 @@ PFubyte Helper_EncodeClip2D(const PFvec4f* v)
 // Used by 'Process_ClipLine3D'
 // 'q' represents a homogeneous coordinate weight from which a homogeneous coordinate 'x', 'y', or 'z' has been subtracted
 // 'p' represents the delta between two homogeneous coordinate weights from which the corresponding homogeneous delta 'x', 'y', or 'z' has been subtracted
-PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* t2)
+static PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* t2)
 {
     if (fabsf(p) < PF_CLIP_EPSILON && q < 0)
     {
@@ -972,13 +972,13 @@ PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* t2)
 
 /* Internal vertex processing function definitions */
 
-void Process_HomogeneousToScreen(PFvec4f* restrict homogeneous)
+static void Process_HomogeneousToScreen(PFvec4f* restrict homogeneous)
 {
     homogeneous->x = currentCtx->viewportX + (homogeneous->x + 1.0f) * 0.5f * currentCtx->viewportW;
     homogeneous->y = currentCtx->viewportY + (1.0f - homogeneous->y) * 0.5f * currentCtx->viewportH;
 }
 
-PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2)
+static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2)
 {
     PFboolean accept = PF_FALSE;
     PFubyte code0, code1;
@@ -1035,7 +1035,7 @@ PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2)
     return accept;
 }
 
-PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2)
+static PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2)
 {
     PFfloat t1 = 0, t2 = 1;
 
@@ -1064,7 +1064,7 @@ PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2)
     return PF_TRUE;
 }
 
-PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, PFubyte* restrict vertexCounter)
+static PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, PFubyte* restrict vertexCounter)
 {
     PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
     memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
@@ -1097,7 +1097,7 @@ PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, PFubyte* restrict ver
     return *vertexCounter > 0;
 }
 
-PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, PFubyte* restrict vertexCounter)
+static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, PFubyte* restrict vertexCounter)
 {
     for (PFubyte iAxis = 0; iAxis < 3; iAxis++)
     {
@@ -1174,7 +1174,7 @@ PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, PFubyte* restrict v
     return *vertexCounter > 0;
 }
 
-void Process_ProjectAndClipLine(PFvertex* restrict line, PFubyte* restrict vertexCounter, const PFmat4f* mvp)
+static void Process_ProjectAndClipLine(PFvertex* restrict line, PFubyte* restrict vertexCounter, const PFmat4f* mvp)
 {
     line[0].position = pfVec4fTransform(&line[0].position, mvp);
     line[1].position = pfVec4fTransform(&line[1].position, mvp);
@@ -1211,7 +1211,7 @@ void Process_ProjectAndClipLine(PFvertex* restrict line, PFubyte* restrict verte
     }
 }
 
-PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, PFubyte* restrict vertexCounter, const PFmat4f* mvp)
+static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, PFubyte* restrict vertexCounter, const PFmat4f* mvp)
 {
     for (PFubyte i = 0; i < *vertexCounter; i++)
     {
@@ -1258,7 +1258,7 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, PFubyte* re
 
 /* Internal line rasterizer function definitions */
 
-void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2)
+static void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2)
 {
     const PFfloat dx = v2->position.x - v1->position.x;
     const PFfloat dy = v2->position.y - v1->position.y;
@@ -1318,7 +1318,7 @@ void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2)
     }
 }
 
-void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
+static void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
 {
     const PFfloat dx = v2->position.x - v1->position.x;
     const PFfloat dy = v2->position.y - v1->position.y;
@@ -1389,7 +1389,7 @@ void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
 
 /* Internal triangle 2D rasterizer function definitions */
 
-void Rasterize_TriangleColorFlat2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+static void Rasterize_TriangleColorFlat2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
     const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
@@ -1450,7 +1450,7 @@ void Rasterize_TriangleColorFlat2D(const PFvertex* v1, const PFvertex* v2, const
     }
 }
 
-void Rasterize_TriangleColorDepth2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+static void Rasterize_TriangleColorDepth2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
     const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
@@ -1517,7 +1517,7 @@ void Rasterize_TriangleColorDepth2D(const PFvertex* v1, const PFvertex* v2, cons
     }
 }
 
-void Rasterize_TriangleTextureFlat2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+static void Rasterize_TriangleTextureFlat2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
     const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
@@ -1582,7 +1582,7 @@ void Rasterize_TriangleTextureFlat2D(const PFvertex* v1, const PFvertex* v2, con
     }
 }
 
-void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+static void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
     const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
@@ -1656,7 +1656,7 @@ void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex* v2, co
 
 /* Internal triangle 3D rasterizer function definitions */
 
-void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+static void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
     const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
@@ -1720,7 +1720,7 @@ void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2, const
     }
 }
 
-void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+static void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
     const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
@@ -1787,7 +1787,7 @@ void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v2, cons
     }
 }
 
-void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
     const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
@@ -1855,7 +1855,7 @@ void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* v2, con
     }
 }
 
-void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
     const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
@@ -1930,7 +1930,7 @@ void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex* v2, co
 
 /* Internal lighting process functions defintions */
 
-PFcolor Light_ComputeDiffuse(const PFlight* light, const PFvec3f* normal)
+static PFcolor Light_ComputeDiffuse(const PFlight* light, const PFvec3f* normal)
 {
     const PFfloat intensity = fmaxf(-pfVec3fDot(&light->direction, normal), 0.0f);
 
@@ -1942,7 +1942,7 @@ PFcolor Light_ComputeDiffuse(const PFlight* light, const PFvec3f* normal)
     };
 }
 
-PFcolor Light_ComputeSpecular(const PFlight* light, const PFvec3f* normal, const PFvec3f* viewDir, PFfloat shininess)
+static PFcolor Light_ComputeSpecular(const PFlight* light, const PFvec3f* normal, const PFvec3f* viewDir, PFfloat shininess)
 {
     const PFvec3f reflectDir = pfVec3fReflect(&light->direction, normal);
     const PFfloat spec = powf(fmaxf(pfVec3fDot(&reflectDir, viewDir), 0.0f), shininess);
@@ -1958,7 +1958,7 @@ PFcolor Light_ComputeSpecular(const PFlight* light, const PFvec3f* normal, const
 
 /* Internal enlightened triangle 3D rasterizer function definitions */
 
-void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewDir)
+static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewDir)
 {
     // Get integer 2D position coordinates
     const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
@@ -2016,7 +2016,7 @@ void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFvertex* v2, 
     }
 }
 
-void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewDir)
+static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewDir)
 {
     // Get integer 2D position coordinates
     const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
@@ -2100,7 +2100,7 @@ void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvertex* v2,
     }
 }
 
-void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewDir)
+static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewDir)
 {
     // Get integer 2D position coordinates
     const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
@@ -2165,7 +2165,7 @@ void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFvertex* v2
     }
 }
 
-void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewDir)
+static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewDir)
 {
     // Get integer 2D position coordinates
     const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
