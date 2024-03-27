@@ -178,6 +178,17 @@ PFvec3f pfVec3fTransform(const PFvec3f* v, const PFmat4f* mat)
     };
 }
 
+PFvec3f pfVec3fReflect(const PFvec3f *incident, const PFvec3f *normal)
+{
+    PFfloat dotProduct = 2 * pfVec3fDot(incident, normal);
+
+    return (PFvec3f) {
+        incident->x - dotProduct * normal->x,
+        incident->y - dotProduct * normal->y,
+        incident->z - dotProduct * normal->z
+    };
+}
+
 // PFvec4f
 
 PFvec4f pfVec4fNeg(const PFvec4f* v)

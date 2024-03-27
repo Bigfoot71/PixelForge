@@ -1,4 +1,7 @@
 #include "pixelforge.h"
+#include <limits.h>
+
+/* Blending API functions */
 
 PFcolor pfBlend(PFcolor source, PFcolor destination)
 {
@@ -26,20 +29,20 @@ PFcolor pfBlendAlpha(PFcolor source, PFcolor destination)
 PFcolor pfBlendAdditive(PFcolor source, PFcolor destination)
 {
     return (PFcolor) {
-        (PFubyte)(MIN(source.r + destination.r, 255)),
-        (PFubyte)(MIN(source.g + destination.g, 255)),
-        (PFubyte)(MIN(source.b + destination.b, 255)),
-        (PFubyte)(MIN(source.a + destination.a, 255))
+        (PFubyte)MIN_255((PFint)(destination.r + source.r)),
+        (PFubyte)MIN_255((PFint)(destination.g + source.g)),
+        (PFubyte)MIN_255((PFint)(destination.b + source.b)),
+        (PFubyte)MIN_255((PFint)(destination.a + source.a))
     };
 }
 
 PFcolor pfBlendSubtractive(PFcolor source, PFcolor destination)
 {
     return (PFcolor) {
-        (PFubyte)(MAX(destination.r - source.r, 0)),
-        (PFubyte)(MAX(destination.g - source.g, 0)),
-        (PFubyte)(MAX(destination.b - source.b, 0)),
-        (PFubyte)(MAX(destination.a - source.a, 0))
+        (PFubyte)MAX_0((PFint)(destination.r - source.r)),
+        (PFubyte)MAX_0((PFint)(destination.g - source.g)),
+        (PFubyte)MAX_0((PFint)(destination.b - source.b)),
+        (PFubyte)MAX_0((PFint)(destination.a - source.a))
     };
 }
 
@@ -56,10 +59,10 @@ PFcolor pfBlendMultiplicative(PFcolor source, PFcolor destination)
 PFcolor pfBlendScreen(PFcolor source, PFcolor destination)
 {
     return (PFcolor) {
-        (PFubyte)MIN(destination.r * (255 - source.r) / 255 + source.r, 255),
-        (PFubyte)MIN(destination.g * (255 - source.g) / 255 + source.g, 255),
-        (PFubyte)MIN(destination.b * (255 - source.b) / 255 + source.b, 255),
-        (PFubyte)MIN(destination.a * (255 - source.a) / 255 + source.a, 255)
+        (PFubyte)MIN_255((PFint)(destination.r * (255 - source.r) / 255 + source.r)),
+        (PFubyte)MIN_255((PFint)(destination.g * (255 - source.g) / 255 + source.g)),
+        (PFubyte)MIN_255((PFint)(destination.b * (255 - source.b) / 255 + source.b)),
+        (PFubyte)MIN_255((PFint)(destination.a * (255 - source.a) / 255 + source.a))
     };
 }
 

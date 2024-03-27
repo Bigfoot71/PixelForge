@@ -38,6 +38,10 @@
 #   define PF_MAX_MATRIX_STACK_SIZE 8
 #endif //PF_MAX_MATRIX_STACK_SIZE
 
+#ifndef PF_MAX_LIGHTS
+#   define PF_MAX_LIGHTS 8
+#endif //PF_MAX_LIGHTS
+
 #ifndef PF_MAX_CLIPPED_POLYGON_VERTICES
 #   define PF_MAX_CLIPPED_POLYGON_VERTICES 12
 #endif //PF_MAX_CLIPPED_POLYGON_VERTICES
@@ -61,6 +65,14 @@
 #ifndef DEG2RAD
 #   define DEG2RAD(deg) ((deg) * M_PI / 180.0)
 #endif //DEG2RAD
+
+#ifndef MIN_255
+#   define MIN_255(n) (n | ((255 - n) >> 31))
+#endif //MIN_255
+
+#ifndef MAX_0
+#   define MAX_0(n) (n & -(n >= 0))
+#endif //MAX_0
 
 #ifndef MIN
 #   define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -176,6 +188,46 @@ typedef enum {
     PF_QUADS     = 4,
 } PFdrawmode;
 
+typedef enum {
+    PF_FRONT,
+    //PF_BACK,
+    //PF_FRONT_AND_BACK
+} PFfaces;
+
+typedef enum {
+    PF_LIGHT0 = 0,
+    PF_LIGHT1,
+    PF_LIGHT2,
+    PF_LIGHT3,
+    PF_LIGHT4,
+    PF_LIGHT5,
+    PF_LIGHT6,
+    PF_LIGHT7,
+    PF_LIGHT8
+} PFlights;
+
+typedef enum {  // NOTE: Common to light and material
+    PF_AMBIENT                  = 1,
+    PF_DIFFUSE                  = 2,
+    PF_SPECULAR                 = 3,
+    PF_AMBIENT_AND_DIFFUSE      = 4
+} PFrenderparam;
+
+typedef enum {
+    PF_POSITION                 = 5,
+    PF_SPOT_DIRECTION           = 6,
+    //PF_SPOT_EXPONENT          = 7,
+    //PF_SPOT_CUTOFF            = 8,
+    //PF_CONSTANT_ATTENUATION   = 9,
+    //PF_LINEAR_ATTENUATION     = 10,
+    //PF_QUADRATIC_ATTENUATION  = 11
+} PFlightparam;
+
+typedef enum {
+    PF_EMISSION                 = 12,
+    PF_SHININESS                = 13
+} PFmaterialparam;
+
 typedef struct {
     PFubyte r, g, b, a;
 } PFcolor;
@@ -248,7 +300,7 @@ PF_API void pfTranslatef(PFfloat x, PFfloat y, PFfloat z);
 PF_API void pfRotatef(PFfloat angle, PFfloat x, PFfloat y, PFfloat z);
 PF_API void pfScalef(PFfloat x, PFfloat y, PFfloat z);
 
-PF_API void pfMultMatrixf(const float* mat);
+PF_API void pfMultMatrixf(const PFfloat* mat);
 PF_API void pfMultMatrixMat4f(const PFmat4f* mat);
 
 PF_API void pfFrustum(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar);
@@ -282,6 +334,17 @@ PF_API void pfDisableWireMode(void);
 
 PF_API void pfEnableDepthTest(void);
 PF_API void pfDisableDepthTest(void);
+
+PF_API void pfEnableLighting(void);
+PF_API void pfDisableLighting(void);
+
+PF_API void pfEnableLight(PFuint light);
+PF_API void pfDisableLight(PFuint light);
+
+PF_API void pfLightfv(PFuint light, PFuint param, const void* value);
+
+PF_API void pfMaterialf(PFfaces faces, PFuint param, PFfloat value);
+PF_API void pfMaterialfv(PFfaces faces, PFuint param, const void* value);
 
 PF_API void pfClear(PFclearflag flag);
 PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
@@ -324,7 +387,7 @@ PF_API void pfFramebufferDestroy(PFframebuffer* framebuffer);
 PF_API void pfFramebufferClear(PFframebuffer* framebuffer, PFcolor color);
 
 PF_API void pfFramebufferSetPixelDepth(PFframebuffer* framebuffer, PFuint x, PFuint y, PFfloat z, PFcolor color);
-PF_API float pfFramebufferGetDepth(const PFframebuffer* framebuffer, PFuint x, PFuint y);
+PF_API PFfloat pfFramebufferGetDepth(const PFframebuffer* framebuffer, PFuint x, PFuint y);
 
 PF_API void pfFramebufferSetPixel(PFframebuffer* framebuffer, PFuint x, PFuint y, PFcolor color);
 PF_API PFcolor pfFrambufferGetPixel(const PFframebuffer* framebuffer, PFuint x, PFuint y);
@@ -365,6 +428,7 @@ PF_API PFvec3f pfVec3fNormalize(const PFvec3f* v);
 PF_API PFfloat pfVec3fDot(const PFvec3f* v1, const PFvec3f* v2);
 PF_API PFvec3f pfVec3fCross(const PFvec3f* v1, const PFvec3f* v2);
 PF_API PFvec3f pfVec3fTransform(const PFvec3f* v1, const PFmat4f* mat);
+PF_API PFvec3f pfVec3fReflect(const PFvec3f *incident, const PFvec3f *normal);
 
 PF_API PFvec4f pfVec4fNeg(const PFvec4f* v);
 PF_API PFvec4f pfVec4fAdd(const PFvec4f* v1, const PFvec4f* v2);

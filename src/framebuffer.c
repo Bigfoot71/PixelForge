@@ -50,7 +50,7 @@ void pfFramebufferSetPixelDepth(PFframebuffer* framebuffer, PFuint x, PFuint y, 
     }
 }
 
-float pfFramebufferGetDepth(const PFframebuffer* framebuffer, PFuint x, PFuint y)
+PFfloat pfFramebufferGetDepth(const PFframebuffer* framebuffer, PFuint x, PFuint y)
 {
     return framebuffer->zbuffer[y*framebuffer->texture.width + x];
 }

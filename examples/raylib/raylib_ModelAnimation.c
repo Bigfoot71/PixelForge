@@ -1,3 +1,4 @@
+#include "pixelforge.h"
 #define PF_COMMON_IMPL
 #include "../common.h"
 #include "raylib.h"
@@ -35,6 +36,24 @@ int main(void)
     unsigned int animCurrentFrame = 0;
     ModelAnimation *modelAnimations = LoadModelAnimations(RESOURCES_PATH "models/robot.glb", &animsCount);
 
+    // Define some values for the camera
+    const PFvec3f camPos = { 25.0f, 25.0f, 25.0f };
+    const PFvec3f camTar = { 0.0f, 10.0f, 0.0f };
+
+    // Enable lighting system
+    pfEnableLighting();
+
+    // Config one light
+    PFvec3f camDir = pfVec3fSub(&camTar, &camPos);
+    camDir = pfVec3fNormalize(&camDir);
+
+    pfEnableLight(0);
+    pfLightfv(0, PF_POSITION, &camPos);
+    pfLightfv(0, PF_SPOT_DIRECTION, &camDir);
+
+    //const PFvec3f col = { 1.0f, 0.0f, 0.0f };
+    //pfMaterialfv(PF_FRONT, PF_DIFFUSE, &col);
+
     // Start the main loop
     while (!WindowShouldClose())
     {
@@ -52,7 +71,7 @@ int main(void)
 
         // Draw something on each iteration of the main loop
         PF_Begin3D(SCREEN_WIDTH, SCREEN_HEIGHT, 60.0);
-        PF_Update3D(25.0f, 25.0f, 25.0f, 0, 10.0f, 0);
+        PF_Update3D(camPos.x, camPos.y, camPos.z, 0, 10.0f, 0);
         PF_DrawGrid(10.0f, 10.0f);
         PF_DrawModel(model, (Vector3) { 0 }, 5.0f, WHITE);
         PF_End3D();
