@@ -1420,7 +1420,7 @@ static void Rasterize_TriangleColorFlat2D(const PFvertex* v1, const PFvertex* v2
     const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
 
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    PFcolor emission = currentCtx->frontMaterial.emission;
+    const PFcolor emission = currentCtx->frontMaterial.emission;
 
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
@@ -1481,7 +1481,7 @@ static void Rasterize_TriangleColorDepth2D(const PFvertex* v1, const PFvertex* v
     const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
 
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    PFcolor emission = currentCtx->frontMaterial.emission;
+    const PFcolor emission = currentCtx->frontMaterial.emission;
 
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
@@ -1548,7 +1548,7 @@ static void Rasterize_TriangleTextureFlat2D(const PFvertex* v1, const PFvertex* 
     const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
 
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    PFcolor emission = currentCtx->frontMaterial.emission;
+    const PFcolor emission = currentCtx->frontMaterial.emission;
 
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
@@ -1613,7 +1613,7 @@ static void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex*
     const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
 
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    PFcolor emission = currentCtx->frontMaterial.emission;
+    const PFcolor emission = currentCtx->frontMaterial.emission;
 
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
@@ -1687,7 +1687,7 @@ static void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2
     const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
 
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    PFcolor emission = currentCtx->frontMaterial.emission;
+    const PFcolor emission = currentCtx->frontMaterial.emission;
 
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
@@ -1751,7 +1751,7 @@ static void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v
     const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
 
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    PFcolor emission = currentCtx->frontMaterial.emission;
+    const PFcolor emission = currentCtx->frontMaterial.emission;
 
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
@@ -1818,7 +1818,7 @@ static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* 
     const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
 
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    PFcolor emission = currentCtx->frontMaterial.emission;
+    const PFcolor emission = currentCtx->frontMaterial.emission;
 
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
@@ -1886,7 +1886,7 @@ static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex*
     const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
 
     // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    PFcolor emission = currentCtx->frontMaterial.emission;
+    const PFcolor emission = currentCtx->frontMaterial.emission;
 
     // Fill the triangle with either color or image based on the provided parameters
     for (PFuint y = yMin; y <= yMax; y++)
