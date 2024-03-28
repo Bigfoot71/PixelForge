@@ -33,16 +33,16 @@ typedef struct {
 typedef struct {
     PFvec3f position;
     PFvec3f direction;
-    PFvec3f ambient;
-    PFvec3f diffuse;
-    PFvec3f specular;
+    PFcolor ambient;
+    PFcolor diffuse;
+    PFcolor specular;
     PFboolean active;
 } PFlight;
 
 typedef struct {
-    PFvec3f ambient;
-    PFvec3f diffuse;
-    PFvec3f specular;
+    PFcolor ambient;
+    PFcolor diffuse;
+    PFcolor specular;
     PFcolor emission;
     PFfloat shininess;
 } PFmaterial;
@@ -145,9 +145,9 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
         ctx->lights[i] = (PFlight) {
             .position = (PFvec3f) { 0 },
             .direction = (PFvec3f) { 0 },
-            .ambient = (PFvec3f) { 0.2f, 0.2f, 0.2f },
-            .diffuse = (PFvec3f) { 1.0f, 1.0f, 1.0f },
-            .specular = (PFvec3f) { 1.0f, 1.0f, 1.0f },
+            .ambient = (PFcolor) { 51, 51, 51, 255 },
+            .diffuse = (PFcolor) { 255, 255, 255, 255 },
+            .specular = (PFcolor) { 255, 255, 255, 255 },
             .active = PF_FALSE
         };
     }
@@ -155,9 +155,9 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     ctx->lastActiveLight = -1;
 
     ctx->frontMaterial = (PFmaterial) {
-        .ambient = (PFvec3f) { 1.0f, 1.0f, 1.0f },
-        .diffuse = (PFvec3f) { 1.0f, 1.0f, 1.0f },
-        .specular = (PFvec3f) { 1.0f, 1.0f, 1.0f },
+        .ambient = (PFcolor) { 255, 255, 255, 255 },
+        .diffuse = (PFcolor) { 255, 255, 255, 255 },
+        .specular = (PFcolor) { 255, 255, 255, 255 },
         .emission = (PFcolor) { 0, 0, 0, 255 },
         .shininess = 16.0f
     };
@@ -563,15 +563,30 @@ void pfLightfv(PFuint light, PFuint param, const void* value)
                 break;
 
             case PF_AMBIENT:
-                l->ambient = *((PFvec3f*)value);
+                l->ambient = (PFcolor) {
+                    (PFubyte)(((PFvec3f*)value)->x*255.0f),
+                    (PFubyte)(((PFvec3f*)value)->y*255.0f),
+                    (PFubyte)(((PFvec3f*)value)->z*255.0f),
+                    255
+                };
                 break;
 
             case PF_DIFFUSE:
-                l->diffuse = *((PFvec3f*)value);
+                l->diffuse = (PFcolor) {
+                    (PFubyte)(((PFvec3f*)value)->x*255.0f),
+                    (PFubyte)(((PFvec3f*)value)->y*255.0f),
+                    (PFubyte)(((PFvec3f*)value)->z*255.0f),
+                    255
+                };
                 break;
 
             case PF_SPECULAR:
-                l->specular = *((PFvec3f*)value);
+                l->specular = (PFcolor) {
+                    (PFubyte)(((PFvec3f*)value)->x*255.0f),
+                    (PFubyte)(((PFvec3f*)value)->y*255.0f),
+                    (PFubyte)(((PFvec3f*)value)->z*255.0f),
+                    255
+                };
                 break;
 
             case PF_AMBIENT_AND_DIFFUSE:
@@ -611,15 +626,30 @@ void pfMaterialf(PFfaces faces, PFuint param, PFfloat value)
     switch (param)
     {
         case PF_AMBIENT:
-            material0->ambient = material1->ambient = (PFvec3f) { value, value, value };
+            material0->ambient = material1->ambient = (PFcolor) {
+                (PFubyte)(value*255.0f),
+                (PFubyte)(value*255.0f),
+                (PFubyte)(value*255.0f),
+                255
+            };
             break;
 
         case PF_DIFFUSE:
-            material0->diffuse = material1->diffuse = (PFvec3f) { value, value, value };
+            material0->diffuse = material1->diffuse = (PFcolor) {
+                (PFubyte)(value*255.0f),
+                (PFubyte)(value*255.0f),
+                (PFubyte)(value*255.0f),
+                255
+            };
             break;
 
         case PF_SPECULAR:
-            material0->specular = material1->specular = (PFvec3f) { value, value, value };
+            material0->specular = material1->specular = (PFcolor) {
+                (PFubyte)(value*255.0f),
+                (PFubyte)(value*255.0f),
+                (PFubyte)(value*255.0f),
+                255
+            };
             break;
 
         case PF_EMISSION:
@@ -627,7 +657,7 @@ void pfMaterialf(PFfaces faces, PFuint param, PFfloat value)
                 (PFubyte)(value*255.0f),
                 (PFubyte)(value*255.0f),
                 (PFubyte)(value*255.0f),
-                0
+                255
             };
             break;
 
@@ -636,8 +666,18 @@ void pfMaterialf(PFfaces faces, PFuint param, PFfloat value)
             break;
 
         case PF_AMBIENT_AND_DIFFUSE:
-            material0->ambient = material1->ambient = (PFvec3f) { value, value, value };
-            material0->diffuse = material1->diffuse = (PFvec3f) { value, value, value };
+            material0->ambient = material1->ambient = (PFcolor) {
+                (PFubyte)(value*255.0f),
+                (PFubyte)(value*255.0f),
+                (PFubyte)(value*255.0f),
+                255
+            };
+            material0->diffuse = material1->diffuse = (PFcolor) {
+                (PFubyte)(value*255.0f),
+                (PFubyte)(value*255.0f),
+                (PFubyte)(value*255.0f),
+                255
+            };
             break;
 
         default: break;
@@ -672,15 +712,30 @@ void pfMaterialfv(PFfaces faces, PFuint param, const void *value)
     switch (param)
     {
         case PF_AMBIENT:
-            material0->ambient = material1->ambient = *((PFvec3f*)value);
+            material0->ambient = material1->ambient = (PFcolor) {
+                (PFubyte)(((PFvec3f*)value)->x*255.0f),
+                (PFubyte)(((PFvec3f*)value)->y*255.0f),
+                (PFubyte)(((PFvec3f*)value)->z*255.0f),
+                255
+            };
             break;
 
         case PF_DIFFUSE:
-            material0->diffuse = material1->diffuse = *((PFvec3f*)value);
+            material0->diffuse = material1->diffuse = (PFcolor) {
+                (PFubyte)(((PFvec3f*)value)->x*255.0f),
+                (PFubyte)(((PFvec3f*)value)->y*255.0f),
+                (PFubyte)(((PFvec3f*)value)->z*255.0f),
+                255
+            };
             break;
 
         case PF_SPECULAR:
-            material0->specular = material1->specular = *((PFvec3f*)value);
+            material0->specular = material1->specular = (PFcolor) {
+                (PFubyte)(((PFvec3f*)value)->x*255.0f),
+                (PFubyte)(((PFvec3f*)value)->y*255.0f),
+                (PFubyte)(((PFvec3f*)value)->z*255.0f),
+                255
+            };
             break;
 
         case PF_EMISSION:
@@ -688,7 +743,7 @@ void pfMaterialfv(PFfaces faces, PFuint param, const void *value)
                 (PFubyte)(((PFvec3f*)value)->x*255.0f),
                 (PFubyte)(((PFvec3f*)value)->y*255.0f),
                 (PFubyte)(((PFvec3f*)value)->z*255.0f),
-                0
+                255
             };
             break;
 
@@ -697,8 +752,18 @@ void pfMaterialfv(PFfaces faces, PFuint param, const void *value)
             break;
 
         case PF_AMBIENT_AND_DIFFUSE:
-            material0->ambient = material1->ambient = *((PFvec3f*)value);
-            material0->diffuse = material1->diffuse = *((PFvec3f*)value);
+            material0->ambient = material1->ambient = (PFcolor) {
+                (PFubyte)(((PFvec3f*)value)->x*255.0f),
+                (PFubyte)(((PFvec3f*)value)->y*255.0f),
+                (PFubyte)(((PFvec3f*)value)->z*255.0f),
+                255
+            };
+            material0->diffuse = material1->diffuse = (PFcolor) {
+                (PFubyte)(((PFvec3f*)value)->x*255.0f),
+                (PFubyte)(((PFvec3f*)value)->y*255.0f),
+                (PFubyte)(((PFvec3f*)value)->z*255.0f),
+                255
+            };
             break;
 
         default: break;
@@ -1975,22 +2040,22 @@ static PFcolor Light_ComputePhong(const PFlight* light, PFcolor ambient, PFcolor
     ambient = pfBlendMultiplicative(texel, ambient);
 
     // Compute diffuse lighting
-    const PFfloat intensity = fmaxf(-pfVec3fDot(&light->direction, normal), 0.0f) * 255.0f;
+    const PFfloat intensity = fmaxf(-pfVec3fDot(&light->direction, normal), 0.0f);
     const PFcolor diffuse = {
-        (PFubyte)(light->diffuse.x * intensity),
-        (PFubyte)(light->diffuse.y * intensity),
-        (PFubyte)(light->diffuse.z * intensity),
+        (PFubyte)(light->diffuse.r * intensity),
+        (PFubyte)(light->diffuse.g * intensity),
+        (PFubyte)(light->diffuse.b * intensity),
         255
     };
 
     // Compute specular lighting
     const PFvec3f reflectDir = pfVec3fReflect(&light->direction, normal);
     const PFfloat spec = powf(fmaxf(pfVec3fDot(&reflectDir, &viewDir), 0.0f),
-                              currentCtx->frontMaterial.shininess) * 255.0f;
+                              currentCtx->frontMaterial.shininess);
     const PFcolor specular = {
-        (PFubyte)(light->specular.x * spec),
-        (PFubyte)(light->specular.y * spec),
-        (PFubyte)(light->specular.z * spec),
+        (PFubyte)(light->specular.r * spec),
+        (PFubyte)(light->specular.g * spec),
+        (PFubyte)(light->specular.b * spec),
         255
     };
 
@@ -2044,12 +2109,8 @@ static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFverte
     {
         const PFlight* light = &currentCtx->lights[i];
 
-        const PFcolor ambient = {
-            (PFubyte)(light->ambient.x*currentCtx->frontMaterial.diffuse.x*255.0f),
-            (PFubyte)(light->ambient.y*currentCtx->frontMaterial.diffuse.y*255.0f),
-            (PFubyte)(light->ambient.z*currentCtx->frontMaterial.diffuse.z*255.0f),
-            255
-        };
+        const PFcolor ambient = pfBlendMultiplicative(
+            light->ambient, currentCtx->frontMaterial.ambient);
 
         // Skip inactive lights
         if (!light->active) continue;
@@ -2129,12 +2190,8 @@ static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvert
     {
         const PFlight* light = &currentCtx->lights[i];
 
-        const PFcolor ambient = {
-            (PFubyte)(light->ambient.x*currentCtx->frontMaterial.diffuse.x*255.0f),
-            (PFubyte)(light->ambient.y*currentCtx->frontMaterial.diffuse.y*255.0f),
-            (PFubyte)(light->ambient.z*currentCtx->frontMaterial.diffuse.z*255.0f),
-            255
-        };
+        const PFcolor ambient = pfBlendMultiplicative(
+            light->ambient, currentCtx->frontMaterial.ambient);
 
         // Skip inactive lights
         if (!light->active) continue;
@@ -2221,12 +2278,8 @@ static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFver
     {
         const PFlight* light = &currentCtx->lights[i];
 
-        const PFcolor ambient = {
-            (PFubyte)(light->ambient.x*currentCtx->frontMaterial.diffuse.x*255.0f),
-            (PFubyte)(light->ambient.y*currentCtx->frontMaterial.diffuse.y*255.0f),
-            (PFubyte)(light->ambient.z*currentCtx->frontMaterial.diffuse.z*255.0f),
-            255
-        };
+        const PFcolor ambient = pfBlendMultiplicative(
+            light->ambient, currentCtx->frontMaterial.ambient);
 
         // Skip inactive lights
         if (!light->active) continue;
@@ -2312,12 +2365,8 @@ static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFve
     {
         const PFlight* light = &currentCtx->lights[i];
 
-        const PFcolor ambient = {
-            (PFubyte)(light->ambient.x*currentCtx->frontMaterial.diffuse.x*255.0f),
-            (PFubyte)(light->ambient.y*currentCtx->frontMaterial.diffuse.y*255.0f),
-            (PFubyte)(light->ambient.z*currentCtx->frontMaterial.diffuse.z*255.0f),
-            255
-        };
+        const PFcolor ambient = pfBlendMultiplicative(
+            light->ambient, currentCtx->frontMaterial.ambient);
 
         // Skip inactive lights
         if (!light->active) continue;
@@ -2394,12 +2443,8 @@ void ProcessRasterize(const PFmat4f* mvp)
 
             for (PFubyte i = 0; i < processedCounter; i++)
             {
-                processed[i].color = (PFcolor) {
-                    (PFubyte)(processed[i].color.r*currentCtx->frontMaterial.diffuse.x),
-                    (PFubyte)(processed[i].color.g*currentCtx->frontMaterial.diffuse.y),
-                    (PFubyte)(processed[i].color.b*currentCtx->frontMaterial.diffuse.z),
-                    processed[i].color.a
-                };
+                processed[i].color = pfBlendMultiplicative(
+                    processed[i].color, currentCtx->frontMaterial.diffuse);
             }
 
             // Rasterize line
@@ -2434,12 +2479,8 @@ void ProcessRasterize(const PFmat4f* mvp)
 
             for (PFubyte i = 0; i < processedCounter; i++)
             {
-                processed[i].color = (PFcolor) {
-                    (PFubyte)(processed[i].color.r*currentCtx->frontMaterial.diffuse.x),
-                    (PFubyte)(processed[i].color.g*currentCtx->frontMaterial.diffuse.y),
-                    (PFubyte)(processed[i].color.b*currentCtx->frontMaterial.diffuse.z),
-                    processed[i].color.a
-                };
+                processed[i].color = pfBlendMultiplicative(
+                    processed[i].color, currentCtx->frontMaterial.diffuse);
             }
 
             // Rasterize triangles
@@ -2477,15 +2518,15 @@ void ProcessRasterize(const PFmat4f* mvp)
                     // Pre-calculation of specularity tints
                     // by multiplying those of light and material
 
-                    PFvec3f oldLightSpecTints[PF_MAX_LIGHTS];
+                    PFcolor oldLightSpecTints[PF_MAX_LIGHTS];
 
                     for (PFint i = 0; i <= currentCtx->lastActiveLight; i++)
                     {
                         PFlight *l = &currentCtx->lights[i];
                         oldLightSpecTints[i] = l->specular;
 
-                        if (l->active) l->specular = pfVec3fMul(
-                            &l->specular, &currentCtx->frontMaterial.specular);
+                        if (l->active) l->specular = pfBlendMultiplicative(
+                            l->specular, currentCtx->frontMaterial.specular);
                     }
 
                     // Get camera/view position
@@ -2578,12 +2619,8 @@ void ProcessRasterize(const PFmat4f* mvp)
 
                 for (PFubyte j = 0; j < processedCounter; j++)
                 {
-                    processed[i].color = (PFcolor) {
-                        (PFubyte)(processed[j].color.r*currentCtx->frontMaterial.diffuse.x),
-                        (PFubyte)(processed[j].color.g*currentCtx->frontMaterial.diffuse.y),
-                        (PFubyte)(processed[j].color.b*currentCtx->frontMaterial.diffuse.z),
-                        processed[j].color.a
-                    };
+                    processed[j].color = pfBlendMultiplicative(
+                        processed[j].color, currentCtx->frontMaterial.diffuse);
                 }
 
                 // Rasterize triangles
@@ -2621,15 +2658,15 @@ void ProcessRasterize(const PFmat4f* mvp)
                         // Pre-calculation of specularity tints
                         // by multiplying those of light and material
 
-                        PFvec3f oldLightSpecTints[PF_MAX_LIGHTS];
+                        PFcolor oldLightSpecTints[PF_MAX_LIGHTS];
 
                         for (PFint j = 0; j <= currentCtx->lastActiveLight; j++)
                         {
                             PFlight *l = &currentCtx->lights[j];
                             oldLightSpecTints[j] = l->specular;
 
-                            if (l->active) l->specular = pfVec3fMul(
-                                &l->specular, &currentCtx->frontMaterial.specular);
+                            if (l->active) l->specular = pfBlendMultiplicative(
+                                l->specular, currentCtx->frontMaterial.specular);
                         }
 
                         // Get camera/view position
