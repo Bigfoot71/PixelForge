@@ -928,8 +928,9 @@ static void Helper_SwapVertex(PFvertex* a, PFvertex* b)
 
 static void Helper_SwapByte(PFubyte* a, PFubyte* b)
 {
-    PFubyte tmp = *a;
-    *a = *b; *b = tmp;
+    *a ^= *b;
+    *b ^= *a;
+    *a ^= *b;
 }
 
 // Used by 'Process_ClipLine2D'
@@ -1857,7 +1858,7 @@ static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* 
                 const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
 
                 PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
-                texcoord = pfVec2fScale(&texcoord, z); // Perspective correct
+                texcoord.x *= z, texcoord.y *= z; // Perspective correct
 
                 const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
                 PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
@@ -1931,7 +1932,7 @@ static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex*
                 if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
                 {
                     PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
-                    texcoord = pfVec2fScale(&texcoord, z); // Perspective correct
+                    texcoord.x *= z, texcoord.y *= z; // Perspective correct
 
                     PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
                     PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
@@ -2231,7 +2232,7 @@ static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFver
                     const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
 
                     PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
-                    texcoord = pfVec2fScale(&texcoord, z); // Perspective correct
+                    texcoord.x *= z, texcoord.y *= z; // Perspective correct
 
                     const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
                     PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
@@ -2326,7 +2327,7 @@ static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFve
                     if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
                     {
                         PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
-                        texcoord = pfVec2fScale(&texcoord, z); // Perspective correct
+                        texcoord.x *= z, texcoord.y *= z; // Perspective correct
 
                         const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord.x, texcoord.y);
                         PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);

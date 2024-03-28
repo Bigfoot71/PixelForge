@@ -449,10 +449,14 @@ PFcolor pfTextureGetPixel(const PFtexture* texture, PFuint x, PFuint y)
 
 void pfTextureSetFragment(PFtexture* texture, PFfloat u, PFfloat v, PFcolor color)
 {
-    pfTextureSetPixel(texture, (u - (PFint)u)*(texture->width-1), (v - (PFint)v)*(texture->height-1), color);
+    PFuint x = (PFuint)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
+    PFuint y = (PFuint)((v - (PFint)v)*(texture->height - 1)) & (texture->width - 1);
+    texture->pixelSetter(texture->pixels, y*texture->width + x, color);
 }
 
 PFcolor pfTextureGetFragment(const PFtexture* texture, PFfloat u, PFfloat v)
 {
-    return pfTextureGetPixel(texture, (u - (PFint)u)*(texture->width-1), (v - (PFint)v)*(texture->height-1));
+    PFuint x = (PFuint)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
+    PFuint y = (PFuint)((v - (PFint)v)*(texture->height - 1)) & (texture->width - 1);
+    return texture->pixelGetter(texture->pixels, y*texture->width + x);
 }
