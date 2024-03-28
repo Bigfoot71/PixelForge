@@ -26,7 +26,7 @@ int main(void)
     PFframebuffer target = pfFramebufferGenBuffer(SCREEN_WIDTH, SCREEN_HEIGHT, PF_PIXELFORMAT_R8G8B8A8);
 
     // Define the camera position and a phase for the rotation
-    PFvec3f camPos = { -2.0f, 1.5f, -2.0f };
+    Vector3 camPos = { -2.0f, 1.5f, -2.0f };
     float timer = 0;
 
     while (!WindowShouldClose())

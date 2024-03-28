@@ -1,6 +1,7 @@
 #define PF_COMMON_IMPL
 #include "../common.h"
 #include "raylib.h"
+#include "raymath.h"
 #include <string.h>
 
 #define SCREEN_WIDTH    800
@@ -36,15 +37,15 @@ int main(void)
     ModelAnimation *modelAnimations = LoadModelAnimations(RESOURCES_PATH "models/robot.glb", &animsCount);
 
     // Define some values for the camera
-    const PFvec3f camPos = { 25.0f, 25.0f, 25.0f };
-    const PFvec3f camTar = { 0.0f, 10.0f, 0.0f };
+    Vector3 camPos = { 25.0f, 25.0f, 25.0f };
+    Vector3 camTar = { 0.0f, 10.0f, 0.0f };
 
     // Enable lighting system
     pfEnableLighting();
 
     // Config one light
-    PFvec3f camDir = pfVec3fSub(&camTar, &camPos);
-    camDir = pfVec3fNormalize(&camDir);
+    Vector3 camDir = Vector3Subtract(camTar, camPos);
+    camDir = Vector3Normalize(camDir);
 
     pfEnableLight(0);
     pfLightfv(0, PF_POSITION, &camPos);
@@ -137,7 +138,7 @@ void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float r
     // Calculate transformation matrix from function parameters
     // Get transform matrix (rotation -> scale -> translation)
     PFmat4f matScale = pfMat4fScale(scale.x, scale.y, scale.z);
-    PFmat4f matRotation = pfMat4fRotate((PFvec3f*)(&rotationAxis), DEG2RAD(rotationAngle));
+    PFmat4f matRotation = pfMat4fRotate((PFfloat*)(&rotationAxis), DEG2RAD(rotationAngle));
     PFmat4f matTranslation = pfMat4fTranslate(position.x, position.y, position.z);
 
     PFmat4f matTransform = pfMat4fMul(&matScale, &matRotation);

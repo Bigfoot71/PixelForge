@@ -135,7 +135,7 @@ void PF_BeginMode3D(Camera3D camera)
     pfLoadIdentity();               // Reset current matrix (modelview)
 
     // Setup Camera view
-    PFmat4f matView = pfMat4fLookAt((PFvec3f*)(&camera.position), (PFvec3f*)(&camera.target), (PFvec3f*)(&camera.up));
+    PFmat4f matView = pfMat4fLookAt((PFfloat*)(&camera.position), (PFfloat*)(&camera.target), (PFfloat*)(&camera.up));
     pfMultMatrixMat4f(&matView);    // Multiply modelview matrix by view matrix (camera)
 
     pfEnableDepthTest();            // Enable DEPTH_TEST for 3D
@@ -192,7 +192,7 @@ void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float r
     // Calculate transformation matrix from function parameters
     // Get transform matrix (rotation -> scale -> translation)
     PFmat4f matScale = pfMat4fScale(scale.x, scale.y, scale.z);
-    PFmat4f matRotation = pfMat4fRotate((PFvec3f*)(&rotationAxis), DEG2RAD(rotationAngle));
+    PFmat4f matRotation = pfMat4fRotate((PFfloat*)(&rotationAxis), DEG2RAD(rotationAngle));
     PFmat4f matTranslation = pfMat4fTranslate(position.x, position.y, position.z);
 
     PFmat4f matTransform = pfMat4fMul(&matScale, &matRotation);

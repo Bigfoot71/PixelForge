@@ -122,8 +122,8 @@ int main(void)
         }
 
         // Update camera position
-        camPos.x = 2.0f * cos(timer);
-        camPos.z = 2.0f * sin(timer);
+        camPos[0] = 2.0f * cosf(timer);
+        camPos[2] = 2.0f * sinf(timer);
         timer += 2.0f * clock.deltaTime;
 
         // Clear the destination buffer
@@ -131,7 +131,7 @@ int main(void)
 
         // Draw something on each iteration of the main loop
         PF_Begin3D(surface->w, surface->h, 60.0);
-        PF_Update3D(camPos.x, camPos.y, camPos.z, 0, 0, 0);
+        PF_Update3D(camPos[0], camPos[1], camPos[2], 0, 0, 0);
         PF_DrawCube(1.0f);
         PF_End3D();
 

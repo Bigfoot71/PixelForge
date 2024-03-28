@@ -163,17 +163,9 @@ typedef struct PFctx PFctx;
 
 /* Math definitions */
 
-typedef struct {
-    PFfloat x, y;
-} PFvec2f;
-
-typedef struct {
-    PFfloat x, y, z;
-} PFvec3f;
-
-typedef struct {
-    PFfloat x, y, z, w;
-} PFvec4f;
+typedef PFfloat PFvec2f[2];
+typedef PFfloat PFvec3f[3];
+typedef PFfloat PFvec4f[4];
 
 typedef struct {
     PFfloat m0, m4, m8, m12;
@@ -373,10 +365,10 @@ PF_API void pfEnd(void);
 
 PF_API void pfVertex2i(PFint x, PFint y);
 PF_API void pfVertex2f(PFfloat x, PFfloat y);
-PF_API void pfVertexVec2f(const PFvec2f* v);
+PF_API void pfVertexVec2f(const PFvec2f v);
 
 PF_API void pfVertex3f(PFfloat x, PFfloat y, PFfloat z);
-PF_API void pfVertexVec3f(const PFvec3f* v);
+PF_API void pfVertexVec3f(const PFvec3f v);
 
 PF_API void pfColor3f(PFfloat r, PFfloat g, PFfloat b);
 PF_API void pfColor4f(PFfloat r, PFfloat g, PFfloat b , PFfloat a);
@@ -384,10 +376,10 @@ PF_API void pfColor4ub(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
 PF_API void pfColor(PFcolor color);
 
 PF_API void pfTexCoord2f(PFfloat u, PFfloat v);
-PF_API void pfTexCoordVec2f(const PFvec2f* v);
+PF_API void pfTexCoordVec2f(const PFvec2f v);
 
 PF_API void pfNormal3f(PFfloat x, PFfloat y, PFfloat z);
-PF_API void pfNormalVec3f(const PFvec3f* v);
+PF_API void pfNormalVec3f(const PFvec3f v);
 
 /* Blending functions */
 
@@ -427,37 +419,37 @@ PF_API PFcolor pfTextureGetFragment(const PFtexture* texture, PFfloat u, PFfloat
 
 /* Math functions */
 
-PF_API PFvec2f pfVec2fNeg(const PFvec2f* v);
-PF_API PFvec2f pfVec2fAdd(const PFvec2f* v1, const PFvec2f* v2);
-PF_API PFvec2f pfVec2fSub(const PFvec2f* v1, const PFvec2f* v2);
-PF_API PFvec2f pfVec2fMul(const PFvec2f* v1, const PFvec2f* v2);
-PF_API PFvec2f pfVec2fDiv(const PFvec2f* v1, const PFvec2f* v2);
-PF_API PFvec2f pfVec2fScale(const PFvec2f* v, PFfloat scalar);
-PF_API PFvec2f pfVec2fNormalize(const PFvec2f* v);
-PF_API PFfloat pfVec2fDot(const PFvec2f* v1, const PFvec2f* v2);
-PF_API PFvec2f pfVec2Transform(const PFvec2f* v, const PFmat4f* mat);
+PF_API void pfVec2fNeg(PFvec2f dst, const PFvec2f v);
+PF_API void pfVec2fAdd(PFvec2f dst, const PFvec2f v1, const PFvec2f v2);
+PF_API void pfVec2fSub(PFvec2f dst, const PFvec2f v1, const PFvec2f v2);
+PF_API void pfVec2fMul(PFvec2f dst, const PFvec2f v1, const PFvec2f v2);
+PF_API void pfVec2fDiv(PFvec2f dst, const PFvec2f v1, const PFvec2f v2);
+PF_API void pfVec2fScale(PFvec2f dst, const PFvec2f v, PFfloat scalar);
+PF_API void pfVec2fNormalize(PFvec2f dst, const PFvec2f v);
+PF_API PFfloat pfVec2fDot(const PFvec2f v1, const PFvec2f v2);
+PF_API void pfVec2Transform(PFvec2f dst, const PFvec2f v, const PFmat4f* mat);
 
-PF_API PFvec3f pfVec3fNeg(const PFvec3f* v);
-PF_API PFvec3f pfVec3fAdd(const PFvec3f* v1, const PFvec3f* v2);
-PF_API PFvec3f pfVec3fSub(const PFvec3f* v1, const PFvec3f* v2);
-PF_API PFvec3f pfVec3fMul(const PFvec3f* v1, const PFvec3f* v2);
-PF_API PFvec3f pfVec3fDiv(const PFvec3f* v1, const PFvec3f* v2);
-PF_API PFvec3f pfVec3fScale(const PFvec3f* v, PFfloat scalar);
-PF_API PFvec3f pfVec3fNormalize(const PFvec3f* v);
-PF_API PFfloat pfVec3fDot(const PFvec3f* v1, const PFvec3f* v2);
-PF_API PFvec3f pfVec3fCross(const PFvec3f* v1, const PFvec3f* v2);
-PF_API PFvec3f pfVec3fTransform(const PFvec3f* v1, const PFmat4f* mat);
-PF_API PFvec3f pfVec3fReflect(const PFvec3f *incident, const PFvec3f *normal);
+PF_API void pfVec3fNeg(PFvec3f dst, const PFvec3f v);
+PF_API void pfVec3fAdd(PFvec3f dst, const PFvec3f v1, const PFvec3f v2);
+PF_API void pfVec3fSub(PFvec3f dst, const PFvec3f v1, const PFvec3f v2);
+PF_API void pfVec3fMul(PFvec3f dst, const PFvec3f v1, const PFvec3f v2);
+PF_API void pfVec3fDiv(PFvec3f dst, const PFvec3f v1, const PFvec3f v2);
+PF_API void pfVec3fScale(PFvec3f dst, const PFvec3f v, PFfloat scalar);
+PF_API void pfVec3fNormalize(PFvec3f dst, const PFvec3f v);
+PF_API PFfloat pfVec3fDot(const PFvec3f v1, const PFvec3f v2);
+PF_API void pfVec3fCross(PFvec3f dst, const PFvec3f v1, const PFvec3f v2);
+PF_API void pfVec3fTransform(PFvec3f dst, const PFvec3f v1, const PFmat4f* mat);
+PF_API void pfVec3fReflect(PFvec3f dst, const PFvec3f incident, const PFvec3f normal);
 
-PF_API PFvec4f pfVec4fNeg(const PFvec4f* v);
-PF_API PFvec4f pfVec4fAdd(const PFvec4f* v1, const PFvec4f* v2);
-PF_API PFvec4f pfVec4fSub(const PFvec4f* v1, const PFvec4f* v2);
-PF_API PFvec4f pfVec4fMul(const PFvec4f* v1, const PFvec4f* v2);
-PF_API PFvec4f pfVec4fDiv(const PFvec4f* v1, const PFvec4f* v2);
-PF_API PFvec4f pfVec4fScale(const PFvec4f* v, PFfloat scalar);
-PF_API PFvec4f pfVec4fNormalize(const PFvec4f* v);
-PF_API PFfloat pfVec4fDot(const PFvec4f* v1, const PFvec4f* v2);
-PF_API PFvec4f pfVec4fTransform(const PFvec4f* v, const PFmat4f* mat);
+PF_API void pfVec4fNeg(PFvec4f dst, const PFvec4f v);
+PF_API void pfVec4fAdd(PFvec4f dst, const PFvec4f v1, const PFvec4f v2);
+PF_API void pfVec4fSub(PFvec4f dst, const PFvec4f v1, const PFvec4f v2);
+PF_API void pfVec4fMul(PFvec4f dst, const PFvec4f v1, const PFvec4f v2);
+PF_API void pfVec4fDiv(PFvec4f dst, const PFvec4f v1, const PFvec4f v2);
+PF_API void pfVec4fScale(PFvec4f dst, const PFvec4f v, PFfloat scalar);
+PF_API void pfVec4fNormalize(PFvec4f dst, const PFvec4f v);
+PF_API PFfloat pfVec4fDot(const PFvec4f v1, const PFvec4f v2);
+PF_API void pfVec4fTransform(PFvec4f dst, const PFvec4f v, const PFmat4f* mat);
 
 PF_API PFfloat pfMat4fDeterminant(const PFmat4f* mat);
 PF_API PFfloat pfMat4fTrace(const PFmat4f* mat);
@@ -468,17 +460,17 @@ PF_API PFmat4f pfMat4fAdd(const PFmat4f* left, const PFmat4f* right);
 PF_API PFmat4f pfMat4fSub(const PFmat4f* left, const PFmat4f* right);
 PF_API PFmat4f pfMat4fMul(const PFmat4f* left, const PFmat4f* right);
 PF_API PFmat4f pfMat4fTranslate(PFfloat x, PFfloat y, PFfloat z);
-PF_API PFmat4f pfMat4fRotate(const PFvec3f* axis, PFfloat angle);
+PF_API PFmat4f pfMat4fRotate(const PFvec3f axis, PFfloat angle);
 PF_API PFmat4f pfMat4fRotateX(PFfloat angle);
 PF_API PFmat4f pfMat4fRotateY(PFfloat angle);
 PF_API PFmat4f pfMat4fRotateZ(PFfloat angle);
-PF_API PFmat4f pfMat4fRotateXYZ(const PFvec3f* angle);
-PF_API PFmat4f pfMat4fRotateZYX(const PFvec3f* angle);
+PF_API PFmat4f pfMat4fRotateXYZ(const PFvec3f angle);
+PF_API PFmat4f pfMat4fRotateZYX(const PFvec3f angle);
 PF_API PFmat4f pfMat4fScale(PFfloat x, PFfloat y, PFfloat z);
 PF_API PFmat4f pfMat4fFrustum(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble near, PFdouble far);
 PF_API PFmat4f pfMat4fPerspective(PFdouble fovY, PFdouble aspect, PFdouble nearPlane, PFdouble farPlane);
 PF_API PFmat4f pfMat4fOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble nearPlane, PFdouble farPlane);
-PF_API PFmat4f pfMat4fLookAt(const PFvec3f* eye, const PFvec3f* target, const PFvec3f* up);
+PF_API PFmat4f pfMat4fLookAt(const PFvec3f eye, const PFvec3f target, const PFvec3f up);
 
 #if defined(__cplusplus)
 }

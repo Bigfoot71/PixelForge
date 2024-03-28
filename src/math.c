@@ -19,292 +19,264 @@
 
 #include "pixelforge.h"
 #include <math.h>
+#include <string.h>
 
 // PFvec2f
 
-PFvec2f pfVec2fNeg(const PFvec2f* v)
+void pfVec2fNeg(PFvec2f dst, const PFvec2f v)
 {
-    return (PFvec2f) {
-        -v->x,
-        -v->y
-    };
-}
-
-PFvec2f pfVec2fAdd(const PFvec2f* v1, const PFvec2f* v2)
-{
-    return (PFvec2f) {
-        v1->x + v2->x,
-        v1->y + v2->y
-    };
-}
-
-PFvec2f pfVec2fSub(const PFvec2f* v1, const PFvec2f* v2)
-{
-    return (PFvec2f) {
-        v1->x - v2->x,
-        v1->y - v2->y
-    };
-}
-
-PFvec2f pfVec2fMul(const PFvec2f* v1, const PFvec2f* v2)
-{
-    return (PFvec2f) {
-        v1->x*v2->x,
-        v1->y*v2->y
-    };
-}
-
-PFvec2f pfVec2fDiv(const PFvec2f* v1, const PFvec2f* v2)
-{
-    return (PFvec2f) {
-        v2->x != 0.0f ? v1->x/v2->x : 0.0f,
-        v2->y != 0.0f ? v1->y/v2->y : 0.0f
-    };
-}
-
-PFvec2f pfVec2fScale(const PFvec2f* v, PFfloat scalar)
-{
-    return (PFvec2f) {
-        v->x*scalar,
-        v->y*scalar
-    };
-}
-
-PFvec2f pfVec2fNormalize(const PFvec2f* v)
-{
-    PFfloat length = sqrt(v->x*v->x + v->y*v->y);
-
-    if (length != 0.0f)
+    for (int_fast8_t i = 0; i < 2; i++)
     {
-        PFfloat invLength = 1.0f/length;
-
-        return (PFvec2f) {
-            v->x*invLength,
-            v->y*invLength
-        };
+        dst[i] = -v[i];
     }
-
-    return *v;
 }
 
-PFfloat pfVec2fDot(const PFvec2f* v1, const PFvec2f* v2)
+void pfVec2fAdd(PFvec2f dst, const PFvec2f v1, const PFvec2f v2)
 {
-    return v1->x*v2->x + v1->y*v2->y;
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v1[i] + v2[i];
+    }
 }
 
-PFvec2f pfVec2Transform(const PFvec2f* v, const PFmat4f* mat)
+void pfVec2fSub(PFvec2f dst, const PFvec2f v1, const PFvec2f v2)
 {
-    return (PFvec2f) {
-        mat->m0*v->x + mat->m4*v->y + mat->m12,
-        mat->m1*v->x + mat->m5*v->y + mat->m13
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v1[i] - v2[i];
+    }
+}
+
+void pfVec2fMul(PFvec2f dst, const PFvec2f v1, const PFvec2f v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v1[i]*v2[i];
+    }
+}
+
+void pfVec2fDiv(PFvec2f dst, const PFvec2f v1, const PFvec2f v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v1[i]/v2[i];
+    }
+}
+
+void pfVec2fScale(PFvec2f dst, const PFvec2f v, PFfloat scalar)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v[i]*scalar;
+    }
+}
+
+void pfVec2fNormalize(PFvec2f dst, const PFvec2f v)
+{
+    PFfloat length = sqrtf(v[0]*v[0] + v[1]*v[1]);
+    if (length == 0.0f) return;
+
+    PFfloat invLength = 1.0f/length;
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v[i]*invLength;
+    }
+}
+
+PFfloat pfVec2fDot(const PFvec2f v1, const PFvec2f v2)
+{
+    return v1[0]*v2[0] + v1[1]*v2[1];
+}
+
+void pfVec2Transform(PFvec2f dst, const PFvec2f v, const PFmat4f* mat)
+{
+    PFvec2f tmp = {
+        mat->m0*v[0] + mat->m4*v[1] + mat->m12,
+        mat->m1*v[0] + mat->m5*v[1] + mat->m13
     };
+
+    memcpy(dst, tmp, sizeof(PFvec2f));
 }
 
 // PFvec3f
 
-PFvec3f pfVec3fNeg(const PFvec3f* v)
+void pfVec3fNeg(PFvec3f dst, const PFvec3f v)
 {
-    return (PFvec3f) { 
-        -v->x,
-        -v->y,
-        -v->z
-    };
-}
-
-PFvec3f pfVec3fAdd(const PFvec3f* v1, const PFvec3f* v2)
-{
-    return (PFvec3f) {
-        v1->x + v2->x,
-        v1->y + v2->y,
-        v1->z + v2->z
-    };
-}
-
-PFvec3f pfVec3fSub(const PFvec3f* v1, const PFvec3f* v2)
-{
-    return (PFvec3f) {
-        v1->x - v2->x,
-        v1->y - v2->y,
-        v1->z - v2->z
-    };
-}
-
-PFvec3f pfVec3fMul(const PFvec3f* v1, const PFvec3f* v2)
-{
-    return (PFvec3f) {
-        v1->x*v2->x,
-        v1->y*v2->y,
-        v1->z*v2->z
-    };
-}
-
-PFvec3f pfVec3fDiv(const PFvec3f* v1, const PFvec3f* v2)
-{
-    return (PFvec3f) {
-        v2->x != 0.0f ? v1->x/v2->x : 0.0f,
-        v2->y != 0.0f ? v1->y/v2->y : 0.0f,
-        v2->z != 0.0f ? v1->z/v2->z : 0.0f
-    };
-}
-
-PFvec3f pfVec3fScale(const PFvec3f* v, PFfloat scalar)
-{
-    return (PFvec3f) {
-        v->x*scalar,
-        v->y*scalar,
-        v->z*scalar
-    };
-}
-
-PFvec3f pfVec3fNormalize(const PFvec3f* v)
-{
-    PFfloat length = sqrt(v->x*v->x + v->y*v->y + v->z*v->z);
-
-    if (length != 0.0f)
+    for (int_fast8_t i = 0; i < 3; i++)
     {
-        PFfloat invLength = 1.0f/length;
-
-        return (PFvec3f) {
-            v->x*invLength,
-            v->y*invLength,
-            v->z*invLength
-        };
+        dst[i] = -v[i];
     }
-
-    return *v;
 }
 
-PFfloat pfVec3fDot(const PFvec3f* v1, const PFvec3f* v2)
+void pfVec3fAdd(PFvec3f dst, const PFvec3f v1, const PFvec3f v2)
 {
-    return v1->x*v2->x + v1->y*v2->y + v1->z*v2->z;
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v1[i] + v2[i];
+    }
 }
 
-PFvec3f pfVec3fCross(const PFvec3f* v1, const PFvec3f* v2)
+void pfVec3fSub(PFvec3f dst, const PFvec3f v1, const PFvec3f v2)
 {
-    return (PFvec3f) {
-        v1->y*v2->z - v1->z*v2->y,
-        v1->z*v2->x - v1->x*v2->z,
-        v1->x*v2->y - v1->y*v2->x
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v1[i] - v2[i];
+    }
+}
+
+void pfVec3fMul(PFvec3f dst, const PFvec3f v1, const PFvec3f v2)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v1[i]*v2[i];
+    }
+}
+
+void pfVec3fDiv(PFvec3f dst, const PFvec3f v1, const PFvec3f v2)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v1[i]/v2[i];
+    }
+}
+
+void pfVec3fScale(PFvec3f dst, const PFvec3f v, PFfloat scalar)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v[i]*scalar;
+    }
+}
+
+void pfVec3fNormalize(PFvec3f dst, const PFvec3f v)
+{
+    PFfloat length = sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+    if (length == 0.0f) return;
+
+    PFfloat invLength = 1.0f/length;
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v[i]*invLength;
+    }
+}
+
+PFfloat pfVec3fDot(const PFvec3f v1, const PFvec3f v2)
+{
+    return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+}
+
+void pfVec3fCross(PFvec3f dst, const PFvec3f v1, const PFvec3f v2)
+{
+    PFvec3f tmp = {
+        v1[1]*v2[2] - v1[2]*v2[1],
+        v1[2]*v2[0] - v1[0]*v2[2],
+        v1[0]*v2[1] - v1[1]*v2[0]
     };
+
+    memcpy(dst, tmp, sizeof(PFvec3f));
 }
 
-PFvec3f pfVec3fTransform(const PFvec3f* v, const PFmat4f* mat)
+void pfVec3fTransform(PFvec3f dst, const PFvec3f v, const PFmat4f* mat)
 {
-    return (PFvec3f) {
-        mat->m0*v->x + mat->m4*v->y + mat->m8*v->z + mat->m12,
-        mat->m1*v->x + mat->m5*v->y + mat->m9*v->z + mat->m13,
-        mat->m2*v->x + mat->m6*v->y + mat->m10*v->z + mat->m14
+    PFvec3f tmp = {
+        mat->m0*v[0] + mat->m4*v[1] + mat->m8*v[2] + mat->m12,
+        mat->m1*v[0] + mat->m5*v[1] + mat->m9*v[2] + mat->m13,
+        mat->m2*v[0] + mat->m6*v[1] + mat->m10*v[2] + mat->m14
     };
+
+    memcpy(dst, tmp, sizeof(PFvec3f));
 }
 
-PFvec3f pfVec3fReflect(const PFvec3f *incident, const PFvec3f *normal)
+void pfVec3fReflect(PFvec3f dst, const PFvec3f incident, const PFvec3f normal)
 {
-    PFfloat dotProduct = 2.0f * (
-        incident->x*normal->x +
-        incident->y*normal->y +
-        incident->z*normal->z);
+    PFfloat dotProduct = 2.0f*(
+        incident[0]*normal[0] +
+        incident[1]*normal[1] +
+        incident[2]*normal[2]);
 
-    return (PFvec3f) {
-        incident->x - dotProduct*normal->x,
-        incident->y - dotProduct*normal->y,
-        incident->z - dotProduct*normal->z
-    };
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = incident[i] - dotProduct*normal[i];
+    }
 }
 
 // PFvec4f
 
-PFvec4f pfVec4fNeg(const PFvec4f* v)
+void pfVec4fNeg(PFvec4f dst, const PFvec4f v)
 {
-    return (PFvec4f) {
-        -v->x,
-        -v->y,
-        -v->z,
-        -v->w
-    };
-}
-
-PFvec4f pfVec4fAdd(const PFvec4f* v1, const PFvec4f* v2)
-{
-    return (PFvec4f) {
-        v1->x + v2->x,
-        v1->y + v2->y,
-        v1->z + v2->z,
-        v1->w + v2->w
-    };
-}
-
-PFvec4f pfVec4fSub(const PFvec4f* v1, const PFvec4f* v2)
-{
-    return (PFvec4f) {
-        v1->x - v2->x,
-        v1->y - v2->y,
-        v1->z - v2->z,
-        v1->w - v2->w
-    };
-}
-
-PFvec4f pfVec4fMul(const PFvec4f* v1, const PFvec4f* v2)
-{
-    return (PFvec4f) {
-        v1->x*v2->x,
-        v1->y*v2->y,
-        v1->z*v2->z,
-        v1->w*v2->w
-    };
-}
-
-PFvec4f pfVec4fDiv(const PFvec4f* v1, const PFvec4f* v2)
-{
-    return (PFvec4f) {
-        v2->x != 0.0f ? v1->x/v2->x : 0.0f,
-        v2->y != 0.0f ? v1->y/v2->y : 0.0f,
-        v2->z != 0.0f ? v1->z/v2->z : 0.0f,
-        v2->w != 0.0f ? v1->w/v2->w : 0.0f
-    };
-}
-
-PFvec4f pfVec4fScale(const PFvec4f* v, PFfloat scalar)
-{
-    return (PFvec4f) {
-        v->x*scalar,
-        v->y*scalar,
-        v->z*scalar,
-        v->w*scalar
-    };
-}
-
-PFvec4f pfVec4fNormalize(const PFvec4f* v)
-{
-    PFfloat length = sqrt(v->x*v->x + v->y*v->y + v->z*v->z + v->w*v->w);
-
-    if (length != 0.0f)
+    for (int_fast8_t i = 0; i < 4; i++)
     {
-        PFfloat invLength = 1.0f/length;
-
-        return (PFvec4f) {
-            v->x*invLength,
-            v->y*invLength,
-            v->z*invLength,
-            v->w*invLength
-        };        
+        dst[i] = -v[i];
     }
-
-    return *v;
 }
 
-PFfloat pfVec4fDot(const PFvec4f* v1, const PFvec4f* v2)
+void pfVec4fAdd(PFvec4f dst, const PFvec4f v1, const PFvec4f v2)
 {
-    return v1->x*v2->x + v1->y*v2->y + v1->z*v2->z + v1->w*v2->w;
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v1[i] + v2[i];
+    }
 }
 
-PFvec4f pfVec4fTransform(const PFvec4f* v, const PFmat4f* mat)
+void pfVec4fSub(PFvec4f dst, const PFvec4f v1, const PFvec4f v2)
 {
-    return (PFvec4f) {
-        mat->m0*v->x + mat->m4*v->y + mat->m8*v->z + mat->m12*v->w,
-        mat->m1*v->x + mat->m5*v->y + mat->m9*v->z + mat->m13*v->w,
-        mat->m2*v->x + mat->m6*v->y + mat->m10*v->z + mat->m14*v->w,
-        mat->m3*v->x + mat->m7*v->y + mat->m11*v->z + mat->m15*v->w
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v1[i] - v2[i];
+    }
+}
+
+void pfVec4fMul(PFvec4f dst, const PFvec4f v1, const PFvec4f v2)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v1[i]*v2[i];
+    }
+}
+
+void pfVec4fDiv(PFvec4f dst, const PFvec4f v1, const PFvec4f v2)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v1[i]/v2[i];
+    }
+}
+
+void pfVec4fScale(PFvec4f dst, const PFvec4f v, PFfloat scalar)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v[i]*scalar;
+    }
+}
+
+void pfVec4fNormalize(PFvec4f dst, const PFvec4f v)
+{
+    PFfloat length = sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
+    if (length == 0.0f) return;
+
+    PFfloat invLength = 1.0f/length;
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v[i]*invLength;
+    }
+}
+
+PFfloat pfVec4fDot(const PFvec4f v1, const PFvec4f v2)
+{
+    return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2] + v1[3]*v2[3];
+}
+
+void pfVec4fTransform(PFvec4f dst, const PFvec4f v, const PFmat4f* mat)
+{
+    PFvec4f tmp = {
+        mat->m0*v[0] + mat->m4*v[1] + mat->m8*v[2] + mat->m12*v[3],
+        mat->m1*v[0] + mat->m5*v[1] + mat->m9*v[2] + mat->m13*v[3],
+        mat->m2*v[0] + mat->m6*v[1] + mat->m10*v[2] + mat->m14*v[3],
+        mat->m3*v[0] + mat->m7*v[1] + mat->m11*v[2] + mat->m15*v[3]
     };
+
+    memcpy(dst, tmp, sizeof(PFvec4f));
 }
 
 // PFmat4f
@@ -499,11 +471,11 @@ PFmat4f pfMat4fTranslate(PFfloat x, PFfloat y, PFfloat z)
 }
 
 // NOTE: Angle should be provided in radians
-PFmat4f pfMat4fRotate(const PFvec3f* axis, PFfloat angle)
+PFmat4f pfMat4fRotate(const PFvec3f axis, PFfloat angle)
 {
     PFmat4f result = { 0 };
 
-    PFfloat x = axis->x, y = axis->y, z = axis->z;
+    PFfloat x = axis[0], y = axis[1], z = axis[2];
 
     PFfloat lengthSquared = x*x + y*y + z*z;
 
@@ -606,7 +578,7 @@ PFmat4f pfMat4fRotateZ(PFfloat angle)
 }
 
 // NOTE: Angle must be provided in radians
-PFmat4f pfMat4fRotateXYZ(const PFvec3f* angle)
+PFmat4f pfMat4fRotateXYZ(const PFvec3f angle)
 {
     PFmat4f result = {
         1.0f, 0.0f, 0.0f, 0.0f,
@@ -615,12 +587,12 @@ PFmat4f pfMat4fRotateXYZ(const PFvec3f* angle)
         0.0f, 0.0f, 0.0f, 1.0f
     }; // MatrixIdentity()
 
-    PFfloat cosz = cosf(-angle->z);
-    PFfloat sinz = sinf(-angle->z);
-    PFfloat cosy = cosf(-angle->y);
-    PFfloat siny = sinf(-angle->y);
-    PFfloat cosx = cosf(-angle->x);
-    PFfloat sinx = sinf(-angle->x);
+    PFfloat cosz = cosf(-angle[2]);
+    PFfloat sinz = sinf(-angle[2]);
+    PFfloat cosy = cosf(-angle[1]);
+    PFfloat siny = sinf(-angle[1]);
+    PFfloat cosx = cosf(-angle[0]);
+    PFfloat sinx = sinf(-angle[0]);
 
     result.m0 = cosz*cosy;
     result.m1 = (cosz*siny*sinx) - (sinz*cosx);
@@ -638,16 +610,16 @@ PFmat4f pfMat4fRotateXYZ(const PFvec3f* angle)
 }
 
 // NOTE: Angle must be provided in radians
-PFmat4f pfMat4fRotateZYX(const PFvec3f* angle)
+PFmat4f pfMat4fRotateZYX(const PFvec3f angle)
 {
     PFmat4f result = { 0 };
 
-    PFfloat cz = cosf(angle->z);
-    PFfloat sz = sinf(angle->z);
-    PFfloat cy = cosf(angle->y);
-    PFfloat sy = sinf(angle->y);
-    PFfloat cx = cosf(angle->x);
-    PFfloat sx = sinf(angle->x);
+    PFfloat cz = cosf(angle[2]);
+    PFfloat sz = sinf(angle[2]);
+    PFfloat cy = cosf(angle[1]);
+    PFfloat sy = sinf(angle[1]);
+    PFfloat cx = cosf(angle[0]);
+    PFfloat sx = sinf(angle[0]);
 
     result.m0 = cz*cy;
     result.m4 = cz*sy*sx - cx*sz;
@@ -767,7 +739,7 @@ PFmat4f pfMat4fOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble to
     return result;
 }
 
-PFmat4f pfMat4fLookAt(const PFvec3f* eye, const PFvec3f* target, const PFvec3f* up)
+PFmat4f pfMat4fLookAt(const PFvec3f eye, const PFvec3f target, const PFvec3f up)
 {
     PFmat4f result = { 0 };
 
@@ -776,58 +748,58 @@ PFmat4f pfMat4fLookAt(const PFvec3f* eye, const PFvec3f* target, const PFvec3f* 
 
     // pfVec3fSub(eye, target)
     PFvec3f vz = {
-        eye->x - target->x,
-        eye->y - target->y,
-        eye->z - target->z
+        eye[0] - target[0],
+        eye[1] - target[1],
+        eye[2] - target[2]
     };
 
     // pfVec3fNormalize(vz)
-    PFvec3f v = vz;
-    length = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+    PFvec3f v = { vz[0], vz[1], vz[2] };
+    length = sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
     if (length == 0.0f) length = 1.0f;
     ilength = 1.0f/length;
-    vz.x *= ilength;
-    vz.y *= ilength;
-    vz.z *= ilength;
+    vz[0] *= ilength;
+    vz[1] *= ilength;
+    vz[2] *= ilength;
 
     // pfVec3Cross(up, vz)
     PFvec3f vx = {
-        up->y*vz.z - up->z*vz.y,
-        up->z*vz.x - up->x*vz.z,
-        up->x*vz.y - up->y*vz.x
+        up[1]*vz[2] - up[2]*vz[1],
+        up[2]*vz[0] - up[0]*vz[2],
+        up[0]*vz[1] - up[1]*vz[0]
     };
 
     // pfVec3fNormalize(x)
-    v = vx;
-    length = sqrtf(v.x*v.x + v.y*v.y + v.z*v.z);
+    for (int_fast8_t i = 0; i < 3; i++) v[i] = vx[i];
+    length = sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
     if (length == 0.0f) length = 1.0f;
     ilength = 1.0f/length;
-    vx.x *= ilength;
-    vx.y *= ilength;
-    vx.z *= ilength;
+    vx[0] *= ilength;
+    vx[1] *= ilength;
+    vx[2] *= ilength;
 
     // pfVec3Cross(vz, vx)
     PFvec3f vy = {
-        vz.y*vx.z - vz.z*vx.y,
-        vz.z*vx.x - vz.x*vx.z,
-        vz.x*vx.y - vz.y*vx.x
+        vz[1]*vx[2] - vz[2]*vx[1],
+        vz[2]*vx[0] - vz[0]*vx[2],
+        vz[0]*vx[1] - vz[1]*vx[0]
     };
 
-    result.m0 = vx.x;
-    result.m1 = vy.x;
-    result.m2 = vz.x;
+    result.m0 = vx[0];
+    result.m1 = vy[0];
+    result.m2 = vz[0];
     result.m3 = 0.0f;
-    result.m4 = vx.y;
-    result.m5 = vy.y;
-    result.m6 = vz.y;
+    result.m4 = vx[1];
+    result.m5 = vy[1];
+    result.m6 = vz[1];
     result.m7 = 0.0f;
-    result.m8 = vx.z;
-    result.m9 = vy.z;
-    result.m10 = vz.z;
+    result.m8 = vx[2];
+    result.m9 = vy[2];
+    result.m10 = vz[2];
     result.m11 = 0.0f;
-    result.m12 = -(vx.x*eye->x + vx.y*eye->y + vx.z*eye->z);   // pfVec3Dot(vx, eye)
-    result.m13 = -(vy.x*eye->x + vy.y*eye->y + vy.z*eye->z);   // pfVec3Dot(vy, eye)
-    result.m14 = -(vz.x*eye->x + vz.y*eye->y + vz.z*eye->z);   // pfVec3Dot(vz, eye)
+    result.m12 = -(vx[0]*eye[0] + vx[1]*eye[1] + vx[2]*eye[2]);   // pfVec3Dot(vx, eye)
+    result.m13 = -(vy[0]*eye[0] + vy[1]*eye[1] + vy[2]*eye[2]);   // pfVec3Dot(vy, eye)
+    result.m14 = -(vz[0]*eye[0] + vz[1]*eye[1] + vz[2]*eye[2]);   // pfVec3Dot(vz, eye)
     result.m15 = 1.0f;
 
     return result;

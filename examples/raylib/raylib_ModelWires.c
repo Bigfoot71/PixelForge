@@ -124,7 +124,7 @@ void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float r
     // Calculate transformation matrix from function parameters
     // Get transform matrix (rotation -> scale -> translation)
     PFmat4f matScale = pfMat4fScale(scale.x, scale.y, scale.z);
-    PFmat4f matRotation = pfMat4fRotate((PFvec3f*)(&rotationAxis), DEG2RAD(rotationAngle));
+    PFmat4f matRotation = pfMat4fRotate((PFfloat*)(&rotationAxis), DEG2RAD(rotationAngle));
     PFmat4f matTranslation = pfMat4fTranslate(position.x, position.y, position.z);
 
     PFmat4f matTransform = pfMat4fMul(&matScale, &matRotation);

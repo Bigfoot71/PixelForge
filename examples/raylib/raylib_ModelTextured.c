@@ -32,15 +32,15 @@ int main(void)
     PFtexture modelDiffuse = pfTextureGenFromBuffer(imModelDiffuse.data, imModelDiffuse.width, imModelDiffuse.height, imModelDiffuse.format);
 
     // Define the camera position and a phase for the rotation
-    PFvec3f camPos = { 50.0f, 25.0f, 50.0f };
+    Vector3 camPos = { 50.0f, 25.0f, 50.0f };
     float timer = 0;
 
     // Start the main loop
     while (!WindowShouldClose())
     {
         // Update camera position
-        camPos.x = 50.0f * cos(timer);
-        camPos.z = 50.0f * sin(timer);
+        camPos.x = 50.0f * cosf(timer);
+        camPos.z = 50.0f * sinf(timer);
         timer += GetFrameTime();
 
         // Clear the destination buffer (RAM)

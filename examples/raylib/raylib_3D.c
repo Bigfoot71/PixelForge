@@ -22,14 +22,14 @@ int main(void)
     PF_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Define the camera position and a phase for the rotation
-    PFvec3f camPos = { -2.0f, 1.5f, -2.0f };
+    Vector3 camPos = { -2.0f, 1.5f, -2.0f };
     float timer = 0;
 
     while (!WindowShouldClose())
     {
         // Update camera position
-        camPos.x = 2.0f * cos(timer);
-        camPos.z = 2.0f * sin(timer);
+        camPos.x = 2.0f * cosf(timer);
+        camPos.z = 2.0f * sinf(timer);
         timer += GetFrameTime();
 
         // Clear the destination buffer (RAM)
