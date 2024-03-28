@@ -22,7 +22,9 @@ typedef struct {
 } PFvertexattribs;
 
 typedef struct {
-    PFvec4f position;
+    PFvec4f homogeneous;
+    PFvec2f screen;
+    PFvec3f position;
     PFvec3f normal;
     PFvec2f texcoord;
     PFcolor color;
@@ -155,9 +157,9 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     ctx->frontMaterial = (PFmaterial) {
         .ambient = (PFvec3f) { 1.0f, 1.0f, 1.0f },
         .diffuse = (PFvec3f) { 1.0f, 1.0f, 1.0f },
-        .specular = (PFvec3f) { 0.0f, 0.0f, 0.0f },
+        .specular = (PFvec3f) { 1.0f, 1.0f, 1.0f },
         .emission = (PFcolor) { 0, 0, 0, 255 },
-        .shininess = 64.0f
+        .shininess = 16.0f
     };
 
     ctx->currentMatrixMode = PF_MODELVIEW;
@@ -365,13 +367,11 @@ void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer
     {
         const PFushort j = ((PFushort*)buffer)[i];
 
-        const PFvec3f *p3 = positions + j;
-        const PFvec4f p4 = { p3->x, p3->y, p3->z, 1.0f };
-
         currentCtx->vertexBuffer[currentCtx->vertexCount++] = (PFvertex) {
-            (currentCtx->transformRequired) ? pfVec4fTransform(&p4, &currentCtx->transform) : p4,
-            (normals) ? normals[j] : (PFvec3f) { 0 }, (texcoords) ? texcoords[j] : (PFvec2f) { 0 },
-            (colors) ? pfBlendMultiplicative(colors[j], currentCtx->currentColor) : currentCtx->currentColor,
+            .position = (currentCtx->transformRequired) ? pfVec3fTransform(positions + j, &currentCtx->transform) : positions[j],
+            .normal = (normals) ? normals[j] : (PFvec3f) { 0 },
+            .texcoord = (texcoords) ? texcoords[j] : (PFvec2f) { 0 },
+            .color = (colors) ? pfBlendMultiplicative(colors[j], currentCtx->currentColor) : currentCtx->currentColor,
         };
 
         if (currentCtx->vertexCount == currentCtx->currentDrawMode)
@@ -404,13 +404,11 @@ void pfDrawVertexArray(PFsizei offset, PFsizei count)
 
     for (PFsizei i = 0; i < count; i++)
     {
-        const PFvec3f *p3 = positions + i;
-        const PFvec4f p4 = { p3->x, p3->y, p3->z, 1.0f };
-
         currentCtx->vertexBuffer[currentCtx->vertexCount++] = (PFvertex) {
-            (currentCtx->transformRequired) ? pfVec4fTransform(&p4, &currentCtx->transform) : p4,
-            (normals) ? normals[i] : (PFvec3f) { 0 }, (texcoords) ? texcoords[i] : (PFvec2f) { 0 },
-            (colors) ? pfBlendMultiplicative(colors[i], currentCtx->currentColor) : currentCtx->currentColor,
+            .position = (currentCtx->transformRequired) ? pfVec3fTransform(positions + i, &currentCtx->transform) : positions[i],
+            .normal = (normals) ? normals[i] : (PFvec3f) { 0 },
+            .texcoord = (texcoords) ? texcoords[i] : (PFvec2f) { 0 },
+            .color = (colors) ? pfBlendMultiplicative(colors[i], currentCtx->currentColor) : currentCtx->currentColor,
         };
 
         if (currentCtx->vertexCount == currentCtx->currentDrawMode)
@@ -785,11 +783,11 @@ void pfVertex3f(PFfloat x, PFfloat y, PFfloat z)
 
 void pfVertexVec3f(const PFvec3f* v)
 {
-    PFvec4f v4 = { v->x, v->y, v->z, 1.0f };
-
     currentCtx->vertexBuffer[currentCtx->vertexCount++] = (PFvertex) {
-        (currentCtx->transformRequired) ? pfVec4fTransform(&v4, &currentCtx->transform) : v4,
-        currentCtx->currentNormal, currentCtx->currentTexcoord, currentCtx->currentColor
+        .position = (currentCtx->transformRequired) ? pfVec3fTransform(v, &currentCtx->transform) : *v,
+        .normal = currentCtx->currentNormal,
+        .texcoord = currentCtx->currentTexcoord,
+        .color = currentCtx->currentColor
     };
 
     if (currentCtx->vertexCount == currentCtx->currentDrawMode)
@@ -857,26 +855,31 @@ static PFvertex Helper_LerpVertex(const PFvertex* start, const PFvertex* end, PF
 {
     PFvertex result;
 
+    // Interpolate homogeneous position
+    result.homogeneous.x = start->homogeneous.x + t*(end->homogeneous.x - start->homogeneous.x);
+    result.homogeneous.y = start->homogeneous.y + t*(end->homogeneous.y - start->homogeneous.y);
+    result.homogeneous.z = start->homogeneous.z + t*(end->homogeneous.z - start->homogeneous.z);
+    result.homogeneous.w = start->homogeneous.w + t*(end->homogeneous.w - start->homogeneous.w);
+
     // Interpolate position
-    result.position.x = start->position.x + t * (end->position.x - start->position.x);
-    result.position.y = start->position.y + t * (end->position.y - start->position.y);
-    result.position.z = start->position.z + t * (end->position.z - start->position.z);
-    result.position.w = start->position.w + t * (end->position.w - start->position.w);
+    result.position.x = start->position.x + t*(end->position.x - start->position.x);
+    result.position.y = start->position.y + t*(end->position.y - start->position.y);
+    result.position.z = start->position.z + t*(end->position.z - start->position.z);
 
     // Interpolate normal
-    result.normal.x = start->normal.x + t * (end->normal.x - start->normal.x);
-    result.normal.y = start->normal.y + t * (end->normal.y - start->normal.y);
-    result.normal.z = start->normal.z + t * (end->normal.z - start->normal.z);
+    result.normal.x = start->normal.x + t*(end->normal.x - start->normal.x);
+    result.normal.y = start->normal.y + t*(end->normal.y - start->normal.y);
+    result.normal.z = start->normal.z + t*(end->normal.z - start->normal.z);
 
     // Interpolate texcoord
-    result.texcoord.x = start->texcoord.x + t * (end->texcoord.x - start->texcoord.x);
-    result.texcoord.y = start->texcoord.y + t * (end->texcoord.y - start->texcoord.y);
+    result.texcoord.x = start->texcoord.x + t*(end->texcoord.x - start->texcoord.x);
+    result.texcoord.y = start->texcoord.y + t*(end->texcoord.y - start->texcoord.y);
 
     // Interpolate color
-    result.color.r = start->color.r + t * (end->color.r - start->color.r);
-    result.color.g = start->color.g + t * (end->color.g - start->color.g);
-    result.color.b = start->color.b + t * (end->color.b - start->color.b);
-    result.color.a = start->color.a + t * (end->color.a - start->color.a);
+    result.color.r = start->color.r + t*(end->color.r - start->color.r);
+    result.color.g = start->color.g + t*(end->color.g - start->color.g);
+    result.color.b = start->color.b + t*(end->color.b - start->color.b);
+    result.color.a = start->color.a + t*(end->color.a - start->color.a);
 
     return result;
 }
@@ -934,13 +937,13 @@ static void Helper_SwapByte(PFubyte* a, PFubyte* b)
 }
 
 // Used by 'Process_ClipLine2D'
-static PFubyte Helper_EncodeClip2D(const PFvec4f* v)
+static PFubyte Helper_EncodeClip2D(const PFvec2f* screen)
 {
     PFubyte code = CLIP_INSIDE;
-    if (v->x < currentCtx->viewportX) code |= CLIP_LEFT;
-    if (v->x > currentCtx->viewportW) code |= CLIP_RIGHT;
-    if (v->y < currentCtx->viewportY) code |= CLIP_BOTTOM;
-    if (v->y > currentCtx->viewportH) code |= CLIP_TOP;
+    if (screen->x < currentCtx->viewportX) code |= CLIP_LEFT;
+    if (screen->x > currentCtx->viewportW) code |= CLIP_RIGHT;
+    if (screen->y < currentCtx->viewportY) code |= CLIP_BOTTOM;
+    if (screen->y > currentCtx->viewportH) code |= CLIP_TOP;
     return code;
 }
 
@@ -973,10 +976,10 @@ static PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* 
 
 /* Internal vertex processing function definitions */
 
-static void Process_HomogeneousToScreen(PFvec4f* restrict homogeneous)
+static void Process_HomogeneousToScreen(PFvertex* restrict v)
 {
-    homogeneous->x = currentCtx->viewportX + (homogeneous->x + 1.0f) * 0.5f * currentCtx->viewportW;
-    homogeneous->y = currentCtx->viewportY + (1.0f - homogeneous->y) * 0.5f * currentCtx->viewportH;
+    v->screen.x = currentCtx->viewportX + (v->homogeneous.x + 1.0f)*0.5f*currentCtx->viewportW;
+    v->screen.y = currentCtx->viewportY + (1.0f - v->homogeneous.y)*0.5f*currentCtx->viewportH;
 }
 
 static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2)
@@ -985,15 +988,15 @@ static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2
     PFubyte code0, code1;
     PFfloat m = 0;
 
-    if (v1->position.x != v2->position.x)
+    if (v1->screen.x != v2->screen.x)
     {
-        m = (v2->position.y - v1->position.y) / (v2->position.x - v1->position.x);
+        m = (v2->screen.y - v1->screen.y) / (v2->screen.x - v1->screen.x);
     }
 
     for (;;)
     {
-        code0 = Helper_EncodeClip2D(&v1->position);
-        code1 = Helper_EncodeClip2D(&v2->position);
+        code0 = Helper_EncodeClip2D(&v1->screen);
+        code1 = Helper_EncodeClip2D(&v2->screen);
 
         // Accepted if both endpoints lie within rectangle
         if ((code0 | code1) == 0)
@@ -1013,23 +1016,23 @@ static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2
 
         if (code0 & CLIP_LEFT)
         {
-            v1->position.y += (currentCtx->viewportX - v1->position.x) * m;
-            v1->position.x = currentCtx->viewportX;
+            v1->screen.y += (currentCtx->viewportX - v1->screen.x)*m;
+            v1->screen.x = currentCtx->viewportX;
         }
         else if (code0 & CLIP_RIGHT)
         {
-            v1->position.y += (currentCtx->viewportW - v1->position.x) * m;
-            v1->position.x = currentCtx->viewportW;
+            v1->screen.y += (currentCtx->viewportW - v1->screen.x)*m;
+            v1->screen.x = currentCtx->viewportW;
         }
         else if (code0 & CLIP_BOTTOM)
         {
-            if (m) v1->position.x += (currentCtx->viewportY - v1->position.y) / m;
-            v1->position.y = currentCtx->viewportY;
+            if (m) v1->screen.x += (currentCtx->viewportY - v1->screen.y) / m;
+            v1->screen.y = currentCtx->viewportY;
         }
         else if (code0 & CLIP_TOP)
         {
-            if (m) v1->position.x += (currentCtx->viewportH - v1->position.y) / m;
-            v1->position.y = currentCtx->viewportH;
+            if (m) v1->screen.x += (currentCtx->viewportH - v1->screen.y) / m;
+            v1->screen.y = currentCtx->viewportH;
         }
     }
 
@@ -1040,26 +1043,26 @@ static PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2
 {
     PFfloat t1 = 0, t2 = 1;
 
-    const PFvec4f delta = pfVec4fSub(&v2->position, &v1->position);
+    const PFvec4f delta = pfVec4fSub(&v2->homogeneous, &v1->homogeneous);
 
-    if (!Helper_ClipCoord3D(v1->position.w - v1->position.x, -delta.w + delta.x, &t1, &t2)) return PF_FALSE;
-    if (!Helper_ClipCoord3D(v1->position.w + v1->position.x, -delta.w - delta.x, &t1, &t2)) return PF_FALSE;
+    if (!Helper_ClipCoord3D(v1->homogeneous.w - v1->homogeneous.x, -delta.w + delta.x, &t1, &t2)) return PF_FALSE;
+    if (!Helper_ClipCoord3D(v1->homogeneous.w + v1->homogeneous.x, -delta.w - delta.x, &t1, &t2)) return PF_FALSE;
 
-    if (!Helper_ClipCoord3D(v1->position.w - v1->position.y, -delta.w + delta.y, &t1, &t2)) return PF_FALSE;
-    if (!Helper_ClipCoord3D(v1->position.w + v1->position.y, -delta.w - delta.y, &t1, &t2)) return PF_FALSE;
+    if (!Helper_ClipCoord3D(v1->homogeneous.w - v1->homogeneous.y, -delta.w + delta.y, &t1, &t2)) return PF_FALSE;
+    if (!Helper_ClipCoord3D(v1->homogeneous.w + v1->homogeneous.y, -delta.w - delta.y, &t1, &t2)) return PF_FALSE;
 
-    if (!Helper_ClipCoord3D(v1->position.w - v1->position.z, -delta.w + delta.z, &t1, &t2)) return PF_FALSE;
-    if (!Helper_ClipCoord3D(v1->position.w + v1->position.z, -delta.w - delta.z, &t1, &t2)) return PF_FALSE;
+    if (!Helper_ClipCoord3D(v1->homogeneous.w - v1->homogeneous.z, -delta.w + delta.z, &t1, &t2)) return PF_FALSE;
+    if (!Helper_ClipCoord3D(v1->homogeneous.w + v1->homogeneous.z, -delta.w - delta.z, &t1, &t2)) return PF_FALSE;
 
     if (t2 < 1)
     {
         PFvec4f d = pfVec4fScale(&delta, t2);
-        v2->position = pfVec4fAdd(&v1->position, &d);
+        v2->homogeneous = pfVec4fAdd(&v1->homogeneous, &d);
     }
     if (t1 > 0)
     {
         PFvec4f d = pfVec4fScale(&delta, t1);
-        v1->position = pfVec4fAdd(&v1->position, &d);
+        v1->homogeneous = pfVec4fAdd(&v1->homogeneous, &d);
     }
 
     return PF_TRUE;
@@ -1074,16 +1077,16 @@ static PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, PFubyte* restr
     *vertexCounter = 0;
 
     const PFvertex *prevVt = &input[inputCounter-1];
-    PFbyte prevDot = (prevVt->position.w < PF_CLIP_EPSILON) ? -1 : 1;
+    PFbyte prevDot = (prevVt->homogeneous.w < PF_CLIP_EPSILON) ? -1 : 1;
 
     for (PFubyte i = 0; i < inputCounter; i++)
     {
-        PFbyte currDot = (input[i].position.w < PF_CLIP_EPSILON) ? -1 : 1;
+        PFbyte currDot = (input[i].homogeneous.w < PF_CLIP_EPSILON) ? -1 : 1;
 
-        if (prevDot * currDot < 0)
+        if (prevDot*currDot < 0)
         {
             polygon[(*vertexCounter)++] = Helper_LerpVertex(prevVt, &input[i], 
-                (PF_CLIP_EPSILON - prevVt->position.w) / (input[i].position.w - prevVt->position.w));
+                (PF_CLIP_EPSILON - prevVt->homogeneous.w) / (input[i].homogeneous.w - prevVt->homogeneous.w));
         }
 
         if (currDot > 0)
@@ -1116,18 +1119,18 @@ static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, PFubyte* res
         *vertexCounter = 0;
 
         prevVt = &input[inputCounter-1];
-        prevDot = (((PFfloat*)(&prevVt->position))[iAxis] <= prevVt->position.w) ? 1 : -1;
+        prevDot = (((PFfloat*)(&prevVt->homogeneous))[iAxis] <= prevVt->homogeneous.w) ? 1 : -1;
 
         for (PFubyte i = 0; i < inputCounter; i++)
         {
-            PFbyte currDot = (((PFfloat*)(&input[i].position))[iAxis] <= input[i].position.w) ? 1 : -1;
+            PFbyte currDot = (((PFfloat*)(&input[i].homogeneous))[iAxis] <= input[i].homogeneous.w) ? 1 : -1;
 
-            if (prevDot * currDot <= 0)
+            if (prevDot*currDot <= 0)
             {
                 polygon[(*vertexCounter)++] = Helper_LerpVertex(prevVt, &input[i], 
-                    (prevVt->position.w - ((PFfloat*)(&prevVt->position))[iAxis]) /
-                    ((prevVt->position.w - ((PFfloat*)(&prevVt->position))[iAxis]) -
-                    (input[i].position.w - ((PFfloat*)(&input[i].position))[iAxis])));
+                    (prevVt->homogeneous.w - ((PFfloat*)(&prevVt->homogeneous))[iAxis]) /
+                    ((prevVt->homogeneous.w - ((PFfloat*)(&prevVt->homogeneous))[iAxis]) -
+                    (input[i].homogeneous.w - ((PFfloat*)(&input[i].homogeneous))[iAxis])));
             }
 
             if (currDot > 0)
@@ -1148,18 +1151,18 @@ static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, PFubyte* res
         *vertexCounter = 0;
 
         prevVt = &input[inputCounter-1];
-        prevDot = (-((PFfloat*)(&prevVt->position))[iAxis] <= prevVt->position.w) ? 1 : -1;
+        prevDot = (-((PFfloat*)(&prevVt->homogeneous))[iAxis] <= prevVt->homogeneous.w) ? 1 : -1;
 
         for (PFubyte i = 0; i < inputCounter; i++)
         {
-            PFbyte currDot = (-((PFfloat*)(&input[i].position))[iAxis] <= input[i].position.w) ? 1 : -1;
+            PFbyte currDot = (-((PFfloat*)(&input[i].homogeneous))[iAxis] <= input[i].homogeneous.w) ? 1 : -1;
 
-            if (prevDot * currDot <= 0)
+            if (prevDot*currDot <= 0)
             {
                 polygon[(*vertexCounter)++] = Helper_LerpVertex(prevVt, &input[i], 
-                    (prevVt->position.w + ((PFfloat*)(&prevVt->position))[iAxis]) /
-                    ((prevVt->position.w + ((PFfloat*)(&prevVt->position))[iAxis]) -
-                    (input[i].position.w + ((PFfloat*)(&input[i].position))[iAxis])));
+                    (prevVt->homogeneous.w + ((PFfloat*)(&prevVt->homogeneous))[iAxis]) /
+                    ((prevVt->homogeneous.w + ((PFfloat*)(&prevVt->homogeneous))[iAxis]) -
+                    (input[i].homogeneous.w + ((PFfloat*)(&input[i].homogeneous))[iAxis])));
             }
 
             if (currDot > 0)
@@ -1177,13 +1180,17 @@ static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, PFubyte* res
 
 static void Process_ProjectAndClipLine(PFvertex* restrict line, PFubyte* restrict vertexCounter, const PFmat4f* mvp)
 {
-    line[0].position = pfVec4fTransform(&line[0].position, mvp);
-    line[1].position = pfVec4fTransform(&line[1].position, mvp);
-
-    if (line[0].position.w == 1.0f && line[1].position.w == 1.0f)
+    for (PFubyte i = 0; i < 2; i++)
     {
-        Process_HomogeneousToScreen(&line[0].position);
-        Process_HomogeneousToScreen(&line[1].position);
+        PFvertex *v = line + i;
+        v->homogeneous = (PFvec4f) { v->position.x, v->position.y, v->position.z, 1.0f };
+        v->homogeneous = pfVec4fTransform(&v->homogeneous, mvp);
+    }
+
+    if (line[0].homogeneous.w == 1.0f && line[1].homogeneous.w == 1.0f)
+    {
+        Process_HomogeneousToScreen(&line[0]);
+        Process_HomogeneousToScreen(&line[1]);
 
         if (!Process_ClipLine2D(&line[0], &line[1]))
         {
@@ -1202,13 +1209,13 @@ static void Process_ProjectAndClipLine(PFvertex* restrict line, PFubyte* restric
         for (PFubyte i = 0; i < 2; i++)
         {
             // Division of XY coordinates by weight (perspective correct)
-            PFfloat invW = 1.0f / line[i].position.w;
-            line[i].position.x *= invW;
-            line[i].position.y *= invW;
+            PFfloat invW = 1.0f / line[i].homogeneous.w;
+            line[i].homogeneous.x *= invW;
+            line[i].homogeneous.y *= invW;
         }
 
-        Process_HomogeneousToScreen(&line[0].position);
-        Process_HomogeneousToScreen(&line[1].position);
+        Process_HomogeneousToScreen(&line[0]);
+        Process_HomogeneousToScreen(&line[1]);
     }
 }
 
@@ -1216,19 +1223,21 @@ static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, PFub
 {
     for (PFubyte i = 0; i < *vertexCounter; i++)
     {
-        polygon[i].position = pfVec4fTransform(&polygon[i].position, mvp);
+        PFvertex *v = polygon + i;
+        v->homogeneous = (PFvec4f) { v->position.x, v->position.y, v->position.z, 1.0f };
+        v->homogeneous = pfVec4fTransform(&v->homogeneous, mvp);
     }
 
     PFboolean is2D = (
-        polygon[0].position.w == 1.0f &&
-        polygon[1].position.w == 1.0f &&
-        polygon[2].position.w == 1.0f);
+        polygon[0].homogeneous.w == 1.0f &&
+        polygon[1].homogeneous.w == 1.0f &&
+        polygon[2].homogeneous.w == 1.0f);
 
     if (is2D)
     {
         for (PFubyte i = 0; i < *vertexCounter; i++)
         {
-            Process_HomogeneousToScreen(&polygon[i].position);
+            Process_HomogeneousToScreen(&polygon[i]);
         }
     }
     else
@@ -1238,17 +1247,17 @@ static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, PFub
             for (PFubyte i = 0; i < *vertexCounter; i++)
             {
                 // Calculation of the reciprocal of Z for the perspective correct
-                polygon[i].position.z = 1.0f / polygon[i].position.z;
+                polygon[i].homogeneous.z = 1.0f / polygon[i].homogeneous.z;
 
                 // Division of texture coordinates by the Z axis (perspective correct)
-                polygon[i].texcoord = pfVec2fScale(&polygon[i].texcoord, polygon[i].position.z);
+                polygon[i].texcoord = pfVec2fScale(&polygon[i].texcoord, polygon[i].homogeneous.z);
 
                 // Division of XY coordinates by weight (perspective correct)
-                PFfloat invW = 1.0f / polygon[i].position.w;
-                polygon[i].position.x *= invW;
-                polygon[i].position.y *= invW;
+                PFfloat invW = 1.0f / polygon[i].homogeneous.w;
+                polygon[i].homogeneous.x *= invW;
+                polygon[i].homogeneous.y *= invW;
 
-                Process_HomogeneousToScreen(&polygon[i].position);
+                Process_HomogeneousToScreen(&polygon[i]);
             }
         }
     }
@@ -1261,12 +1270,12 @@ static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, PFub
 
 static void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2)
 {
-    const PFfloat dx = v2->position.x - v1->position.x;
-    const PFfloat dy = v2->position.y - v1->position.y;
+    const PFfloat dx = v2->screen.x - v1->screen.x;
+    const PFfloat dy = v2->screen.y - v1->screen.y;
 
     if (dx == 0 && dy == 0)
     {
-        pfFramebufferSetPixel(currentCtx->currentFramebuffer, v1->position.x, v1->position.y, v1->color);
+        pfFramebufferSetPixel(currentCtx->currentFramebuffer, v1->screen.x, v1->screen.y, v1->color);
         return;
     }
 
@@ -1279,19 +1288,19 @@ static void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2)
         const PFfloat slope = dy / dx;
 
         PFint xMin, xMax;
-        if (v1->position.x < v2->position.x)
+        if (v1->screen.x < v2->screen.x)
         {
-            xMin = v1->position.x, xMax = v2->position.x;
+            xMin = v1->screen.x, xMax = v2->screen.x;
         }
         else
         {
-            xMin = v2->position.x, xMax = v1->position.x;
+            xMin = v2->screen.x, xMax = v1->screen.x;
         }
 
         for (PFint x = xMin; x <= xMax; x++)
         {
             const PFfloat t = (x - xMin)*invAdx;
-            const PFint y = v1->position.y + (x - v1->position.x)*slope;
+            const PFint y = v1->screen.y + (x - v1->screen.x)*slope;
             pfFramebufferSetPixel(currentCtx->currentFramebuffer, x, y, Helper_LerpColor(v1->color, v2->color, t));
         }
     }
@@ -1301,19 +1310,19 @@ static void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2)
         const PFfloat slope = dx / dy;
 
         PFint yMin, yMax;
-        if (v1->position.y < v2->position.y)
+        if (v1->screen.y < v2->screen.y)
         {
-            yMin = v1->position.y, yMax = v2->position.y;
+            yMin = v1->screen.y, yMax = v2->screen.y;
         }
         else
         {
-            yMin = v2->position.y, yMax = v1->position.y;
+            yMin = v2->screen.y, yMax = v1->screen.y;
         }
 
         for (PFint y = yMin; y <= yMax; y++)
         {
             const PFfloat t = (y - yMin)*invAdy;
-            const PFint x = v1->position.x + (y - v1->position.y)*slope;
+            const PFint x = v1->screen.x + (y - v1->screen.y)*slope;
             pfFramebufferSetPixel(currentCtx->currentFramebuffer, x, y, Helper_LerpColor(v1->color, v2->color, t));
         }
     }
@@ -1321,12 +1330,12 @@ static void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2)
 
 static void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
 {
-    const PFfloat dx = v2->position.x - v1->position.x;
-    const PFfloat dy = v2->position.y - v1->position.y;
+    const PFfloat dx = v2->screen.x - v1->screen.x;
+    const PFfloat dy = v2->screen.y - v1->screen.y;
 
     if (dx == 0 && dy == 0)
     {
-        pfFramebufferSetPixelDepth(currentCtx->currentFramebuffer, v1->position.x, v1->position.y, v1->position.z, v1->color);
+        pfFramebufferSetPixelDepth(currentCtx->currentFramebuffer, v1->screen.x, v1->screen.y, v1->homogeneous.z, v1->color);
         return;
     }
 
@@ -1340,22 +1349,22 @@ static void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
 
         PFint xMin, xMax;
         PFfloat zMin, zMax;
-        if (v1->position.x < v2->position.x)
+        if (v1->screen.x < v2->screen.x)
         {
-            xMin = v1->position.x, xMax = v2->position.x;
-            zMin = v1->position.z, zMax = v2->position.z;
+            xMin = v1->screen.x, xMax = v2->screen.x;
+            zMin = v1->homogeneous.z, zMax = v2->homogeneous.z;
         }
         else
         {
-            xMin = v2->position.x, xMax = v1->position.x;
-            zMin = v2->position.z, zMax = v1->position.z;
+            xMin = v2->screen.x, xMax = v1->screen.x;
+            zMin = v2->homogeneous.z, zMax = v1->homogeneous.z;
         }
 
         for (PFint x = xMin; x <= xMax; x++)
         {
             const PFfloat t = (x - xMin)*invAdx;
             const PFfloat z = zMin + t*(zMax - zMin);
-            const PFint y = v1->position.y + (x - v1->position.x)*slope;
+            const PFint y = v1->screen.y + (x - v1->screen.x)*slope;
             pfFramebufferSetPixelDepth(currentCtx->currentFramebuffer, x, y, z, Helper_LerpColor(v1->color, v2->color, t));
         }
     }
@@ -1366,22 +1375,22 @@ static void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
 
         PFint yMin, yMax;
         PFfloat zMin, zMax;
-        if (v1->position.y < v2->position.y)
+        if (v1->screen.y < v2->screen.y)
         {
-            yMin = v1->position.y, yMax = v2->position.y;
-            zMin = v1->position.z, zMax = v2->position.z;
+            yMin = v1->screen.y, yMax = v2->screen.y;
+            zMin = v1->homogeneous.z, zMax = v2->homogeneous.z;
         }
         else
         {
-            yMin = v2->position.y, yMax = v1->position.y;
-            zMin = v2->position.z, zMax = v1->position.z;
+            yMin = v2->screen.y, yMax = v1->screen.y;
+            zMin = v2->homogeneous.z, zMax = v1->homogeneous.z;
         }
 
         for (PFint y = yMin; y <= yMax; y++)
         {
             const PFfloat t = (y - yMin)*invAdy;
             const PFfloat z = zMin + t*(zMax - zMin);
-            const PFint x = v1->position.x + (y - v1->position.y)*slope;
+            const PFint x = v1->screen.x + (y - v1->screen.y)*slope;
             pfFramebufferSetPixelDepth(currentCtx->currentFramebuffer, x, y, z, Helper_LerpColor(v1->color, v2->color, t));
         }
     }
@@ -1393,9 +1402,9 @@ static void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
 static void Rasterize_TriangleColorFlat2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
-    const PFint x2 = (PFint)v2->position.x, y2 = (PFint)v2->position.y;
-    const PFint x3 = (PFint)v3->position.x, y3 = (PFint)v3->position.y;
+    const PFint x1 = (PFint)v1->screen.x, y1 = (PFint)v1->screen.y;
+    const PFint x2 = (PFint)v2->screen.x, y2 = (PFint)v2->screen.y;
+    const PFint x3 = (PFint)v3->screen.x, y3 = (PFint)v3->screen.y;
 
     // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
     if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
@@ -1457,9 +1466,9 @@ static void Rasterize_TriangleColorFlat2D(const PFvertex* v1, const PFvertex* v2
 static void Rasterize_TriangleColorDepth2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
-    const PFint x2 = (PFint)v2->position.x, y2 = (PFint)v2->position.y;
-    const PFint x3 = (PFint)v3->position.x, y3 = (PFint)v3->position.y;
+    const PFint x1 = (PFint)v1->screen.x, y1 = (PFint)v1->screen.y;
+    const PFint x2 = (PFint)v2->screen.x, y2 = (PFint)v2->screen.y;
+    const PFint x3 = (PFint)v3->screen.x, y3 = (PFint)v3->screen.y;
 
     // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
     if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
@@ -1503,7 +1512,7 @@ static void Rasterize_TriangleColorDepth2D(const PFvertex* v1, const PFvertex* v
                 const PFuint xyOffset = yOffset + x;
                 const PFfloat invSum = 1.0f/(w1 + w2 + w3);
                 const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z;
+                const PFfloat z = aW1*v1->homogeneous.z + aW2*v2->homogeneous.z + aW3*v3->homogeneous.z;
 
                 if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
                 {
@@ -1527,9 +1536,9 @@ static void Rasterize_TriangleColorDepth2D(const PFvertex* v1, const PFvertex* v
 static void Rasterize_TriangleTextureFlat2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
-    const PFint x2 = (PFint)v2->position.x, y2 = (PFint)v2->position.y;
-    const PFint x3 = (PFint)v3->position.x, y3 = (PFint)v3->position.y;
+    const PFint x1 = (PFint)v1->screen.x, y1 = (PFint)v1->screen.y;
+    const PFint x2 = (PFint)v2->screen.x, y2 = (PFint)v2->screen.y;
+    const PFint x3 = (PFint)v3->screen.x, y3 = (PFint)v3->screen.y;
 
     // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
     if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
@@ -1595,9 +1604,9 @@ static void Rasterize_TriangleTextureFlat2D(const PFvertex* v1, const PFvertex* 
 static void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
-    const PFint x2 = (PFint)v2->position.x, y2 = (PFint)v2->position.y;
-    const PFint x3 = (PFint)v3->position.x, y3 = (PFint)v3->position.y;
+    const PFint x1 = (PFint)v1->screen.x, y1 = (PFint)v1->screen.y;
+    const PFint x2 = (PFint)v2->screen.x, y2 = (PFint)v2->screen.y;
+    const PFint x3 = (PFint)v3->screen.x, y3 = (PFint)v3->screen.y;
 
     // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
     if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
@@ -1641,7 +1650,7 @@ static void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex*
                 const PFuint xyOffset = yOffset + x;
                 const PFfloat invSum = 1.0f/(w1 + w2 + w3);
                 const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z;
+                const PFfloat z = aW1*v1->homogeneous.z + aW2*v2->homogeneous.z + aW3*v3->homogeneous.z;
 
                 if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
                 {
@@ -1672,9 +1681,9 @@ static void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex*
 static void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
-    const PFint x2 = (PFint)v2->position.x, y2 = (PFint)v2->position.y;
-    const PFint x3 = (PFint)v3->position.x, y3 = (PFint)v3->position.y;
+    const PFint x1 = (PFint)v1->screen.x, y1 = (PFint)v1->screen.y;
+    const PFint x2 = (PFint)v2->screen.x, y2 = (PFint)v2->screen.y;
+    const PFint x3 = (PFint)v3->screen.x, y3 = (PFint)v3->screen.y;
 
     // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
     if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
@@ -1718,7 +1727,7 @@ static void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2
                 const PFuint xyOffset = yOffset + x;
                 const PFfloat invSum = 1.0f/(w1 + w2 + w3);
                 const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
+                const PFfloat z = 1.0f/(aW1*v1->homogeneous.z + aW2*v2->homogeneous.z + aW3*v3->homogeneous.z);
 
                 const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
                 const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
@@ -1739,9 +1748,9 @@ static void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2
 static void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
-    const PFint x2 = (PFint)v2->position.x, y2 = (PFint)v2->position.y;
-    const PFint x3 = (PFint)v3->position.x, y3 = (PFint)v3->position.y;
+    const PFint x1 = (PFint)v1->screen.x, y1 = (PFint)v1->screen.y;
+    const PFint x2 = (PFint)v2->screen.x, y2 = (PFint)v2->screen.y;
+    const PFint x3 = (PFint)v3->screen.x, y3 = (PFint)v3->screen.y;
 
     // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
     if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
@@ -1785,7 +1794,7 @@ static void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v
                 const PFuint xyOffset = yOffset + x;
                 const PFfloat invSum = 1.0f/(w1 + w2 + w3);
                 const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
+                const PFfloat z = 1.0f/(aW1*v1->homogeneous.z + aW2*v2->homogeneous.z + aW3*v3->homogeneous.z);
 
                 if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
                 {
@@ -1809,9 +1818,9 @@ static void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v
 static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
-    const PFint x2 = (PFint)v2->position.x, y2 = (PFint)v2->position.y;
-    const PFint x3 = (PFint)v3->position.x, y3 = (PFint)v3->position.y;
+    const PFint x1 = (PFint)v1->screen.x, y1 = (PFint)v1->screen.y;
+    const PFint x2 = (PFint)v2->screen.x, y2 = (PFint)v2->screen.y;
+    const PFint x3 = (PFint)v3->screen.x, y3 = (PFint)v3->screen.y;
 
     // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
     if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
@@ -1855,7 +1864,7 @@ static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* 
                 const PFuint xyOffset = yOffset + x;
                 const PFfloat invSum = 1.0f/(w1 + w2 + w3);
                 const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
+                const PFfloat z = 1.0f/(aW1*v1->homogeneous.z + aW2*v2->homogeneous.z + aW3*v3->homogeneous.z);
 
                 PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
                 texcoord.x *= z, texcoord.y *= z; // Perspective correct
@@ -1881,9 +1890,9 @@ static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* 
 static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
-    const PFint x2 = (PFint)v2->position.x, y2 = (PFint)v2->position.y;
-    const PFint x3 = (PFint)v3->position.x, y3 = (PFint)v3->position.y;
+    const PFint x1 = (PFint)v1->screen.x, y1 = (PFint)v1->screen.y;
+    const PFint x2 = (PFint)v2->screen.x, y2 = (PFint)v2->screen.y;
+    const PFint x3 = (PFint)v3->screen.x, y3 = (PFint)v3->screen.y;
 
     // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
     if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
@@ -1927,7 +1936,7 @@ static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex*
                 const PFuint xyOffset = yOffset + x;
                 const PFfloat invSum = 1.0f/(w1 + w2 + w3);
                 const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
+                const PFfloat z = 1.0f/(aW1*v1->homogeneous.z + aW2*v2->homogeneous.z + aW3*v3->homogeneous.z);
 
                 if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
                 {
@@ -1956,40 +1965,50 @@ static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex*
 
 /* Internal lighting process functions defintions */
 
-static PFcolor Light_ComputeDiffuse(const PFlight* light, const PFvec3f* normal)
+static PFcolor Light_ComputePhong(const PFlight* light, PFcolor ambient, PFcolor texel, const PFvec3f* viewPos, const PFvec3f* vertex, const PFvec3f* normal)
 {
-    const PFfloat intensity = fmaxf(-pfVec3fDot(&light->direction, normal), 0.0f);
+    // Calculate view direction vector
+    PFvec3f viewDir = pfVec3fSub(viewPos, vertex);
+    viewDir = pfVec3fNormalize(&viewDir);
 
-    return (PFcolor) {
-        (PFubyte)(light->diffuse.x * intensity * 255.0f),
-        (PFubyte)(light->diffuse.y * intensity * 255.0f),
-        (PFubyte)(light->diffuse.z * intensity * 255.0f),
+    // Compute ambient lighting contribution
+    ambient = pfBlendMultiplicative(texel, ambient);
+
+    // Compute diffuse lighting
+    const PFfloat intensity = fmaxf(-pfVec3fDot(&light->direction, normal), 0.0f) * 255.0f;
+    const PFcolor diffuse = {
+        (PFubyte)(light->diffuse.x * intensity),
+        (PFubyte)(light->diffuse.y * intensity),
+        (PFubyte)(light->diffuse.z * intensity),
         255
     };
-}
 
-static PFcolor Light_ComputeSpecular(const PFlight* light, const PFvec3f* normal, const PFvec3f* viewDir, PFfloat shininess)
-{
+    // Compute specular lighting
     const PFvec3f reflectDir = pfVec3fReflect(&light->direction, normal);
-    const PFfloat spec = powf(fmaxf(pfVec3fDot(&reflectDir, viewDir), 0.0f), shininess);
-
-    return (PFcolor) {
-        (PFubyte)(light->specular.x * spec * 255.0f),
-        (PFubyte)(light->specular.y * spec * 255.0f),
-        (PFubyte)(light->specular.z * spec * 255.0f),
+    const PFfloat spec = powf(fmaxf(pfVec3fDot(&reflectDir, &viewDir), 0.0f),
+                              currentCtx->frontMaterial.shininess) * 255.0f;
+    const PFcolor specular = {
+        (PFubyte)(light->specular.x * spec),
+        (PFubyte)(light->specular.y * spec),
+        (PFubyte)(light->specular.z * spec),
         255
     };
+
+    // Combine ambient, diffuse, and specular components
+    PFcolor finalColor = pfBlendMultiplicative(texel, diffuse);
+    finalColor = pfBlendAdditive(finalColor, specular);
+    return pfBlendAdditive(finalColor, ambient);
 }
 
 
 /* Internal enlightened triangle 3D rasterizer function definitions */
 
-static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewDir)
+static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewPos)
 {
     // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
-    const PFint x2 = (PFint)v2->position.x, y2 = (PFint)v2->position.y;
-    const PFint x3 = (PFint)v3->position.x, y3 = (PFint)v3->position.y;
+    const PFint x1 = (PFint)v1->screen.x, y1 = (PFint)v1->screen.y;
+    const PFint x2 = (PFint)v2->screen.x, y2 = (PFint)v2->screen.y;
+    const PFint x3 = (PFint)v3->screen.x, y3 = (PFint)v3->screen.y;
 
     // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
     if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
@@ -2048,17 +2067,15 @@ static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFverte
                     const PFuint xyOffset = yOffset + x;
                     const PFfloat invSum = 1.0f/(w1 + w2 + w3);
                     const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                    const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
+                    const PFfloat z = 1.0f/(aW1*v1->homogeneous.z + aW2*v2->homogeneous.z + aW3*v3->homogeneous.z);
 
                     const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
                     const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
 
                     const PFvec3f normal = Helper_InterpolateVec3f(&v1->normal, &v2->normal, &v3->normal, aW1, aW2, aW3);
+                    const PFvec3f vertex = Helper_InterpolateVec3f(&v1->position, &v2->position, &v3->position, aW1, aW2, aW3);
 
-                    const PFcolor diffuse = Light_ComputeDiffuse(light, &normal);
-                    const PFcolor specular = Light_ComputeSpecular(light, &normal, viewDir, currentCtx->frontMaterial.shininess);
-
-                    const PFcolor finalColor = pfBlendMultiplicative(pfBlendAdditive(ambient, pfBlendAdditive(diffuse, specular)), currentCtx->blendFunction(srcCol, dstCol));
+                    const PFcolor finalColor = Light_ComputePhong(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, &vertex, &normal);
                     texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
                     currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
                 }
@@ -2071,12 +2088,12 @@ static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFverte
     }
 }
 
-static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewDir)
+static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewPos)
 {
     // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
-    const PFint x2 = (PFint)v2->position.x, y2 = (PFint)v2->position.y;
-    const PFint x3 = (PFint)v3->position.x, y3 = (PFint)v3->position.y;
+    const PFint x1 = (PFint)v1->screen.x, y1 = (PFint)v1->screen.y;
+    const PFint x2 = (PFint)v2->screen.x, y2 = (PFint)v2->screen.y;
+    const PFint x3 = (PFint)v3->screen.x, y3 = (PFint)v3->screen.y;
 
     // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
     if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
@@ -2135,7 +2152,7 @@ static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvert
                     const PFuint xyOffset = yOffset + x;
                     const PFfloat invSum = 1.0f/(w1 + w2 + w3);
                     const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                    const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
+                    const PFfloat z = 1.0f/(aW1*v1->homogeneous.z + aW2*v2->homogeneous.z + aW3*v3->homogeneous.z);
 
                     if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
                     {
@@ -2143,11 +2160,9 @@ static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvert
                         const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
 
                         const PFvec3f normal = Helper_InterpolateVec3f(&v1->normal, &v2->normal, &v3->normal, aW1, aW2, aW3);
+                        const PFvec3f vertex = Helper_InterpolateVec3f(&v1->position, &v2->position, &v3->position, aW1, aW2, aW3);
 
-                        const PFcolor diffuse = Light_ComputeDiffuse(light, &normal);
-                        const PFcolor specular = Light_ComputeSpecular(light, &normal, viewDir, currentCtx->frontMaterial.shininess);
-
-                        const PFcolor finalColor = pfBlendMultiplicative(pfBlendAdditive(ambient, pfBlendAdditive(diffuse, specular)), currentCtx->blendFunction(srcCol, dstCol));
+                        const PFcolor finalColor = Light_ComputePhong(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, &vertex, &normal);
                         texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
 
                         if (i == currentCtx->lastActiveLight)
@@ -2165,12 +2180,12 @@ static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvert
     }
 }
 
-static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewDir)
+static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewPos)
 {
     // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
-    const PFint x2 = (PFint)v2->position.x, y2 = (PFint)v2->position.y;
-    const PFint x3 = (PFint)v3->position.x, y3 = (PFint)v3->position.y;
+    const PFint x1 = (PFint)v1->screen.x, y1 = (PFint)v1->screen.y;
+    const PFint x2 = (PFint)v2->screen.x, y2 = (PFint)v2->screen.y;
+    const PFint x3 = (PFint)v3->screen.x, y3 = (PFint)v3->screen.y;
 
     // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
     if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
@@ -2229,7 +2244,7 @@ static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFver
                     const PFuint xyOffset = yOffset + x;
                     const PFfloat invSum = 1.0f/(w1 + w2 + w3);
                     const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                    const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
+                    const PFfloat z = 1.0f/(aW1*v1->homogeneous.z + aW2*v2->homogeneous.z + aW3*v3->homogeneous.z);
 
                     PFvec2f texcoord = Helper_InterpolateVec2f(&v1->texcoord, &v2->texcoord, &v3->texcoord, aW1, aW2, aW3);
                     texcoord.x *= z, texcoord.y *= z; // Perspective correct
@@ -2241,11 +2256,9 @@ static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFver
                     const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
 
                     const PFvec3f normal = Helper_InterpolateVec3f(&v1->normal, &v2->normal, &v3->normal, aW1, aW2, aW3);
+                    const PFvec3f vertex = Helper_InterpolateVec3f(&v1->position, &v2->position, &v3->position, aW1, aW2, aW3);
 
-                    const PFcolor diffuse = Light_ComputeDiffuse(light, &normal);
-                    const PFcolor specular = Light_ComputeSpecular(light, &normal, viewDir, currentCtx->frontMaterial.shininess);
-
-                    const PFcolor finalColor = pfBlendMultiplicative(pfBlendAdditive(ambient, pfBlendAdditive(diffuse, specular)), currentCtx->blendFunction(srcCol, dstCol));
+                    const PFcolor finalColor = Light_ComputePhong(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, &vertex, &normal);
                     texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
                     currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
                 }
@@ -2258,12 +2271,12 @@ static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFver
     }
 }
 
-static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewDir)
+static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f* viewPos)
 {
     // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->position.x, y1 = (PFint)v1->position.y;
-    const PFint x2 = (PFint)v2->position.x, y2 = (PFint)v2->position.y;
-    const PFint x3 = (PFint)v3->position.x, y3 = (PFint)v3->position.y;
+    const PFint x1 = (PFint)v1->screen.x, y1 = (PFint)v1->screen.y;
+    const PFint x2 = (PFint)v2->screen.x, y2 = (PFint)v2->screen.y;
+    const PFint x3 = (PFint)v3->screen.x, y3 = (PFint)v3->screen.y;
 
     // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
     if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
@@ -2322,7 +2335,7 @@ static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFve
                     const PFuint xyOffset = yOffset + x;
                     const PFfloat invSum = 1.0f/(w1 + w2 + w3);
                     const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                    const PFfloat z = 1.0f/(aW1*v1->position.z + aW2*v2->position.z + aW3*v3->position.z);
+                    const PFfloat z = 1.0f/(aW1*v1->homogeneous.z + aW2*v2->homogeneous.z + aW3*v3->homogeneous.z);
 
                     if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
                     {
@@ -2336,11 +2349,9 @@ static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFve
                         const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
 
                         const PFvec3f normal = Helper_InterpolateVec3f(&v1->normal, &v2->normal, &v3->normal, aW1, aW2, aW3);
+                        const PFvec3f vertex = Helper_InterpolateVec3f(&v1->position, &v2->position, &v3->position, aW1, aW2, aW3);
 
-                        const PFcolor diffuse = Light_ComputeDiffuse(light, &normal);
-                        const PFcolor specular = Light_ComputeSpecular(light, &normal, viewDir, currentCtx->frontMaterial.shininess);
-
-                        const PFcolor finalColor = pfBlendMultiplicative(pfBlendAdditive(ambient, pfBlendAdditive(diffuse, specular)), currentCtx->blendFunction(srcCol, dstCol));
+                        const PFcolor finalColor = Light_ComputePhong(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, &vertex, &normal);
                         texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
 
                         if (i == currentCtx->lastActiveLight)
@@ -2384,9 +2395,9 @@ void ProcessRasterize(const PFmat4f* mvp)
             for (PFubyte i = 0; i < processedCounter; i++)
             {
                 processed[i].color = (PFcolor) {
-                    (PFubyte)(processed[i].color.r * currentCtx->frontMaterial.diffuse.x),
-                    (PFubyte)(processed[i].color.g * currentCtx->frontMaterial.diffuse.y),
-                    (PFubyte)(processed[i].color.b * currentCtx->frontMaterial.diffuse.z),
+                    (PFubyte)(processed[i].color.r*currentCtx->frontMaterial.diffuse.x),
+                    (PFubyte)(processed[i].color.g*currentCtx->frontMaterial.diffuse.y),
+                    (PFubyte)(processed[i].color.b*currentCtx->frontMaterial.diffuse.z),
                     processed[i].color.a
                 };
             }
@@ -2424,9 +2435,9 @@ void ProcessRasterize(const PFmat4f* mvp)
             for (PFubyte i = 0; i < processedCounter; i++)
             {
                 processed[i].color = (PFcolor) {
-                    (PFubyte)(processed[i].color.r * currentCtx->frontMaterial.diffuse.x),
-                    (PFubyte)(processed[i].color.g * currentCtx->frontMaterial.diffuse.y),
-                    (PFubyte)(processed[i].color.b * currentCtx->frontMaterial.diffuse.z),
+                    (PFubyte)(processed[i].color.r*currentCtx->frontMaterial.diffuse.x),
+                    (PFubyte)(processed[i].color.g*currentCtx->frontMaterial.diffuse.y),
+                    (PFubyte)(processed[i].color.b*currentCtx->frontMaterial.diffuse.z),
                     processed[i].color.a
                 };
             }
@@ -2477,10 +2488,10 @@ void ProcessRasterize(const PFmat4f* mvp)
                             &l->specular, &currentCtx->frontMaterial.specular);
                     }
 
-                    // Get camera view direction
-                    // NOTE: We could also use the 'modelview' matrix without reversing the direction
+                    // Get camera/view position
 
-                    PFvec3f viewDir = { -mvp->m2, -mvp->m6, -mvp->m10 };
+                    PFmat4f invMV = pfMat4fInvert(&currentCtx->modelview);
+                    PFvec3f viewPos = { invMV.m12, invMV.m13, invMV.m14 };
 
                     // Selects the appropriate rasterization function
 
@@ -2503,14 +2514,17 @@ void ProcessRasterize(const PFmat4f* mvp)
 
                     for (PFbyte i = 0; i < processedCounter - 2; i++)
                     {
-                        rasterizer(&processed[0], &processed[i + 1], &processed[i + 2], &viewDir);
+                        rasterizer(&processed[0], &processed[i + 1], &processed[i + 2], &viewPos);
                     }
 
                     // Reset old light specular tints
 
                     for (PFint i = 0; i <= currentCtx->lastActiveLight; i++)
                     {
-                        currentCtx->lights[i].specular = oldLightSpecTints[i];
+                        if (currentCtx->lights[i].active)
+                        {
+                            currentCtx->lights[i].specular = oldLightSpecTints[i];
+                        }
                     }
                 }
                 else
@@ -2565,9 +2579,9 @@ void ProcessRasterize(const PFmat4f* mvp)
                 for (PFubyte j = 0; j < processedCounter; j++)
                 {
                     processed[i].color = (PFcolor) {
-                        (PFubyte)(processed[j].color.r * currentCtx->frontMaterial.diffuse.x),
-                        (PFubyte)(processed[j].color.g * currentCtx->frontMaterial.diffuse.y),
-                        (PFubyte)(processed[j].color.b * currentCtx->frontMaterial.diffuse.z),
+                        (PFubyte)(processed[j].color.r*currentCtx->frontMaterial.diffuse.x),
+                        (PFubyte)(processed[j].color.g*currentCtx->frontMaterial.diffuse.y),
+                        (PFubyte)(processed[j].color.b*currentCtx->frontMaterial.diffuse.z),
                         processed[j].color.a
                     };
                 }
@@ -2618,10 +2632,10 @@ void ProcessRasterize(const PFmat4f* mvp)
                                 &l->specular, &currentCtx->frontMaterial.specular);
                         }
 
-                        // Get camera view direction
-                        // NOTE: We could also use the 'modelview' matrix without reversing the direction
+                        // Get camera/view position
 
-                        PFvec3f viewDir = { -mvp->m2, -mvp->m6, -mvp->m10 };
+                        PFmat4f invMV = pfMat4fInvert(&currentCtx->modelview);
+                        PFvec3f viewPos = { invMV.m12, invMV.m13, invMV.m14 };
 
                         // Selects the appropriate rasterization function
 
@@ -2644,14 +2658,17 @@ void ProcessRasterize(const PFmat4f* mvp)
 
                         for (PFbyte j = 0; j < processedCounter - 2; j++)
                         {
-                            rasterizer(&processed[0], &processed[j + 1], &processed[j + 2], &viewDir);
+                            rasterizer(&processed[0], &processed[j + 1], &processed[j + 2], &viewPos);
                         }
 
                         // Reset old light specular tints
 
                         for (PFint j = 0; j <= currentCtx->lastActiveLight; j++)
                         {
-                            currentCtx->lights[j].specular = oldLightSpecTints[j];
+                            if (currentCtx->lights[j].active)
+                            {
+                                currentCtx->lights[j].specular = oldLightSpecTints[j];
+                            }
                         }
                     }
                     else
