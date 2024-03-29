@@ -69,43 +69,43 @@ typedef struct {
 
 struct PFctx {
 
-    PFframebuffer screenBuffer;                // Screen buffer for rendering
-    PFframebuffer *currentFramebuffer;         // Pointer to the current framebuffer
+    PFframebuffer screenBuffer;                 // Screen buffer for rendering
+    PFframebuffer *currentFramebuffer;          // Pointer to the current framebuffer
 
-    PFuint viewportX, viewportY;               // X and Y coordinates of the viewport
-    PFuint viewportW, viewportH;               // Width and height of the viewport
+    PFuint viewportX, viewportY;                // X and Y coordinates of the viewport
+    PFuint viewportW, viewportH;                // Width and height of the viewport
 
-    PFdrawmode currentDrawMode;                // Current drawing mode (e.g., lines, triangles)
-    PFblendfunc blendFunction;                 // Blend function for alpha blending
-    PFcolor clearColor;                        // Color used to clear the screen
+    PFdrawmode currentDrawMode;                 // Current drawing mode (e.g., lines, triangles)
+    PFblendfunc blendFunction;                  // Blend function for alpha blending
+    PFcolor clearColor;                         // Color used to clear the screen
 
-    PFvec3f currentNormal;                     // Current normal vector for lighting calculations
-    PFvec2f currentTexcoord;                   // Current texture coordinates
-    PFcolor currentColor;                      // Current color for vertex rendering
+    PFvec3f currentNormal;                      // Current normal vector for lighting calculations
+    PFvec2f currentTexcoord;                    // Current texture coordinates
+    PFcolor currentColor;                       // Current color for vertex rendering
 
-    PFvertex vertexBuffer[6];                  // Vertex buffer for geometry
-    PFuint vertexCount;                        // Number of vertices in the buffer
+    PFvertex vertexBuffer[6];                   // Vertex buffer for geometry
+    PFuint vertexCount;                         // Number of vertices in the buffer
 
     PFlight lights[PF_MAX_LIGHTS];
     PFint lastActiveLight;
 
     PFmaterial frontMaterial;
-    //PFmaterial backMaterial;                 // TODO: Implement backface rendering
+    //PFmaterial backMaterial;                  // TODO: Implement backface rendering
 
-    PFmatrixmode currentMatrixMode;            // Current matrix mode (e.g., PF_MODELVIEW, PF_PROJECTION)
-    PFmat4f *currentMatrix;                    // Pointer to the current matrix
-    PFmat4f modelview;                         // Default modelview matrix
-    PFmat4f projection;                        // Default projection matrix
-    PFmat4f transform;                         // Transformation matrix for translation, rotation, and scaling
-    PFboolean transformRequired;               // Flag indicating whether transformation is required for vertices
-    PFmat4f stack[PF_MAX_MATRIX_STACK_SIZE];   // Matrix stack for push/pop operations
-    PFint stackCounter;                        // Counter for matrix stack operations
+    PFmatrixmode currentMatrixMode;             // Current matrix mode (e.g., PF_MODELVIEW, PF_PROJECTION)
+    PFmat4f *currentMatrix;                     // Pointer to the current matrix
+    PFmat4f modelview;                          // Default modelview matrix
+    PFmat4f projection;                         // Default projection matrix
+    PFmat4f transform;                          // Transformation matrix for translation, rotation, and scaling
+    PFboolean transformRequired;                // Flag indicating whether transformation is required for vertices
+    PFmat4f stack[PF_MAX_MATRIX_STACK_SIZE];    // Matrix stack for push/pop operations
+    PFint stackCounter;                         // Counter for matrix stack operations
 
-    PFvertexattribs vertexAttribs;             // Vertex attributes (e.g., normal, texture coordinates)
-    PFtexture *currentTexture;                 // Pointer to the current texture
+    PFvertexattribs vertexAttribs;              // Vertex attributes (e.g., normal, texture coordinates)
+    PFtexture *currentTexture;                  // Pointer to the current texture
 
-    PFushort vertexAttribState;                // State of vertex attributes
-    PFushort renderState;                      // Current rendering state
+    PFushort vertexAttribState;                 // State of vertex attributes
+    PFushort renderState;                       // Current rendering state
 
 };
 
@@ -126,7 +126,32 @@ typedef void (*RasterizeTriangleLightFunc)(const PFvertex*, const PFvertex*, con
 
 /* Internal processing and rasterization function declarations */
 
-static void ProcessRasterize(const PFmat4f* mvp);
+static void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal);
+
+/* Internal helper function declarations */
+
+static PFmat4f Helper_GetModelView(PFmat4f* outMatNormal, PFmat4f* outMVP)
+{
+    PFmat4f modelview = currentCtx->modelview;
+
+    if (currentCtx->transformRequired)
+    {
+        modelview = pfMat4fMul(&currentCtx->transform, &modelview);
+    }
+
+    if (outMatNormal)   // TODO REVIEW: Only calculate it when PF_LIGHTING state is activated??
+    {
+        *outMatNormal = pfMat4fInvert(&currentCtx->transform);  // TODO REVIEW: modelview strange behaviour, i need to recheck this
+        *outMatNormal = pfMat4fTranspose(outMatNormal);
+    }
+
+    if (outMVP)
+    {
+        *outMVP = pfMat4fMul(&modelview, &currentCtx->projection);
+    }
+
+    return modelview;
+}
 
 /* Context API functions */
 
@@ -179,7 +204,11 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
         .diffuse = (PFcolor) { 255, 255, 255, 255 },
         .specular = (PFcolor) { 255, 255, 255, 255 },
         .emission = (PFcolor) { 0, 0, 0, 255 },
+#   ifdef PF_NO_BLINN_PHONG
         .shininess = 16.0f
+#   else
+        .shininess = 64.0f
+#   endif
     };
 
     ctx->currentMatrixMode = PF_MODELVIEW;
@@ -380,7 +409,8 @@ void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer
     const PFvec2f *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
         ? (const PFvec2f*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
 
-    const PFmat4f mvp = pfMat4fMul(&currentCtx->modelview, &currentCtx->projection);
+    PFmat4f matNormal, mvp;
+    (void)Helper_GetModelView(&matNormal, &mvp);
 
     pfBegin((currentCtx->renderState & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
 
@@ -405,19 +435,12 @@ void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer
         if (colors) memcpy(&vertex->color, colors + j, sizeof(PFcolor));
         else memcpy(&vertex->color, &currentCtx->currentColor, sizeof(PFcolor));
 
-        // Transform the vertex position if necessary
-
-        if (currentCtx->transformRequired)
-        {
-            pfVec3fTransform(vertex->position, vertex->position, &currentCtx->transform);
-        }
-
         // If the number of vertices has reached that necessary for, we process the shape
 
         if (currentCtx->vertexCount == currentCtx->currentDrawMode)
         {
             currentCtx->vertexCount = 0;
-            ProcessRasterize(&mvp);
+            ProcessRasterize(&mvp, &matNormal);
         }
     }
 
@@ -438,7 +461,8 @@ void pfDrawVertexArray(PFsizei offset, PFsizei count)
     const PFvec2f *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
         ? (const PFvec2f*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
 
-    const PFmat4f mvp = pfMat4fMul(&currentCtx->modelview, &currentCtx->projection);
+    PFmat4f matNormal, mvp;
+    (void)Helper_GetModelView(&matNormal, &mvp);
 
     pfBegin((currentCtx->renderState & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
 
@@ -462,19 +486,12 @@ void pfDrawVertexArray(PFsizei offset, PFsizei count)
         if (colors) memcpy(&vertex->color, colors + i, sizeof(PFcolor));
         else memcpy(&vertex->color, &currentCtx->currentColor, sizeof(PFcolor));
 
-        // Transform the vertex position if necessary
-
-        if (currentCtx->transformRequired)
-        {
-            pfVec3fTransform(vertex->position, vertex->position, &currentCtx->transform);
-        }
-
         // If the number of vertices has reached that necessary for, we process the shape
 
         if (currentCtx->vertexCount == currentCtx->currentDrawMode)
         {
             currentCtx->vertexCount = 0;
-            ProcessRasterize(&mvp);
+            ProcessRasterize(&mvp, &matNormal);
         }
     }
 
@@ -919,20 +936,15 @@ void pfVertexVec3f(const PFvec3f v)
     memcpy(vertex->texcoord, currentCtx->currentTexcoord, sizeof(PFvec2f));
     memcpy(&vertex->color, &currentCtx->currentColor, sizeof(PFcolor));
 
-    // Transform the vertex position if necessary
-
-    if (currentCtx->transformRequired)
-    {
-        pfVec3fTransform(vertex->position, vertex->position, &currentCtx->transform);
-    }
-
     // If the number of vertices has reached that necessary for, we process the shape
 
     if (currentCtx->vertexCount == currentCtx->currentDrawMode)
     {
-        PFmat4f mvp = pfMat4fMul(&currentCtx->modelview, &currentCtx->projection);
+        PFmat4f matNormal, mvp;
+        (void)Helper_GetModelView(&matNormal, &mvp);
+
         currentCtx->vertexCount = 0;
-        ProcessRasterize(&mvp);
+        ProcessRasterize(&mvp, &matNormal);
     }
 }
 
@@ -1227,7 +1239,7 @@ static PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, PFubyte* restr
     const PFvertex *prevVt = &input[inputCounter-1];
     PFbyte prevDot = (prevVt->homogeneous[3] < PF_CLIP_EPSILON) ? -1 : 1;
 
-    for (PFubyte i = 0; i < inputCounter; i++)
+    for (int_fast8_t i = 0; i < inputCounter; i++)
     {
         PFbyte currDot = (input[i].homogeneous[3] < PF_CLIP_EPSILON) ? -1 : 1;
 
@@ -1269,7 +1281,7 @@ static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, PFubyte* res
         prevVt = &input[inputCounter-1];
         prevDot = (prevVt->homogeneous[iAxis] <= prevVt->homogeneous[3]) ? 1 : -1;
 
-        for (PFubyte i = 0; i < inputCounter; i++)
+        for (int_fast8_t i = 0; i < inputCounter; i++)
         {
             PFbyte currDot = (input[i].homogeneous[iAxis] <= input[i].homogeneous[3]) ? 1 : -1;
 
@@ -1299,7 +1311,7 @@ static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, PFubyte* res
         prevVt = &input[inputCounter-1];
         prevDot = (-prevVt->homogeneous[iAxis] <= prevVt->homogeneous[3]) ? 1 : -1;
 
-        for (PFubyte i = 0; i < inputCounter; i++)
+        for (int_fast8_t i = 0; i < inputCounter; i++)
         {
             PFbyte currDot = (-input[i].homogeneous[iAxis] <= input[i].homogeneous[3]) ? 1 : -1;
 
@@ -1324,7 +1336,7 @@ static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, PFubyte* res
 
 static void Process_ProjectAndClipLine(PFvertex* restrict line, PFubyte* restrict vertexCounter, const PFmat4f* mvp)
 {
-    for (PFubyte i = 0; i < 2; i++)
+    for (int_fast8_t i = 0; i < 2; i++)
     {
         PFvertex *v = line + i;
 
@@ -1353,7 +1365,7 @@ static void Process_ProjectAndClipLine(PFvertex* restrict line, PFubyte* restric
             return;
         }
 
-        for (PFubyte i = 0; i < 2; i++)
+        for (int_fast8_t i = 0; i < 2; i++)
         {
             // Division of XY coordinates by weight (perspective correct)
             PFfloat invW = 1.0f / line[i].homogeneous[3];
@@ -1368,7 +1380,7 @@ static void Process_ProjectAndClipLine(PFvertex* restrict line, PFubyte* restric
 
 static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, PFubyte* restrict vertexCounter, const PFmat4f* mvp)
 {
-    for (PFubyte i = 0; i < *vertexCounter; i++)
+    for (int_fast8_t i = 0; i < *vertexCounter; i++)
     {
         PFvertex *v = polygon + i;
 
@@ -1385,7 +1397,7 @@ static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, PFub
 
     if (is2D)
     {
-        for (PFubyte i = 0; i < *vertexCounter; i++)
+        for (int_fast8_t i = 0; i < *vertexCounter; i++)
         {
             Process_HomogeneousToScreen(&polygon[i]);
         }
@@ -1394,7 +1406,7 @@ static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, PFub
     {
         if (Process_ClipPolygonW(polygon, vertexCounter) && Process_ClipPolygonXYZ(polygon, vertexCounter))
         {
-            for (PFubyte i = 0; i < *vertexCounter; i++)
+            for (int_fast8_t i = 0; i < *vertexCounter; i++)
             {
                 // Calculation of the reciprocal of Z for the perspective correct
                 polygon[i].homogeneous[2] = 1.0f / polygon[i].homogeneous[2];
@@ -2119,7 +2131,7 @@ static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex*
 
 /* Internal lighting process functions defintions */
 
-static PFcolor Light_ComputePhong(const PFlight* light, PFcolor ambient, PFcolor texel, const PFvec3f viewPos, const PFvec3f vertex, const PFvec3f normal)
+static PFcolor Light_Compute(const PFlight* light, PFcolor ambient, PFcolor texel, const PFvec3f viewPos, const PFvec3f vertex, const PFvec3f normal)
 {
     // Calculate view direction vector
     PFvec3f viewDir;
@@ -2131,6 +2143,7 @@ static PFcolor Light_ComputePhong(const PFlight* light, PFcolor ambient, PFcolor
 
     // Compute diffuse lighting
     const PFfloat intensity = fmaxf(-pfVec3fDot(light->direction, normal), 0.0f);
+
     const PFcolor diffuse = {
         (PFubyte)(light->diffuse.r * intensity),
         (PFubyte)(light->diffuse.g * intensity),
@@ -2138,11 +2151,29 @@ static PFcolor Light_ComputePhong(const PFlight* light, PFcolor ambient, PFcolor
         255
     };
 
-    // Compute specular lighting
+#ifdef PF_NO_BLINN_PHONG
+
     PFvec3f reflectDir;
     pfVec3fReflect(reflectDir, light->direction, normal);
     const PFfloat spec = powf(fmaxf(pfVec3fDot(reflectDir, viewDir), 0.0f),
                               currentCtx->frontMaterial.shininess);
+
+#else
+
+    // To work here we take the opposite direction
+    PFvec3f negLightDir;
+    pfVec3fNeg(negLightDir, light->direction);
+
+    // Compute half vector (Blinn vector)
+    PFvec3f halfVec;
+    pfVec3fAdd(halfVec, negLightDir, viewDir);
+    pfVec3fNormalize(halfVec, halfVec);
+
+    // Compute specular term using half vector
+    const PFfloat spec = powf(fmaxf(pfVec3fDot(normal, halfVec), 0.0f),
+                              currentCtx->frontMaterial.shininess);
+
+#endif
 
     const PFcolor specular = {
         (PFubyte)(light->specular.r * spec),
@@ -2229,7 +2260,7 @@ static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFverte
                     Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
                     Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
-                    const PFcolor finalColor = Light_ComputePhong(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
+                    const PFcolor finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
                     texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
                     currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
                 }
@@ -2313,7 +2344,7 @@ static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvert
                         Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
                         Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
-                        const PFcolor finalColor = Light_ComputePhong(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
+                        const PFcolor finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
                         texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
 
                         if (i == currentCtx->lastActiveLight)
@@ -2407,7 +2438,7 @@ static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFver
                     Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
                     Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
-                    const PFcolor finalColor = Light_ComputePhong(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
+                    const PFcolor finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
                     texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
                     currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
                 }
@@ -2498,7 +2529,7 @@ static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFve
                         Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
                         Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
-                        const PFcolor finalColor = Light_ComputePhong(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
+                        const PFcolor finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
                         texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
 
                         if (i == currentCtx->lastActiveLight)
@@ -2519,7 +2550,7 @@ static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFve
 
 /* Internal processing and rasterization function definitions */
 
-void ProcessRasterize(const PFmat4f* mvp)
+void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 {
     switch (currentCtx->currentDrawMode)
     {
@@ -2539,7 +2570,7 @@ void ProcessRasterize(const PFmat4f* mvp)
 
             // Multiply vertices color with material diffuse
 
-            for (PFubyte i = 0; i < processedCounter; i++)
+            for (int_fast8_t i = 0; i < processedCounter; i++)
             {
                 processed[i].color = pfBlendMultiplicative(
                     processed[i].color, currentCtx->frontMaterial.diffuse);
@@ -2560,8 +2591,6 @@ void ProcessRasterize(const PFmat4f* mvp)
 
         case PF_TRIANGLES:
         {
-            // Process vertices
-
             PFubyte processedCounter = 3;
 
             PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES] = {
@@ -2570,16 +2599,29 @@ void ProcessRasterize(const PFmat4f* mvp)
                 currentCtx->vertexBuffer[2]
             };
 
-            PFboolean is2D = Process_ProjectAndClipTriangle(processed, &processedCounter, mvp);
-            if (processedCounter < 3) break;
+            // Transform normals if needed
+
+            if (currentCtx->renderState & PF_LIGHTING)
+            {
+                for (int_fast8_t i = 0; i < processedCounter; i++)
+                {
+                    pfVec3fTransform(processed[i].normal, processed[i].normal, matNormal);
+                    pfVec3fNormalize(processed[i].normal, processed[i].normal);
+                }
+            }
 
             // Multiply vertices color with material diffuse
 
-            for (PFubyte i = 0; i < processedCounter; i++)
+            for (int_fast8_t i = 0; i < processedCounter; i++)
             {
                 processed[i].color = pfBlendMultiplicative(
                     processed[i].color, currentCtx->frontMaterial.diffuse);
             }
+
+            // Process vertices
+
+            PFboolean is2D = Process_ProjectAndClipTriangle(processed, &processedCounter, mvp);
+            if (processedCounter < 3) break;
 
             // Rasterize triangles
 
@@ -2700,8 +2742,6 @@ void ProcessRasterize(const PFmat4f* mvp)
         {
             for (PFint i = 0; i < 2; i++)
             {
-                // Process vertices
-
                 PFubyte processedCounter = 3;
 
                 PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES] = {
@@ -2710,8 +2750,16 @@ void ProcessRasterize(const PFmat4f* mvp)
                     currentCtx->vertexBuffer[i + 2]
                 };
 
-                PFboolean is2D = Process_ProjectAndClipTriangle(processed, &processedCounter, mvp);
-                if (processedCounter < 3) continue;
+                // Transform normals if needed
+
+                if (currentCtx->renderState & PF_LIGHTING)
+                {
+                    for (int_fast8_t j = 0; j < processedCounter; j++)
+                    {
+                        pfVec3fTransform(processed[j].normal, processed[j].normal, matNormal);
+                        pfVec3fNormalize(processed[j].normal, processed[j].normal);
+                    }
+                }
 
                 // Multiply vertices color with material diffuse
 
@@ -2720,6 +2768,11 @@ void ProcessRasterize(const PFmat4f* mvp)
                     processed[j].color = pfBlendMultiplicative(
                         processed[j].color, currentCtx->frontMaterial.diffuse);
                 }
+
+                // Process vertices
+
+                PFboolean is2D = Process_ProjectAndClipTriangle(processed, &processedCounter, mvp);
+                if (processedCounter < 3) continue;
 
                 // Rasterize triangles
 

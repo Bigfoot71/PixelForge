@@ -73,13 +73,13 @@ void pfVec2fScale(PFvec2f dst, const PFvec2f v, PFfloat scalar)
 
 void pfVec2fNormalize(PFvec2f dst, const PFvec2f v)
 {
-    PFfloat length = sqrtf(v[0]*v[0] + v[1]*v[1]);
-    if (length == 0.0f) return;
+    PFfloat squaredLength = v[0]*v[0] + v[1]*v[1];
+    if (squaredLength == 0.0f) return;
 
-    PFfloat invLength = 1.0f/length;
+    PFfloat invLength = 1.0f / sqrtf(squaredLength);
     for (int_fast8_t i = 0; i < 2; i++)
     {
-        dst[i] = v[i]*invLength;
+        dst[i] = v[i] * invLength;
     }
 }
 
@@ -150,13 +150,13 @@ void pfVec3fScale(PFvec3f dst, const PFvec3f v, PFfloat scalar)
 
 void pfVec3fNormalize(PFvec3f dst, const PFvec3f v)
 {
-    PFfloat length = sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-    if (length == 0.0f) return;
+    PFfloat squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+    if (squaredLength == 0.0f) return;
 
-    PFfloat invLength = 1.0f/length;
+    PFfloat invLength = 1.0f / sqrtf(squaredLength);
     for (int_fast8_t i = 0; i < 3; i++)
     {
-        dst[i] = v[i]*invLength;
+        dst[i] = v[i] * invLength;
     }
 }
 
@@ -252,13 +252,13 @@ void pfVec4fScale(PFvec4f dst, const PFvec4f v, PFfloat scalar)
 
 void pfVec4fNormalize(PFvec4f dst, const PFvec4f v)
 {
-    PFfloat length = sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
-    if (length == 0.0f) return;
+    PFfloat squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3];
+    if (squaredLength == 0.0f) return;
 
-    PFfloat invLength = 1.0f/length;
+    PFfloat invLength = 1.0f / sqrtf(squaredLength);
     for (int_fast8_t i = 0; i < 4; i++)
     {
-        dst[i] = v[i]*invLength;
+        dst[i] = v[i] * invLength;
     }
 }
 
