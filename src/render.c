@@ -117,7 +117,15 @@ typedef enum {
     CLIP_TOP    = 0x08, // 1000
 } PFclipcode;
 
-static PFctx *currentCtx = NULL;
+/* Current thread local-thread declaration */
+
+#if defined(__GNUC__) || defined(__clang__)
+    static __thread PFctx *currentCtx = NULL;
+#elif defined(_MSC_VER)
+    __declspec(thread) static PFctx *currentCtx = NULL;
+#else
+    static PFctx *currentCtx = NULL;
+#endif
 
 /* Internal types */
 
