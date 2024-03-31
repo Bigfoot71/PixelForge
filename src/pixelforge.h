@@ -384,6 +384,8 @@ PF_API void pfNormalVec3f(const PFvec3f v);
 
 /* Blending functions */
 
+PF_API PFcolor pfBlendDisabled(PFcolor source, PFcolor destination);
+
 PF_API PFcolor pfBlend(PFcolor source, PFcolor destination);
 PF_API PFcolor pfBlendAlpha(PFcolor source, PFcolor destination);
 PF_API PFcolor pfBlendAdditive(PFcolor source, PFcolor destination);

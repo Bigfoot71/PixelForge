@@ -22,6 +22,12 @@
 
 /* Blending API functions */
 
+PFcolor pfBlendDisabled(PFcolor source, PFcolor destination)
+{
+    (void)destination;
+    return source;
+}
+
 PFcolor pfBlend(PFcolor source, PFcolor destination)
 {
     return (PFcolor) {

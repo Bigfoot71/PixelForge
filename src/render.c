@@ -184,7 +184,7 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     ctx->viewportH = screenHeight - 1;
 
     ctx->currentDrawMode = 0;
-    ctx->blendFunction = pfBlendAlpha;
+    ctx->blendFunction = pfBlendDisabled;
     ctx->clearColor = (PFcolor) { 0 };
 
     memset(ctx->currentNormal, 0, sizeof(PFvec3f));

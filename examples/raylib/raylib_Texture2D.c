@@ -1,3 +1,4 @@
+#include "pixelforge.h"
 #define PF_COMMON_IMPL
 #include "../common.h"
 #include "raylib.h"
@@ -54,6 +55,7 @@ int main(void)
     // Create a PixelForge context (see examples/common.h)
     PFctx *ctx = PF_Init(dest.data, dest.width, dest.height);
     PF_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
+    pfSetBlendFunction(pfBlendAlpha);
 
     // We load a background texture
     Image imBG = LoadImage(RESOURCES_PATH "images/PixelForge.png");
