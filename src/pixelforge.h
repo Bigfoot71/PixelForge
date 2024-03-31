@@ -194,6 +194,7 @@ typedef enum {
 } PFmatrixmode;
 
 typedef enum {
+    PF_POINTS    = 1,
     PF_LINES     = 2,
     PF_TRIANGLES = 3,
     PF_QUADS     = 4,

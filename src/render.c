@@ -935,7 +935,6 @@ void pfVertexVec3f(const PFvec3f v)
     // Get the pointer of the current vertex of the batch and pad it with zero
 
     PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCount++);
-    memset(vertex, 0, sizeof(PFvertex));
 
     // Fill the vertex with given vertices data
 
@@ -1341,6 +1340,29 @@ static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, PFubyte* res
 
     return *vertexCounter > 0;
 }
+
+static PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFmat4f* mvp)
+{
+    memcpy(v->homogeneous, v->position, sizeof(PFvec3f));
+    v->homogeneous[3] = 1.0f;
+
+    pfVec4fTransform(v->homogeneous, v->homogeneous, mvp);
+
+    if (v->homogeneous[3] != 1.0f)
+    {
+        PFfloat invW = 1.0f / v->homogeneous[3];
+        v->homogeneous[0] *= invW;
+        v->homogeneous[1] *= invW;
+    }
+
+    Process_HomogeneousToScreen(v);
+
+    return v->screen[0] >= currentCtx->viewportX
+        && v->screen[0] <= currentCtx->viewportW
+        && v->screen[1] >= currentCtx->viewportY
+        && v->screen[1] <= currentCtx->viewportH;
+}
+
 
 static void Process_ProjectAndClipLine(PFvertex* restrict line, PFubyte* restrict vertexCounter, const PFmat4f* mvp)
 {
@@ -2562,6 +2584,30 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 {
     switch (currentCtx->currentDrawMode)
     {
+        case PF_POINTS:
+        {
+            PFvertex *processed = currentCtx->vertexBuffer;
+
+            // Process vertex
+
+            if (!Process_ProjectPoint(processed, mvp))
+            {
+                return;
+            }
+
+            // Draw vertex
+
+            if (currentCtx->renderState & (PF_DEPTH_TEST))
+            {
+                pfFramebufferSetPixelDepth(currentCtx->currentFramebuffer, processed->screen[0], processed->screen[1], processed->homogeneous[2], processed->color);
+            }
+            else
+            {
+                pfFramebufferSetPixel(currentCtx->currentFramebuffer, processed->screen[0], processed->screen[1], processed->color);
+            }
+        }
+        break;
+
         case PF_LINES:
         {
             // Process vertices

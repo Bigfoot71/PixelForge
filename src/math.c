@@ -18,8 +18,8 @@
  */
 
 #include "pixelforge.h"
-#include <math.h>
 #include <string.h>
+#include <math.h>
 
 // PFvec2f
 
