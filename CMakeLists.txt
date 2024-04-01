@@ -17,8 +17,16 @@ option(PF_BUILD_EXAMPLES_SDL2 "Build PixelForge examples for SDL2" ${PF_IS_MAIN}
 option(PF_BUILD_EXAMPLES_X11 "Build PixelForge examples for X11" ${PF_IS_MAIN})
 
 # Defining source files
-file(GLOB SRCS src/*.c)
-file(GLOB HDRS src/*.h)
+file(GLOB SRCS
+    ${PF_ROOT_PATH}/src/math.c
+    ${PF_ROOT_PATH}/src/blend.c
+    ${PF_ROOT_PATH}/src/render.c
+    ${PF_ROOT_PATH}/src/texture.c
+    ${PF_ROOT_PATH}/src/framebuffer.c
+)
+file(GLOB HDRS
+    ${PF_ROOT_PATH}/src/*.h
+)
 
 # Common compilation options
 add_compile_options(-Wall -Wextra -pedantic)

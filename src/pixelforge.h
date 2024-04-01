@@ -202,8 +202,8 @@ typedef enum {
 
 typedef enum {
     PF_FRONT,
-    //PF_BACK,
-    //PF_FRONT_AND_BACK
+    PF_BACK,
+    PF_FRONT_AND_BACK
 } PFfaces;
 
 typedef enum {
@@ -324,11 +324,14 @@ PF_API void pfViewport(PFuint x, PFuint y, PFuint width, PFuint height);
 PF_API void pfSetDefaultPixelGetter(PFpixelgetter func);
 PF_API void pfSetDefaultPixelSetter(PFpixelsetter func);
 
-PF_API PFblendfunc pfGetBlendFunction();
+PF_API PFblendfunc pfGetBlendFunction(void);
 PF_API void pfSetBlendFunction(PFblendfunc func);
 
-PF_API void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer);
-PF_API void pfDrawVertexArray(PFsizei offset, PFsizei count);
+PF_API PFfaces pfGetCullFace(void);
+PF_API void pfSetCullFace(PFfaces face);
+
+PF_API void pfEnableCullMode(void);
+PF_API void pfDisableCullMode(void);
 
 PF_API void pfEnableStatePointer(PFarraytype vertexAttribType, const void* buffer);
 PF_API void pfDisableStatePointer(PFarraytype vertexAttribType);
@@ -339,7 +342,7 @@ PF_API void pfDisableFramebuffer(void);
 
 PF_API PFtexture* pfGetActiveTexture(void);
 PF_API void pfEnableTexture(PFtexture* texture);
-PF_API void pfDisableTexture();
+PF_API void pfDisableTexture(void);
 
 PF_API void pfEnableWireMode(void);
 PF_API void pfDisableWireMode(void);
@@ -360,6 +363,9 @@ PF_API void pfMaterialfv(PFfaces faces, PFuint param, const void* value);
 
 PF_API void pfClear(PFclearflag flag);
 PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
+
+PF_API void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer);
+PF_API void pfDrawVertexArray(PFsizei offset, PFsizei count);
 
 PF_API void pfBegin(PFdrawmode mode);
 PF_API void pfEnd(void);

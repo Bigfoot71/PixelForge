@@ -127,7 +127,7 @@ static void SetR32G32B32(void* pixels, PFsizei offset, PFcolor color)
     // NOTE: Calculate R32G32B32 equivalent color (normalized to 32bit)
     PFvec3f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
 
-    memcpy(pixels + offset, nCol, sizeof(PFvec3f));
+    memcpy((PFvec3f*)pixels + offset, nCol, sizeof(PFvec3f));
 }
 
 static void SetR32G32B32A32(void* pixels, PFsizei offset, PFcolor color)
@@ -135,7 +135,7 @@ static void SetR32G32B32A32(void* pixels, PFsizei offset, PFcolor color)
     // NOTE: Calculate R32G32B32A32 equivalent color (normalized to 32bit)
     PFvec4f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
 
-    memcpy(pixels + offset, nCol, sizeof(PFvec4f));
+    memcpy((PFvec4f*)pixels + offset, nCol, sizeof(PFvec4f));
 }
 
 static void SetR16(void* pixels, PFsizei offset, PFcolor color)

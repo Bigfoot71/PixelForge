@@ -18,6 +18,8 @@
  */
 
 #include "pixelforge.h"
+#include "trirast.c"
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -25,13 +27,16 @@
 #include <float.h>
 #include <math.h>
 
+// TODO: Review the API get/set and enable/disable functions
+
 /* Internal data */
 
 typedef enum {
     PF_TEXTURE_MODE = 0x01,
-    PF_DEPTH_TEST = 0x02,
-    PF_WIRE_MODE = 0x04,
-    PF_LIGHTING = 0x08
+    PF_DEPTH_TEST   = 0x02,
+    PF_WIRE_MODE    = 0x04,
+    PF_CULL_FACE    = 0x08,
+    PF_LIGHTING     = 0x10
 } PFrenderstate;
 
 typedef struct {
@@ -90,7 +95,7 @@ struct PFctx {
     PFint lastActiveLight;
 
     PFmaterial frontMaterial;
-    //PFmaterial backMaterial;                  // TODO: Implement backface rendering
+    PFmaterial backMaterial;
 
     PFmatrixmode currentMatrixMode;             // Current matrix mode (e.g., PF_MODELVIEW, PF_PROJECTION)
     PFmat4f *currentMatrix;                     // Pointer to the current matrix
@@ -106,6 +111,7 @@ struct PFctx {
 
     PFushort vertexAttribState;                 // State of vertex attributes
     PFushort renderState;                       // Current rendering state
+    PFfaces cullFace;
 
 };
 
@@ -232,6 +238,9 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
 
     ctx->vertexAttribState = 0x00;
     ctx->renderState = 0x00;
+
+    ctx->renderState |= PF_CULL_FACE;
+    ctx->cullFace = PF_BACK;
 
     return ctx;
 }
@@ -393,7 +402,7 @@ void pfSetDefaultPixelSetter(PFpixelsetter func)
     currentCtx->screenBuffer.texture.pixelSetter = func;
 }
 
-PFblendfunc pfGetBlendFunction()
+PFblendfunc pfGetBlendFunction(void)
 {
     return currentCtx->blendFunction;
 }
@@ -403,107 +412,25 @@ void pfSetBlendFunction(PFblendfunc func)
     currentCtx->blendFunction = func;
 }
 
-void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer)
+PFfaces pfGetCullFace(void)
 {
-    if (!(currentCtx->vertexAttribState & PF_VERTEX_ARRAY)) return;
-    const PFvec3f *positions = (const PFvec3f*)(currentCtx->vertexAttribs.positions) + offset;
-
-    const PFvec3f *normals = (currentCtx->vertexAttribState & PF_NORMAL_ARRAY)
-        ? (const PFvec3f*)(currentCtx->vertexAttribs.normals) + offset : NULL;
-
-    const PFcolor *colors = (currentCtx->vertexAttribState & PF_COLOR_ARRAY)
-        ? (const PFcolor*)(currentCtx->vertexAttribs.colors) + offset : NULL;
-
-    const PFvec2f *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
-        ? (const PFvec2f*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
-
-    PFmat4f matNormal, mvp;
-    (void)Helper_GetModelView(&matNormal, &mvp);
-
-    pfBegin((currentCtx->renderState & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
-
-    for (PFsizei i = 0; i < count; i++)
-    {
-        const PFushort j = ((PFushort*)buffer)[i];
-
-        // Get the pointer of the current vertex of the batch and pad it with zero
-
-        PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCount++);
-
-        // Fill the vertex with given vertices data
-
-        memcpy(vertex->position, *(positions + j), sizeof(PFvec3f));
-
-        if (normals) memcpy(vertex->normal, *(normals + j), sizeof(PFvec3f));
-        else memset(vertex->normal, 0, sizeof(PFvec3f));
-
-        if (texcoords) memcpy(vertex->texcoord, *(texcoords + j), sizeof(PFvec2f));
-        else memset(vertex->texcoord, 0, sizeof(PFvec2f));
-
-        if (colors) memcpy(&vertex->color, colors + j, sizeof(PFcolor));
-        else memcpy(&vertex->color, &currentCtx->currentColor, sizeof(PFcolor));
-
-        // If the number of vertices has reached that necessary for, we process the shape
-
-        if (currentCtx->vertexCount == currentCtx->currentDrawMode)
-        {
-            currentCtx->vertexCount = 0;
-            ProcessRasterize(&mvp, &matNormal);
-        }
-    }
-
-    pfEnd();
+    return currentCtx->cullFace;
 }
 
-void pfDrawVertexArray(PFsizei offset, PFsizei count)
+void pfSetCullFace(PFfaces face)
 {
-    if (!(currentCtx->vertexAttribState & PF_VERTEX_ARRAY)) return;
-    const PFvec3f *positions = (const PFvec3f*)(currentCtx->vertexAttribs.positions) + offset;
+    if (face < PF_FRONT || face > PF_BACK) return;
+    currentCtx->cullFace = face;
+}
 
-    const PFvec3f *normals = (currentCtx->vertexAttribState & PF_NORMAL_ARRAY)
-        ? (const PFvec3f*)(currentCtx->vertexAttribs.normals) + offset : NULL;
+void pfEnableCullMode(void)
+{
+    currentCtx->renderState |= PF_CULL_FACE;
+}
 
-    const PFcolor *colors = (currentCtx->vertexAttribState & PF_COLOR_ARRAY)
-        ? (const PFcolor*)(currentCtx->vertexAttribs.colors) + offset : NULL;
-
-    const PFvec2f *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
-        ? (const PFvec2f*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
-
-    PFmat4f matNormal, mvp;
-    (void)Helper_GetModelView(&matNormal, &mvp);
-
-    pfBegin((currentCtx->renderState & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
-
-    for (PFsizei i = 0; i < count; i++)
-    {
-        // Get the pointer of the current vertex of the batch and pad it with zero
-
-        PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCount++);
-        memset(vertex, 0, sizeof(PFvertex));
-
-        // Fill the vertex with given vertices data
-
-        memcpy(vertex->position, *(positions + i), sizeof(PFvec3f));
-
-        if (normals) memcpy(vertex->normal, *(normals + i), sizeof(PFvec3f));
-        else memset(vertex->normal, 0, sizeof(PFvec3f));
-
-        if (texcoords) memcpy(vertex->texcoord, *(texcoords + i), sizeof(PFvec2f));
-        else memset(vertex->texcoord, 0, sizeof(PFvec2f));
-
-        if (colors) memcpy(&vertex->color, colors + i, sizeof(PFcolor));
-        else memcpy(&vertex->color, &currentCtx->currentColor, sizeof(PFcolor));
-
-        // If the number of vertices has reached that necessary for, we process the shape
-
-        if (currentCtx->vertexCount == currentCtx->currentDrawMode)
-        {
-            currentCtx->vertexCount = 0;
-            ProcessRasterize(&mvp, &matNormal);
-        }
-    }
-
-    pfEnd();
+void pfDisableCullMode(void)
+{
+    currentCtx->renderState &= ~PF_CULL_FACE;
 }
 
 void pfEnableStatePointer(PFarraytype vertexAttribType, const void* buffer)
@@ -566,7 +493,7 @@ void pfEnableTexture(PFtexture* texture)
     currentCtx->currentTexture = texture;
 }
 
-void pfDisableTexture()
+void pfDisableTexture(void)
 {
     currentCtx->renderState &= ~PF_TEXTURE_MODE;
     currentCtx->currentTexture = NULL;
@@ -694,15 +621,15 @@ void pfMaterialf(PFfaces faces, PFuint param, PFfloat value)
             material1 = &currentCtx->frontMaterial;
             break;
 
-        //case PF_BACK:
-        //    material0 = &currentCtx->backMaterial;
-        //    material1 = &currentCtx->backMaterial;
-        //    break;
+        case PF_BACK:
+            material0 = &currentCtx->backMaterial;
+            material1 = &currentCtx->backMaterial;
+            break;
 
-        //case PF_FRONT_AND_BACK:
-        //    material0 = &currentCtx->frontMaterial;
-        //    material1 = &currentCtx->backMaterial;
-        //    break;
+        case PF_FRONT_AND_BACK:
+            material0 = &currentCtx->frontMaterial;
+            material1 = &currentCtx->backMaterial;
+            break;
 
         default: return;
     }
@@ -780,15 +707,15 @@ void pfMaterialfv(PFfaces faces, PFuint param, const void *value)
             material1 = &currentCtx->frontMaterial;
             break;
 
-        //case PF_BACK:
-        //    material0 = &currentCtx->backMaterial;
-        //    material1 = &currentCtx->backMaterial;
-        //    break;
+        case PF_BACK:
+            material0 = &currentCtx->backMaterial;
+            material1 = &currentCtx->backMaterial;
+            break;
 
-        //case PF_FRONT_AND_BACK:
-        //    material0 = &currentCtx->frontMaterial;
-        //    material1 = &currentCtx->backMaterial;
-        //    break;
+        case PF_FRONT_AND_BACK:
+            material0 = &currentCtx->frontMaterial;
+            material1 = &currentCtx->backMaterial;
+            break;
 
         default: return;
     }
@@ -893,6 +820,109 @@ void pfClear(PFclearflag flag)
 void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
 {
     currentCtx->clearColor = (PFcolor) { r, g, b, a };
+}
+
+void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer)
+{
+    if (!(currentCtx->vertexAttribState & PF_VERTEX_ARRAY)) return;
+    const PFvec3f *positions = (const PFvec3f*)(currentCtx->vertexAttribs.positions) + offset;
+
+    const PFvec3f *normals = (currentCtx->vertexAttribState & PF_NORMAL_ARRAY)
+        ? (const PFvec3f*)(currentCtx->vertexAttribs.normals) + offset : NULL;
+
+    const PFcolor *colors = (currentCtx->vertexAttribState & PF_COLOR_ARRAY)
+        ? (const PFcolor*)(currentCtx->vertexAttribs.colors) + offset : NULL;
+
+    const PFvec2f *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
+        ? (const PFvec2f*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
+
+    PFmat4f matNormal, mvp;
+    (void)Helper_GetModelView(&matNormal, &mvp);
+
+    pfBegin((currentCtx->renderState & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
+
+    for (PFsizei i = 0; i < count; i++)
+    {
+        const PFushort j = ((PFushort*)buffer)[i];
+
+        // Get the pointer of the current vertex of the batch and pad it with zero
+
+        PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCount++);
+
+        // Fill the vertex with given vertices data
+
+        memcpy(vertex->position, *(positions + j), sizeof(PFvec3f));
+
+        if (normals) memcpy(vertex->normal, *(normals + j), sizeof(PFvec3f));
+        else memset(vertex->normal, 0, sizeof(PFvec3f));
+
+        if (texcoords) memcpy(vertex->texcoord, *(texcoords + j), sizeof(PFvec2f));
+        else memset(vertex->texcoord, 0, sizeof(PFvec2f));
+
+        if (colors) memcpy(&vertex->color, colors + j, sizeof(PFcolor));
+        else memcpy(&vertex->color, &currentCtx->currentColor, sizeof(PFcolor));
+
+        // If the number of vertices has reached that necessary for, we process the shape
+
+        if (currentCtx->vertexCount == currentCtx->currentDrawMode)
+        {
+            currentCtx->vertexCount = 0;
+            ProcessRasterize(&mvp, &matNormal);
+        }
+    }
+
+    pfEnd();
+}
+
+void pfDrawVertexArray(PFsizei offset, PFsizei count)
+{
+    if (!(currentCtx->vertexAttribState & PF_VERTEX_ARRAY)) return;
+    const PFvec3f *positions = (const PFvec3f*)(currentCtx->vertexAttribs.positions) + offset;
+
+    const PFvec3f *normals = (currentCtx->vertexAttribState & PF_NORMAL_ARRAY)
+        ? (const PFvec3f*)(currentCtx->vertexAttribs.normals) + offset : NULL;
+
+    const PFcolor *colors = (currentCtx->vertexAttribState & PF_COLOR_ARRAY)
+        ? (const PFcolor*)(currentCtx->vertexAttribs.colors) + offset : NULL;
+
+    const PFvec2f *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
+        ? (const PFvec2f*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
+
+    PFmat4f matNormal, mvp;
+    (void)Helper_GetModelView(&matNormal, &mvp);
+
+    pfBegin((currentCtx->renderState & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
+
+    for (PFsizei i = 0; i < count; i++)
+    {
+        // Get the pointer of the current vertex of the batch and pad it with zero
+
+        PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCount++);
+        memset(vertex, 0, sizeof(PFvertex));
+
+        // Fill the vertex with given vertices data
+
+        memcpy(vertex->position, *(positions + i), sizeof(PFvec3f));
+
+        if (normals) memcpy(vertex->normal, *(normals + i), sizeof(PFvec3f));
+        else memset(vertex->normal, 0, sizeof(PFvec3f));
+
+        if (texcoords) memcpy(vertex->texcoord, *(texcoords + i), sizeof(PFvec2f));
+        else memset(vertex->texcoord, 0, sizeof(PFvec2f));
+
+        if (colors) memcpy(&vertex->color, colors + i, sizeof(PFcolor));
+        else memcpy(&vertex->color, &currentCtx->currentColor, sizeof(PFcolor));
+
+        // If the number of vertices has reached that necessary for, we process the shape
+
+        if (currentCtx->vertexCount == currentCtx->currentDrawMode)
+        {
+            currentCtx->vertexCount = 0;
+            ProcessRasterize(&mvp, &matNormal);
+        }
+    }
+
+    pfEnd();
 }
 
 void pfBegin(PFdrawmode mode)
@@ -1593,568 +1623,260 @@ static void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
 
 static void Rasterize_TriangleColorFlat2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
-    // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-    const PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-    const PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+    // Define the origin barycentric coordinates
+    // as well as the barycentric increment steps
+    // and also the rendering area xMin, xMax, ...
 
-    // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
+    PF_PREPARE_TRIANGLE_FRONT_2D();
 
-    // Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
-    const PFuint xMin = (PFuint)CLAMP(MIN(x1, MIN(x2, x3)), (PFint)currentCtx->viewportX, (PFint)(currentCtx->viewportX + currentCtx->viewportW));
-    const PFuint yMin = (PFuint)CLAMP(MIN(y1, MIN(y2, y3)), (PFint)currentCtx->viewportY, (PFint)(currentCtx->viewportY + currentCtx->viewportH));
-    const PFuint xMax = (PFuint)CLAMP(MAX(x1, MAX(x2, x3)), (PFint)currentCtx->viewportX, (PFint)(currentCtx->viewportX + currentCtx->viewportW));
-    const PFuint yMax = (PFuint)CLAMP(MAX(y1, MAX(y2, y3)), (PFint)currentCtx->viewportY, (PFint)(currentCtx->viewportY + currentCtx->viewportH));
-
-    // If triangle is entirely outside the viewport we can stop now
-    if (xMin == xMax && yMin == yMax) return;
-
-    // Calculate original edge weights relative to bounds.min
-    // Will be used to obtain barycentric coordinates by incrementing then averaging them
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2);
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3);
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1);
-
-    // Calculate weight increment steps for each edge
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3;
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
-
-    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
     const PFcolor emission = currentCtx->frontMaterial.emission;
 
-    // Get target texture pointer
-    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+    // The BEGIN_XXX_LOOP macro provides access to certain useful variables and constants, including:
+    //      - `PFtexture texTarget`, which is the destination buffer
+    //      - `PFcolor finalColor`, which stores the color that will be put
+    //      - `const PFfloat aW1, aW2, aW3` allowing barycentric interpolation
+    //      - `const PFfloat z`, which is the interpolated depth
 
-    // Fill the triangle with either color or image based on the provided parameters
-    for (PFuint y = yMin; y <= yMax; y++)
+    PF_BEGIN_TRIANGLE_FLAT_LOOP();
     {
-        const PFuint yOffset = y*texture->width;
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+        const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+        const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-        for (PFuint x = xMin; x <= xMax; x++)
-        {
-            if ((w1 | w2 | w3) >= 0)
-            {
-                const PFuint xyOffset = yOffset + x;
-                const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-
-                const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
-
-                const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-                texture->pixelSetter(texture->pixels, xyOffset, finalColor);
-            }
-
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
-        }
-
-        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
+        finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
     }
+    PF_END_TRIANGLE_FLAT_LOOP();
 }
 
 static void Rasterize_TriangleColorDepth2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
-    // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-    const PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-    const PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+    PF_PREPARE_TRIANGLE_FRONT_2D();
 
-    // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
-
-    // Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
-    const PFuint xMin = (PFuint)CLAMP(MIN(x1, MIN(x2, x3)), (PFint)currentCtx->viewportX, (PFint)(currentCtx->viewportX + currentCtx->viewportW));
-    const PFuint yMin = (PFuint)CLAMP(MIN(y1, MIN(y2, y3)), (PFint)currentCtx->viewportY, (PFint)(currentCtx->viewportY + currentCtx->viewportH));
-    const PFuint xMax = (PFuint)CLAMP(MAX(x1, MAX(x2, x3)), (PFint)currentCtx->viewportX, (PFint)(currentCtx->viewportX + currentCtx->viewportW));
-    const PFuint yMax = (PFuint)CLAMP(MAX(y1, MAX(y2, y3)), (PFint)currentCtx->viewportY, (PFint)(currentCtx->viewportY + currentCtx->viewportH));
-
-    // If triangle is entirely outside the viewport we can stop now
-    if (xMin == xMax && yMin == yMax) return;
-
-    // Calculate original edge weights relative to bounds.min
-    // Will be used to obtain barycentric coordinates by incrementing then averaging them
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2);
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3);
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1);
-
-    // Calculate weight increment steps for each edge
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3;
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
-
-    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
     const PFcolor emission = currentCtx->frontMaterial.emission;
 
-    // Get target texture pointer
-    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-
-    // Fill the triangle with either color or image based on the provided parameters
-    for (PFuint y = yMin; y <= yMax; y++)
+    PF_BEGIN_TRIANGLE_DEPTH_LOOP();
     {
-        const PFuint yOffset = y*texture->width;
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+        const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+        const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-        for (PFuint x = xMin; x <= xMax; x++)
-        {
-            if ((w1 | w2 | w3) >= 0)
-            {
-                const PFuint xyOffset = yOffset + x;
-                const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2];
-
-                if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
-                {
-                    const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                    const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
-
-                    const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-                    texture->pixelSetter(texture->pixels, xyOffset, finalColor);
-
-                    currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
-                }
-            }
-
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
-        }
-
-        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
+        finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
     }
+    PF_END_TRIANGLE_DEPTH_LOOP();
 }
 
 static void Rasterize_TriangleTextureFlat2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
-    // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-    const PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-    const PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+    PF_PREPARE_TRIANGLE_FRONT_2D();
 
-    // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
-
-    // Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
-    const PFuint xMin = (PFuint)CLAMP(MIN(x1, MIN(x2, x3)), (PFint)currentCtx->viewportX, (PFint)(currentCtx->viewportX + currentCtx->viewportW));
-    const PFuint yMin = (PFuint)CLAMP(MIN(y1, MIN(y2, y3)), (PFint)currentCtx->viewportY, (PFint)(currentCtx->viewportY + currentCtx->viewportH));
-    const PFuint xMax = (PFuint)CLAMP(MAX(x1, MAX(x2, x3)), (PFint)currentCtx->viewportX, (PFint)(currentCtx->viewportX + currentCtx->viewportW));
-    const PFuint yMax = (PFuint)CLAMP(MAX(y1, MAX(y2, y3)), (PFint)currentCtx->viewportY, (PFint)(currentCtx->viewportY + currentCtx->viewportH));
-
-    // If triangle is entirely outside the viewport we can stop now
-    if (xMin == xMax && yMin == yMax) return;
-
-    // Calculate original edge weights relative to bounds.min
-    // Will be used to obtain barycentric coordinates by incrementing then averaging them
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2);
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3);
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1);
-
-    // Calculate weight increment steps for each edge
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3;
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
-
-    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
     const PFcolor emission = currentCtx->frontMaterial.emission;
 
-    // Get target texture pointer
-    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-
-    // Fill the triangle with either color or image based on the provided parameters
-    for (PFuint y = yMin; y <= yMax; y++)
+    PF_BEGIN_TRIANGLE_FLAT_LOOP();
     {
-        const PFuint yOffset = y*texture->width;
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+        PFvec2f texcoord = { 0 };
+        Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+        PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
 
-        for (PFuint x = xMin; x <= xMax; x++)
-        {
-            if ((w1 | w2 | w3) >= 0)
-            {
-                const PFuint xyOffset = yOffset + x;
-                const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
+        const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+        PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+        srcCol = pfBlendMultiplicative(texel, srcCol);
 
-                PFvec2f texcoord = { 0 };
-                Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
-                PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
-
-                const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
-                PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                srcCol = pfBlendMultiplicative(texel, srcCol);
-
-                const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-                texture->pixelSetter(texture->pixels, xyOffset, finalColor);
-            }
-
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
-        }
-
-        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
+        finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
     }
+    PF_END_TRIANGLE_FLAT_LOOP();
 }
 
 static void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
-    // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-    const PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-    const PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+    PF_PREPARE_TRIANGLE_FRONT_2D();
 
-    // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
-
-    // Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
-    const PFuint xMin = (PFuint)CLAMP(MIN(x1, MIN(x2, x3)), (PFint)currentCtx->viewportX, (PFint)(currentCtx->viewportX + currentCtx->viewportW));
-    const PFuint yMin = (PFuint)CLAMP(MIN(y1, MIN(y2, y3)), (PFint)currentCtx->viewportY, (PFint)(currentCtx->viewportY + currentCtx->viewportH));
-    const PFuint xMax = (PFuint)CLAMP(MAX(x1, MAX(x2, x3)), (PFint)currentCtx->viewportX, (PFint)(currentCtx->viewportX + currentCtx->viewportW));
-    const PFuint yMax = (PFuint)CLAMP(MAX(y1, MAX(y2, y3)), (PFint)currentCtx->viewportY, (PFint)(currentCtx->viewportY + currentCtx->viewportH));
-
-    // If triangle is entirely outside the viewport we can stop now
-    if (xMin == xMax && yMin == yMax) return;
-
-    // Calculate original edge weights relative to bounds.min
-    // Will be used to obtain barycentric coordinates by incrementing then averaging them
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2);
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3);
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1);
-
-    // Calculate weight increment steps for each edge
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3;
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
-
-    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
     const PFcolor emission = currentCtx->frontMaterial.emission;
 
-    // Get target texture pointer
-    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-
-    // Fill the triangle with either color or image based on the provided parameters
-    for (PFuint y = yMin; y <= yMax; y++)
+    PF_BEGIN_TRIANGLE_DEPTH_LOOP();
     {
-        const PFuint yOffset = y*texture->width;
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+        PFvec2f texcoord = { 0 };
+        Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+        PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
 
-        for (PFuint x = xMin; x <= xMax; x++)
-        {
-            if ((w1 | w2 | w3) >= 0)
-            {
-                const PFuint xyOffset = yOffset + x;
-                const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2];
+        const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+        PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+        srcCol = pfBlendMultiplicative(texel, srcCol);
 
-                if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
-                {
-                    PFvec2f texcoord = { 0 };
-                    Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
-                    PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
-
-                    const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
-                    PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                    srcCol = pfBlendMultiplicative(texel, srcCol);
-
-                    const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-                    texture->pixelSetter(texture->pixels, xyOffset, finalColor);
-
-                    currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
-                }
-            }
-
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
-        }
-
-        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
+        finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
     }
+    PF_END_TRIANGLE_DEPTH_LOOP();
 }
 
 
-/* Internal triangle 3D rasterizer function definitions */
+/* Internal front triangle 3D rasterizer function definitions */
 
 static void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
-    // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-    const PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-    const PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
 
-    // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
-
-    // Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
-    const PFuint xMin = MIN(x1, MIN(x2, x3));
-    const PFuint yMin = MIN(y1, MIN(y2, y3));
-    const PFuint xMax = MAX(x1, MAX(x2, x3));
-    const PFuint yMax = MAX(y1, MAX(y2, y3));
-
-    // If triangle is entirely outside the viewport we can stop now
-    if (xMin == xMax && yMin == yMax) return;
-
-    // Calculate original edge weights relative to bounds.min
-    // Will be used to obtain barycentric coordinates by incrementing then averaging them
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2);
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3);
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1);
-
-    // Calculate weight increment steps for each edge
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3;
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
-
-    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    const PFcolor emission = currentCtx->frontMaterial.emission;
-
-    // Get target texture pointer
-    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-
-    // Fill the triangle with either color or image based on the provided parameters
-    for (PFuint y = yMin; y <= yMax; y++)
+    if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
-        const PFuint yOffset = y*texture->width;
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+        PF_PREPARE_TRIANGLE_FRONT_3D();
 
-        for (PFuint x = xMin; x <= xMax; x++)
+        const PFcolor emission = currentCtx->frontMaterial.emission;
+
+        PF_BEGIN_TRIANGLE_FLAT_LOOP();
         {
-            if ((w1 | w2 | w3) >= 0)
-            {
-                const PFuint xyOffset = yOffset + x;
-                const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]);
+            const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-                const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
-
-                const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-                texture->pixelSetter(texture->pixels, xyOffset, finalColor);
-
-                currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
-            }
-
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
+            finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
         }
+        PF_END_TRIANGLE_FLAT_LOOP();
+    }
 
-        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
+    if (faceCullingDisabled || currentCtx->cullFace == PF_FRONT)
+    {
+        PF_PREPARE_TRIANGLE_BACK_3D();
+
+        const PFcolor emission = currentCtx->backMaterial.emission;
+
+        PF_BEGIN_TRIANGLE_FLAT_LOOP();
+        {
+            const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+
+            finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
+        }
+        PF_END_TRIANGLE_FLAT_LOOP();
     }
 }
 
 static void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
-    // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-    const PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-    const PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
 
-    // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
-
-    // Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
-    const PFuint xMin = MIN(x1, MIN(x2, x3));
-    const PFuint yMin = MIN(y1, MIN(y2, y3));
-    const PFuint xMax = MAX(x1, MAX(x2, x3));
-    const PFuint yMax = MAX(y1, MAX(y2, y3));
-
-    // If triangle is entirely outside the viewport we can stop now
-    if (xMin == xMax && yMin == yMax) return;
-
-    // Calculate original edge weights relative to bounds.min
-    // Will be used to obtain barycentric coordinates by incrementing then averaging them
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2);
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3);
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1);
-
-    // Calculate weight increment steps for each edge
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3;
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
-
-    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    const PFcolor emission = currentCtx->frontMaterial.emission;
-
-    // Get target texture pointer
-    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-
-    // Fill the triangle with either color or image based on the provided parameters
-    for (PFuint y = yMin; y <= yMax; y++)
+    if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
-        const PFuint yOffset = y*texture->width;
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+        PF_PREPARE_TRIANGLE_FRONT_3D();
 
-        for (PFuint x = xMin; x <= xMax; x++)
+        const PFcolor emission = currentCtx->frontMaterial.emission;
+
+        PF_BEGIN_TRIANGLE_DEPTH_LOOP();
         {
-            if ((w1 | w2 | w3) >= 0)
-            {
-                const PFuint xyOffset = yOffset + x;
-                const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]);
+            const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-                if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
-                {
-                    const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                    const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
-
-                    const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-                    texture->pixelSetter(texture->pixels, xyOffset, finalColor);
-
-                    currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
-                }
-            }
-
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
+            finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
         }
+        PF_END_TRIANGLE_DEPTH_LOOP();
+    }
 
-        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
+    if (faceCullingDisabled || currentCtx->cullFace == PF_FRONT)
+    {
+        PF_PREPARE_TRIANGLE_BACK_3D();
+
+        const PFcolor emission = currentCtx->backMaterial.emission;
+
+        PF_BEGIN_TRIANGLE_DEPTH_LOOP();
+        {
+            const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+
+            finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
+        }
+        PF_END_TRIANGLE_DEPTH_LOOP();
     }
 }
 
 static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
-    // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-    const PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-    const PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
 
-    // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
-
-    // Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
-    const PFuint xMin = MIN(x1, MIN(x2, x3));
-    const PFuint yMin = MIN(y1, MIN(y2, y3));
-    const PFuint xMax = MAX(x1, MAX(x2, x3));
-    const PFuint yMax = MAX(y1, MAX(y2, y3));
-
-    // If triangle is entirely outside the viewport we can stop now
-    if (xMin == xMax && yMin == yMax) return;
-
-    // Calculate original edge weights relative to bounds.min
-    // Will be used to obtain barycentric coordinates by incrementing then averaging them
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2);
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3);
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1);
-
-    // Calculate weight increment steps for each edge
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3;
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
-
-    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    const PFcolor emission = currentCtx->frontMaterial.emission;
-
-    // Get target texture pointer
-    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-
-    // Fill the triangle with either color or image based on the provided parameters
-    for (PFuint y = yMin; y <= yMax; y++)
+    if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
-        const PFuint yOffset = y*texture->width;
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+        PF_PREPARE_TRIANGLE_FRONT_3D();
 
-        for (PFuint x = xMin; x <= xMax; x++)
+        const PFcolor emission = currentCtx->frontMaterial.emission;
+
+        PF_BEGIN_TRIANGLE_FLAT_LOOP();
         {
-            if ((w1 | w2 | w3) >= 0)
-            {
-                const PFuint xyOffset = yOffset + x;
-                const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]);
+            PFvec2f texcoord;
+            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-                PFvec2f texcoord;
-                Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
-                texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
+            const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            srcCol = pfBlendMultiplicative(texel, srcCol);
 
-                const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
-                PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                srcCol = pfBlendMultiplicative(texel, srcCol);
-
-                const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
-                const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-
-                texture->pixelSetter(texture->pixels, xyOffset, finalColor);
-                currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
-            }
-
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
         }
+        PF_END_TRIANGLE_FLAT_LOOP();
+    }
 
-        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
+    if (faceCullingDisabled || currentCtx->cullFace == PF_FRONT)
+    {
+        PF_PREPARE_TRIANGLE_BACK_3D();
+
+        const PFcolor emission = currentCtx->backMaterial.emission;
+
+        PF_BEGIN_TRIANGLE_FLAT_LOOP();
+        {
+            PFvec2f texcoord;
+            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
+
+            const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            srcCol = pfBlendMultiplicative(texel, srcCol);
+
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
+        }
+        PF_END_TRIANGLE_FLAT_LOOP();
     }
 }
 
 static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
-    // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-    const PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-    const PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
 
-    // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
-
-    // Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
-    const PFuint xMin = MIN(x1, MIN(x2, x3));
-    const PFuint yMin = MIN(y1, MIN(y2, y3));
-    const PFuint xMax = MAX(x1, MAX(x2, x3));
-    const PFuint yMax = MAX(y1, MAX(y2, y3));
-
-    // If triangle is entirely outside the viewport we can stop now
-    if (xMin == xMax && yMin == yMax) return;
-
-    // Calculate original edge weights relative to bounds.min
-    // Will be used to obtain barycentric coordinates by incrementing then averaging them
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2);
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3);
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1);
-
-    // Calculate weight increment steps for each edge
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3;
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
-
-    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    const PFcolor emission = currentCtx->frontMaterial.emission;
-
-    // Get target texture pointer
-    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-
-    // Fill the triangle with either color or image based on the provided parameters
-    for (PFuint y = yMin; y <= yMax; y++)
+    if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
-        const PFuint yOffset = y*texture->width;
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+        PF_PREPARE_TRIANGLE_FRONT_3D();
 
-        for (PFuint x = xMin; x <= xMax; x++)
+        const PFcolor emission = currentCtx->frontMaterial.emission;
+
+        PF_BEGIN_TRIANGLE_DEPTH_LOOP();
         {
-            if ((w1 | w2 | w3) >= 0)
-            {
-                const PFuint xyOffset = yOffset + x;
-                const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]);
+            PFvec2f texcoord;
+            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-                if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
-                {
-                    PFvec2f texcoord;
-                    Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
-                    texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
+            PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            srcCol = pfBlendMultiplicative(texel, srcCol);
 
-                    PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                    PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
-                    srcCol = pfBlendMultiplicative(texel, srcCol);
-
-                    const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
-                    const PFcolor finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
-
-                    texture->pixelSetter(texture->pixels, xyOffset, finalColor);
-                    currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
-                }
-            }
-
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
         }
+        PF_END_TRIANGLE_DEPTH_LOOP();
+    }
 
-        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
+    if (faceCullingDisabled || currentCtx->cullFace == PF_FRONT)
+    {
+        PF_PREPARE_TRIANGLE_BACK_3D();
+
+        const PFcolor emission = currentCtx->backMaterial.emission;
+
+        PF_BEGIN_TRIANGLE_DEPTH_LOOP();
+        {
+            PFvec2f texcoord;
+            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
+
+            PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            srcCol = pfBlendMultiplicative(texel, srcCol);
+
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            finalColor = pfBlendAdditive(currentCtx->blendFunction(srcCol, dstCol), emission);
+        }
+        PF_END_TRIANGLE_DEPTH_LOOP();
     }
 }
 
@@ -2182,14 +1904,11 @@ static PFcolor Light_Compute(const PFlight* light, PFcolor ambient, PFcolor texe
     };
 
 #ifdef PF_NO_BLINN_PHONG
-
     PFvec3f reflectDir;
     pfVec3fReflect(reflectDir, light->direction, normal);
     const PFfloat spec = powf(fmaxf(pfVec3fDot(reflectDir, viewDir), 0.0f),
                               currentCtx->frontMaterial.shininess);
-
 #else
-
     // To work here we take the opposite direction
     PFvec3f negLightDir;
     pfVec3fNeg(negLightDir, light->direction);
@@ -2202,7 +1921,6 @@ static PFcolor Light_Compute(const PFlight* light, PFcolor ambient, PFcolor texe
     // Compute specular term using half vector
     const PFfloat spec = powf(fmaxf(pfVec3fDot(normal, halfVec), 0.0f),
                               currentCtx->frontMaterial.shininess);
-
 #endif
 
     const PFcolor specular = {
@@ -2223,357 +1941,225 @@ static PFcolor Light_Compute(const PFlight* light, PFcolor ambient, PFcolor texe
 
 static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f viewPos)
 {
-    // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-    const PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-    const PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
 
-    // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
-
-    // Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
-    const PFuint xMin = MIN(x1, MIN(x2, x3));
-    const PFuint yMin = MIN(y1, MIN(y2, y3));
-    const PFuint xMax = MAX(x1, MAX(x2, x3));
-    const PFuint yMax = MAX(y1, MAX(y2, y3));
-
-    // If triangle is entirely outside the viewport we can stop now
-    if (xMin == xMax && yMin == yMax) return;
-
-    // Calculate original edge weights relative to bounds.min
-    // Will be used to obtain barycentric coordinates by incrementing then averaging them
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2);
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3);
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1);
-
-    // Calculate weight increment steps for each edge
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3;
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
-
-    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    const PFcolor emission = currentCtx->frontMaterial.emission;
-
-    // Get target texture pointer
-    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-
-    // Renders for all lights
-    for (int i = 0; i <= currentCtx->lastActiveLight; i++)
+    if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
-        const PFlight* light = &currentCtx->lights[i];
+        PF_PREPARE_TRIANGLE_FRONT_3D();
 
-        const PFcolor ambient = pfBlendMultiplicative(
-            light->ambient, currentCtx->frontMaterial.ambient);
+        const PFcolor emission = currentCtx->frontMaterial.emission;
 
-        // Skip inactive lights
-        if (!light->active) continue;
+        // The 'PF_BEGIN_XXX_LIGHT_LOOP' macro additionally provides access to:
+        //  - `const PFlight *light` which is the active light for the currently rendered pixel
+        //  - `const PFcolor ambient` which is the ambient color of the light multiplied by that of the active material
 
-        // Fill the triangle with either color or image based on the provided parameters
-        for (PFuint y = yMin; y <= yMax; y++)
+        PF_BEGIN_TRIANGLE_FLAT_LIGHT_LOOP(currentCtx->frontMaterial);
         {
-            const PFuint yOffset = y*texture->width;
-            PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+            const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-            for (PFuint x = xMin; x <= xMax; x++)
-            {
-                if ((w1 | w2 | w3) >= 0)
-                {
-                    const PFuint xyOffset = yOffset + x;
-                    const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                    const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                    const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]);
+            PFvec3f normal, vertex;
+            Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
+            Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
-                    const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                    const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
-
-                    PFvec3f normal, vertex;
-                    Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
-                    Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
-
-                    const PFcolor finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
-                    texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
-                    currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
-                }
-
-                w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
-            }
-
-            w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
+            finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
+            finalColor = pfBlendAdditive(finalColor, emission);
         }
+        PF_END_TRIANGLE_FLAT_LIGHT_LOOP();
+    }
+
+    if (faceCullingDisabled || currentCtx->cullFace == PF_FRONT)
+    {
+        PF_PREPARE_TRIANGLE_BACK_3D();
+
+        const PFcolor emission = currentCtx->backMaterial.emission;
+
+        // The 'PF_BEGIN_XXX_LIGHT_LOOP' macro additionally provides access to:
+        //  - `const PFlight *light` which is the active light for the currently rendered pixel
+        //  - `const PFcolor ambient` which is the ambient color of the light multiplied by that of the active material
+
+        PF_BEGIN_TRIANGLE_FLAT_LIGHT_LOOP(currentCtx->backMaterial);
+        {
+            const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+
+            PFvec3f normal, vertex;
+            Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
+            Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
+
+            finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
+            finalColor = pfBlendAdditive(finalColor, emission);
+        }
+        PF_END_TRIANGLE_FLAT_LIGHT_LOOP();
     }
 }
 
 static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f viewPos)
 {
-    // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-    const PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-    const PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
 
-    // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
-
-    // Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
-    const PFuint xMin = MIN(x1, MIN(x2, x3));
-    const PFuint yMin = MIN(y1, MIN(y2, y3));
-    const PFuint xMax = MAX(x1, MAX(x2, x3));
-    const PFuint yMax = MAX(y1, MAX(y2, y3));
-
-    // If triangle is entirely outside the viewport we can stop now
-    if (xMin == xMax && yMin == yMax) return;
-
-    // Calculate original edge weights relative to bounds.min
-    // Will be used to obtain barycentric coordinates by incrementing then averaging them
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2);
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3);
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1);
-
-    // Calculate weight increment steps for each edge
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3;
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
-
-    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    const PFcolor emission = currentCtx->frontMaterial.emission;
-
-    // Get target texture pointer
-    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-
-    // Renders for all lights
-    for (int i = 0; i <= currentCtx->lastActiveLight; i++)
+    if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
-        const PFlight* light = &currentCtx->lights[i];
+        PF_PREPARE_TRIANGLE_FRONT_3D();
 
-        const PFcolor ambient = pfBlendMultiplicative(
-            light->ambient, currentCtx->frontMaterial.ambient);
+        const PFcolor emission = currentCtx->frontMaterial.emission;
 
-        // Skip inactive lights
-        if (!light->active) continue;
-
-        // Fill the triangle with either color or image based on the provided parameters
-        for (PFuint y = yMin; y <= yMax; y++)
+        PF_BEGIN_TRIANGLE_DEPTH_LIGHT_LOOP(currentCtx->frontMaterial);
         {
-            const PFuint yOffset = y*texture->width;
-            PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+            const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-            for (PFuint x = xMin; x <= xMax; x++)
-            {
-                if ((w1 | w2 | w3) >= 0)
-                {
-                    const PFuint xyOffset = yOffset + x;
-                    const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                    const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                    const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]);
+            PFvec3f normal, vertex;
+            Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
+            Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
-                    if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
-                    {
-                        const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                        const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
-
-                        PFvec3f normal, vertex;
-                        Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
-                        Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
-
-                        const PFcolor finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
-                        texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
-
-                        if (i == currentCtx->lastActiveLight)
-                        {
-                            currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
-                        }
-                    }
-                }
-
-                w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
-            }
-
-            w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
+            finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
+            finalColor = pfBlendAdditive(finalColor, emission);
         }
+        PF_END_TRIANGLE_DEPTH_LIGHT_LOOP();
+    }
+
+    if (faceCullingDisabled || currentCtx->cullFace == PF_FRONT)
+    {
+        PF_PREPARE_TRIANGLE_BACK_3D();
+
+        const PFcolor emission = currentCtx->backMaterial.emission;
+
+        PF_BEGIN_TRIANGLE_DEPTH_LIGHT_LOOP(currentCtx->backMaterial);
+        {
+            const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+
+            PFvec3f normal, vertex;
+            Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
+            Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
+
+            finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
+            finalColor = pfBlendAdditive(finalColor, emission);
+        }
+        PF_END_TRIANGLE_DEPTH_LIGHT_LOOP();
     }
 }
 
 static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f viewPos)
 {
-    // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-    const PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-    const PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
 
-    // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
-
-    // Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
-    const PFuint xMin = MIN(x1, MIN(x2, x3));
-    const PFuint yMin = MIN(y1, MIN(y2, y3));
-    const PFuint xMax = MAX(x1, MAX(x2, x3));
-    const PFuint yMax = MAX(y1, MAX(y2, y3));
-
-    // If triangle is entirely outside the viewport we can stop now
-    if (xMin == xMax && yMin == yMax) return;
-
-    // Calculate original edge weights relative to bounds.min
-    // Will be used to obtain barycentric coordinates by incrementing then averaging them
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2);
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3);
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1);
-
-    // Calculate weight increment steps for each edge
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3;
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
-
-    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    const PFcolor emission = currentCtx->frontMaterial.emission;
-
-    // Get target texture pointer
-    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-
-    // Renders for all lights
-    for (int i = 0; i <= currentCtx->lastActiveLight; i++)
+    if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
-        const PFlight* light = &currentCtx->lights[i];
+        PF_PREPARE_TRIANGLE_FRONT_3D();
 
-        const PFcolor ambient = pfBlendMultiplicative(
-            light->ambient, currentCtx->frontMaterial.ambient);
+        const PFcolor emission = currentCtx->frontMaterial.emission;
 
-        // Skip inactive lights
-        if (!light->active) continue;
-
-        // Fill the triangle with either color or image based on the provided parameters
-        for (PFuint y = yMin; y <= yMax; y++)
+        PF_BEGIN_TRIANGLE_FLAT_LIGHT_LOOP(currentCtx->frontMaterial);
         {
-            const PFuint yOffset = y*texture->width;
-            PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+            PFvec2f texcoord;
+            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            for (PFuint x = xMin; x <= xMax; x++)
-            {
-                if ((w1 | w2 | w3) >= 0)
-                {
-                    const PFuint xyOffset = yOffset + x;
-                    const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                    const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                    const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]);
+            const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            srcCol = pfBlendMultiplicative(texel, srcCol);
 
-                    PFvec2f texcoord;
-                    Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
-                    texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-                    const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
-                    PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                    srcCol = pfBlendMultiplicative(texel, srcCol);
+            PFvec3f normal, vertex;
+            Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
+            Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
-                    const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
-
-                    PFvec3f normal, vertex;
-                    Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
-                    Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
-
-                    const PFcolor finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
-                    texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
-                    currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
-                }
-
-                w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
-            }
-
-            w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
+            finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
+            finalColor = pfBlendAdditive(finalColor, emission);
         }
+        PF_END_TRIANGLE_FLAT_LIGHT_LOOP();
+    }
+
+    if (faceCullingDisabled || currentCtx->cullFace == PF_FRONT)
+    {
+        PF_PREPARE_TRIANGLE_BACK_3D();
+
+        const PFcolor emission = currentCtx->backMaterial.emission;
+
+        PF_BEGIN_TRIANGLE_FLAT_LIGHT_LOOP(currentCtx->backMaterial);
+        {
+            PFvec2f texcoord;
+            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
+
+            const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            srcCol = pfBlendMultiplicative(texel, srcCol);
+
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+
+            PFvec3f normal, vertex;
+            Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
+            Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
+
+            finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
+            finalColor = pfBlendAdditive(finalColor, emission);
+        }
+        PF_END_TRIANGLE_FLAT_LIGHT_LOOP();
     }
 }
 
 static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f viewPos)
 {
-    // Get integer 2D position coordinates
-    const PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-    const PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-    const PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
 
-    // Check if vertices are in clockwise order or degenerate, in which case the triangle cannot be rendered
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return;
-
-    // Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
-    const PFuint xMin = MIN(x1, MIN(x2, x3));
-    const PFuint yMin = MIN(y1, MIN(y2, y3));
-    const PFuint xMax = MAX(x1, MAX(x2, x3));
-    const PFuint yMax = MAX(y1, MAX(y2, y3));
-
-    // If triangle is entirely outside the viewport we can stop now
-    if (xMin == xMax && yMin == yMax) return;
-
-    // Calculate original edge weights relative to bounds.min
-    // Will be used to obtain barycentric coordinates by incrementing then averaging them
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2);
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3);
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1);
-
-    // Calculate weight increment steps for each edge
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3;
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1;
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
-
-    // We obtain the emission color (TODO: Review when we have added the rendering of the backfaces)
-    const PFcolor emission = currentCtx->frontMaterial.emission;
-
-    // Get target texture pointer
-    PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-
-    // Renders for all lights
-    for (int i = 0; i <= currentCtx->lastActiveLight; i++)
+    if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
-        const PFlight* light = &currentCtx->lights[i];
+        PF_PREPARE_TRIANGLE_FRONT_3D();
 
-        const PFcolor ambient = pfBlendMultiplicative(
-            light->ambient, currentCtx->frontMaterial.ambient);
+        const PFcolor emission = currentCtx->frontMaterial.emission;
 
-        // Skip inactive lights
-        if (!light->active) continue;
-
-        // Fill the triangle with either color or image based on the provided parameters
-        for (PFuint y = yMin; y <= yMax; y++)
+        PF_BEGIN_TRIANGLE_DEPTH_LIGHT_LOOP(currentCtx->frontMaterial);
         {
-            const PFuint yOffset = y*texture->width;
-            PFint w1 = w1Row, w2 = w2Row, w3 = w3Row;
+            PFvec2f texcoord;
+            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            for (PFuint x = xMin; x <= xMax; x++)
-            {
-                if ((w1 | w2 | w3) >= 0)
-                {
-                    const PFuint xyOffset = yOffset + x;
-                    const PFfloat invSum = 1.0f/(w1 + w2 + w3);
-                    const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum;
-                    const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]);
+            const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            srcCol = pfBlendMultiplicative(texel, srcCol);
 
-                    if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset])
-                    {
-                        PFvec2f texcoord;
-                        Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
-                        texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-                        const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
-                        PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-                        srcCol = pfBlendMultiplicative(texel, srcCol);
+            PFvec3f normal, vertex;
+            Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
+            Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
-                        const PFcolor dstCol = texture->pixelGetter(texture->pixels, xyOffset);
-
-                        PFvec3f normal, vertex;
-                        Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
-                        Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
-
-                        const PFcolor finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
-                        texture->pixelSetter(texture->pixels, xyOffset, pfBlendAdditive(finalColor, emission));
-
-                        if (i == currentCtx->lastActiveLight)
-                        {
-                            currentCtx->currentFramebuffer->zbuffer[xyOffset] = z;
-                        }
-                    }
-                }
-
-                w1 += stepWX1, w2 += stepWX2, w3 += stepWX3;
-            }
-
-            w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3;
+            finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
+            finalColor = pfBlendAdditive(finalColor, emission);
         }
+        PF_END_TRIANGLE_DEPTH_LIGHT_LOOP();
+    }
+
+    if (faceCullingDisabled || currentCtx->cullFace == PF_FRONT)
+    {
+        PF_PREPARE_TRIANGLE_BACK_3D();
+
+        const PFcolor emission = currentCtx->backMaterial.emission;
+
+        PF_BEGIN_TRIANGLE_DEPTH_LIGHT_LOOP(currentCtx->backMaterial);
+        {
+            PFvec2f texcoord;
+            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
+
+            const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
+            srcCol = pfBlendMultiplicative(texel, srcCol);
+
+            const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+
+            PFvec3f normal, vertex;
+            Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
+            Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
+
+            finalColor = Light_Compute(light, ambient, currentCtx->blendFunction(srcCol, dstCol), viewPos, vertex, normal);
+            finalColor = pfBlendAdditive(finalColor, emission);
+        }
+        PF_END_TRIANGLE_DEPTH_LIGHT_LOOP();
     }
 }
 

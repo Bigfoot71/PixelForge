@@ -9,7 +9,14 @@ PF_BUILD_STATIC := 1
 PF_BUILD_SHARED := 0
 
 # Source files
-SRCS := $(wildcard src/*.c)
+SRCS := \
+    src/math.c \
+    src/blend.c \
+    src/render.c \
+    src/texture.c \
+    src/framebuffer.c
+
+# Header files
 HDRS := $(wildcard src/*.h)
 
 # Static library target
