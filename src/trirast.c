@@ -57,7 +57,14 @@
     */ \
     const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3; \
     const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1; \
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
+    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2; \
+    /*
+        Finally, we calculate the inverse of the sum of
+        the barycentric coordinates for the top-left point; this
+        sum always remains the same, regardless of the coordinate
+        within the triangle.
+    */ \
+    const PFfloat invWSum = 1.0f/(w1Row + w2Row + w3Row);
 
 
 #define PF_PREPARE_TRIANGLE_FRONT_3D() \
@@ -92,7 +99,14 @@
     */ \
     const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3; \
     const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1; \
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2;
+    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2; \
+    /*
+        Finally, we calculate the inverse of the sum of
+        the barycentric coordinates for the top-left point; this
+        sum always remains the same, regardless of the coordinate
+        within the triangle.
+    */ \
+    const PFfloat invWSum = 1.0f/(w1Row + w2Row + w3Row);
 
 
 #define PF_PREPARE_TRIANGLE_BACK_3D() \
@@ -128,7 +142,14 @@
     */ \
     const PFint stepWX1 = y2 - y3, stepWY1 = x3 - x2; \
     const PFint stepWX2 = y3 - y1, stepWY2 = x1 - x3; \
-    const PFint stepWX3 = y1 - y2, stepWY3 = x2 - x1;
+    const PFint stepWX3 = y1 - y2, stepWY3 = x2 - x1; \
+    /*
+        Finally, we calculate the inverse of the sum of
+        the barycentric coordinates for the top-left point; this
+        sum always remains the same, regardless of the coordinate
+        within the triangle.
+    */ \
+    const PFfloat invWSum = 1.0f/(w1Row + w2Row + w3Row);
 
 
 // Begin/End flat triangle rasterizer macros
@@ -145,8 +166,7 @@
             { \
                 PFcolor finalColor; \
                 const PFuint xyOffset = yOffset + x; \
-                const PFfloat invSum = 1.0f/(w1 + w2 + w3); \
-                const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum; \
+                const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
                 const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]);
 
 #define PF_END_TRIANGLE_FLAT_LOOP() \
@@ -156,7 +176,7 @@
             w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
         } \
         w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3; \
-    } \
+    }
 
 
 // Begin/End depth triangle rasterizer macros
@@ -173,8 +193,7 @@
             { \
                 PFcolor finalColor; \
                 const PFuint xyOffset = yOffset + x; \
-                const PFfloat invSum = 1.0f/(w1 + w2 + w3); \
-                const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum; \
+                const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
                 const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]); \
                 if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset]) \
                 {
@@ -187,7 +206,7 @@
             w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
         } \
         w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3; \
-    } \
+    }
 
 // Begin/End flat triangle light rasterizer macros
 
@@ -201,7 +220,7 @@
 
 #define PF_END_TRIANGLE_FLAT_LIGHT_LOOP() \
         PF_END_TRIANGLE_FLAT_LOOP(); \
-    } \
+    }
 
 
 // Begin/End depth triangle light rasterizer macros
@@ -223,8 +242,7 @@
                 { \
                     PFcolor finalColor; \
                     const PFuint xyOffset = yOffset + x; \
-                    const PFfloat invSum = 1.0f/(w1 + w2 + w3); \
-                    const PFfloat aW1 = w1*invSum, aW2 = w2*invSum, aW3 = w3*invSum; \
+                    const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
                     const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]); \
                     if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset]) \
                     {
