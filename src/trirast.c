@@ -45,19 +45,19 @@
     */ \
     if (xMin == xMax && yMin == yMax) return; \
     /*
+        Calculate weight increment steps for each edge
+    */ \
+    const PFint stepWX1 = y3 - y2, stepWY1 = x2 - x3; \
+    const PFint stepWX2 = y1 - y3, stepWY2 = x3 - x1; \
+    const PFint stepWX3 = y2 - y1, stepWY3 = x1 - x2; \
+    /*
         Calculate original edge weights relative to bounds.min
         Will be used to obtain barycentric coordinates by incrementing then
         NOTE: The type of face rendered and the order of the vertices (FRONT/BACK) is dependent on these calculations.
     */ \
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2); \
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3); \
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1); \
-    /*
-        Calculate weight increment steps for each edge
-    */ \
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3; \
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1; \
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2; \
+    PFint w1Row = (xMin - x2)*stepWX1 + stepWY1*(yMin - y2); \
+    PFint w2Row = (xMin - x3)*stepWX2 + stepWY2*(yMin - y3); \
+    PFint w3Row = (xMin - x1)*stepWX3 + stepWY3*(yMin - y1); \
     /*
         Finally, we calculate the inverse of the sum of
         the barycentric coordinates for the top-left point; this
@@ -87,19 +87,19 @@
     const PFuint xMax = MAX(x1, MAX(x2, x3)); \
     const PFuint yMax = MAX(y1, MAX(y2, y3)); \
     /*
+        Calculate weight increment steps for each edge
+    */ \
+    const PFint stepWX1 = y3 - y2, stepWY1 = x2 - x3; \
+    const PFint stepWX2 = y1 - y3, stepWY2 = x3 - x1; \
+    const PFint stepWX3 = y2 - y1, stepWY3 = x1 - x2; \
+    /*
         Calculate original edge weights relative to bounds.min
         Will be used to obtain barycentric coordinates by incrementing then
         NOTE: The type of face rendered and the order of the vertices (FRONT/BACK) is dependent on these calculations.
     */ \
-    PFint w1Row = (xMin - x2)*(y3 - y2) - (x3 - x2)*(yMin - y2); \
-    PFint w2Row = (xMin - x3)*(y1 - y3) - (x1 - x3)*(yMin - y3); \
-    PFint w3Row = (xMin - x1)*(y2 - y1) - (x2 - x1)*(yMin - y1); \
-    /*
-        Calculate weight increment steps for each edge
-    */ \
-    const PFuint stepWX1 = y3 - y2, stepWY1 = x2 - x3; \
-    const PFuint stepWX2 = y1 - y3, stepWY2 = x3 - x1; \
-    const PFuint stepWX3 = y2 - y1, stepWY3 = x1 - x2; \
+    PFint w1Row = (xMin - x2)*stepWX1 + stepWY1*(yMin - y2); \
+    PFint w2Row = (xMin - x3)*stepWX2 + stepWY2*(yMin - y3); \
+    PFint w3Row = (xMin - x1)*stepWX3 + stepWY3*(yMin - y1); \
     /*
         Finally, we calculate the inverse of the sum of
         the barycentric coordinates for the top-left point; this
@@ -129,20 +129,20 @@
     const PFuint xMax = MAX(x1, MAX(x2, x3)); \
     const PFuint yMax = MAX(y1, MAX(y2, y3)); \
     /*
-        Calculate original edge weights relative to bounds.min
-        Will be used to obtain barycentric coordinates by incrementing then
-        NOTE: The type of face rendered and the order of the vertices (FRONT/BACK) is dependent on these calculations.
-    */ \
-    PFint w1Row = (x3 - x2)*(yMin - y2) - (y3 - y2)*(xMin - x2); \
-    PFint w2Row = (x1 - x3)*(yMin - y3) - (y1 - y3)*(xMin - x3); \
-    PFint w3Row = (x2 - x1)*(yMin - y1) - (y2 - y1)*(xMin - x1); \
-    /*
         Calculate weight increment steps for each edge
         NOTE: The steps are reversed when we render the back faces
     */ \
     const PFint stepWX1 = y2 - y3, stepWY1 = x3 - x2; \
     const PFint stepWX2 = y3 - y1, stepWY2 = x1 - x3; \
     const PFint stepWX3 = y1 - y2, stepWY3 = x2 - x1; \
+    /*
+        Calculate original edge weights relative to bounds.min
+        Will be used to obtain barycentric coordinates by incrementing then
+        NOTE: The type of face rendered and the order of the vertices (FRONT/BACK) is dependent on these calculations.
+    */ \
+    PFint w1Row = (yMin - y2)*stepWY1 + stepWX1*(xMin - x2); \
+    PFint w2Row = (yMin - y3)*stepWY2 + stepWX2*(xMin - x3); \
+    PFint w3Row = (yMin - y1)*stepWY3 + stepWX3*(xMin - x1); \
     /*
         Finally, we calculate the inverse of the sum of
         the barycentric coordinates for the top-left point; this
