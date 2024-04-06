@@ -1,7 +1,6 @@
-#include "pixelforge.h"
 #define PF_COMMON_IMPL
 #include "../common.h"
-#include "raylib.h"
+#include <raylib.h>
 #include <string.h>
 
 #define SCREEN_WIDTH    800
@@ -56,9 +55,9 @@ int main(void)
         PF_Update3D(25.0f, 25.0f, 25.0f, 0, 10.0f, 0);
         PF_DrawGrid(10.0f, 10.0f);
 
-        pfEnableWireMode();
+        pfEnable(PF_WIRE_MODE);
         PF_DrawModel(model, (Vector3) { 0 }, 5.0f, WHITE);
-        pfDisableWireMode();
+        pfDisable(PF_WIRE_MODE);
 
         PF_End3D();
 
@@ -115,8 +114,6 @@ void PF_DrawMesh(Mesh mesh, Material material, Matrix transform)
     pfDisableStatePointer(PF_TEXTURE_COORD_ARRAY);
     pfDisableStatePointer(PF_NORMAL_ARRAY);
     pfDisableStatePointer(PF_COLOR_ARRAY);
-
-    pfDisableTexture();
 }
 
 void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rotationAngle, Vector3 scale, Color tint)

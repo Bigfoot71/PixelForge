@@ -1,8 +1,8 @@
 #define PF_COMMON_IMPL
 #include "../common.h"
 
-#include "raylib.h"
-#include "raymath.h"
+#include <raylib.h>
+#include <raymath.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -27,7 +27,9 @@ int main(void)
     Texture texDest = LoadTextureFromImage(dest);
 
     PFctx *ctx = pfContextCreate(dest.data, dest.width, dest.height, dest.format);
+
     pfMakeCurrent(ctx);
+    pfEnable(PF_TEXTURE_2D);
 
     PF_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
 
@@ -44,7 +46,7 @@ int main(void)
     Model model = LoadModelFromMesh(mesh);
 
     Image imTexMap = LoadImage(RESOURCES_PATH "images/cubicmap_atlas.png");
-    PFtexture texMap = pfTextureGenFromBuffer(imTexMap.data, imTexMap.width, imTexMap.height, imTexMap.format);
+    PFtexture texMap = pfTextureCreate(imTexMap.data, imTexMap.width, imTexMap.height, imTexMap.format);
 
     DisableCursor();
     SetTargetFPS(60);
@@ -82,9 +84,9 @@ int main(void)
 
         pfClear(PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT);
         PF_BeginMode3D(camera);
-            pfEnableTexture(&texMap);
+            pfBindTexture(&texMap);
             PF_DrawModel(model, (Vector3) { 0 }, 1.0f, WHITE);
-            pfDisableTexture();
+            pfBindTexture(0);
         PF_EndMode3D();
 
         UpdateTexture(texDest, dest.data);
@@ -138,7 +140,7 @@ void PF_BeginMode3D(Camera3D camera)
     PFmat4f matView = pfMat4fLookAt((PFfloat*)(&camera.position), (PFfloat*)(&camera.target), (PFfloat*)(&camera.up));
     pfMultMatrixMat4f(&matView);    // Multiply modelview matrix by view matrix (camera)
 
-    pfEnableDepthTest();            // Enable DEPTH_TEST for 3D
+    pfEnable(PF_DEPTH_TEST);        // Enable DEPTH_TEST for 3D
 }
 
 void PF_EndMode3D(void)
@@ -149,7 +151,7 @@ void PF_EndMode3D(void)
     pfMatrixMode(PF_MODELVIEW);     // Switch back to modelview matrix
     pfLoadIdentity();               // Reset current matrix (modelview)
 
-    pfDisableDepthTest();           // Disable DEPTH_TEST for 2D
+    pfDisable(PF_DEPTH_TEST);       // Disable DEPTH_TEST for 2D
 }
 
 void PF_DrawMesh(Mesh mesh, Material material, Matrix transform)
@@ -183,8 +185,6 @@ void PF_DrawMesh(Mesh mesh, Material material, Matrix transform)
     pfDisableStatePointer(PF_TEXTURE_COORD_ARRAY);
     pfDisableStatePointer(PF_NORMAL_ARRAY);
     pfDisableStatePointer(PF_COLOR_ARRAY);
-
-    pfDisableTexture();
 }
 
 void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rotationAngle, Vector3 scale, Color tint)

@@ -1,6 +1,6 @@
 #define PF_COMMON_IMPL
 #include "../common.h"
-#include "raylib.h"
+#include <raylib.h>
 #include <string.h>
 
 #define SCREEN_WIDTH    800
@@ -29,11 +29,14 @@ int main(void)
     // Load a 3D model with raylib
     Model model = LoadModel(RESOURCES_PATH "models/castle.obj");
     Image imModelDiffuse = LoadImage(RESOURCES_PATH "images/castle_diffuse.png");
-    PFtexture modelDiffuse = pfTextureGenFromBuffer(imModelDiffuse.data, imModelDiffuse.width, imModelDiffuse.height, imModelDiffuse.format);
+    PFtexture modelDiffuse = pfTextureCreate(imModelDiffuse.data, imModelDiffuse.width, imModelDiffuse.height, imModelDiffuse.format);
 
     // Define the camera position and a phase for the rotation
     Vector3 camPos = { 50.0f, 25.0f, 50.0f };
     float timer = 0;
+
+    // Activate texture rendering
+    pfEnable(PF_TEXTURE_2D);
 
     // Start the main loop
     while (!WindowShouldClose())
@@ -52,9 +55,9 @@ int main(void)
 
         PF_DrawGrid(10.0f, 10.0f);
 
-        pfEnableTexture(&modelDiffuse);
+        pfBindTexture(&modelDiffuse);
         PF_DrawModel(model, (Vector3) { 0 }, 1.0f, WHITE);
-        pfDisableTexture();
+        pfBindTexture(0);
 
         PF_End3D();
 
@@ -113,8 +116,6 @@ void PF_DrawMesh(Mesh mesh, Material material, Matrix transform)
     pfDisableStatePointer(PF_TEXTURE_COORD_ARRAY);
     pfDisableStatePointer(PF_NORMAL_ARRAY);
     pfDisableStatePointer(PF_COLOR_ARRAY);
-
-    pfDisableTexture();
 }
 
 void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rotationAngle, Vector3 scale, Color tint)

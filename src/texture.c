@@ -396,7 +396,7 @@ PFsizei GetPixelByte(PFpixelformat format)
 
 /* Texture functions */
 
-PFtexture pfTextureGenFromBuffer(void* pixels, PFuint width, PFuint height, PFpixelformat format)
+PFtexture pfTextureCreate(void* pixels, PFuint width, PFuint height, PFpixelformat format)
 {
     PFtexture texture = { NULL, NULL, pixels, width, height, format };
     if (format == PF_PIXELFORMAT_UNKNOWN) return texture;

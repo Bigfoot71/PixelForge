@@ -1,8 +1,7 @@
-#include "pixelforge.h"
 #define PF_COMMON_IMPL
 #include "../common.h"
-#include "raylib.h"
-#include "raymath.h"
+#include <raylib.h>
+#include <raymath.h>
 
 #define SCREEN_WIDTH    800
 #define SCREEN_HEIGHT   600
@@ -56,14 +55,15 @@ int main(void)
     PFctx *ctx = PF_Init(dest.data, dest.width, dest.height);
     PF_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
     pfSetBlendFunction(pfBlendAlpha);
+    pfEnable(PF_TEXTURE_2D);
 
     // We load a background texture
     Image imBG = LoadImage(RESOURCES_PATH "images/PixelForge.png");
-    PFtexture texBG = pfTextureGenFromBuffer(imBG.data, imBG.width, imBG.height, imBG.format);   // NOTE: PFpixelform is compatible with raylib PixelFormat!
+    PFtexture texBG = pfTextureCreate(imBG.data, imBG.width, imBG.height, imBG.format);   // NOTE: PFpixelform is compatible with raylib PixelFormat!
 
     // We load an arrow texture
     Image imArrow = LoadImage(RESOURCES_PATH "images/arrow.png");
-    PFtexture texArrow = pfTextureGenFromBuffer(imArrow.data, imArrow.width, imArrow.height, imArrow.format);
+    PFtexture texArrow = pfTextureCreate(imArrow.data, imArrow.width, imArrow.height, imArrow.format);
 
     // We create an arrow that will follow the mouse cursor
     Arrow arrow = Arrow_Create();

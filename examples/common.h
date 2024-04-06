@@ -64,7 +64,7 @@ void PF_DrawRectangle(PFfloat x, PFfloat y, PFfloat width, PFfloat height)
 
 void PF_DrawTexture(PFtexture* texture, PFfloat x, PFfloat y, PFfloat width, PFfloat height)
 {
-    pfEnableTexture(texture);
+    pfBindTexture(texture);
     pfBegin(PF_QUADS);
 
     pfTexCoord2f(0.0f, 0.0f); pfVertex2f(x, y);
@@ -73,7 +73,7 @@ void PF_DrawTexture(PFtexture* texture, PFfloat x, PFfloat y, PFfloat width, PFf
     pfTexCoord2f(1.0f, 0.0f); pfVertex2f(x + width, y);
 
     pfEnd();
-    pfDisableTexture();
+    pfBindTexture(0);
 }
 
 void PF_DrawTextureEx(PFtexture* texture, PFfloat x, PFfloat y, PFfloat width, PFfloat height, PFfloat ox, PFfloat oy, PFfloat angleDegrees)
@@ -103,7 +103,7 @@ void PF_DrawTextureEx(PFtexture* texture, PFfloat x, PFfloat y, PFfloat width, P
     PFfloat rx4 = (x4 * c - y4 * s) + hWidth;
     PFfloat ry4 = (x4 * s + y4 * c) + hHeight;
 
-    pfEnableTexture(texture);
+    pfBindTexture(texture);
     pfBegin(PF_QUADS);
 
     pfTexCoord2f(0.0f, 0.0f); pfVertex2f(x - ox + rx1, y - oy + ry1);
@@ -112,7 +112,7 @@ void PF_DrawTextureEx(PFtexture* texture, PFfloat x, PFfloat y, PFfloat width, P
     pfTexCoord2f(1.0f, 0.0f); pfVertex2f(x - ox + rx4, y - oy + ry4);
 
     pfEnd();
-    pfDisableTexture();
+    pfBindTexture(0);
 }
 
 
@@ -133,7 +133,7 @@ void PF_Begin3D(PFuint width, PFuint height, PFdouble fovy)
     pfMatrixMode(PF_MODELVIEW);
     pfLoadIdentity();
 
-    pfEnableDepthTest();
+    pfEnable(PF_DEPTH_TEST);
 }
 
 void PF_End3D()
@@ -144,7 +144,7 @@ void PF_End3D()
     pfMatrixMode(PF_MODELVIEW);     // Switch back to modelview matrix
     pfLoadIdentity();               // Reset current matrix (modelview)
 
-    pfDisableDepthTest();           // Disable DEPTH_TEST for 2D
+    pfDisable(PF_DEPTH_TEST);       // Disable DEPTH_TEST for 2D
 }
 
 void PF_Update3D(PFfloat px, PFfloat py, PFfloat pz, PFfloat tx, PFfloat ty, PFfloat tz)

@@ -159,7 +159,15 @@ typedef enum {
 
 /* Context defintions */
 
-typedef struct PFctx PFctx;
+typedef struct PFctx PFctx;     // NOTE: This type is opaque, API functions are used to modify its state
+
+typedef enum {
+    PF_TEXTURE_2D   = 0x01,
+    PF_DEPTH_TEST   = 0x02,
+    PF_WIRE_MODE    = 0x04,
+    PF_CULL_FACE    = 0x08,
+    PF_LIGHTING     = 0x10
+} PFstate;
 
 /* Math definitions */
 
@@ -204,7 +212,7 @@ typedef enum {
     PF_FRONT,
     PF_BACK,
     PF_FRONT_AND_BACK
-} PFfaces;
+} PFface;
 
 typedef enum {
     PF_LIGHT0 = 0,
@@ -299,7 +307,10 @@ PF_API PFctx* pfGetCurrent(void);
 PF_API void pfMakeCurrent(PFctx* ctx);
 PF_API PFboolean pfIsCurrent(PFctx* ctx);
 
-/* Render API functions */
+PF_API void pfEnable(PFstate state);
+PF_API void pfDisable(PFstate state);
+
+/* Matrix management API functions */
 
 PF_API void pfMatrixMode(PFmatrixmode mode);
 
@@ -318,6 +329,8 @@ PF_API void pfMultMatrixMat4f(const PFmat4f* mat);
 PF_API void pfFrustum(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar);
 PF_API void pfOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar);
 
+/* Render API functions */
+
 PF_API void pfGetViewport(PFuint* x, PFuint* y, PFuint* width, PFuint* height);
 PF_API void pfViewport(PFuint x, PFuint y, PFuint width, PFuint height);
 
@@ -327,11 +340,8 @@ PF_API void pfSetDefaultPixelSetter(PFpixelsetter func);
 PF_API PFblendfunc pfGetBlendFunction(void);
 PF_API void pfSetBlendFunction(PFblendfunc func);
 
-PF_API PFfaces pfGetCullFace(void);
-PF_API void pfSetCullFace(PFfaces face);
-
-PF_API void pfEnableCullMode(void);
-PF_API void pfDisableCullMode(void);
+PF_API PFface pfGetCullFace(void);
+PF_API void pfSetCullFace(PFface face);
 
 PF_API void pfEnableStatePointer(PFarraytype vertexAttribType, const void* buffer);
 PF_API void pfDisableStatePointer(PFarraytype vertexAttribType);
@@ -341,25 +351,14 @@ PF_API void pfEnableFramebuffer(PFframebuffer* framebuffer);
 PF_API void pfDisableFramebuffer(void);
 
 PF_API PFtexture* pfGetActiveTexture(void);
-PF_API void pfEnableTexture(PFtexture* texture);
-PF_API void pfDisableTexture(void);
-
-PF_API void pfEnableWireMode(void);
-PF_API void pfDisableWireMode(void);
-
-PF_API void pfEnableDepthTest(void);
-PF_API void pfDisableDepthTest(void);
-
-PF_API void pfEnableLighting(void);
-PF_API void pfDisableLighting(void);
+PF_API void pfBindTexture(PFtexture* texture);
 
 PF_API void pfEnableLight(PFuint light);
 PF_API void pfDisableLight(PFuint light);
-
 PF_API void pfLightfv(PFuint light, PFuint param, const void* value);
 
-PF_API void pfMaterialf(PFfaces faces, PFuint param, PFfloat value);
-PF_API void pfMaterialfv(PFfaces faces, PFuint param, const void* value);
+PF_API void pfMaterialf(PFface face, PFuint param, PFfloat value);
+PF_API void pfMaterialfv(PFface face, PFuint param, const void* value);
 
 PF_API void pfClear(PFclearflag flag);
 PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
@@ -372,21 +371,40 @@ PF_API void pfEnd(void);
 
 PF_API void pfVertex2i(PFint x, PFint y);
 PF_API void pfVertex2f(PFfloat x, PFfloat y);
-PF_API void pfVertexVec2f(const PFvec2f v);
+PF_API void pfVertex2fv(const PFfloat* v);
 
 PF_API void pfVertex3f(PFfloat x, PFfloat y, PFfloat z);
-PF_API void pfVertexVec3f(const PFvec3f v);
+PF_API void pfVertexfv(const PFfloat* v);
+
+PF_API void pfColor3ub(PFubyte r, PFubyte g, PFubyte b);
+PF_API void pfColor3ubv(const PFubyte* v);
+
+PF_API void pfColor3us(PFushort r, PFushort g, PFushort b);
+PF_API void pfColor3usv(const PFushort* v);
+
+PF_API void pfColor3ui(PFuint r, PFuint g, PFuint b);
+PF_API void pfColor3uiv(const PFuint* v);
 
 PF_API void pfColor3f(PFfloat r, PFfloat g, PFfloat b);
-PF_API void pfColor4f(PFfloat r, PFfloat g, PFfloat b , PFfloat a);
+PF_API void pfColor3fv(const PFfloat* v);
+
 PF_API void pfColor4ub(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
-PF_API void pfColor(PFcolor color);
+PF_API void pfColor4ubv(const PFubyte* v);
+
+PF_API void pfColor4us(PFushort r, PFushort g, PFushort b, PFushort a);
+PF_API void pfColor4usv(const PFushort* v);
+
+PF_API void pfColor4ui(PFuint r, PFuint g, PFuint b, PFuint a);
+PF_API void pfColor4uiv(const PFuint* v);
+
+PF_API void pfColor4f(PFfloat r, PFfloat g, PFfloat b, PFfloat a);
+PF_API void pfColor4fv(const PFfloat* v);
 
 PF_API void pfTexCoord2f(PFfloat u, PFfloat v);
-PF_API void pfTexCoordVec2f(const PFvec2f v);
+PF_API void pfTexCoordfv(const PFfloat* v);
 
 PF_API void pfNormal3f(PFfloat x, PFfloat y, PFfloat z);
-PF_API void pfNormalVec3f(const PFvec3f v);
+PF_API void pfNormal3fv(const PFfloat* v);
 
 /* Blending functions */
 
@@ -414,7 +432,7 @@ PF_API PFcolor pfFrambufferGetPixel(const PFframebuffer* framebuffer, PFuint x, 
 
 /* Texture functions */
 
-PF_API PFtexture pfTextureGenFromBuffer(void* pixels, PFuint width, PFuint height, PFpixelformat format);
+PF_API PFtexture pfTextureCreate(void* pixels, PFuint width, PFuint height, PFpixelformat format);
 PF_API PFtexture pfTextureGenBuffer(PFuint width, PFuint height, PFpixelformat format);
 PF_API PFtexture pfTextureGenColorBuffer(PFuint width, PFuint height, PFcolor color, PFpixelformat format);
 

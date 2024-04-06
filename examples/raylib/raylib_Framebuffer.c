@@ -1,7 +1,6 @@
-#include "pixelforge.h"
 #define PF_COMMON_IMPL
 #include "../common.h"
-#include "raylib.h"
+#include <raylib.h>
 
 #define SCREEN_WIDTH    800
 #define SCREEN_HEIGHT   600

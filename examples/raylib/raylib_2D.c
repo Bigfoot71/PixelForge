@@ -1,5 +1,5 @@
 #include "pixelforge.h"
-#include "raylib.h"
+#include <raylib.h>
 
 #define SCREEN_WIDTH    800
 #define SCREEN_HEIGHT   600

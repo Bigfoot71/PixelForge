@@ -31,14 +31,6 @@
 
 /* Internal data */
 
-typedef enum {
-    PF_TEXTURE_MODE = 0x01,
-    PF_DEPTH_TEST   = 0x02,
-    PF_WIRE_MODE    = 0x04,
-    PF_CULL_FACE    = 0x08,
-    PF_LIGHTING     = 0x10
-} PFrenderstate;
-
 typedef struct {
     const void *positions;
     const void *normals;
@@ -110,8 +102,9 @@ struct PFctx {
     PFtexture *currentTexture;                  // Pointer to the current texture
 
     PFushort vertexAttribState;                 // State of vertex attributes
-    PFushort renderState;                       // Current rendering state
-    PFfaces cullFace;
+    PFushort state;                             // Current rendering state
+
+    PFface cullFace;                           // Faces to cull
 
 };
 
@@ -175,7 +168,7 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
 
     ctx->screenBuffer = (PFframebuffer) { 0 };
 
-    ctx->screenBuffer.texture = pfTextureGenFromBuffer(
+    ctx->screenBuffer.texture = pfTextureCreate(
         screenBuffer, screenWidth, screenHeight, screenFormat);
 
     const PFsizei bufferSize = screenWidth*screenHeight;
@@ -237,9 +230,9 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     ctx->currentTexture = NULL;
 
     ctx->vertexAttribState = 0x00;
-    ctx->renderState = 0x00;
+    ctx->state = 0x00;
 
-    ctx->renderState |= PF_CULL_FACE;
+    ctx->state |= PF_CULL_FACE;
     ctx->cullFace = PF_BACK;
 
     return ctx;
@@ -274,8 +267,18 @@ PFboolean pfIsCurrent(PFctx* ctx)
     return (PFboolean)(currentCtx == ctx);
 }
 
+void pfEnable(PFstate state)
+{
+    currentCtx->state |= state;
+}
 
-/* Render API functions */
+void pfDisable(PFstate state)
+{
+    currentCtx->state &= ~state;
+}
+
+
+/* Matrix management API functions */
 
 void pfMatrixMode(PFmatrixmode mode)
 {
@@ -376,6 +379,9 @@ void pfOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdou
     *currentCtx->currentMatrix = pfMat4fMul(currentCtx->currentMatrix, &ortho);
 }
 
+
+/* Render API functions */
+
 void pfGetViewport(PFuint* x, PFuint* y, PFuint* width, PFuint* height)
 {
     *x = currentCtx->viewportX;
@@ -412,25 +418,15 @@ void pfSetBlendFunction(PFblendfunc func)
     currentCtx->blendFunction = func;
 }
 
-PFfaces pfGetCullFace(void)
+PFface pfGetCullFace(void)
 {
     return currentCtx->cullFace;
 }
 
-void pfSetCullFace(PFfaces face)
+void pfSetCullFace(PFface face)
 {
     if (face < PF_FRONT || face > PF_BACK) return;
     currentCtx->cullFace = face;
-}
-
-void pfEnableCullMode(void)
-{
-    currentCtx->renderState |= PF_CULL_FACE;
-}
-
-void pfDisableCullMode(void)
-{
-    currentCtx->renderState &= ~PF_CULL_FACE;
 }
 
 void pfEnableStatePointer(PFarraytype vertexAttribType, const void* buffer)
@@ -486,47 +482,9 @@ PFtexture* pfGetActiveTexture(void)
     return currentCtx->currentTexture;
 }
 
-void pfEnableTexture(PFtexture* texture)
+void pfBindTexture(PFtexture* texture)
 {
-    if (!texture) { pfDisableTexture(); return; }
-    currentCtx->renderState |= PF_TEXTURE_MODE;
     currentCtx->currentTexture = texture;
-}
-
-void pfDisableTexture(void)
-{
-    currentCtx->renderState &= ~PF_TEXTURE_MODE;
-    currentCtx->currentTexture = NULL;
-}
-
-void pfEnableWireMode(void)
-{
-    currentCtx->renderState |= PF_WIRE_MODE;
-}
-
-void pfDisableWireMode(void)
-{
-    currentCtx->renderState &= ~PF_WIRE_MODE;
-}
-
-void pfEnableDepthTest(void)
-{
-    currentCtx->renderState |= PF_DEPTH_TEST;
-}
-
-void pfDisableDepthTest(void)
-{
-    currentCtx->renderState &= ~PF_DEPTH_TEST;
-}
-
-void pfEnableLighting(void)
-{
-    currentCtx->renderState |= PF_LIGHTING;
-}
-
-void pfDisableLighting(void)
-{
-    currentCtx->renderState &= ~PF_LIGHTING;
 }
 
 void pfEnableLight(PFuint light)
@@ -609,12 +567,12 @@ void pfLightfv(PFuint light, PFuint param, const void* value)
     }
 }
 
-void pfMaterialf(PFfaces faces, PFuint param, PFfloat value)
+void pfMaterialf(PFface face, PFuint param, PFfloat value)
 {
     PFmaterial *material0 = NULL;
     PFmaterial *material1 = NULL;
 
-    switch (faces)
+    switch (face)
     {
         case PF_FRONT:
             material0 = &currentCtx->frontMaterial;
@@ -695,12 +653,12 @@ void pfMaterialf(PFfaces faces, PFuint param, PFfloat value)
     }
 }
 
-void pfMaterialfv(PFfaces faces, PFuint param, const void *value)
+void pfMaterialfv(PFface face, PFuint param, const void *value)
 {
     PFmaterial *material0 = NULL;
     PFmaterial *material1 = NULL;
 
-    switch (faces)
+    switch (face)
     {
         case PF_FRONT:
             material0 = &currentCtx->frontMaterial;
@@ -839,7 +797,7 @@ void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer
     PFmat4f matNormal, mvp;
     (void)Helper_GetModelView(&matNormal, &mvp);
 
-    pfBegin((currentCtx->renderState & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
+    pfBegin((currentCtx->state & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
 
     for (PFsizei i = 0; i < count; i++)
     {
@@ -891,7 +849,7 @@ void pfDrawVertexArray(PFsizei offset, PFsizei count)
     PFmat4f matNormal, mvp;
     (void)Helper_GetModelView(&matNormal, &mvp);
 
-    pfBegin((currentCtx->renderState & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
+    pfBegin((currentCtx->state & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
 
     for (PFsizei i = 0; i < count; i++)
     {
@@ -939,28 +897,28 @@ void pfEnd(void)
 void pfVertex2i(PFint x, PFint y)
 {
     PFvec3f v = { (PFfloat)x, (PFfloat)y, 0.0f };
-    pfVertexVec3f(v);
+    pfVertexfv(v);
 }
 
 void pfVertex2f(PFfloat x, PFfloat y)
 {
     PFvec3f v = { x, y, 0.0f };
-    pfVertexVec3f(v);
+    pfVertexfv(v);
 }
 
-void pfVertexVec2f(const PFvec2f v)
+void pfVertex2fv(const PFfloat* v)
 {
     PFvec3f v3 = { v[0], v[1], 0.0f };
-    pfVertexVec3f(v3);
+    pfVertexfv(v3);
 }
 
 void pfVertex3f(PFfloat x, PFfloat y, PFfloat z)
 {
     PFvec3f v = { x, y, z };
-    pfVertexVec3f(v);
+    pfVertexfv(v);
 }
 
-void pfVertexVec3f(const PFvec3f v)
+void pfVertexfv(const PFfloat* v)
 {
     // Get the pointer of the current vertex of the batch and pad it with zero
 
@@ -985,6 +943,66 @@ void pfVertexVec3f(const PFvec3f v)
     }
 }
 
+void pfColor3ub(PFubyte r, PFubyte g, PFubyte b)
+{
+    currentCtx->currentColor = (PFcolor) {
+        r,
+        g,
+        b,
+        255
+    };
+}
+
+void pfColor3ubv(const PFubyte* v)
+{
+    currentCtx->currentColor = (PFcolor) {
+        v[0],
+        v[1],
+        v[2],
+        255
+    };
+}
+
+void pfColor3us(PFushort r, PFushort g, PFushort b)
+{
+    currentCtx->currentColor = (PFcolor) {
+        (PFubyte)(r >> 8),
+        (PFubyte)(g >> 8),
+        (PFubyte)(b >> 8),
+        255
+    };
+}
+
+void pfColor3usv(const PFushort* v)
+{
+    currentCtx->currentColor = (PFcolor) {
+        (PFubyte)(v[0] >> 8),
+        (PFubyte)(v[1] >> 8),
+        (PFubyte)(v[2] >> 8),
+        255
+    };
+}
+
+void pfColor3ui(PFuint r, PFuint g, PFuint b)
+{
+    currentCtx->currentColor = (PFcolor) {
+        (PFubyte)(r >> 24),
+        (PFubyte)(g >> 24),
+        (PFubyte)(b >> 24),
+        255
+    };
+}
+
+void pfColor3uiv(const PFuint* v)
+{
+    currentCtx->currentColor = (PFcolor) {
+        (PFubyte)(v[0] >> 24),
+        (PFubyte)(v[1] >> 24),
+        (PFubyte)(v[2] >> 24),
+        255
+    };
+}
+
 void pfColor3f(PFfloat r, PFfloat g, PFfloat b)
 {
     currentCtx->currentColor = (PFcolor) {
@@ -995,7 +1013,77 @@ void pfColor3f(PFfloat r, PFfloat g, PFfloat b)
     };
 }
 
-void pfColor4f(PFfloat r, PFfloat g, PFfloat b , PFfloat a)
+void pfColor3fv(const PFfloat* v)
+{
+    currentCtx->currentColor = (PFcolor) {
+        (PFubyte)(v[0]*255),
+        (PFubyte)(v[1]*255),
+        (PFubyte)(v[2]*255),
+        255
+    };
+}
+
+void pfColor4ub(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
+{
+    currentCtx->currentColor = (PFcolor) {
+        r,
+        g,
+        b,
+        a
+    };
+}
+
+void pfColor4ubv(const PFubyte* v)
+{
+    currentCtx->currentColor = (PFcolor) {
+        v[0],
+        v[1],
+        v[2],
+        v[3]
+    };
+}
+
+void pfColor4us(PFushort r, PFushort g, PFushort b, PFushort a)
+{
+    currentCtx->currentColor = (PFcolor) {
+        (PFubyte)(r >> 8),
+        (PFubyte)(g >> 8),
+        (PFubyte)(b >> 8),
+        (PFubyte)(a >> 8)
+    };
+}
+
+void pfColor4usv(const PFushort* v)
+{
+    currentCtx->currentColor = (PFcolor) {
+        (PFubyte)(v[0] >> 8),
+        (PFubyte)(v[1] >> 8),
+        (PFubyte)(v[2] >> 8),
+        (PFubyte)(v[3] >> 8)
+    };
+}
+
+void pfColor4ui(PFuint r, PFuint g, PFuint b, PFuint a)
+{
+    currentCtx->currentColor = (PFcolor) {
+        (PFubyte)(r >> 24),
+        (PFubyte)(g >> 24),
+        (PFubyte)(b >> 24),
+        (PFubyte)(a >> 24)
+    };
+}
+
+void pfColor4uiv(const PFuint* v)
+{
+    currentCtx->currentColor = (PFcolor) {
+        (PFubyte)(v[0] >> 24),
+        (PFubyte)(v[1] >> 24),
+        (PFubyte)(v[2] >> 24),
+        (PFubyte)(v[3] >> 24)
+    };
+}
+
+void pfColor4f(PFfloat r, PFfloat g, PFfloat b, PFfloat a)
 {
     currentCtx->currentColor = (PFcolor) {
         (PFubyte)(r*255),
@@ -1005,14 +1093,14 @@ void pfColor4f(PFfloat r, PFfloat g, PFfloat b , PFfloat a)
     };
 }
 
-void pfColor4ub(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
+void pfColor4fv(const PFfloat* v)
 {
-    currentCtx->currentColor = (PFcolor) { r, g, b, a };
-}
-
-void pfColor(PFcolor color)
-{
-    currentCtx->currentColor = color;
+    currentCtx->currentColor = (PFcolor) {
+        (PFubyte)(v[0]*255),
+        (PFubyte)(v[1]*255),
+        (PFubyte)(v[2]*255),
+        (PFubyte)(v[3]*255)
+    };
 }
 
 void pfTexCoord2f(PFfloat u, PFfloat v)
@@ -1021,7 +1109,7 @@ void pfTexCoord2f(PFfloat u, PFfloat v)
     currentCtx->currentTexcoord[1] = v;
 }
 
-void pfTexCoordVec2f(const PFvec2f v)
+void pfTexCoordfv(const PFfloat* v)
 {
     memcpy(currentCtx->currentTexcoord, v, sizeof(PFvec2f));
 }
@@ -1033,7 +1121,7 @@ void pfNormal3f(PFfloat x, PFfloat y, PFfloat z)
     currentCtx->currentNormal[2] = z;
 }
 
-void pfNormalVec3f(const PFvec3f v)
+void pfNormal3fv(const PFfloat* v)
 {
     memcpy(currentCtx->currentNormal, v, sizeof(PFvec3f));
 }
@@ -1710,7 +1798,7 @@ static void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex*
 
 static void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
-    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
+    PFboolean faceCullingDisabled = !(currentCtx->state & PF_CULL_FACE);
 
     if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
@@ -1747,7 +1835,7 @@ static void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2
 
 static void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
-    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
+    PFboolean faceCullingDisabled = !(currentCtx->state & PF_CULL_FACE);
 
     if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
@@ -1784,7 +1872,7 @@ static void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v
 
 static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
-    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
+    PFboolean faceCullingDisabled = !(currentCtx->state & PF_CULL_FACE);
 
     if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
@@ -1833,7 +1921,7 @@ static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* 
 
 static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
-    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
+    PFboolean faceCullingDisabled = !(currentCtx->state & PF_CULL_FACE);
 
     if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
@@ -1941,7 +2029,7 @@ static PFcolor Light_Compute(const PFlight* light, PFcolor ambient, PFcolor texe
 
 static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f viewPos)
 {
-    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
+    PFboolean faceCullingDisabled = !(currentCtx->state & PF_CULL_FACE);
 
     if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
@@ -1996,7 +2084,7 @@ static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFverte
 
 static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f viewPos)
 {
-    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
+    PFboolean faceCullingDisabled = !(currentCtx->state & PF_CULL_FACE);
 
     if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
@@ -2043,7 +2131,7 @@ static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvert
 
 static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f viewPos)
 {
-    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
+    PFboolean faceCullingDisabled = !(currentCtx->state & PF_CULL_FACE);
 
     if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
@@ -2104,7 +2192,7 @@ static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFver
 
 static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f viewPos)
 {
-    PFboolean faceCullingDisabled = !(currentCtx->renderState & PF_CULL_FACE);
+    PFboolean faceCullingDisabled = !(currentCtx->state & PF_CULL_FACE);
 
     if (faceCullingDisabled || currentCtx->cullFace == PF_BACK)
     {
@@ -2174,22 +2262,31 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
         {
             PFvertex *processed = currentCtx->vertexBuffer;
 
-            // Process vertex
+            // Process point
 
             if (!Process_ProjectPoint(processed, mvp))
             {
                 return;
             }
 
-            // Draw vertex
+            // Draw point
 
-            if (currentCtx->renderState & (PF_DEPTH_TEST))
+            if (currentCtx->state & (PF_DEPTH_TEST))
             {
-                pfFramebufferSetPixelDepth(currentCtx->currentFramebuffer, processed->screen[0], processed->screen[1], processed->homogeneous[2], processed->color);
+                pfFramebufferSetPixelDepth(
+                    currentCtx->currentFramebuffer,
+                    processed->screen[0],
+                    processed->screen[1],
+                    processed->homogeneous[2],
+                    processed->color);
             }
             else
             {
-                pfFramebufferSetPixel(currentCtx->currentFramebuffer, processed->screen[0], processed->screen[1], processed->color);
+                pfFramebufferSetPixel(
+                    currentCtx->currentFramebuffer,
+                    processed->screen[0],
+                    processed->screen[1],
+                    processed->color);
             }
         }
         break;
@@ -2218,7 +2315,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
             // Rasterize line
 
-            if (currentCtx->renderState & (PF_DEPTH_TEST))
+            if (currentCtx->state & (PF_DEPTH_TEST))
             {
                 Rasterize_LineDepth(&processed[0], &processed[1]);
             }
@@ -2241,7 +2338,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
             // Transform normals if needed
 
-            if (currentCtx->renderState & PF_LIGHTING)
+            if (currentCtx->state & PF_LIGHTING)
             {
                 for (int_fast8_t i = 0; i < processedCounter; i++)
                 {
@@ -2271,15 +2368,16 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                 // Selects the appropriate rasterization function
 
-                if ((currentCtx->renderState & (PF_TEXTURE_MODE | PF_DEPTH_TEST)) == (PF_TEXTURE_MODE | PF_DEPTH_TEST))
+                if (currentCtx->currentTexture &&
+                   (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
                 {
                     rasterizer = Rasterize_TriangleTextureDepth2D;
                 }
-                else if (currentCtx->renderState & (PF_TEXTURE_MODE))
+                else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
                 {
                     rasterizer = Rasterize_TriangleTextureFlat2D;
                 }
-                else if (currentCtx->renderState & (PF_DEPTH_TEST))
+                else if (currentCtx->state & (PF_DEPTH_TEST))
                 {
                     rasterizer = Rasterize_TriangleColorDepth2D;
                 }
@@ -2293,7 +2391,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
             }
             else
             {
-                if (currentCtx->renderState & PF_LIGHTING)
+                if (currentCtx->state & PF_LIGHTING)
                 {
                     // Pre-calculation of specularity tints
                     // by multiplying those of light and material
@@ -2318,15 +2416,16 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                     RasterizeTriangleLightFunc rasterizer = Rasterize_TriangleColorFlatLight3D;
 
-                    if ((currentCtx->renderState & (PF_TEXTURE_MODE | PF_DEPTH_TEST)) == (PF_TEXTURE_MODE | PF_DEPTH_TEST))
+                    if (currentCtx->currentTexture &&
+                       (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
                     {
                         rasterizer = Rasterize_TriangleTextureDepthLight3D;
                     }
-                    else if (currentCtx->renderState & (PF_TEXTURE_MODE))
+                    else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
                     {
                         rasterizer = Rasterize_TriangleTextureFlatLight3D;
                     }
-                    else if (currentCtx->renderState & (PF_DEPTH_TEST))
+                    else if (currentCtx->state & (PF_DEPTH_TEST))
                     {
                         rasterizer = Rasterize_TriangleColorDepthLight3D;
                     }
@@ -2354,15 +2453,16 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                     RasterizeTriangleFunc rasterizer = Rasterize_TriangleColorFlat3D;
 
-                    if ((currentCtx->renderState & (PF_TEXTURE_MODE | PF_DEPTH_TEST)) == (PF_TEXTURE_MODE | PF_DEPTH_TEST))
+                    if (currentCtx->currentTexture &&
+                       (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
                     {
                         rasterizer = Rasterize_TriangleTextureDepth3D;
                     }
-                    else if (currentCtx->renderState & (PF_TEXTURE_MODE))
+                    else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
                     {
                         rasterizer = Rasterize_TriangleTextureFlat3D;
                     }
-                    else if (currentCtx->renderState & (PF_DEPTH_TEST))
+                    else if (currentCtx->state & (PF_DEPTH_TEST))
                     {
                         rasterizer = Rasterize_TriangleColorDepth3D;
                     }
@@ -2392,7 +2492,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                 // Transform normals if needed
 
-                if (currentCtx->renderState & PF_LIGHTING)
+                if (currentCtx->state & PF_LIGHTING)
                 {
                     for (int_fast8_t j = 0; j < processedCounter; j++)
                     {
@@ -2422,15 +2522,16 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                     RasterizeTriangleFunc rasterizer = Rasterize_TriangleColorFlat2D;
 
-                    if ((currentCtx->renderState & (PF_TEXTURE_MODE | PF_DEPTH_TEST)) == (PF_TEXTURE_MODE | PF_DEPTH_TEST))
+                    if (currentCtx->currentTexture &&
+                       (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
                     {
                         rasterizer = Rasterize_TriangleTextureDepth2D;
                     }
-                    else if (currentCtx->renderState & (PF_TEXTURE_MODE))
+                    else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
                     {
                         rasterizer = Rasterize_TriangleTextureFlat2D;
                     }
-                    else if (currentCtx->renderState & (PF_DEPTH_TEST))
+                    else if (currentCtx->state & (PF_DEPTH_TEST))
                     {
                         rasterizer = Rasterize_TriangleColorDepth2D;
                     }
@@ -2444,7 +2545,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
                 }
                 else
                 {
-                    if (currentCtx->renderState & PF_LIGHTING)
+                    if (currentCtx->state & PF_LIGHTING)
                     {
                         // Pre-calculation of specularity tints
                         // by multiplying those of light and material
@@ -2469,15 +2570,16 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                         RasterizeTriangleLightFunc rasterizer = Rasterize_TriangleColorFlatLight3D;
 
-                        if ((currentCtx->renderState & (PF_TEXTURE_MODE | PF_DEPTH_TEST)) == (PF_TEXTURE_MODE | PF_DEPTH_TEST))
+                        if (currentCtx->currentTexture &&
+                           (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
                         {
                             rasterizer = Rasterize_TriangleTextureDepthLight3D;
                         }
-                        else if (currentCtx->renderState & (PF_TEXTURE_MODE))
+                        else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
                         {
                             rasterizer = Rasterize_TriangleTextureFlatLight3D;
                         }
-                        else if (currentCtx->renderState & (PF_DEPTH_TEST))
+                        else if (currentCtx->state & (PF_DEPTH_TEST))
                         {
                             rasterizer = Rasterize_TriangleColorDepthLight3D;
                         }
@@ -2505,15 +2607,16 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                         RasterizeTriangleFunc rasterizer = Rasterize_TriangleColorFlat3D;
 
-                        if ((currentCtx->renderState & (PF_TEXTURE_MODE | PF_DEPTH_TEST)) == (PF_TEXTURE_MODE | PF_DEPTH_TEST))
+                        if (currentCtx->currentTexture &&
+                           (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
                         {
                             rasterizer = Rasterize_TriangleTextureDepth3D;
                         }
-                        else if (currentCtx->renderState & (PF_TEXTURE_MODE))
+                        else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
                         {
                             rasterizer = Rasterize_TriangleTextureFlat3D;
                         }
-                        else if (currentCtx->renderState & (PF_DEPTH_TEST))
+                        else if (currentCtx->state & (PF_DEPTH_TEST))
                         {
                             rasterizer = Rasterize_TriangleColorDepth3D;
                         }

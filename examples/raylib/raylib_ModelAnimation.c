@@ -1,7 +1,7 @@
 #define PF_COMMON_IMPL
 #include "../common.h"
-#include "raylib.h"
-#include "raymath.h"
+#include <raylib.h>
+#include <raymath.h>
 #include <string.h>
 
 #define SCREEN_WIDTH    800
@@ -41,7 +41,7 @@ int main(void)
     Vector3 camTar = { 0.0f, 10.0f, 0.0f };
 
     // Enable lighting system
-    pfEnableLighting();
+    pfEnable(PF_LIGHTING);
 
     // Config one light
     Vector3 camDir = Vector3Subtract(camTar, camPos);
@@ -129,8 +129,6 @@ void PF_DrawMesh(Mesh mesh, Material material, Matrix transform)
     pfDisableStatePointer(PF_TEXTURE_COORD_ARRAY);
     pfDisableStatePointer(PF_NORMAL_ARRAY);
     pfDisableStatePointer(PF_COLOR_ARRAY);
-
-    pfDisableTexture();
 }
 
 void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rotationAngle, Vector3 scale, Color tint)
