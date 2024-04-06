@@ -27,7 +27,7 @@
 #include <float.h>
 #include <math.h>
 
-// TODO: Review the API get/set and enable/disable functions
+// TODO: Review the API pfGet/pfSet functions
 
 /* Internal data */
 
