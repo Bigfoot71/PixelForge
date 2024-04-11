@@ -441,8 +441,8 @@ PF_API void pfTextureDestroy(PFtexture* texture);
 PF_API void pfTextureSetPixel(PFtexture* texture, PFuint x, PFuint y, PFcolor color);
 PF_API PFcolor pfTextureGetPixel(const PFtexture* texture, PFuint x, PFuint y);
 
-PF_API void pfTextureSetFragment(PFtexture* texture, PFfloat u, PFfloat v, PFcolor color);
-PF_API PFcolor pfTextureGetFragment(const PFtexture* texture, PFfloat u, PFfloat v);
+PF_API void pfTextureSetSample(PFtexture* texture, PFfloat u, PFfloat v, PFcolor color);
+PF_API PFcolor pfTextureGetSample(const PFtexture* texture, PFfloat u, PFfloat v);
 
 /* Math functions */
 

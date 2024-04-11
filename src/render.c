@@ -1139,15 +1139,10 @@ static PFvertex Helper_LerpVertex(const PFvertex* start, const PFvertex* end, PF
         result.homogeneous[i] = start->homogeneous[i] + t*(end->homogeneous[i] - start->homogeneous[i]);
     }
 
-    // Interpolate position
+    // Interpolate positions and normals
     for (int_fast8_t i = 0; i < 3; i++)
     {
         result.position[i] = start->position[i] + t*(end->position[i] - start->position[i]);
-    }
-
-    // Interpolate normal
-    for (int_fast8_t i = 0; i < 3; i++)
-    {
         result.normal[i] = start->normal[i] + t*(end->normal[i] - start->normal[i]);
     }
 
@@ -1353,12 +1348,12 @@ static PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2
     return PF_TRUE;
 }
 
-static PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, PFubyte* restrict vertexCounter)
+static PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter)
 {
     PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
     memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
 
-    PFubyte inputCounter = *vertexCounter;
+    int_fast8_t inputCounter = *vertexCounter;
     *vertexCounter = 0;
 
     const PFvertex *prevVt = &input[inputCounter-1];
@@ -1386,15 +1381,16 @@ static PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, PFubyte* restr
     return *vertexCounter > 0;
 }
 
-static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, PFubyte* restrict vertexCounter)
+static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter)
 {
-    for (PFubyte iAxis = 0; iAxis < 3; iAxis++)
+    for (int_fast8_t iAxis = 0; iAxis < 3; iAxis++)
     {
         if (*vertexCounter == 0) return PF_FALSE;
 
         PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
+        int_fast8_t inputCounter;
+
         const PFvertex *prevVt;
-        PFubyte inputCounter;
         PFbyte prevDot;
 
         // Clip against first plane
@@ -1482,7 +1478,7 @@ static PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFmat4f* mvp)
 }
 
 
-static void Process_ProjectAndClipLine(PFvertex* restrict line, PFubyte* restrict vertexCounter, const PFmat4f* mvp)
+static void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict vertexCounter, const PFmat4f* mvp)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -1526,7 +1522,7 @@ static void Process_ProjectAndClipLine(PFvertex* restrict line, PFubyte* restric
     }
 }
 
-static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, PFubyte* restrict vertexCounter, const PFmat4f* mvp)
+static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter, const PFmat4f* mvp)
 {
     for (int_fast8_t i = 0; i < *vertexCounter; i++)
     {
@@ -1761,7 +1757,7 @@ static void Rasterize_TriangleTextureFlat2D(const PFvertex* v1, const PFvertex* 
     {
         PFvec2f texcoord = { 0 };
         Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
-        PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+        PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
 
         const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
         PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
@@ -1782,7 +1778,7 @@ static void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex*
     {
         PFvec2f texcoord = { 0 };
         Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
-        PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+        PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
 
         const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
         PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
@@ -1886,7 +1882,7 @@ static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* 
             Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            const PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
@@ -1908,7 +1904,7 @@ static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* 
             Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            const PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
@@ -1936,7 +1932,7 @@ static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex*
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-            PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
             const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
@@ -1958,7 +1954,7 @@ static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex*
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-            PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
             const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
@@ -2145,7 +2141,7 @@ static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFver
             Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            const PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
@@ -2173,7 +2169,7 @@ static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFver
             Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            const PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
@@ -2206,7 +2202,7 @@ static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFve
             Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            const PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
@@ -2234,7 +2230,7 @@ static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFve
             Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            const PFcolor texel = pfTextureGetFragment(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            const PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
@@ -2273,19 +2269,15 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
             if (currentCtx->state & (PF_DEPTH_TEST))
             {
-                pfFramebufferSetPixelDepth(
-                    currentCtx->currentFramebuffer,
-                    processed->screen[0],
-                    processed->screen[1],
+                pfFramebufferSetPixelDepth(currentCtx->currentFramebuffer,
+                    processed->screen[0], processed->screen[1],
                     processed->homogeneous[2],
                     processed->color);
             }
             else
             {
-                pfFramebufferSetPixel(
-                    currentCtx->currentFramebuffer,
-                    processed->screen[0],
-                    processed->screen[1],
+                pfFramebufferSetPixel(currentCtx->currentFramebuffer,
+                    processed->screen[0], processed->screen[1],
                     processed->color);
             }
         }
@@ -2295,7 +2287,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
         {
             // Process vertices
 
-            PFubyte processedCounter = 2;
+            int_fast8_t processedCounter = 2;
 
             PFvertex processed[2] = {
                 currentCtx->vertexBuffer[0],
@@ -2328,7 +2320,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
         case PF_TRIANGLES:
         {
-            PFubyte processedCounter = 3;
+            int_fast8_t processedCounter = 3;
 
             PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES] = {
                 currentCtx->vertexBuffer[0],
@@ -2384,7 +2376,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                 // Performs rasterization of triangles
 
-                for (PFbyte i = 0; i < processedCounter - 2; i++)
+                for (int_fast8_t i = 0; i < processedCounter - 2; i++)
                 {
                     rasterizer(&processed[0], &processed[i + 1], &processed[i + 2]);
                 }
@@ -2432,7 +2424,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                     // Performs rasterization of triangles
 
-                    for (PFbyte i = 0; i < processedCounter - 2; i++)
+                    for (int_fast8_t i = 0; i < processedCounter - 2; i++)
                     {
                         rasterizer(&processed[0], &processed[i + 1], &processed[i + 2], viewPos);
                     }
@@ -2469,7 +2461,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                     // Performs rasterization of triangles
 
-                    for (PFbyte i = 0; i < processedCounter - 2; i++)
+                    for (int_fast8_t i = 0; i < processedCounter - 2; i++)
                     {
                         rasterizer(&processed[0], &processed[i + 1], &processed[i + 2]);
                     }
@@ -2482,7 +2474,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
         {
             for (PFint i = 0; i < 2; i++)
             {
-                PFubyte processedCounter = 3;
+                int_fast8_t processedCounter = 3;
 
                 PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES] = {
                     currentCtx->vertexBuffer[0],
@@ -2503,7 +2495,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                 // Multiply vertices color with material diffuse
 
-                for (PFubyte j = 0; j < processedCounter; j++)
+                for (int_fast8_t j = 0; j < processedCounter; j++)
                 {
                     processed[j].color = pfBlendMultiplicative(
                         processed[j].color, currentCtx->frontMaterial.diffuse);
@@ -2538,7 +2530,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                     // Performs rasterization of triangles
 
-                    for (PFbyte j = 0; j < processedCounter - 2; j++)
+                    for (int_fast8_t j = 0; j < processedCounter - 2; j++)
                     {
                         rasterizer(&processed[0], &processed[j + 1], &processed[j + 2]);
                     }
@@ -2586,7 +2578,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                         // Performs rasterization of triangles
 
-                        for (PFbyte j = 0; j < processedCounter - 2; j++)
+                        for (int_fast8_t j = 0; j < processedCounter - 2; j++)
                         {
                             rasterizer(&processed[0], &processed[j + 1], &processed[j + 2], viewPos);
                         }
@@ -2623,7 +2615,7 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                         // Performs rasterization of triangles
 
-                        for (PFbyte j = 0; j < processedCounter - 2; j++)
+                        for (int_fast8_t j = 0; j < processedCounter - 2; j++)
                         {
                             rasterizer(&processed[0], &processed[j + 1], &processed[j + 2]);
                         }
