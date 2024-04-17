@@ -20,14 +20,6 @@ int main(void)
     PFctx *ctx = pfContextCreate(dest.data, dest.width, dest.height, dest.format);
     pfMakeCurrent(ctx);
 
-    // Init viewport and projection matrix
-    pfViewport(0, 0, dest.width, dest.height);
-    pfMatrixMode(PF_PROJECTION);
-    pfLoadIdentity();
-    pfOrtho(-1, 1, -1, 1, -1, 1);
-    pfMatrixMode(PF_MODELVIEW);
-    pfLoadIdentity();
-
     while (!WindowShouldClose())
     {
         // Clear the destination buffer

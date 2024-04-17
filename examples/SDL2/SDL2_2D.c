@@ -95,14 +95,6 @@ int main(void)
     PFctx *ctx = pfContextCreate(surface->pixels, surface->w, surface->h, PF_PIXELFORMAT_UNKNOWN);
     pfMakeCurrent(ctx);
 
-    // Init viewport and projection matrix
-    pfViewport(0, 0, surface->w, surface->h);
-    pfMatrixMode(PF_PROJECTION);
-    pfLoadIdentity();
-    pfOrtho(-1, 1, -1, 1, -1, 1);
-    pfMatrixMode(PF_MODELVIEW);
-    pfLoadIdentity();
-
     // Defining our own pixel getter/setter functions
     pfSetDefaultPixelGetter(GetScreenPixel);
     pfSetDefaultPixelSetter(SetScreenPixel);

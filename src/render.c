@@ -91,8 +91,8 @@ struct PFctx {
 
     PFmatrixmode currentMatrixMode;             // Current matrix mode (e.g., PF_MODELVIEW, PF_PROJECTION)
     PFmat4f *currentMatrix;                     // Pointer to the current matrix
-    PFmat4f modelview;                          // Default modelview matrix
     PFmat4f projection;                         // Default projection matrix
+    PFmat4f modelview;                          // Default modelview matrix
     PFmat4f transform;                          // Transformation matrix for translation, rotation, and scaling
     PFboolean transformRequired;                // Flag indicating whether transformation is required for vertices
     PFmat4f stack[PF_MAX_MATRIX_STACK_SIZE];    // Matrix stack for push/pop operations
@@ -219,10 +219,12 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     };
 
     ctx->currentMatrixMode = PF_MODELVIEW;
-    ctx->currentMatrix = NULL;
+    ctx->currentMatrix = &ctx->modelview;
+
+    ctx->projection = pfMat4fOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
     ctx->modelview = pfMat4fIdentity();
-    ctx->projection = pfMat4fIdentity();
     ctx->transform = pfMat4fIdentity();
+
     ctx->transformRequired = PF_FALSE;
     ctx->stackCounter = 0;
 
