@@ -1,7 +1,6 @@
 #ifndef PF_SDL2_COMMON_H
 #define PF_SDL2_COMMON_H
 
-#include <SDL2/SDL_video.h>
 #ifdef PF_SDL2_COMMON_H
 #   define PF_COMMON_IMPL
 #endif //PF_SDL2_COMMON_H
