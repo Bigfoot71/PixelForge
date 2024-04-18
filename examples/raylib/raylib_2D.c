@@ -17,7 +17,7 @@ int main(void)
     Texture gpuDest = LoadTextureFromImage(dest);
 
     // Creating the PixelForge context
-    PFctx *ctx = pfContextCreate(dest.data, dest.width, dest.height, dest.format);
+    PFctx *ctx = pfCreateContext(dest.data, dest.width, dest.height, dest.format);
     pfMakeCurrent(ctx);
 
     while (!WindowShouldClose())
@@ -50,7 +50,7 @@ int main(void)
     }
 
     // Free allocated data
-    pfContextDestroy(ctx);
+    pfDeleteContext(ctx);
     UnloadTexture(gpuDest);
     UnloadImage(dest);
 

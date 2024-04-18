@@ -167,7 +167,7 @@ int main()
     }
 
     // Destroy PixelForge context
-    pfContextDestroy(ctx);
+    pfDeleteContext(ctx);
 
     // Free image and pixel buffer
     XFree(image);

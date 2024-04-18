@@ -2,6 +2,7 @@
 #define PF_COMMON_H
 
 #include "pixelforge.h"
+#include "pfm.h"
 
 /* Base functions */
 
@@ -33,7 +34,7 @@ void PF_DrawGrid(PFint slices, PFfloat spacing);
 
 PFctx* PF_Init(void* pixels, PFuint width, PFuint height)
 {
-    PFctx *ctx = pfContextCreate(pixels, width, height, PF_PIXELFORMAT_R8G8B8A8);
+    PFctx *ctx = pfCreateContext(pixels, width, height, PF_PIXELFORMAT_R8G8B8A8);
     pfMakeCurrent(ctx);
     return ctx;
 }
@@ -156,8 +157,10 @@ void PF_Update3D(PFfloat px, PFfloat py, PFfloat pz, PFfloat tx, PFfloat ty, PFf
     PFvec3f target = { tx, ty, tz };
     PFvec3f up = { 0, 1, 0 };
 
-    PFmat4f matView = pfMat4fLookAt(position, target, up);
-    pfMultMatrixMat4f(&matView);
+    PFmat4f matView;
+    pfMat4fLookAt(matView, position, target, up);
+
+    pfMultMatrixf(matView);
 }
 
 void PF_DrawCube(PFfloat size)

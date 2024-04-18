@@ -19,6 +19,7 @@
 
 #include "pixelforge.h"
 #include "trirast.c"
+#include "pfm.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -133,36 +134,34 @@ typedef void (*RasterizeTriangleLightFunc)(const PFvertex*, const PFvertex*, con
 
 /* Internal processing and rasterization function declarations */
 
-static void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal);
+static void ProcessRasterize(const PFmat4f mvp, const PFmat4f matNormal);
 
 /* Internal helper function declarations */
 
-static PFmat4f Helper_GetModelView(PFmat4f* outMatNormal, PFmat4f* outMVP)
+static void Helper_GetModelView(PFmat4f outModelview, PFmat4f outMatNormal, PFmat4f outMVP)
 {
-    PFmat4f modelview = currentCtx->modelview;
+    pfMat4fCopy(outModelview, currentCtx->modelview);
 
     if (currentCtx->transformRequired)
     {
-        modelview = pfMat4fMul(&currentCtx->transform, &modelview);
+        pfMat4fMul(outModelview, currentCtx->transform, outModelview);
     }
 
     if (outMatNormal)   // TODO REVIEW: Only calculate it when PF_LIGHTING state is activated??
     {
-        *outMatNormal = pfMat4fInvert(&currentCtx->transform);  // TODO REVIEW: modelview strange behaviour, i need to recheck this
-        *outMatNormal = pfMat4fTranspose(outMatNormal);
+        pfMat4fInvert(outMatNormal, currentCtx->transform);  // TODO REVIEW: modelview strange behaviour, i need to recheck this
+        pfMat4fTranspose(outMatNormal, outMatNormal);
     }
 
     if (outMVP)
     {
-        *outMVP = pfMat4fMul(&modelview, &currentCtx->projection);
+        pfMat4fMul(outMVP, outModelview, currentCtx->projection);
     }
-
-    return modelview;
 }
 
 /* Context API functions */
 
-PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeight, PFpixelformat screenFormat)
+PFctx* pfCreateContext(void* screenBuffer, PFuint screenWidth, PFuint screenHeight, PFpixelformat screenFormat)
 {
     PFctx *ctx = (PFctx*)PF_MALLOC(sizeof(PFctx));
 
@@ -221,9 +220,9 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     ctx->currentMatrixMode = PF_MODELVIEW;
     ctx->currentMatrix = &ctx->modelview;
 
-    ctx->projection = pfMat4fOrtho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
-    ctx->modelview = pfMat4fIdentity();
-    ctx->transform = pfMat4fIdentity();
+    pfMat4fOrtho(ctx->projection, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+    pfMat4fIdentity(ctx->modelview);
+    pfMat4fIdentity(ctx->transform);
 
     ctx->transformRequired = PF_FALSE;
     ctx->stackCounter = 0;
@@ -240,7 +239,7 @@ PFctx* pfContextCreate(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     return ctx;
 }
 
-void pfContextDestroy(PFctx* ctx)
+void pfDeleteContext(PFctx* ctx)
 {
     if (ctx)
     {
@@ -254,7 +253,7 @@ void pfContextDestroy(PFctx* ctx)
     }
 }
 
-PFctx* pfGetCurrent(void)
+PFctx* pfGetCurrentContext(void)
 {
     return currentCtx;
 }
@@ -262,11 +261,6 @@ PFctx* pfGetCurrent(void)
 void pfMakeCurrent(PFctx* ctx)
 {
     currentCtx = ctx;
-}
-
-PFboolean pfIsCurrent(PFctx* ctx)
-{
-    return (PFboolean)(currentCtx == ctx);
 }
 
 void pfEnable(PFstate state)
@@ -311,7 +305,7 @@ void pfPushMatrix(void)
         currentCtx->currentMatrix = &currentCtx->transform;
     }
 
-    currentCtx->stack[currentCtx->stackCounter] = *currentCtx->currentMatrix;
+    pfMat4fCopy(currentCtx->stack[currentCtx->stackCounter], *currentCtx->currentMatrix);
     currentCtx->stackCounter++;
 }
 
@@ -319,7 +313,7 @@ void pfPopMatrix(void)
 {
     if (currentCtx->stackCounter > 0)
     {
-        *currentCtx->currentMatrix = currentCtx->stack[--currentCtx->stackCounter];
+        pfMat4fCopy(*currentCtx->currentMatrix, currentCtx->stack[--currentCtx->stackCounter]);
     }
 
     if (currentCtx->stackCounter == 0 && currentCtx->currentMatrixMode == PF_MODELVIEW)
@@ -331,54 +325,55 @@ void pfPopMatrix(void)
 
 void pfLoadIdentity(void)
 {
-    *currentCtx->currentMatrix = pfMat4fIdentity();
+    pfMat4fIdentity(*currentCtx->currentMatrix);
 }
 
 void pfTranslatef(PFfloat x, PFfloat y, PFfloat z)
 {
-    PFmat4f translation = pfMat4fTranslate(x, y, z);
+    PFmat4f translation;
+    pfMat4fTranslate(translation, x, y, z);
 
     // NOTE: We transpose matrix with multiplication order
-    *currentCtx->currentMatrix = pfMat4fMul(&translation, currentCtx->currentMatrix);
+    pfMat4fMul(*currentCtx->currentMatrix, translation, *currentCtx->currentMatrix);
 }
 
 void pfRotatef(PFfloat angle, PFfloat x, PFfloat y, PFfloat z)
 {
     PFvec3f axis = { x, y, z }; // TODO: review
-    PFmat4f rotation = pfMat4fRotate(axis, DEG2RAD(angle));
+
+    PFmat4f rotation;
+    pfMat4fRotate(rotation, axis, DEG2RAD(angle));
 
     // NOTE: We transpose matrix with multiplication order
-    *currentCtx->currentMatrix = pfMat4fMul(&rotation, currentCtx->currentMatrix);
+    pfMat4fMul(*currentCtx->currentMatrix, rotation, *currentCtx->currentMatrix);
 }
 
 void pfScalef(PFfloat x, PFfloat y, PFfloat z)
 {
-    PFmat4f scale = pfMat4fScale(x, y, z);
+    PFmat4f scale;
+    pfMat4fScale(scale, x, y, z);
 
     // NOTE: We transpose matrix with multiplication order
-    *currentCtx->currentMatrix = pfMat4fMul(&scale, currentCtx->currentMatrix);
+    pfMat4fMul(*currentCtx->currentMatrix, scale, *currentCtx->currentMatrix);
 }
 
 void pfMultMatrixf(const PFfloat* mat)
 {
-    *currentCtx->currentMatrix = pfMat4fMul(currentCtx->currentMatrix, (PFmat4f*)&mat);
-}
-
-void pfMultMatrixMat4f(const PFmat4f* mat)
-{
-    *currentCtx->currentMatrix = pfMat4fMul(currentCtx->currentMatrix, mat);
+    pfMat4fMul(*currentCtx->currentMatrix, *currentCtx->currentMatrix, mat);
 }
 
 void pfFrustum(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar)
 {
-    PFmat4f frustum = pfMat4fFrustum(left, right, bottom, top, znear, zfar);
-    *currentCtx->currentMatrix = pfMat4fMul(currentCtx->currentMatrix, &frustum);
+    PFmat4f frustum;
+    pfMat4fFrustum(frustum, left, right, bottom, top, znear, zfar);
+    pfMat4fMul(*currentCtx->currentMatrix, *currentCtx->currentMatrix, frustum);
 }
 
 void pfOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar)
 {
-    PFmat4f ortho = pfMat4fOrtho(left, right, bottom, top, znear, zfar);
-    *currentCtx->currentMatrix = pfMat4fMul(currentCtx->currentMatrix, &ortho);
+    PFmat4f ortho;
+    pfMat4fOrtho(ortho, left, right, bottom, top, znear, zfar);
+    pfMat4fMul(*currentCtx->currentMatrix, *currentCtx->currentMatrix, ortho);
 }
 
 
@@ -796,8 +791,8 @@ void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer
     const PFvec2f *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
         ? (const PFvec2f*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
 
-    PFmat4f matNormal, mvp;
-    (void)Helper_GetModelView(&matNormal, &mvp);
+    PFmat4f modelview, matNormal, mvp; // TODO: Review this, modelview is not used
+    (void)Helper_GetModelView(modelview, matNormal, mvp);
 
     pfBegin((currentCtx->state & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
 
@@ -827,7 +822,7 @@ void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer
         if (currentCtx->vertexCount == currentCtx->currentDrawMode)
         {
             currentCtx->vertexCount = 0;
-            ProcessRasterize(&mvp, &matNormal);
+            ProcessRasterize(mvp, matNormal);
         }
     }
 
@@ -848,8 +843,8 @@ void pfDrawVertexArray(PFsizei offset, PFsizei count)
     const PFvec2f *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
         ? (const PFvec2f*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
 
-    PFmat4f matNormal, mvp;
-    (void)Helper_GetModelView(&matNormal, &mvp);
+    PFmat4f modelview, matNormal, mvp; // TODO: Review this, modelview is not used
+    (void)Helper_GetModelView(modelview, matNormal, mvp);
 
     pfBegin((currentCtx->state & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
 
@@ -878,7 +873,7 @@ void pfDrawVertexArray(PFsizei offset, PFsizei count)
         if (currentCtx->vertexCount == currentCtx->currentDrawMode)
         {
             currentCtx->vertexCount = 0;
-            ProcessRasterize(&mvp, &matNormal);
+            ProcessRasterize(mvp, matNormal);
         }
     }
 
@@ -937,11 +932,11 @@ void pfVertexfv(const PFfloat* v)
 
     if (currentCtx->vertexCount == currentCtx->currentDrawMode)
     {
-        PFmat4f matNormal, mvp;
-        (void)Helper_GetModelView(&matNormal, &mvp);
+        PFmat4f modelview, matNormal, mvp; // TODO: Review this, modelview is not used
+        (void)Helper_GetModelView(modelview, matNormal, mvp);
 
         currentCtx->vertexCount = 0;
-        ProcessRasterize(&mvp, &matNormal);
+        ProcessRasterize(mvp, matNormal);
     }
 }
 
@@ -1457,7 +1452,7 @@ static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, int_fast8_t*
     return *vertexCounter > 0;
 }
 
-static PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFmat4f* mvp)
+static PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFmat4f mvp)
 {
     memcpy(v->homogeneous, v->position, sizeof(PFvec3f));
     v->homogeneous[3] = 1.0f;
@@ -1480,7 +1475,7 @@ static PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFmat4f* mvp)
 }
 
 
-static void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict vertexCounter, const PFmat4f* mvp)
+static void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict vertexCounter, const PFmat4f mvp)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -1524,7 +1519,7 @@ static void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* res
     }
 }
 
-static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter, const PFmat4f* mvp)
+static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter, const PFmat4f mvp)
 {
     for (int_fast8_t i = 0; i < *vertexCounter; i++)
     {
@@ -2252,7 +2247,7 @@ static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFve
 
 /* Internal processing and rasterization function definitions */
 
-void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
+void ProcessRasterize(const PFmat4f mvp, const PFmat4f matNormal)
 {
     switch (currentCtx->currentDrawMode)
     {
@@ -2403,8 +2398,9 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                     // Get camera/view position
 
-                    PFmat4f invMV = pfMat4fInvert(&currentCtx->modelview);
-                    PFvec3f viewPos = { invMV.m12, invMV.m13, invMV.m14 };
+                    PFmat4f invMV;
+                    pfMat4fInvert(invMV, currentCtx->modelview);
+                    PFvec3f viewPos = { invMV[12], invMV[13], invMV[14] };
 
                     // Selects the appropriate rasterization function
 
@@ -2557,8 +2553,9 @@ void ProcessRasterize(const PFmat4f* mvp, const PFmat4f* matNormal)
 
                         // Get camera/view position
 
-                        PFmat4f invMV = pfMat4fInvert(&currentCtx->modelview);
-                        PFvec3f viewPos = { invMV.m12, invMV.m13, invMV.m14 };
+                        PFmat4f invMV;
+                        pfMat4fInvert(invMV, currentCtx->modelview);
+                        PFvec3f viewPos = { invMV[12], invMV[13], invMV[14] };
 
                         // Selects the appropriate rasterization function
 

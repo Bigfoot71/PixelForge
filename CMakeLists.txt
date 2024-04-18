@@ -18,7 +18,6 @@ option(PF_BUILD_EXAMPLES_X11 "Build PixelForge examples for X11" ${PF_IS_MAIN})
 
 # Defining source files
 file(GLOB SRCS
-    ${PF_ROOT_PATH}/src/math.c
     ${PF_ROOT_PATH}/src/blend.c
     ${PF_ROOT_PATH}/src/render.c
     ${PF_ROOT_PATH}/src/texture.c

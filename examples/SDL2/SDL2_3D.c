@@ -142,7 +142,7 @@ int main(void)
     }
 
     // Freeing resources and closing SDL
-    pfContextDestroy(ctx);
+    pfDeleteContext(ctx);
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;

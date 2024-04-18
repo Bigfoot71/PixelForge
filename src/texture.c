@@ -18,10 +18,12 @@
  */
 
 #include "pixelforge.h"
+#include "pfm.h"
+
 #include <stdlib.h>
 #include <stddef.h>
-#include <math.h>
 #include <string.h>
+#include <math.h>
 
 /* Internal convert functions */
 

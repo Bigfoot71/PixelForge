@@ -101,7 +101,7 @@ int main()
                                     ZPixmap, 0, (char*)pixels, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0);
 
     // Allocate destination buffer and init PixelForge context
-    PFctx *ctx = pfContextCreate(pixels, SCREEN_WIDTH, SCREEN_HEIGHT, PF_PIXELFORMAT_UNKNOWN);
+    PFctx *ctx = pfCreateContext(pixels, SCREEN_WIDTH, SCREEN_HEIGHT, PF_PIXELFORMAT_UNKNOWN);
     pfMakeCurrent(ctx);
 
     // Defining our own pixel getter/setter functions
@@ -159,7 +159,7 @@ int main()
     }
 
     // Destroy PixelForge context
-    pfContextDestroy(ctx);
+    pfDeleteContext(ctx);
 
     // Free image and pixel buffer
     XFree(image);

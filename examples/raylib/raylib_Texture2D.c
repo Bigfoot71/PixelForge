@@ -23,7 +23,7 @@ Arrow Arrow_Create()
 
 void Arrow_Update(Arrow* arrow)
 {
-    arrow->angle = -Vector2LineAngle(arrow->position, GetMousePosition()) * RAD2DEG + 90.0f;
+    arrow->angle = RAD2DEG(-Vector2LineAngle(arrow->position, GetMousePosition())) + 90.0f;
     float dist = Vector2Distance(arrow->position, GetMousePosition());
 
     if (dist > 32)
@@ -103,7 +103,7 @@ int main(void)
     //pfTextureDestroy(&texBG);
 
     // Free allocated data
-    pfContextDestroy(ctx);
+    pfDeleteContext(ctx);
     UnloadTexture(gpuDest);
     UnloadImage(dest);
 

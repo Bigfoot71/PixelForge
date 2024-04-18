@@ -92,7 +92,7 @@ int main(void)
     Clock clock = Clock_Create(60);
 
     // Creating the PixelForge context
-    PFctx *ctx = pfContextCreate(surface->pixels, surface->w, surface->h, PF_PIXELFORMAT_UNKNOWN);
+    PFctx *ctx = pfCreateContext(surface->pixels, surface->w, surface->h, PF_PIXELFORMAT_UNKNOWN);
     pfMakeCurrent(ctx);
 
     // Defining our own pixel getter/setter functions
@@ -135,7 +135,7 @@ int main(void)
     }
 
     // Freeing resources and closing SDL
-    pfContextDestroy(ctx);
+    pfDeleteContext(ctx);
     SDL_DestroyWindow(window);
     SDL_Quit();
     return 0;

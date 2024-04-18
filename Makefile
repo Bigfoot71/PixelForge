@@ -10,7 +10,6 @@ PF_BUILD_SHARED := 0
 
 # Source files
 SRCS := \
-    src/math.c \
     src/blend.c \
     src/render.c \
     src/texture.c \

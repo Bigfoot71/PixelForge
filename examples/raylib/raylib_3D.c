@@ -56,7 +56,7 @@ int main(void)
     }
 
     // Free allocated data
-    pfContextDestroy(ctx);
+    pfDeleteContext(ctx);
     UnloadTexture(gpuDest);
     UnloadImage(dest);
 
