@@ -1,25 +1,18 @@
-#define PF_COMMON_IMPL
-#include "../common.h"
-#include <raylib.h>
+#define PF_RAYLIB_COMMON_IMPL
+#include "raylib_common.h"
 
 #define SCREEN_WIDTH    800
 #define SCREEN_HEIGHT   600
 
 int main(void)
 {
-    SetTraceLogLevel(LOG_NONE); // NOTE: Used to disable log when drawing text to dest image...
-
     // Init raylib window and set target FPS
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "PixelForge - raylib example");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "PixelForge - Basic 3D");
     SetTargetFPS(60);
 
-    // Create a rendering buffer in RAM as well as in VRAM
-    Image dest = GenImageColor(SCREEN_WIDTH, SCREEN_HEIGHT, BLACK);
-    Texture gpuDest = LoadTextureFromImage(dest);
-
-    // Create a PixelForge context (see examples/common.h)
-    PFctx *ctx = PF_Init(dest.data, dest.width, dest.height);
-    PF_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
+    // Create a rendering buffer in RAM as well as in VRAM (see raylib_common.h)
+    PF_TargetBuffer target = PF_LoadTargetBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
+    PFctx *ctx = PF_InitFromTargetBuffer(target); // PixelForge context
 
     // Define the camera position and a phase for the rotation
     Vector3 camPos = { -2.0f, 1.5f, -2.0f };
@@ -37,29 +30,22 @@ int main(void)
 
         // Draw something on each iteration of the main loop
         PF_Begin3D(SCREEN_WIDTH, SCREEN_HEIGHT, 60.0);
-        PF_Update3D(camPos.x, camPos.y, camPos.z, 0, 0, 0);
-        PF_DrawCube(1.0f);
+            PF_Update3D(camPos.x, camPos.y, camPos.z, 0, 0, 0);
+            PF_DrawCube(1.0f);
         PF_End3D();
-
-        // We display the FPS on the destination image
-        ImageDrawText(&dest, TextFormat("FPS: %i", GetFPS()), 10, 10, 24,
-            ColorFromHSV(MIN((GetFPS()/60.0f)*110.0f, 110.0f), 1.0f, 1.0f));
-
-        // Updates the destination texture
-        UpdateTexture(gpuDest, dest.data);
 
         // Texture rendering via raylib
         BeginDrawing();
             ClearBackground(BLACK);
-            DrawTexture(gpuDest, 0, 0, WHITE);
+            PF_DrawTargetBuffer(target, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
         EndDrawing();
     }
 
-    // Free allocated data
+    // Unload the PixelForge context and the target buffer
     pfDeleteContext(ctx);
-    UnloadTexture(gpuDest);
-    UnloadImage(dest);
+    PF_UnloadTargetBuffer(target);
 
+    // Close raylib window
     CloseWindow();
 
     return 0;

@@ -1,35 +1,22 @@
-#define PF_COMMON_IMPL
-#include "../common.h"
-#include <raylib.h>
-#include <string.h>
+#define PF_RAYLIB_COMMON_IMPL
+#include "raylib_common.h"
 
 #define SCREEN_WIDTH    800
 #define SCREEN_HEIGHT   600
 
-void PF_DrawMesh(Mesh mesh, Material material, Matrix transform);
-void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rotationAngle, Vector3 scale, Color tint);
-void PF_DrawModel(Model model, Vector3 position, float scale, Color tint);
-
 int main(void)
 {
-    SetTraceLogLevel(LOG_NONE); // NOTE: Used to disable log when drawing text to dest image...
-
     // Init raylib window and set target FPS
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "PixelForge - raylib example");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "PixelForge - Textured Model");
     SetTargetFPS(60);
 
-    // Create a rendering buffer in RAM as well as in VRAM
-    Image dest = GenImageColor(SCREEN_WIDTH, SCREEN_HEIGHT, BLACK);
-    Texture gpuDest = LoadTextureFromImage(dest);
-
-    // Create a PixelForge context (see examples/common.h)
-    PFctx *ctx = PF_Init(dest.data, dest.width, dest.height);
-    PF_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
+    // Create a rendering buffer in RAM as well as in VRAM (see raylib_common.h)
+    PF_TargetBuffer target = PF_LoadTargetBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
+    PFctx *ctx = PF_InitFromTargetBuffer(target); // PixelForge context
 
     // Load a 3D model with raylib
     Model model = LoadModel(RESOURCES_PATH "models/castle.obj");
-    Image imModelDiffuse = LoadImage(RESOURCES_PATH "images/castle_diffuse.png");
-    PFtexture modelDiffuse = pfGenTexture(imModelDiffuse.data, imModelDiffuse.width, imModelDiffuse.height, imModelDiffuse.format);
+    PFtexture modelDiffuse = PF_LoadTexture(RESOURCES_PATH "images/castle_diffuse.png");
 
     // Define the camera position and a phase for the rotation
     Vector3 camPos = { 50.0f, 25.0f, 50.0f };
@@ -51,110 +38,41 @@ int main(void)
 
         // Draw something on each iteration of the main loop
         PF_Begin3D(SCREEN_WIDTH, SCREEN_HEIGHT, 60.0);
-        PF_Update3D(camPos.x, camPos.y, camPos.z, 0, 10.0f, 0);
+        {
+            PF_Update3D(camPos.x, camPos.y, camPos.z, 0, 10.0f, 0);
 
-        PF_DrawGrid(10.0f, 10.0f);
+            PF_DrawGrid(10.0f, 10.0f);
 
-        pfBindTexture(&modelDiffuse);
-        PF_DrawModel(model, (Vector3) { 0 }, 1.0f, WHITE);
-        pfBindTexture(0);
-
+            pfBindTexture(&modelDiffuse);
+                PF_DrawModel(model, (Vector3) { 0 }, 1.0f, WHITE);
+            pfBindTexture(0);
+        }
         PF_End3D();
-
-        // We display the FPS on the destination image
-        ImageDrawText(&dest, TextFormat("FPS: %i", GetFPS()), 10, 10, 24,
-            ColorFromHSV(MIN((GetFPS()/60.0f)*110.0f, 110.0f), 1.0f, 1.0f));
-
-        // Updates the destination texture
-        UpdateTexture(gpuDest, dest.data);
 
         // Texture rendering via raylib
         BeginDrawing();
+        {
             ClearBackground(BLACK);
-            DrawTexture(gpuDest, 0, 0, WHITE);
+
+            PF_DrawTargetBuffer(target, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT); // Update and draw final texture
+            DrawFPS(10, 10);
+
             DrawText("Visual glitch also present with this model in the original raylib example :-(", 0, SCREEN_HEIGHT-18, 18, WHITE);
+        }
         EndDrawing();
     }
 
+    // Unload assets
+    UnloadModel(model);
+    pfDeleteTexture(&modelDiffuse);
+
+    // Unload the PixelForge context and the target buffer
     pfDeleteContext(ctx);
-    UnloadImage(imModelDiffuse);
-    UnloadTexture(gpuDest);
-    UnloadImage(dest);
+    PF_UnloadTargetBuffer(target);
+
+    // Close raylib window
     CloseWindow();
 
     return 0;
 }
 
-void PF_DrawMesh(Mesh mesh, Material material, Matrix transform)
-{
-    if (mesh.animVertices)
-    {
-        pfEnableStatePointer(PF_VERTEX_ARRAY, mesh.animVertices);
-        pfEnableStatePointer(PF_NORMAL_ARRAY, mesh.animNormals);
-    }
-    else
-    {
-        pfEnableStatePointer(PF_VERTEX_ARRAY, mesh.vertices);
-        pfEnableStatePointer(PF_NORMAL_ARRAY, mesh.normals);
-    }
-
-    pfEnableStatePointer(PF_TEXTURE_COORD_ARRAY, mesh.texcoords);
-    pfEnableStatePointer(PF_COLOR_ARRAY, mesh.colors);
-
-    pfPushMatrix();
-        pfMultMatrixf((float*)(&transform));
-        pfColor4ub(material.maps[MATERIAL_MAP_DIFFUSE].color.r,
-                   material.maps[MATERIAL_MAP_DIFFUSE].color.g,
-                   material.maps[MATERIAL_MAP_DIFFUSE].color.b,
-                   material.maps[MATERIAL_MAP_DIFFUSE].color.a);
-
-        if (mesh.indices != NULL) pfDrawVertexArrayElements(0, mesh.triangleCount*3, mesh.indices);
-        else pfDrawVertexArray(0, mesh.vertexCount);
-    pfPopMatrix();
-
-    pfDisableStatePointer(PF_VERTEX_ARRAY);
-    pfDisableStatePointer(PF_TEXTURE_COORD_ARRAY);
-    pfDisableStatePointer(PF_NORMAL_ARRAY);
-    pfDisableStatePointer(PF_COLOR_ARRAY);
-}
-
-void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float rotationAngle, Vector3 scale, Color tint)
-{
-    // Calculate transformation matrix from function parameters
-    // Get transform matrix (rotation -> scale -> translation)
-    PFMmat4 matScale, matRotation, matTranslation;
-    pfmMat4Scale(matScale, scale.x, scale.y, scale.z);
-    pfmMat4Rotate(matRotation, *(PFMvec3*)(&rotationAxis), DEG2RAD(rotationAngle));
-    pfmMat4Translate(matTranslation, position.x, position.y, position.z);
-
-    PFMmat4 matTransform;
-    pfmMat4Mul(matTransform, matScale, matRotation);
-    pfmMat4Mul(matTransform, matTransform, matTranslation);
-
-    // Combine model transformation matrix (model.transform) with matrix generated by function parameters (matTransform)
-    PFMmat4 modelTransform;
-    pfmMat4Mul(modelTransform, *(PFMmat4*)(&model.transform), matTransform);
-    memcpy(&model.transform, &modelTransform, sizeof(Matrix));
-
-    for (int i = 0; i < model.meshCount; i++)
-    {
-        Color color = model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color;
-
-        Color colorTint = WHITE;
-        colorTint.r = (unsigned char)((((float)color.r/255.0f)*((float)tint.r/255.0f))*255.0f);
-        colorTint.g = (unsigned char)((((float)color.g/255.0f)*((float)tint.g/255.0f))*255.0f);
-        colorTint.b = (unsigned char)((((float)color.b/255.0f)*((float)tint.b/255.0f))*255.0f);
-        colorTint.a = (unsigned char)((((float)color.a/255.0f)*((float)tint.a/255.0f))*255.0f);
-
-        model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = colorTint;
-        PF_DrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], model.transform);
-        model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = color;
-    }
-}
-
-void PF_DrawModel(Model model, Vector3 position, float scale, Color tint)
-{
-    Vector3 vScale = { scale, scale, scale };
-    Vector3 rotationAxis = { 0.0f, 1.0f, 0.0f };
-    PF_DrawModelEx(model, position, rotationAxis, 0.0f, vScale, tint);
-}
