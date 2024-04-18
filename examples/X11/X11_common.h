@@ -13,6 +13,51 @@
 
 /* Pixel getter/setter */
 
+PFcolor PF_GetPixel(const void* pixels, PFsizei offset);
+void PF_SetPixel(void* pixels, PFsizei offset, PFcolor color);
+
+/* X11 App management */
+
+typedef struct {
+    Display *dpy;
+    Window root;
+    Window win;
+    GC gc;
+    XEvent e;
+    Atom wmDeleteMessage;
+    int screen;
+    PFuint *destBuffer;
+    XImage *destImage;
+} X11_App;
+
+X11_App X11_InitApp(int width, int height);
+void X11_CloseApp(X11_App* app);
+
+void X11_UpdateWindow(X11_App* app);
+
+/* Clock management */
+
+typedef struct {
+    struct timeval tvLastFrame;
+    float deltaTime;
+    unsigned int maxFPS;
+} Clock;
+
+Clock Clock_Create(unsigned int maxFPS);
+void Clock_Begin(Clock* clock);
+void Clock_End(Clock* clock);
+
+/* PixelForge context management */
+
+PFctx* PF_InitFromX11App(X11_App* app);
+
+
+/* Implementation */
+
+#ifdef PF_X11_COMMON_IMPL
+
+/* Pixel getter/setter */
+
 PFcolor PF_GetPixel(const void* pixels, PFsizei offset)
 {
     return (PFcolor) {
@@ -32,18 +77,6 @@ void PF_SetPixel(void* pixels, PFsizei offset, PFcolor color)
 }
 
 /* X11 App management */
-
-typedef struct {
-    Display *dpy;
-    Window root;
-    Window win;
-    GC gc;
-    XEvent e;
-    Atom wmDeleteMessage;
-    int screen;
-    PFuint *destBuffer;
-    XImage *destImage;
-} X11_App;
 
 X11_App X11_InitApp(int width, int height)
 {
@@ -101,12 +134,6 @@ void X11_UpdateWindow(X11_App* app)
 
 /* Clock management */
 
-typedef struct {
-    struct timeval tvLastFrame;
-    float deltaTime;
-    unsigned int maxFPS;
-} Clock;
-
 Clock Clock_Create(unsigned int maxFPS)
 {
     Clock clock;
@@ -150,4 +177,5 @@ PFctx* PF_InitFromX11App(X11_App* app)
     return ctx;
 }
 
+#endif //PF_X11_COMMON_IMPL
 #endif //PF_X11_COMMON_H
