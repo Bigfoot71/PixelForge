@@ -1254,8 +1254,17 @@ static PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* 
 
 static void Process_HomogeneousToScreen(PFvertex* restrict v)
 {
-    v->screen[0] = currentCtx->viewportX + (v->homogeneous[0] + 1.0f)*0.5f*currentCtx->viewportW;
-    v->screen[1] = currentCtx->viewportY + (1.0f - v->homogeneous[1])*0.5f*currentCtx->viewportH;
+    // NOTE: We add 0.5 to the screen coordinates to round them to the nearest integer
+    // when they are converted to integer coordinates. This adjustment was added because
+    // during clipping, some triangle vertices from the positive plane were found to be
+    // offset by -1 pixel in X or Y (or both in some cases), which could even cause
+    // triangle "tearing". While it's unclear if this is the best or correct solution,
+    // it effectively resolves the issue without observed problems so far. There may be
+    // an error in the polygon clipping functions. Nonetheless, this solution has been
+    // functioning without issue up to this point.
+
+    v->screen[0] = (currentCtx->viewportX + (v->homogeneous[0] + 1.0f) * 0.5f * currentCtx->viewportW) + 0.5f;
+    v->screen[1] = (currentCtx->viewportY + (1.0f - v->homogeneous[1]) * 0.5f * currentCtx->viewportH) + 0.5f;
 }
 
 static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2)
