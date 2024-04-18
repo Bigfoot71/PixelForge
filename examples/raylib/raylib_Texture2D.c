@@ -59,11 +59,11 @@ int main(void)
 
     // We load a background texture
     Image imBG = LoadImage(RESOURCES_PATH "images/PixelForge.png");
-    PFtexture texBG = pfTextureCreate(imBG.data, imBG.width, imBG.height, imBG.format);   // NOTE: PFpixelform is compatible with raylib PixelFormat!
+    PFtexture texBG = pfGenTexture(imBG.data, imBG.width, imBG.height, imBG.format);   // NOTE: PFpixelform is compatible with raylib PixelFormat!
 
     // We load an arrow texture
     Image imArrow = LoadImage(RESOURCES_PATH "images/arrow.png");
-    PFtexture texArrow = pfTextureCreate(imArrow.data, imArrow.width, imArrow.height, imArrow.format);
+    PFtexture texArrow = pfGenTexture(imArrow.data, imArrow.width, imArrow.height, imArrow.format);
 
     // We create an arrow that will follow the mouse cursor
     Arrow arrow = Arrow_Create();
@@ -99,8 +99,8 @@ int main(void)
     UnloadImage(imBG);
 
     // NOTE: No need to destroy tex here
-    //pfTextureDestroy(&texArrow);
-    //pfTextureDestroy(&texBG);
+    //pfDeleteTexture(&texArrow);
+    //pfDeleteTexture(&texBG);
 
     // Free allocated data
     pfDeleteContext(ctx);

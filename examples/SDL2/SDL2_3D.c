@@ -102,7 +102,7 @@ int main(void)
     pfSetDefaultPixelSetter(SetScreenPixel);
 
     // Define the camera position and a phase for the rotation
-    PFvec3f camPos = { -2.0f, 1.5f, -2.0f };
+    PFMvec3 camPos = { -2.0f, 1.5f, -2.0f };
     float timer = 0;
 
     // Main loop

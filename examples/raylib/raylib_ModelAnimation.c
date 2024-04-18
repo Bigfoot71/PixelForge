@@ -51,7 +51,7 @@ int main(void)
     pfLightfv(0, PF_POSITION, &camPos);
     pfLightfv(0, PF_SPOT_DIRECTION, &camDir);
 
-    //const PFvec3f col = { 1.0f, 0.0f, 0.0f };
+    //const PFMvec3 col = { 1.0f, 0.0f, 0.0f };
     //pfMaterialfv(PF_FRONT, PF_DIFFUSE, &col);
 
     // Start the main loop

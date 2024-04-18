@@ -117,7 +117,7 @@ int main()
     int frameTime;
 
     // Set camera position and phase for rotation
-    PFvec3f camPos = { -2.0f, 1.5f, -2.0f };
+    PFMvec3 camPos = { -2.0f, 1.5f, -2.0f };
     float timer = 0;
 
     while (1)

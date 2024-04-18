@@ -161,10 +161,6 @@ typedef enum {
     PF_LIGHTING     = 0x10
 } PFstate;
 
-/* Math definitions */
-
-
-
 /* Render definitions */
 
 typedef enum {
@@ -310,7 +306,7 @@ PF_API void pfMultMatrixf(const PFfloat* mat);
 PF_API void pfFrustum(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar);
 PF_API void pfOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar);
 
-/* Render API functions */
+/* Render configuration API functions */
 
 PF_API void pfGetViewport(PFuint* x, PFuint* y, PFuint* width, PFuint* height);
 PF_API void pfViewport(PFuint x, PFuint y, PFuint width, PFuint height);
@@ -346,6 +342,8 @@ PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
 
 PF_API void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer);
 PF_API void pfDrawVertexArray(PFsizei offset, PFsizei count);
+
+/* Primitives drawing API functions */
 
 PF_API void pfBegin(PFdrawmode mode);
 PF_API void pfEnd(void);
@@ -399,31 +397,31 @@ PF_API PFcolor pfBlendMultiplicative(PFcolor source, PFcolor destination);
 
 /* Framebuffer functions */
 
-PFframebuffer pfFramebufferGenBuffer(PFuint width, PFuint height, PFpixelformat format);
-PF_API void pfFramebufferDestroy(PFframebuffer* framebuffer);
+PFframebuffer pfGenFramebuffer(PFuint width, PFuint height, PFpixelformat format);
+PF_API void pfDeleteFramebuffer(PFframebuffer* framebuffer);
 
 // NOTE: This function clears the color as well as depth buffer
-PF_API void pfFramebufferClear(PFframebuffer* framebuffer, PFcolor color);
+PF_API void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color);
 
-PF_API void pfFramebufferSetPixelDepth(PFframebuffer* framebuffer, PFuint x, PFuint y, PFfloat z, PFcolor color);
-PF_API PFfloat pfFramebufferGetDepth(const PFframebuffer* framebuffer, PFuint x, PFuint y);
+PF_API void pfSetFramebufferPixelDepth(PFframebuffer* framebuffer, PFuint x, PFuint y, PFfloat z, PFcolor color);
+PF_API PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFuint x, PFuint y);
 
-PF_API void pfFramebufferSetPixel(PFframebuffer* framebuffer, PFuint x, PFuint y, PFcolor color);
-PF_API PFcolor pfFrambufferGetPixel(const PFframebuffer* framebuffer, PFuint x, PFuint y);
+PF_API void pfSetFramebufferPixel(PFframebuffer* framebuffer, PFuint x, PFuint y, PFcolor color);
+PF_API PFcolor pfGetFramebufferPixel(const PFframebuffer* framebuffer, PFuint x, PFuint y);
 
 /* Texture functions */
 
-PF_API PFtexture pfTextureCreate(void* pixels, PFuint width, PFuint height, PFpixelformat format);
-PF_API PFtexture pfTextureGenBuffer(PFuint width, PFuint height, PFpixelformat format);
-PF_API PFtexture pfTextureGenColorBuffer(PFuint width, PFuint height, PFcolor color, PFpixelformat format);
+PF_API PFtexture pfGenTexture(void* pixels, PFuint width, PFuint height, PFpixelformat format);
+PF_API PFtexture pfGenTextureBuffer(PFuint width, PFuint height, PFpixelformat format);
+PF_API PFtexture pfGenColorTextureBuffer(PFuint width, PFuint height, PFcolor color, PFpixelformat format);
 
-PF_API void pfTextureDestroy(PFtexture* texture);
+PF_API void pfDeleteTexture(PFtexture* texture);
 
-PF_API void pfTextureSetPixel(PFtexture* texture, PFuint x, PFuint y, PFcolor color);
-PF_API PFcolor pfTextureGetPixel(const PFtexture* texture, PFuint x, PFuint y);
+PF_API void pfSetTexturePixel(PFtexture* texture, PFuint x, PFuint y, PFcolor color);
+PF_API PFcolor pfGetTexturePixel(const PFtexture* texture, PFuint x, PFuint y);
 
-PF_API void pfTextureSetSample(PFtexture* texture, PFfloat u, PFfloat v, PFcolor color);
-PF_API PFcolor pfTextureGetSample(const PFtexture* texture, PFfloat u, PFfloat v);
+PF_API void pfSetTextureSample(PFtexture* texture, PFfloat u, PFfloat v, PFcolor color);
+PF_API PFcolor pfGetTextureSample(const PFtexture* texture, PFfloat u, PFfloat v);
 
 #if defined(__cplusplus)
 }

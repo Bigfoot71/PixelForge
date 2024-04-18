@@ -46,7 +46,7 @@ int main(void)
     Model model = LoadModelFromMesh(mesh);
 
     Image imTexMap = LoadImage(RESOURCES_PATH "images/cubicmap_atlas.png");
-    PFtexture texMap = pfTextureCreate(imTexMap.data, imTexMap.width, imTexMap.height, imTexMap.format);
+    PFtexture texMap = pfGenTexture(imTexMap.data, imTexMap.width, imTexMap.height, imTexMap.format);
 
     DisableCursor();
     SetTargetFPS(60);
@@ -137,8 +137,8 @@ void PF_BeginMode3D(Camera3D camera)
     pfLoadIdentity();                   // Reset current matrix (modelview)
 
     // Setup Camera view
-    PFmat4f matView;
-    pfMat4fLookAt(matView, (PFfloat*)(&camera.position), (PFfloat*)(&camera.target), (PFfloat*)(&camera.up));
+    PFMmat4 matView;
+    pfmMat4LookAt(matView, (PFfloat*)(&camera.position), (PFfloat*)(&camera.target), (PFfloat*)(&camera.up));
     pfMultMatrixf((float*)(&matView));  // Multiply modelview matrix by view matrix (camera)
 
     pfEnable(PF_DEPTH_TEST);            // Enable DEPTH_TEST for 3D

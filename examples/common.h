@@ -153,12 +153,12 @@ void PF_Update3D(PFfloat px, PFfloat py, PFfloat pz, PFfloat tx, PFfloat ty, PFf
     pfMatrixMode(PF_MODELVIEW);
     pfLoadIdentity();
 
-    PFvec3f position = { px, py, pz };
-    PFvec3f target = { tx, ty, tz };
-    PFvec3f up = { 0, 1, 0 };
+    PFMvec3 position = { px, py, pz };
+    PFMvec3 target = { tx, ty, tz };
+    PFMvec3 up = { 0, 1, 0 };
 
-    PFmat4f matView;
-    pfMat4fLookAt(matView, position, target, up);
+    PFMmat4 matView;
+    pfmMat4LookAt(matView, position, target, up);
 
     pfMultMatrixf(matView);
 }

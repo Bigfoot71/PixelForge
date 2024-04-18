@@ -51,7 +51,7 @@ static PFfloat HalfToFloat(PFushort x)
 static void SetGrayscale(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate grayscale equivalent color
-    PFvec3f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
+    PFMvec3 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
     PFubyte gray = (PFubyte)((nCol[0]*0.299f + nCol[1]*0.587f + nCol[2]*0.114f)*255.0f);
 
     ((PFubyte*)pixels)[offset] = gray;
@@ -60,7 +60,7 @@ static void SetGrayscale(void* pixels, PFsizei offset, PFcolor color)
 static void SetGrayAlpha(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate grayscale equivalent color
-    PFvec3f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
+    PFMvec3 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
     PFubyte gray = (PFubyte)((nCol[0]*0.299f + nCol[1]*0.587f + nCol[2]*0.114f)*255.0f);
 
     PFubyte *pixel = (PFubyte*)pixels + offset*2;
@@ -70,7 +70,7 @@ static void SetGrayAlpha(void* pixels, PFsizei offset, PFcolor color)
 static void SetR5G6B5(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate R5G6B5 equivalent color
-    PFvec3f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
+    PFMvec3 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
 
     PFubyte r = (PFubyte)(round(nCol[0]*31.0f));
     PFubyte g = (PFubyte)(round(nCol[1]*63.0f));
@@ -88,7 +88,7 @@ static void SetR8G8B8(void* pixels, PFsizei offset, PFcolor color)
 static void SetR5G5B5A1(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate R5G5B5A1 equivalent color
-    PFvec4f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
+    PFMvec4 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
 
     PFubyte r = (PFubyte)(round(nCol[0]*31.0f));
     PFubyte g = (PFubyte)(round(nCol[1]*31.0f));
@@ -101,7 +101,7 @@ static void SetR5G5B5A1(void* pixels, PFsizei offset, PFcolor color)
 static void SetR4G4B4A4(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate R5G5B5A1 equivalent color
-    PFvec4f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
+    PFMvec4 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
 
     PFubyte r = (PFubyte)(round(nCol[0]*15.0f));
     PFubyte g = (PFubyte)(round(nCol[1]*15.0f));
@@ -119,7 +119,7 @@ static void SetR8G8B8A8(void* pixels, PFsizei offset, PFcolor color)
 static void SetR32(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate grayscale equivalent color (normalized to 32bit)
-    PFvec3f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
+    PFMvec3 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
 
     ((PFfloat*)pixels)[offset] = nCol[0]*0.299f + nCol[1]*0.587f + nCol[2]*0.114f;
 }
@@ -127,23 +127,23 @@ static void SetR32(void* pixels, PFsizei offset, PFcolor color)
 static void SetR32G32B32(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate R32G32B32 equivalent color (normalized to 32bit)
-    PFvec3f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
+    PFMvec3 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
 
-    memcpy((PFvec3f*)pixels + offset, nCol, sizeof(PFvec3f));
+    memcpy((PFMvec3*)pixels + offset, nCol, sizeof(PFMvec3));
 }
 
 static void SetR32G32B32A32(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate R32G32B32A32 equivalent color (normalized to 32bit)
-    PFvec4f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
+    PFMvec4 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
 
-    memcpy((PFvec4f*)pixels + offset, nCol, sizeof(PFvec4f));
+    memcpy((PFMvec4*)pixels + offset, nCol, sizeof(PFMvec4));
 }
 
 static void SetR16(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate grayscale equivalent color (normalized to 32bit)
-    PFvec3f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
+    PFMvec3 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
 
     ((PFushort*)pixels)[offset] = FloatToHalf(nCol[0]*0.299f + nCol[1]*0.587f + nCol[2]*0.114f);
 }
@@ -151,7 +151,7 @@ static void SetR16(void* pixels, PFsizei offset, PFcolor color)
 static void SetR16G16B16(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate R32G32B32 equivalent color (normalized to 32bit)
-    PFvec3f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
+    PFMvec3 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
 
     PFushort *pixel = (PFushort*)pixels + offset*3;
     pixel[0] = FloatToHalf(nCol[0]);
@@ -162,7 +162,7 @@ static void SetR16G16B16(void* pixels, PFsizei offset, PFcolor color)
 static void SetR16G16B16A16(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate R32G32B32A32 equivalent color (normalized to 32bit)
-    PFvec4f nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
+    PFMvec4 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
 
     PFushort *pixel = (PFushort*)pixels + offset*4;
     pixel[0] = FloatToHalf(nCol[0]);
@@ -398,7 +398,7 @@ PFsizei GetPixelByte(PFpixelformat format)
 
 /* Texture functions */
 
-PFtexture pfTextureCreate(void* pixels, PFuint width, PFuint height, PFpixelformat format)
+PFtexture pfGenTexture(void* pixels, PFuint width, PFuint height, PFpixelformat format)
 {
     PFtexture texture = { NULL, NULL, pixels, width, height, format };
     if (format == PF_PIXELFORMAT_UNKNOWN) return texture;
@@ -408,7 +408,7 @@ PFtexture pfTextureCreate(void* pixels, PFuint width, PFuint height, PFpixelform
     return texture;
 }
 
-PFtexture pfTextureGenBuffer(PFuint width, PFuint height, PFpixelformat format)
+PFtexture pfGenTextureBuffer(PFuint width, PFuint height, PFpixelformat format)
 {
     PFtexture texture = { NULL, NULL, NULL, width, height, format };
     if (format == PF_PIXELFORMAT_UNKNOWN) return texture;
@@ -426,7 +426,7 @@ PFtexture pfTextureGenBuffer(PFuint width, PFuint height, PFpixelformat format)
     return texture;
 }
 
-PFtexture pfTextureGenBufferColor(PFuint width, PFuint height, PFcolor color, PFpixelformat format)
+PFtexture pfGenTextureBufferColor(PFuint width, PFuint height, PFcolor color, PFpixelformat format)
 {
     PFtexture texture = { NULL, NULL, NULL, width, height, format };
     if (format == PF_PIXELFORMAT_UNKNOWN) return texture;
@@ -444,7 +444,7 @@ PFtexture pfTextureGenBufferColor(PFuint width, PFuint height, PFcolor color, PF
     return texture;
 }
 
-void pfTextureDestroy(PFtexture* texture)
+void pfDeleteTexture(PFtexture* texture)
 {
     if (texture)
     {
@@ -459,24 +459,24 @@ void pfTextureDestroy(PFtexture* texture)
     }
 }
 
-void pfTextureSetPixel(PFtexture* texture, PFuint x, PFuint y, PFcolor color)
+void pfSetTexturePixel(PFtexture* texture, PFuint x, PFuint y, PFcolor color)
 {
     texture->pixelSetter(texture->pixels, y*texture->width + x, color);
 }
 
-PFcolor pfTextureGetPixel(const PFtexture* texture, PFuint x, PFuint y)
+PFcolor pfGetTexturePixel(const PFtexture* texture, PFuint x, PFuint y)
 {
     return texture->pixelGetter(texture->pixels, y*texture->width + x);
 }
 
-void pfTextureSetSample(PFtexture* texture, PFfloat u, PFfloat v, PFcolor color)
+void pfSetTextureSample(PFtexture* texture, PFfloat u, PFfloat v, PFcolor color)
 {
     PFuint x = (PFuint)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
     PFuint y = (PFuint)((v - (PFint)v)*(texture->height - 1)) & (texture->width - 1);
     texture->pixelSetter(texture->pixels, y*texture->width + x, color);
 }
 
-PFcolor pfTextureGetSample(const PFtexture* texture, PFfloat u, PFfloat v)
+PFcolor pfGetTextureSample(const PFtexture* texture, PFfloat u, PFfloat v)
 {
     PFuint x = (PFuint)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
     PFuint y = (PFuint)((v - (PFint)v)*(texture->height - 1)) & (texture->width - 1);

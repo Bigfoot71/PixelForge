@@ -40,17 +40,17 @@ typedef struct {
 } PFvertexattribs;
 
 typedef struct {
-    PFvec4f homogeneous;
-    PFvec2f screen;
-    PFvec3f position;
-    PFvec3f normal;
-    PFvec2f texcoord;
+    PFMvec4 homogeneous;
+    PFMvec2 screen;
+    PFMvec3 position;
+    PFMvec3 normal;
+    PFMvec2 texcoord;
     PFcolor color;
 } PFvertex;
 
 typedef struct {
-    PFvec3f position;
-    PFvec3f direction;
+    PFMvec3 position;
+    PFMvec3 direction;
     PFcolor ambient;
     PFcolor diffuse;
     PFcolor specular;
@@ -77,8 +77,8 @@ struct PFctx {
     PFblendfunc blendFunction;                  // Blend function for alpha blending
     PFcolor clearColor;                         // Color used to clear the screen
 
-    PFvec3f currentNormal;                      // Current normal vector for lighting calculations
-    PFvec2f currentTexcoord;                    // Current texture coordinates
+    PFMvec3 currentNormal;                      // Current normal vector for lighting calculations
+    PFMvec2 currentTexcoord;                    // Current texture coordinates
     PFcolor currentColor;                       // Current color for vertex rendering
 
     PFvertex vertexBuffer[6];                   // Vertex buffer for geometry
@@ -91,12 +91,12 @@ struct PFctx {
     PFmaterial backMaterial;
 
     PFmatrixmode currentMatrixMode;             // Current matrix mode (e.g., PF_MODELVIEW, PF_PROJECTION)
-    PFmat4f *currentMatrix;                     // Pointer to the current matrix
-    PFmat4f projection;                         // Default projection matrix
-    PFmat4f modelview;                          // Default modelview matrix
-    PFmat4f transform;                          // Transformation matrix for translation, rotation, and scaling
+    PFMmat4 *currentMatrix;                     // Pointer to the current matrix
+    PFMmat4 projection;                         // Default projection matrix
+    PFMmat4 modelview;                          // Default modelview matrix
+    PFMmat4 transform;                          // Transformation matrix for translation, rotation, and scaling
     PFboolean transformRequired;                // Flag indicating whether transformation is required for vertices
-    PFmat4f stack[PF_MAX_MATRIX_STACK_SIZE];    // Matrix stack for push/pop operations
+    PFMmat4 stack[PF_MAX_MATRIX_STACK_SIZE];    // Matrix stack for push/pop operations
     PFint stackCounter;                         // Counter for matrix stack operations
 
     PFvertexattribs vertexAttribs;              // Vertex attributes (e.g., normal, texture coordinates)
@@ -130,32 +130,32 @@ typedef enum {
 /* Internal types */
 
 typedef void (*RasterizeTriangleFunc)(const PFvertex*, const PFvertex*, const PFvertex*);
-typedef void (*RasterizeTriangleLightFunc)(const PFvertex*, const PFvertex*, const PFvertex*, const PFvec3f);
+typedef void (*RasterizeTriangleLightFunc)(const PFvertex*, const PFvertex*, const PFvertex*, const PFMvec3);
 
 /* Internal processing and rasterization function declarations */
 
-static void ProcessRasterize(const PFmat4f mvp, const PFmat4f matNormal);
+static void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal);
 
 /* Internal helper function declarations */
 
-static void Helper_GetModelView(PFmat4f outModelview, PFmat4f outMatNormal, PFmat4f outMVP)
+static void Helper_GetModelView(PFMmat4 outModelview, PFMmat4 outMatNormal, PFMmat4 outMVP)
 {
-    pfMat4fCopy(outModelview, currentCtx->modelview);
+    pfmMat4Copy(outModelview, currentCtx->modelview);
 
     if (currentCtx->transformRequired)
     {
-        pfMat4fMul(outModelview, currentCtx->transform, outModelview);
+        pfmMat4Mul(outModelview, currentCtx->transform, outModelview);
     }
 
     if (outMatNormal)   // TODO REVIEW: Only calculate it when PF_LIGHTING state is activated??
     {
-        pfMat4fInvert(outMatNormal, currentCtx->transform);  // TODO REVIEW: modelview strange behaviour, i need to recheck this
-        pfMat4fTranspose(outMatNormal, outMatNormal);
+        pfmMat4Invert(outMatNormal, currentCtx->transform);  // TODO REVIEW: modelview strange behaviour, i need to recheck this
+        pfmMat4Transpose(outMatNormal, outMatNormal);
     }
 
     if (outMVP)
     {
-        pfMat4fMul(outMVP, outModelview, currentCtx->projection);
+        pfmMat4Mul(outMVP, outModelview, currentCtx->projection);
     }
 }
 
@@ -167,7 +167,7 @@ PFctx* pfCreateContext(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
 
     ctx->screenBuffer = (PFframebuffer) { 0 };
 
-    ctx->screenBuffer.texture = pfTextureCreate(
+    ctx->screenBuffer.texture = pfGenTexture(
         screenBuffer, screenWidth, screenHeight, screenFormat);
 
     const PFsizei bufferSize = screenWidth*screenHeight;
@@ -185,8 +185,8 @@ PFctx* pfCreateContext(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     ctx->blendFunction = pfBlendDisabled;
     ctx->clearColor = (PFcolor) { 0 };
 
-    memset(ctx->currentNormal, 0, sizeof(PFvec3f));
-    memset(ctx->currentTexcoord, 0, sizeof(PFvec2f));
+    memset(ctx->currentNormal, 0, sizeof(PFMvec3));
+    memset(ctx->currentTexcoord, 0, sizeof(PFMvec2));
     ctx->currentColor = (PFcolor) { 255, 255, 255, 255 };
 
     ctx->vertexCount = 0;
@@ -220,9 +220,9 @@ PFctx* pfCreateContext(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     ctx->currentMatrixMode = PF_MODELVIEW;
     ctx->currentMatrix = &ctx->modelview;
 
-    pfMat4fOrtho(ctx->projection, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
-    pfMat4fIdentity(ctx->modelview);
-    pfMat4fIdentity(ctx->transform);
+    pfmMat4Ortho(ctx->projection, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+    pfmMat4Identity(ctx->modelview);
+    pfmMat4Identity(ctx->transform);
 
     ctx->transformRequired = PF_FALSE;
     ctx->stackCounter = 0;
@@ -305,7 +305,7 @@ void pfPushMatrix(void)
         currentCtx->currentMatrix = &currentCtx->transform;
     }
 
-    pfMat4fCopy(currentCtx->stack[currentCtx->stackCounter], *currentCtx->currentMatrix);
+    pfmMat4Copy(currentCtx->stack[currentCtx->stackCounter], *currentCtx->currentMatrix);
     currentCtx->stackCounter++;
 }
 
@@ -313,7 +313,7 @@ void pfPopMatrix(void)
 {
     if (currentCtx->stackCounter > 0)
     {
-        pfMat4fCopy(*currentCtx->currentMatrix, currentCtx->stack[--currentCtx->stackCounter]);
+        pfmMat4Copy(*currentCtx->currentMatrix, currentCtx->stack[--currentCtx->stackCounter]);
     }
 
     if (currentCtx->stackCounter == 0 && currentCtx->currentMatrixMode == PF_MODELVIEW)
@@ -325,59 +325,59 @@ void pfPopMatrix(void)
 
 void pfLoadIdentity(void)
 {
-    pfMat4fIdentity(*currentCtx->currentMatrix);
+    pfmMat4Identity(*currentCtx->currentMatrix);
 }
 
 void pfTranslatef(PFfloat x, PFfloat y, PFfloat z)
 {
-    PFmat4f translation;
-    pfMat4fTranslate(translation, x, y, z);
+    PFMmat4 translation;
+    pfmMat4Translate(translation, x, y, z);
 
     // NOTE: We transpose matrix with multiplication order
-    pfMat4fMul(*currentCtx->currentMatrix, translation, *currentCtx->currentMatrix);
+    pfmMat4Mul(*currentCtx->currentMatrix, translation, *currentCtx->currentMatrix);
 }
 
 void pfRotatef(PFfloat angle, PFfloat x, PFfloat y, PFfloat z)
 {
-    PFvec3f axis = { x, y, z }; // TODO: review
+    PFMvec3 axis = { x, y, z }; // TODO: review
 
-    PFmat4f rotation;
-    pfMat4fRotate(rotation, axis, DEG2RAD(angle));
+    PFMmat4 rotation;
+    pfmMat4Rotate(rotation, axis, DEG2RAD(angle));
 
     // NOTE: We transpose matrix with multiplication order
-    pfMat4fMul(*currentCtx->currentMatrix, rotation, *currentCtx->currentMatrix);
+    pfmMat4Mul(*currentCtx->currentMatrix, rotation, *currentCtx->currentMatrix);
 }
 
 void pfScalef(PFfloat x, PFfloat y, PFfloat z)
 {
-    PFmat4f scale;
-    pfMat4fScale(scale, x, y, z);
+    PFMmat4 scale;
+    pfmMat4Scale(scale, x, y, z);
 
     // NOTE: We transpose matrix with multiplication order
-    pfMat4fMul(*currentCtx->currentMatrix, scale, *currentCtx->currentMatrix);
+    pfmMat4Mul(*currentCtx->currentMatrix, scale, *currentCtx->currentMatrix);
 }
 
 void pfMultMatrixf(const PFfloat* mat)
 {
-    pfMat4fMul(*currentCtx->currentMatrix, *currentCtx->currentMatrix, mat);
+    pfmMat4Mul(*currentCtx->currentMatrix, *currentCtx->currentMatrix, mat);
 }
 
 void pfFrustum(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar)
 {
-    PFmat4f frustum;
-    pfMat4fFrustum(frustum, left, right, bottom, top, znear, zfar);
-    pfMat4fMul(*currentCtx->currentMatrix, *currentCtx->currentMatrix, frustum);
+    PFMmat4 frustum;
+    pfmMat4Frustum(frustum, left, right, bottom, top, znear, zfar);
+    pfmMat4Mul(*currentCtx->currentMatrix, *currentCtx->currentMatrix, frustum);
 }
 
 void pfOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar)
 {
-    PFmat4f ortho;
-    pfMat4fOrtho(ortho, left, right, bottom, top, znear, zfar);
-    pfMat4fMul(*currentCtx->currentMatrix, *currentCtx->currentMatrix, ortho);
+    PFMmat4 ortho;
+    pfmMat4Ortho(ortho, left, right, bottom, top, znear, zfar);
+    pfmMat4Mul(*currentCtx->currentMatrix, *currentCtx->currentMatrix, ortho);
 }
 
 
-/* Render API functions */
+/* Render configuration API functions */
 
 void pfGetViewport(PFuint* x, PFuint* y, PFuint* width, PFuint* height)
 {
@@ -521,11 +521,11 @@ void pfLightfv(PFuint light, PFuint param, const void* value)
         switch (param)
         {
             case PF_POSITION:
-                memcpy(l->position, value, sizeof(PFvec3f));
+                memcpy(l->position, value, sizeof(PFMvec3));
                 break;
 
             case PF_SPOT_DIRECTION:
-                memcpy(l->direction, value, sizeof(PFvec3f));
+                memcpy(l->direction, value, sizeof(PFMvec3));
                 break;
 
             case PF_AMBIENT:
@@ -780,18 +780,18 @@ void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
 void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer)
 {
     if (!(currentCtx->vertexAttribState & PF_VERTEX_ARRAY)) return;
-    const PFvec3f *positions = (const PFvec3f*)(currentCtx->vertexAttribs.positions) + offset;
+    const PFMvec3 *positions = (const PFMvec3*)(currentCtx->vertexAttribs.positions) + offset;
 
-    const PFvec3f *normals = (currentCtx->vertexAttribState & PF_NORMAL_ARRAY)
-        ? (const PFvec3f*)(currentCtx->vertexAttribs.normals) + offset : NULL;
+    const PFMvec3 *normals = (currentCtx->vertexAttribState & PF_NORMAL_ARRAY)
+        ? (const PFMvec3*)(currentCtx->vertexAttribs.normals) + offset : NULL;
 
     const PFcolor *colors = (currentCtx->vertexAttribState & PF_COLOR_ARRAY)
         ? (const PFcolor*)(currentCtx->vertexAttribs.colors) + offset : NULL;
 
-    const PFvec2f *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
-        ? (const PFvec2f*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
+    const PFMvec2 *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
+        ? (const PFMvec2*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
 
-    PFmat4f modelview, matNormal, mvp; // TODO: Review this, modelview is not used
+    PFMmat4 modelview, matNormal, mvp; // TODO: Review this, modelview is not used
     (void)Helper_GetModelView(modelview, matNormal, mvp);
 
     pfBegin((currentCtx->state & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
@@ -806,13 +806,13 @@ void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer
 
         // Fill the vertex with given vertices data
 
-        memcpy(vertex->position, *(positions + j), sizeof(PFvec3f));
+        memcpy(vertex->position, *(positions + j), sizeof(PFMvec3));
 
-        if (normals) memcpy(vertex->normal, *(normals + j), sizeof(PFvec3f));
-        else memset(vertex->normal, 0, sizeof(PFvec3f));
+        if (normals) memcpy(vertex->normal, *(normals + j), sizeof(PFMvec3));
+        else memset(vertex->normal, 0, sizeof(PFMvec3));
 
-        if (texcoords) memcpy(vertex->texcoord, *(texcoords + j), sizeof(PFvec2f));
-        else memset(vertex->texcoord, 0, sizeof(PFvec2f));
+        if (texcoords) memcpy(vertex->texcoord, *(texcoords + j), sizeof(PFMvec2));
+        else memset(vertex->texcoord, 0, sizeof(PFMvec2));
 
         if (colors) memcpy(&vertex->color, colors + j, sizeof(PFcolor));
         else memcpy(&vertex->color, &currentCtx->currentColor, sizeof(PFcolor));
@@ -832,18 +832,18 @@ void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer
 void pfDrawVertexArray(PFsizei offset, PFsizei count)
 {
     if (!(currentCtx->vertexAttribState & PF_VERTEX_ARRAY)) return;
-    const PFvec3f *positions = (const PFvec3f*)(currentCtx->vertexAttribs.positions) + offset;
+    const PFMvec3 *positions = (const PFMvec3*)(currentCtx->vertexAttribs.positions) + offset;
 
-    const PFvec3f *normals = (currentCtx->vertexAttribState & PF_NORMAL_ARRAY)
-        ? (const PFvec3f*)(currentCtx->vertexAttribs.normals) + offset : NULL;
+    const PFMvec3 *normals = (currentCtx->vertexAttribState & PF_NORMAL_ARRAY)
+        ? (const PFMvec3*)(currentCtx->vertexAttribs.normals) + offset : NULL;
 
     const PFcolor *colors = (currentCtx->vertexAttribState & PF_COLOR_ARRAY)
         ? (const PFcolor*)(currentCtx->vertexAttribs.colors) + offset : NULL;
 
-    const PFvec2f *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
-        ? (const PFvec2f*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
+    const PFMvec2 *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
+        ? (const PFMvec2*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
 
-    PFmat4f modelview, matNormal, mvp; // TODO: Review this, modelview is not used
+    PFMmat4 modelview, matNormal, mvp; // TODO: Review this, modelview is not used
     (void)Helper_GetModelView(modelview, matNormal, mvp);
 
     pfBegin((currentCtx->state & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
@@ -857,13 +857,13 @@ void pfDrawVertexArray(PFsizei offset, PFsizei count)
 
         // Fill the vertex with given vertices data
 
-        memcpy(vertex->position, *(positions + i), sizeof(PFvec3f));
+        memcpy(vertex->position, *(positions + i), sizeof(PFMvec3));
 
-        if (normals) memcpy(vertex->normal, *(normals + i), sizeof(PFvec3f));
-        else memset(vertex->normal, 0, sizeof(PFvec3f));
+        if (normals) memcpy(vertex->normal, *(normals + i), sizeof(PFMvec3));
+        else memset(vertex->normal, 0, sizeof(PFMvec3));
 
-        if (texcoords) memcpy(vertex->texcoord, *(texcoords + i), sizeof(PFvec2f));
-        else memset(vertex->texcoord, 0, sizeof(PFvec2f));
+        if (texcoords) memcpy(vertex->texcoord, *(texcoords + i), sizeof(PFMvec2));
+        else memset(vertex->texcoord, 0, sizeof(PFMvec2));
 
         if (colors) memcpy(&vertex->color, colors + i, sizeof(PFcolor));
         else memcpy(&vertex->color, &currentCtx->currentColor, sizeof(PFcolor));
@@ -880,6 +880,9 @@ void pfDrawVertexArray(PFsizei offset, PFsizei count)
     pfEnd();
 }
 
+
+/* Primitives drawing API functions */
+
 void pfBegin(PFdrawmode mode)
 {
     currentCtx->currentDrawMode = mode;
@@ -893,25 +896,25 @@ void pfEnd(void)
 
 void pfVertex2i(PFint x, PFint y)
 {
-    PFvec3f v = { (PFfloat)x, (PFfloat)y, 0.0f };
+    PFMvec3 v = { (PFfloat)x, (PFfloat)y, 0.0f };
     pfVertexfv(v);
 }
 
 void pfVertex2f(PFfloat x, PFfloat y)
 {
-    PFvec3f v = { x, y, 0.0f };
+    PFMvec3 v = { x, y, 0.0f };
     pfVertexfv(v);
 }
 
 void pfVertex2fv(const PFfloat* v)
 {
-    PFvec3f v3 = { v[0], v[1], 0.0f };
+    PFMvec3 v3 = { v[0], v[1], 0.0f };
     pfVertexfv(v3);
 }
 
 void pfVertex3f(PFfloat x, PFfloat y, PFfloat z)
 {
-    PFvec3f v = { x, y, z };
+    PFMvec3 v = { x, y, z };
     pfVertexfv(v);
 }
 
@@ -923,16 +926,16 @@ void pfVertexfv(const PFfloat* v)
 
     // Fill the vertex with given vertices data
 
-    memcpy(vertex->position, v, sizeof(PFvec3f));
-    memcpy(vertex->normal, currentCtx->currentNormal, sizeof(PFvec3f));
-    memcpy(vertex->texcoord, currentCtx->currentTexcoord, sizeof(PFvec2f));
+    memcpy(vertex->position, v, sizeof(PFMvec3));
+    memcpy(vertex->normal, currentCtx->currentNormal, sizeof(PFMvec3));
+    memcpy(vertex->texcoord, currentCtx->currentTexcoord, sizeof(PFMvec2));
     memcpy(&vertex->color, &currentCtx->currentColor, sizeof(PFcolor));
 
     // If the number of vertices has reached that necessary for, we process the shape
 
     if (currentCtx->vertexCount == currentCtx->currentDrawMode)
     {
-        PFmat4f modelview, matNormal, mvp; // TODO: Review this, modelview is not used
+        PFMmat4 modelview, matNormal, mvp; // TODO: Review this, modelview is not used
         (void)Helper_GetModelView(modelview, matNormal, mvp);
 
         currentCtx->vertexCount = 0;
@@ -1108,7 +1111,7 @@ void pfTexCoord2f(PFfloat u, PFfloat v)
 
 void pfTexCoordfv(const PFfloat* v)
 {
-    memcpy(currentCtx->currentTexcoord, v, sizeof(PFvec2f));
+    memcpy(currentCtx->currentTexcoord, v, sizeof(PFMvec2));
 }
 
 void pfNormal3f(PFfloat x, PFfloat y, PFfloat z)
@@ -1120,7 +1123,7 @@ void pfNormal3f(PFfloat x, PFfloat y, PFfloat z)
 
 void pfNormal3fv(const PFfloat* v)
 {
-    memcpy(currentCtx->currentNormal, v, sizeof(PFvec3f));
+    memcpy(currentCtx->currentNormal, v, sizeof(PFMvec3));
 }
 
 
@@ -1168,7 +1171,7 @@ static PFcolor Helper_LerpColor(PFcolor a, PFcolor b, PFfloat t)
     };
 }
 
-static void Helper_InterpolateVec2f(PFvec2f dst, const PFvec2f v1, const PFvec2f v2, const PFvec2f v3, PFfloat w1, PFfloat w2, PFfloat w3)
+static void Helper_InterpolateVec2(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, PFfloat w1, PFfloat w2, PFfloat w3)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -1176,7 +1179,7 @@ static void Helper_InterpolateVec2f(PFvec2f dst, const PFvec2f v1, const PFvec2f
     }
 }
 
-static void Helper_InterpolateVec3f(PFvec2f dst, const PFvec3f v1, const PFvec3f v2, const PFvec3f v3, PFfloat w1, PFfloat w2, PFfloat w3)
+static void Helper_InterpolateVec3f(PFMvec2 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, PFfloat w1, PFfloat w2, PFfloat w3)
 {
     for (int_fast8_t i = 0; i < 3; i++)
     {
@@ -1210,7 +1213,7 @@ static void Helper_SwapByte(PFubyte* a, PFubyte* b)
 }
 
 // Used by 'Process_ClipLine2D'
-static PFubyte Helper_EncodeClip2D(const PFvec2f screen)
+static PFubyte Helper_EncodeClip2D(const PFMvec2 screen)
 {
     PFubyte code = CLIP_INSIDE;
     if (screen[0] < currentCtx->viewportX) code |= CLIP_LEFT;
@@ -1316,8 +1319,8 @@ static PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2
 {
     PFfloat t1 = 0, t2 = 1;
 
-    PFvec4f delta;
-    pfVec4fSub(delta, v2->homogeneous, v1->homogeneous);
+    PFMvec4 delta;
+    pfmVec4Sub(delta, v2->homogeneous, v1->homogeneous);
 
     if (!Helper_ClipCoord3D(v1->homogeneous[3] - v1->homogeneous[0], -delta[3] + delta[0], &t1, &t2)) return PF_FALSE;
     if (!Helper_ClipCoord3D(v1->homogeneous[3] + v1->homogeneous[0], -delta[3] - delta[0], &t1, &t2)) return PF_FALSE;
@@ -1330,16 +1333,16 @@ static PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2
 
     if (t2 < 1)
     {
-        PFvec4f d;
-        pfVec4fScale(d, delta, t2);
-        pfVec4fAdd(v2->homogeneous, v1->homogeneous, d);
+        PFMvec4 d;
+        pfmVec4Scale(d, delta, t2);
+        pfmVec4Add(v2->homogeneous, v1->homogeneous, d);
     }
 
     if (t1 > 0)
     {
-        PFvec4f d;
-        pfVec4fScale(d, delta, t1);
-        pfVec4fAdd(v1->homogeneous, v1->homogeneous, d);
+        PFMvec4 d;
+        pfmVec4Scale(d, delta, t1);
+        pfmVec4Add(v1->homogeneous, v1->homogeneous, d);
     }
 
     return PF_TRUE;
@@ -1452,12 +1455,12 @@ static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, int_fast8_t*
     return *vertexCounter > 0;
 }
 
-static PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFmat4f mvp)
+static PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFMmat4 mvp)
 {
-    memcpy(v->homogeneous, v->position, sizeof(PFvec3f));
+    memcpy(v->homogeneous, v->position, sizeof(PFMvec3));
     v->homogeneous[3] = 1.0f;
 
-    pfVec4fTransform(v->homogeneous, v->homogeneous, mvp);
+    pfmVec4Transform(v->homogeneous, v->homogeneous, mvp);
 
     if (v->homogeneous[3] != 1.0f)
     {
@@ -1475,16 +1478,16 @@ static PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFmat4f mvp)
 }
 
 
-static void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict vertexCounter, const PFmat4f mvp)
+static void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict vertexCounter, const PFMmat4 mvp)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
         PFvertex *v = line + i;
 
-        memcpy(v->homogeneous, v->position, sizeof(PFvec3f));
+        memcpy(v->homogeneous, v->position, sizeof(PFMvec3));
         v->homogeneous[3] = 1.0f;
 
-        pfVec4fTransform(v->homogeneous, v->homogeneous, mvp);
+        pfmVec4Transform(v->homogeneous, v->homogeneous, mvp);
     }
 
     if (line[0].homogeneous[3] == 1.0f && line[1].homogeneous[3] == 1.0f)
@@ -1519,16 +1522,16 @@ static void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* res
     }
 }
 
-static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter, const PFmat4f mvp)
+static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter, const PFMmat4 mvp)
 {
     for (int_fast8_t i = 0; i < *vertexCounter; i++)
     {
         PFvertex *v = polygon + i;
 
-        memcpy(v->homogeneous, v->position, sizeof(PFvec3f));
+        memcpy(v->homogeneous, v->position, sizeof(PFMvec3));
         v->homogeneous[3] = 1.0f;
 
-        pfVec4fTransform(v->homogeneous, v->homogeneous, mvp);
+        pfmVec4Transform(v->homogeneous, v->homogeneous, mvp);
     }
 
     PFboolean is2D = (
@@ -1553,7 +1556,7 @@ static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_
                 polygon[i].homogeneous[2] = 1.0f / polygon[i].homogeneous[2];
 
                 // Division of texture coordinates by the Z axis (perspective correct)
-                pfVec2fScale(polygon[i].texcoord, polygon[i].texcoord, polygon[i].homogeneous[2]);
+                pfmVec2Scale(polygon[i].texcoord, polygon[i].texcoord, polygon[i].homogeneous[2]);
 
                 // Division of XY coordinates by weight (perspective correct)
                 PFfloat invW = 1.0f / polygon[i].homogeneous[3];
@@ -1578,7 +1581,7 @@ static void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2)
 
     if (dx == 0 && dy == 0)
     {
-        pfFramebufferSetPixel(currentCtx->currentFramebuffer, v1->screen[0], v1->screen[1], v1->color);
+        pfSetFramebufferPixel(currentCtx->currentFramebuffer, v1->screen[0], v1->screen[1], v1->color);
         return;
     }
 
@@ -1604,7 +1607,7 @@ static void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2)
         {
             const PFfloat t = (x - xMin)*invAdx;
             const PFint y = v1->screen[1] + (x - v1->screen[0])*slope;
-            pfFramebufferSetPixel(currentCtx->currentFramebuffer, x, y, Helper_LerpColor(v1->color, v2->color, t));
+            pfSetFramebufferPixel(currentCtx->currentFramebuffer, x, y, Helper_LerpColor(v1->color, v2->color, t));
         }
     }
     else
@@ -1626,7 +1629,7 @@ static void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2)
         {
             const PFfloat t = (y - yMin)*invAdy;
             const PFint x = v1->screen[0] + (y - v1->screen[1])*slope;
-            pfFramebufferSetPixel(currentCtx->currentFramebuffer, x, y, Helper_LerpColor(v1->color, v2->color, t));
+            pfSetFramebufferPixel(currentCtx->currentFramebuffer, x, y, Helper_LerpColor(v1->color, v2->color, t));
         }
     }
 }
@@ -1638,7 +1641,7 @@ static void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
 
     if (dx == 0 && dy == 0)
     {
-        pfFramebufferSetPixelDepth(currentCtx->currentFramebuffer, v1->screen[0], v1->screen[1], v1->homogeneous[2], v1->color);
+        pfSetFramebufferPixelDepth(currentCtx->currentFramebuffer, v1->screen[0], v1->screen[1], v1->homogeneous[2], v1->color);
         return;
     }
 
@@ -1668,7 +1671,7 @@ static void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
             const PFfloat t = (x - xMin)*invAdx;
             const PFfloat z = zMin + t*(zMax - zMin);
             const PFint y = v1->screen[1] + (x - v1->screen[0])*slope;
-            pfFramebufferSetPixelDepth(currentCtx->currentFramebuffer, x, y, z, Helper_LerpColor(v1->color, v2->color, t));
+            pfSetFramebufferPixelDepth(currentCtx->currentFramebuffer, x, y, z, Helper_LerpColor(v1->color, v2->color, t));
         }
     }
     else
@@ -1694,7 +1697,7 @@ static void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
             const PFfloat t = (y - yMin)*invAdy;
             const PFfloat z = zMin + t*(zMax - zMin);
             const PFint x = v1->screen[0] + (y - v1->screen[1])*slope;
-            pfFramebufferSetPixelDepth(currentCtx->currentFramebuffer, x, y, z, Helper_LerpColor(v1->color, v2->color, t));
+            pfSetFramebufferPixelDepth(currentCtx->currentFramebuffer, x, y, z, Helper_LerpColor(v1->color, v2->color, t));
         }
     }
 }
@@ -1752,9 +1755,9 @@ static void Rasterize_TriangleTextureFlat2D(const PFvertex* v1, const PFvertex* 
 
     PF_BEGIN_TRIANGLE_FLAT_LOOP();
     {
-        PFvec2f texcoord = { 0 };
-        Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
-        PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+        PFMvec2 texcoord = { 0 };
+        Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+        PFcolor texel = pfGetTextureSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
 
         const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
         PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
@@ -1773,9 +1776,9 @@ static void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex*
 
     PF_BEGIN_TRIANGLE_DEPTH_LOOP();
     {
-        PFvec2f texcoord = { 0 };
-        Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
-        PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+        PFMvec2 texcoord = { 0 };
+        Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+        PFcolor texel = pfGetTextureSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
 
         const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
         PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
@@ -1875,11 +1878,11 @@ static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* 
 
         PF_BEGIN_TRIANGLE_FLAT_LOOP();
         {
-            PFvec2f texcoord;
-            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            PFMvec2 texcoord;
+            Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            const PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            const PFcolor texel = pfGetTextureSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
@@ -1897,11 +1900,11 @@ static void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* 
 
         PF_BEGIN_TRIANGLE_FLAT_LOOP();
         {
-            PFvec2f texcoord;
-            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            PFMvec2 texcoord;
+            Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            const PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            const PFcolor texel = pfGetTextureSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
@@ -1924,12 +1927,12 @@ static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex*
 
         PF_BEGIN_TRIANGLE_DEPTH_LOOP();
         {
-            PFvec2f texcoord;
-            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            PFMvec2 texcoord;
+            Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-            PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            PFcolor texel = pfGetTextureSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
             const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
@@ -1946,12 +1949,12 @@ static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex*
 
         PF_BEGIN_TRIANGLE_DEPTH_LOOP();
         {
-            PFvec2f texcoord;
-            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            PFMvec2 texcoord;
+            Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-            PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            PFcolor texel = pfGetTextureSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
             const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
@@ -1964,18 +1967,18 @@ static void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex*
 
 /* Internal lighting process functions defintions */
 
-static PFcolor Light_Compute(const PFlight* light, PFcolor ambient, PFcolor texel, const PFvec3f viewPos, const PFvec3f vertex, const PFvec3f normal)
+static PFcolor Light_Compute(const PFlight* light, PFcolor ambient, PFcolor texel, const PFMvec3 viewPos, const PFMvec3 vertex, const PFMvec3 normal)
 {
     // Calculate view direction vector
-    PFvec3f viewDir;
-    pfVec3fSub(viewDir, viewPos, vertex);
-    pfVec3fNormalize(viewDir, viewDir);
+    PFMvec3 viewDir;
+    pfmVec3Sub(viewDir, viewPos, vertex);
+    pfmVec3Normalize(viewDir, viewDir);
 
     // Compute ambient lighting contribution
     ambient = pfBlendMultiplicative(texel, ambient);
 
     // Compute diffuse lighting
-    const PFfloat intensity = fmaxf(-pfVec3fDot(light->direction, normal), 0.0f);
+    const PFfloat intensity = fmaxf(-pfmVec3Dot(light->direction, normal), 0.0f);
 
     const PFcolor diffuse = {
         (PFubyte)(light->diffuse.r * intensity),
@@ -1985,22 +1988,22 @@ static PFcolor Light_Compute(const PFlight* light, PFcolor ambient, PFcolor texe
     };
 
 #ifdef PF_NO_BLINN_PHONG
-    PFvec3f reflectDir;
-    pfVec3fReflect(reflectDir, light->direction, normal);
-    const PFfloat spec = powf(fmaxf(pfVec3fDot(reflectDir, viewDir), 0.0f),
+    PFMvec3 reflectDir;
+    pfmVec3Reflect(reflectDir, light->direction, normal);
+    const PFfloat spec = powf(fmaxf(pfmVec3Dot(reflectDir, viewDir), 0.0f),
                               currentCtx->frontMaterial.shininess);
 #else
     // To work here we take the opposite direction
-    PFvec3f negLightDir;
-    pfVec3fNeg(negLightDir, light->direction);
+    PFMvec3 negLightDir;
+    pfmVec3Neg(negLightDir, light->direction);
 
     // Compute half vector (Blinn vector)
-    PFvec3f halfVec;
-    pfVec3fAdd(halfVec, negLightDir, viewDir);
-    pfVec3fNormalize(halfVec, halfVec);
+    PFMvec3 halfVec;
+    pfmVec3Add(halfVec, negLightDir, viewDir);
+    pfmVec3Normalize(halfVec, halfVec);
 
     // Compute specular term using half vector
-    const PFfloat spec = powf(fmaxf(pfVec3fDot(normal, halfVec), 0.0f),
+    const PFfloat spec = powf(fmaxf(pfmVec3Dot(normal, halfVec), 0.0f),
                               currentCtx->frontMaterial.shininess);
 #endif
 
@@ -2020,7 +2023,7 @@ static PFcolor Light_Compute(const PFlight* light, PFcolor ambient, PFcolor texe
 
 /* Internal enlightened triangle 3D rasterizer function definitions */
 
-static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f viewPos)
+static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
     PFboolean faceCullingDisabled = !(currentCtx->state & PF_CULL_FACE);
 
@@ -2039,7 +2042,7 @@ static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFverte
             const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-            PFvec3f normal, vertex;
+            PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
             Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
@@ -2064,7 +2067,7 @@ static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFverte
             const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-            PFvec3f normal, vertex;
+            PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
             Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
@@ -2075,7 +2078,7 @@ static void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFverte
     }
 }
 
-static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f viewPos)
+static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
     PFboolean faceCullingDisabled = !(currentCtx->state & PF_CULL_FACE);
 
@@ -2090,7 +2093,7 @@ static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvert
             const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-            PFvec3f normal, vertex;
+            PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
             Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
@@ -2111,7 +2114,7 @@ static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvert
             const PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-            PFvec3f normal, vertex;
+            PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
             Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
@@ -2122,7 +2125,7 @@ static void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvert
     }
 }
 
-static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f viewPos)
+static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
     PFboolean faceCullingDisabled = !(currentCtx->state & PF_CULL_FACE);
 
@@ -2134,17 +2137,17 @@ static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFver
 
         PF_BEGIN_TRIANGLE_FLAT_LIGHT_LOOP(currentCtx->frontMaterial);
         {
-            PFvec2f texcoord;
-            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            PFMvec2 texcoord;
+            Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            const PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            const PFcolor texel = pfGetTextureSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
             const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-            PFvec3f normal, vertex;
+            PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
             Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
@@ -2162,17 +2165,17 @@ static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFver
 
         PF_BEGIN_TRIANGLE_FLAT_LIGHT_LOOP(currentCtx->backMaterial);
         {
-            PFvec2f texcoord;
-            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            PFMvec2 texcoord;
+            Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            const PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            const PFcolor texel = pfGetTextureSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
             const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-            PFvec3f normal, vertex;
+            PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
             Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
@@ -2183,7 +2186,7 @@ static void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFver
     }
 }
 
-static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFvec3f viewPos)
+static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
     PFboolean faceCullingDisabled = !(currentCtx->state & PF_CULL_FACE);
 
@@ -2195,17 +2198,17 @@ static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFve
 
         PF_BEGIN_TRIANGLE_DEPTH_LIGHT_LOOP(currentCtx->frontMaterial);
         {
-            PFvec2f texcoord;
-            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            PFMvec2 texcoord;
+            Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            const PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            const PFcolor texel = pfGetTextureSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
             const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-            PFvec3f normal, vertex;
+            PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
             Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
@@ -2223,17 +2226,17 @@ static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFve
 
         PF_BEGIN_TRIANGLE_DEPTH_LIGHT_LOOP(currentCtx->backMaterial);
         {
-            PFvec2f texcoord;
-            Helper_InterpolateVec2f(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
+            PFMvec2 texcoord;
+            Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
             texcoord[0] *= z, texcoord[1] *= z; // Perspective correct
 
-            const PFcolor texel = pfTextureGetSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
+            const PFcolor texel = pfGetTextureSample(currentCtx->currentTexture, texcoord[0], texcoord[1]);
             PFcolor srcCol = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             srcCol = pfBlendMultiplicative(texel, srcCol);
 
             const PFcolor dstCol = texTarget->pixelGetter(texTarget->pixels, xyOffset);
 
-            PFvec3f normal, vertex;
+            PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
             Helper_InterpolateVec3f(vertex, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
@@ -2247,7 +2250,7 @@ static void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFve
 
 /* Internal processing and rasterization function definitions */
 
-void ProcessRasterize(const PFmat4f mvp, const PFmat4f matNormal)
+void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
 {
     switch (currentCtx->currentDrawMode)
     {
@@ -2266,14 +2269,14 @@ void ProcessRasterize(const PFmat4f mvp, const PFmat4f matNormal)
 
             if (currentCtx->state & (PF_DEPTH_TEST))
             {
-                pfFramebufferSetPixelDepth(currentCtx->currentFramebuffer,
+                pfSetFramebufferPixelDepth(currentCtx->currentFramebuffer,
                     processed->screen[0], processed->screen[1],
                     processed->homogeneous[2],
                     processed->color);
             }
             else
             {
-                pfFramebufferSetPixel(currentCtx->currentFramebuffer,
+                pfSetFramebufferPixel(currentCtx->currentFramebuffer,
                     processed->screen[0], processed->screen[1],
                     processed->color);
             }
@@ -2331,8 +2334,8 @@ void ProcessRasterize(const PFmat4f mvp, const PFmat4f matNormal)
             {
                 for (int_fast8_t i = 0; i < processedCounter; i++)
                 {
-                    pfVec3fTransform(processed[i].normal, processed[i].normal, matNormal);
-                    pfVec3fNormalize(processed[i].normal, processed[i].normal);
+                    pfmVec3Transform(processed[i].normal, processed[i].normal, matNormal);
+                    pfmVec3Normalize(processed[i].normal, processed[i].normal);
                 }
             }
 
@@ -2398,9 +2401,9 @@ void ProcessRasterize(const PFmat4f mvp, const PFmat4f matNormal)
 
                     // Get camera/view position
 
-                    PFmat4f invMV;
-                    pfMat4fInvert(invMV, currentCtx->modelview);
-                    PFvec3f viewPos = { invMV[12], invMV[13], invMV[14] };
+                    PFMmat4 invMV;
+                    pfmMat4Invert(invMV, currentCtx->modelview);
+                    PFMvec3 viewPos = { invMV[12], invMV[13], invMV[14] };
 
                     // Selects the appropriate rasterization function
 
@@ -2486,8 +2489,8 @@ void ProcessRasterize(const PFmat4f mvp, const PFmat4f matNormal)
                 {
                     for (int_fast8_t j = 0; j < processedCounter; j++)
                     {
-                        pfVec3fTransform(processed[j].normal, processed[j].normal, matNormal);
-                        pfVec3fNormalize(processed[j].normal, processed[j].normal);
+                        pfmVec3Transform(processed[j].normal, processed[j].normal, matNormal);
+                        pfmVec3Normalize(processed[j].normal, processed[j].normal);
                     }
                 }
 
@@ -2553,9 +2556,9 @@ void ProcessRasterize(const PFmat4f mvp, const PFmat4f matNormal)
 
                         // Get camera/view position
 
-                        PFmat4f invMV;
-                        pfMat4fInvert(invMV, currentCtx->modelview);
-                        PFvec3f viewPos = { invMV[12], invMV[13], invMV[14] };
+                        PFMmat4 invMV;
+                        pfmMat4Invert(invMV, currentCtx->modelview);
+                        PFMvec3 viewPos = { invMV[12], invMV[13], invMV[14] };
 
                         // Selects the appropriate rasterization function
 

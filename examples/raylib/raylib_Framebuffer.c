@@ -22,7 +22,7 @@ int main(void)
     PF_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Create framebuffer
-    PFframebuffer target = pfFramebufferGenBuffer(SCREEN_WIDTH, SCREEN_HEIGHT, PF_PIXELFORMAT_R8G8B8A8);
+    PFframebuffer target = pfGenFramebuffer(SCREEN_WIDTH, SCREEN_HEIGHT, PF_PIXELFORMAT_R8G8B8A8);
 
     // Define the camera position and a phase for the rotation
     Vector3 camPos = { -2.0f, 1.5f, -2.0f };

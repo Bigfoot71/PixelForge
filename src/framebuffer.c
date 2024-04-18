@@ -21,9 +21,9 @@
 #include <stdlib.h>
 #include <float.h>
 
-PFframebuffer pfFramebufferGenBuffer(PFuint width, PFuint height, PFpixelformat format)
+PFframebuffer pfGenFramebuffer(PFuint width, PFuint height, PFpixelformat format)
 {
-    PFtexture texture = pfTextureGenBuffer(width, height, format);
+    PFtexture texture = pfGenTextureBuffer(width, height, format);
 
     PFsizei size = width*height;
     PFfloat *zbuffer = (PFfloat*)PF_MALLOC(size*sizeof(PFfloat));
@@ -32,11 +32,11 @@ PFframebuffer pfFramebufferGenBuffer(PFuint width, PFuint height, PFpixelformat 
     return (PFframebuffer) { texture, zbuffer };
 }
 
-void pfFramebufferDestroy(PFframebuffer* framebuffer)
+void pfDeleteFramebuffer(PFframebuffer* framebuffer)
 {
     if (framebuffer)
     {
-        pfTextureDestroy(&framebuffer->texture);
+        pfDeleteTexture(&framebuffer->texture);
 
         if (framebuffer->zbuffer)
         {
@@ -46,7 +46,7 @@ void pfFramebufferDestroy(PFframebuffer* framebuffer)
     }
 }
 
-void pfFramebufferClear(PFframebuffer* framebuffer, PFcolor color)
+void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color)
 {
     PFsizei size = framebuffer->texture.width*framebuffer->texture.height;
 
@@ -57,7 +57,7 @@ void pfFramebufferClear(PFframebuffer* framebuffer, PFcolor color)
     }
 }
 
-void pfFramebufferSetPixelDepth(PFframebuffer* framebuffer, PFuint x, PFuint y, PFfloat z, PFcolor color)
+void pfSetFramebufferPixelDepth(PFframebuffer* framebuffer, PFuint x, PFuint y, PFfloat z, PFcolor color)
 {
     PFsizei offset = y*framebuffer->texture.width + x;
     PFfloat *zp = framebuffer->zbuffer + offset;
@@ -69,17 +69,17 @@ void pfFramebufferSetPixelDepth(PFframebuffer* framebuffer, PFuint x, PFuint y, 
     }
 }
 
-PFfloat pfFramebufferGetDepth(const PFframebuffer* framebuffer, PFuint x, PFuint y)
+PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFuint x, PFuint y)
 {
     return framebuffer->zbuffer[y*framebuffer->texture.width + x];
 }
 
-void pfFramebufferSetPixel(PFframebuffer* framebuffer, PFuint x, PFuint y, PFcolor color)
+void pfSetFramebufferPixel(PFframebuffer* framebuffer, PFuint x, PFuint y, PFcolor color)
 {
     framebuffer->texture.pixelSetter(framebuffer->texture.pixels, y*framebuffer->texture.width + x, color);
 }
 
-PFcolor pfFrambufferGetPixel(const PFframebuffer* framebuffer, PFuint x, PFuint y)
+PFcolor pfGetFramebufferPixel(const PFframebuffer* framebuffer, PFuint x, PFuint y)
 {
     return framebuffer->texture.pixelGetter(framebuffer->texture.pixels, y*framebuffer->texture.width + x);;
 }
