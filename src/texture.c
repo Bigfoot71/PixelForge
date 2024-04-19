@@ -492,13 +492,13 @@ PFcolor pfGetTexturePixel(const PFtexture* texture, PFuint x, PFuint y)
 void pfSetTextureSample(PFtexture* texture, PFfloat u, PFfloat v, PFcolor color)
 {
     PFuint x = (PFuint)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
-    PFuint y = (PFuint)((v - (PFint)v)*(texture->height - 1)) & (texture->width - 1);
+    PFuint y = (PFuint)((v - (PFint)v)*(texture->height - 1)) & (texture->height - 1);
     texture->pixelSetter(texture->pixels, y*texture->width + x, color);
 }
 
 PFcolor pfGetTextureSample(const PFtexture* texture, PFfloat u, PFfloat v)
 {
     PFuint x = (PFuint)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
-    PFuint y = (PFuint)((v - (PFint)v)*(texture->height - 1)) & (texture->width - 1);
+    PFuint y = (PFuint)((v - (PFint)v)*(texture->height - 1)) & (texture->height - 1);
     return texture->pixelGetter(texture->pixels, y*texture->width + x);
 }
