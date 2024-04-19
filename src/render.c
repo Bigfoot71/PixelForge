@@ -1269,26 +1269,26 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
     PFfloat xPixelZoom = currentCtx->pixelZoom[0];
     PFfloat yPixelZoom = currentCtx->pixelZoom[1];
 
-    PFfloat xIncSrc = (xPixelZoom < 1.0f) ? 1.0f / xPixelZoom : 1.0f;
-    PFfloat yIncSrc = (yPixelZoom < 1.0f) ? 1.0f / yPixelZoom : 1.0f;
+    PFfloat xSrcInc = (xPixelZoom < 1.0f) ? 1.0f / xPixelZoom : 1.0f;
+    PFfloat ySrcInc = (yPixelZoom < 1.0f) ? 1.0f / yPixelZoom : 1.0f;
 
     if (currentCtx->state & PF_DEPTH_TEST)
     {
-        for (PFfloat ySrc = 0; ySrc < height; ySrc += yIncSrc)
+        for (PFfloat ySrc = 0; ySrc < height; ySrc += ySrcInc)
         {
             PFint ySrcOffset = (PFint)(ySrc + 0.5f) * width;
-            PFfloat yMinDst = yScreen + ySrc * yPixelZoom;
-            PFfloat yMaxDst = yMinDst + yPixelZoom;
+            PFfloat yDstMin = yScreen + ySrc * yPixelZoom;
+            PFfloat yDstMax = yDstMin + yPixelZoom;
 
-            for (PFfloat xSrc = 0; xSrc < width; xSrc += xIncSrc)
+            for (PFfloat xSrc = 0; xSrc < width; xSrc += xSrcInc)
             {
-                PFint yDstOffset = (PFint)(yMinDst + 0.5f) * wDst;
-                PFfloat xMinDst = xScreen + xSrc * xPixelZoom;
-                PFfloat xMaxDst = xMinDst + xPixelZoom;
+                PFint yDstOffset = (PFint)(yDstMin + 0.5f) * wDst;
+                PFfloat xDstMin = xScreen + xSrc * xPixelZoom;
+                PFfloat xDstMax = xDstMin + xPixelZoom;
 
-                for (PFfloat yDst = yMinDst; yDst < yMaxDst; yDst++)
+                for (PFfloat yDst = yDstMin; yDst < yDstMax; yDst++)
                 {
-                    for (PFfloat xDst = xMinDst; xDst < xMaxDst; xDst++)
+                    for (PFfloat xDst = xDstMin; xDst < xDstMax; xDst++)
                     {
                         if (xDst >= 0 && xDst < wDst && yDst >= 0 && yDst < hDst)
                         {
@@ -1313,21 +1313,21 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
     }
     else
     {
-        for (PFfloat ySrc = 0; ySrc < height; ySrc += yIncSrc)
+        for (PFfloat ySrc = 0; ySrc < height; ySrc += ySrcInc)
         {
             PFint ySrcOffset = (PFint)(ySrc + 0.5f) * width;
-            PFfloat yMinDst = yScreen + ySrc * yPixelZoom;
-            PFfloat yMaxDst = yMinDst + yPixelZoom;
+            PFfloat yDstMin = yScreen + ySrc * yPixelZoom;
+            PFfloat yDstMax = yDstMin + yPixelZoom;
 
-            for (PFfloat xSrc = 0; xSrc < width; xSrc += xIncSrc)
+            for (PFfloat xSrc = 0; xSrc < width; xSrc += xSrcInc)
             {
-                PFint yDstOffset = (PFint)(yMinDst + 0.5f) * wDst;
-                PFfloat xMinDst = xScreen + xSrc * xPixelZoom;
-                PFfloat xMaxDst = xMinDst + xPixelZoom;
+                PFint yDstOffset = (PFint)(yDstMin + 0.5f) * wDst;
+                PFfloat xDstMin = xScreen + xSrc * xPixelZoom;
+                PFfloat xDstMax = xDstMin + xPixelZoom;
 
-                for (PFfloat yDst = yMinDst; yDst < yMaxDst; yDst++)
+                for (PFfloat yDst = yDstMin; yDst < yDstMax; yDst++)
                 {
-                    for (PFfloat xDst = xMinDst; xDst < xMaxDst; xDst++)
+                    for (PFfloat xDst = xDstMin; xDst < xDstMax; xDst++)
                     {
                         if (xDst >= 0 && xDst < wDst && yDst >= 0 && yDst < hDst)
                         {
