@@ -145,22 +145,28 @@ static void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal);
 
 static void Helper_GetModelView(PFMmat4 outModelview, PFMmat4 outMatNormal, PFMmat4 outMVP)
 {
-    pfmMat4Copy(outModelview, currentCtx->modelview);
+    PFMmat4 modelview;
+    pfmMat4Copy(modelview, currentCtx->modelview);
 
     if (currentCtx->transformRequired)
     {
-        pfmMat4Mul(outModelview, currentCtx->transform, outModelview);
+        pfmMat4Mul(modelview, currentCtx->transform, modelview);
     }
 
-    if (outMatNormal)   // TODO REVIEW: Only calculate it when PF_LIGHTING state is activated??
+    if (outMatNormal) // TODO REVIEW: Only calculate it when PF_LIGHTING state is activated??
     {
-        pfmMat4Invert(outMatNormal, currentCtx->transform);  // TODO REVIEW: modelview strange behaviour, i need to recheck this
+        pfmMat4Invert(outMatNormal, currentCtx->transform);
         pfmMat4Transpose(outMatNormal, outMatNormal);
     }
 
     if (outMVP)
     {
-        pfmMat4Mul(outMVP, outModelview, currentCtx->projection);
+        pfmMat4Mul(outMVP, modelview, currentCtx->projection);
+    }
+
+    if (outModelview)
+    {
+        pfmMat4Copy(outModelview, modelview);
     }
 }
 
@@ -867,8 +873,8 @@ void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer
     const PFMvec2 *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
         ? (const PFMvec2*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
 
-    PFMmat4 modelview, matNormal, mvp; // TODO: Review this, modelview is not used
-    (void)Helper_GetModelView(modelview, matNormal, mvp);
+    PFMmat4 matNormal, mvp;
+    Helper_GetModelView(NULL, matNormal, mvp);
 
     pfBegin((currentCtx->state & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
 
@@ -920,8 +926,8 @@ void pfDrawVertexArray(PFsizei offset, PFsizei count)
     const PFMvec2 *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
         ? (const PFMvec2*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
 
-    PFMmat4 modelview, matNormal, mvp; // TODO: Review this, modelview is not used
-    (void)Helper_GetModelView(modelview, matNormal, mvp);
+    PFMmat4 matNormal, mvp;
+    Helper_GetModelView(NULL, matNormal, mvp);
 
     pfBegin((currentCtx->state & PF_WIRE_MODE) ? PF_LINES : PF_TRIANGLES);
 
@@ -1037,8 +1043,8 @@ void pfVertex4fv(const PFfloat* v)
 
     if (currentCtx->vertexCount == currentCtx->currentDrawMode)
     {
-        PFMmat4 modelview, matNormal, mvp; // TODO: Review this, modelview is not used
-        Helper_GetModelView(modelview, matNormal, mvp);
+        PFMmat4 matNormal, mvp;
+        Helper_GetModelView(NULL, matNormal, mvp);
 
         currentCtx->vertexCount = 0;
         ProcessRasterize(mvp, matNormal);
@@ -1237,8 +1243,8 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
     PFtexture texSrc = pfGenTexture(pixels, width, height, format);
 
     // Get the transformation matrix from model to view (ModelView) and projection
-    PFMmat4 modelview, matNormal, mvp; // TODO: Review this, modelview is not used
-    Helper_GetModelView(modelview, matNormal, mvp);
+    PFMmat4 matNormal, mvp;
+    Helper_GetModelView(NULL, matNormal, mvp);
 
     // Project raster point
     PFMvec4 rasterPos = { currentCtx->rasterPos[0], currentCtx->rasterPos[1], currentCtx->rasterPos[2], 1.0f };
