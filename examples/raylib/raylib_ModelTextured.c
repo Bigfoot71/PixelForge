@@ -57,7 +57,7 @@ int main(void)
             PF_DrawTargetBuffer(target, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT); // Update and draw final texture
             DrawFPS(10, 10);
 
-            DrawText("Model made by Ilya Anchouz Danilov", 0, SCREEN_HEIGHT-18, 18, WHITE);
+            DrawText("Model made by Ilya Anchouz Danilov", 4, SCREEN_HEIGHT-28, 24, WHITE);
         }
         EndDrawing();
     }
