@@ -15,11 +15,11 @@ int main(void)
     PFctx *ctx = PF_InitFromTargetBuffer(target); // PixelForge context
 
     // Load a 3D model with raylib
-    Model model = LoadModel(RESOURCES_PATH "models/FemaleOpenGameArt.obj");
-    PFtexture modelDiffuse = PF_LoadTexture(RESOURCES_PATH "images/castle_diffuse.png");
+    Model model = LoadModel(RESOURCES_PATH "models/character.obj");
+    PFtexture modelDiffuse = PF_LoadTexture(RESOURCES_PATH "images/character.png");
 
     // Define the camera position and a phase for the rotation
-    Vector3 camPos = { 50.0f, 25.0f, 50.0f };
+    Vector3 camPos = { 35.0f, 30.0f, 35.0f };
     float timer = 0;
 
     // Activate texture rendering
@@ -29,8 +29,8 @@ int main(void)
     while (!WindowShouldClose())
     {
         // Update camera position
-        camPos.x = 50.0f * cosf(timer);
-        camPos.z = 50.0f * sinf(timer);
+        camPos.x = 35.0f * cosf(timer);
+        camPos.z = 35.0f * sinf(timer);
         timer += GetFrameTime();
 
         // Clear the destination buffer (RAM)
@@ -39,12 +39,12 @@ int main(void)
         // Draw something on each iteration of the main loop
         PF_Begin3D(SCREEN_WIDTH, SCREEN_HEIGHT, 60.0);
         {
-            PF_Update3D(camPos.x, camPos.y, camPos.z, 0, 10.0f, 0);
+            PF_Update3D(camPos.x, camPos.y, camPos.z, 0, 12.5f, 0);
 
             PF_DrawGrid(10.0f, 10.0f);
 
             pfBindTexture(&modelDiffuse);
-                PF_DrawModel(model, (Vector3) { 0 }, 1.0f, WHITE);
+                PF_DrawModel(model, (Vector3) { 0 }, 1.5f, WHITE);
             pfBindTexture(0);
         }
         PF_End3D();
@@ -57,7 +57,7 @@ int main(void)
             PF_DrawTargetBuffer(target, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT); // Update and draw final texture
             DrawFPS(10, 10);
 
-            DrawText("Visual glitch also present with this model in the original raylib example :-(", 0, SCREEN_HEIGHT-18, 18, WHITE);
+            DrawText("Model made by Ilya Anchouz Danilov", 0, SCREEN_HEIGHT-18, 18, WHITE);
         }
         EndDrawing();
     }

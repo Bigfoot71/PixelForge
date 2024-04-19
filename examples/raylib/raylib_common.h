@@ -210,7 +210,7 @@ void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float r
         colorTint.a = (unsigned char)((((float)color.a/255.0f)*((float)tint.a/255.0f))*255.0f);
 
         model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = colorTint;
-        PF_DrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], model.transform);
+        PF_DrawMesh(model.meshes[i], model.materials[model.meshMaterial[i]], MatrixTranspose(model.transform));
         model.materials[model.meshMaterial[i]].maps[MATERIAL_MAP_DIFFUSE].color = color;
     }
 }
