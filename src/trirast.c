@@ -376,7 +376,6 @@
                 } \
                 w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
             } \
-            w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3; \
         } \
     }
 
