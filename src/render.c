@@ -137,6 +137,10 @@ typedef enum {
 typedef void (*RasterizeTriangleFunc)(const PFvertex*, const PFvertex*, const PFvertex*);
 typedef void (*RasterizeTriangleLightFunc)(const PFvertex*, const PFvertex*, const PFvertex*, const PFMvec3);
 
+/* Including internal function prototypes */
+
+void pfInternal_DefineGetterSetter(PFpixelgetter* getter, PFpixelsetter* setter, PFpixelformat format);
+
 /* Internal processing and rasterization function declarations */
 
 static void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal);
@@ -1239,8 +1243,9 @@ void pfNormal3fv(const PFfloat* v)
 
 void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
 {
-    // Generate a temporary texture from the provided pixels
-    PFtexture texSrc = pfGenTexture(pixels, width, height, format);
+    // Retrieve the appropriate pixel getter function for the given buffer format
+    PFpixelgetter getPixelSrc;
+    pfInternal_DefineGetterSetter(&getPixelSrc, NULL, format);
 
     // Get the transformation matrix from model to view (ModelView) and projection
     PFMmat4 matNormal, mvp;
@@ -1255,11 +1260,11 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
     PFint yScreen = currentCtx->viewportY + (1.0f - rasterPos[1]) * 0.5f * currentCtx->viewportH;
 
     // Draw pixels on current framebuffer
-    PFtexture *texTarget = &currentCtx->currentFramebuffer->texture;
+    PFtexture *texDst = &currentCtx->currentFramebuffer->texture;
     PFfloat *zBuffer = currentCtx->currentFramebuffer->zbuffer;
 
-    PFint wTarget = texTarget->width;
-    PFint hTarget = texTarget->height;
+    PFint wDst = texDst->width;
+    PFint hDst = texDst->height;
 
     PFfloat xPixelZoom = currentCtx->pixelZoom[0];
     PFfloat yPixelZoom = currentCtx->pixelZoom[1];
@@ -1271,33 +1276,37 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
     {
         for (PFfloat ySrc = 0; ySrc < height; ySrc += yIncSrc)
         {
-            PFfloat yMinTarget = yScreen + ySrc * yPixelZoom;
-            PFfloat yMaxTarget = yMinTarget + yPixelZoom;
+            PFint ySrcOffset = (PFint)(ySrc + 0.5f) * width;
+            PFfloat yMinDst = yScreen + ySrc * yPixelZoom;
+            PFfloat yMaxDst = yMinDst + yPixelZoom;
 
             for (PFfloat xSrc = 0; xSrc < width; xSrc += xIncSrc)
             {
-                PFfloat xMinTarget = xScreen + xSrc * xPixelZoom;
-                PFfloat xMaxTarget = xMinTarget + xPixelZoom;
+                PFint yDstOffset = (PFint)(yMinDst + 0.5f) * wDst;
+                PFfloat xMinDst = xScreen + xSrc * xPixelZoom;
+                PFfloat xMaxDst = xMinDst + xPixelZoom;
 
-                for (PFfloat yTarget = yMinTarget; yTarget < yMaxTarget; yTarget++)
+                for (PFfloat yDst = yMinDst; yDst < yMaxDst; yDst++)
                 {
-                    PFint yOffset = (PFint)(yTarget + 0.5f) * wTarget;
-
-                    for (PFfloat xTarget = xMinTarget; xTarget < xMaxTarget; xTarget++)
+                    for (PFfloat xDst = xMinDst; xDst < xMaxDst; xDst++)
                     {
-                        if (xTarget >= 0 && xTarget < wTarget && yTarget >= 0 && yTarget < hTarget)
+                        if (xDst >= 0 && xDst < wDst && yDst >= 0 && yDst < hDst)
                         {
-                            PFint xyOffset = yOffset + (PFint)xTarget;
+                            PFint xyDstOffset = yDstOffset + (PFint)xDst;
 
-                            if (rasterPos[2] < zBuffer[xyOffset])
+                            if (rasterPos[2] < zBuffer[xyDstOffset])
                             {
-                                zBuffer[xyOffset] = rasterPos[2];
-                                PFcolor colSrc = pfGetTexturePixel(&texSrc, xSrc, ySrc);
-                                PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
-                                texTarget->pixelSetter(texTarget->pixels, xyOffset, currentCtx->blendFunction(colSrc, colDst));
+                                PFint xySrcOffset = ySrcOffset + (PFint)(xSrc + 0.5f);
+
+                                zBuffer[xyDstOffset] = rasterPos[2];
+                                PFcolor colSrc = getPixelSrc(pixels, xySrcOffset);
+                                PFcolor colDst = texDst->pixelGetter(texDst->pixels, xyDstOffset);
+                                texDst->pixelSetter(texDst->pixels, xyDstOffset, currentCtx->blendFunction(colSrc, colDst));
                             }
                         }
                     }
+
+                    yDstOffset++;
                 }
             }
         }
@@ -1306,30 +1315,33 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
     {
         for (PFfloat ySrc = 0; ySrc < height; ySrc += yIncSrc)
         {
-            PFfloat yMinTarget = yScreen + ySrc * yPixelZoom;
-            PFfloat yMaxTarget = yMinTarget + yPixelZoom;
+            PFint ySrcOffset = (PFint)(ySrc + 0.5f) * width;
+            PFfloat yMinDst = yScreen + ySrc * yPixelZoom;
+            PFfloat yMaxDst = yMinDst + yPixelZoom;
 
             for (PFfloat xSrc = 0; xSrc < width; xSrc += xIncSrc)
             {
-                PFfloat xMinTarget = xScreen + xSrc * xPixelZoom;
-                PFfloat xMaxTarget = xMinTarget + xPixelZoom;
+                PFint yDstOffset = (PFint)(yMinDst + 0.5f) * wDst;
+                PFfloat xMinDst = xScreen + xSrc * xPixelZoom;
+                PFfloat xMaxDst = xMinDst + xPixelZoom;
 
-                for (PFfloat yTarget = yMinTarget; yTarget < yMaxTarget; yTarget++)
+                for (PFfloat yDst = yMinDst; yDst < yMaxDst; yDst++)
                 {
-                    PFint yOffset = (PFint)(yTarget + 0.5f) * wTarget;
-
-                    for (PFfloat xTarget = xMinTarget; xTarget < xMaxTarget; xTarget++)
+                    for (PFfloat xDst = xMinDst; xDst < xMaxDst; xDst++)
                     {
-                        if (xTarget >= 0 && xTarget < wTarget && yTarget >= 0 && yTarget < hTarget)
+                        if (xDst >= 0 && xDst < wDst && yDst >= 0 && yDst < hDst)
                         {
-                            PFint xyOffset = yOffset + (PFint)(xTarget + 0.5f);
-                            zBuffer[xyOffset] = rasterPos[2];
+                            PFint xySrcOffset = ySrcOffset + (PFint)(xSrc + 0.5f);
+                            PFint xyDstOffset = yDstOffset + (PFint)(xDst + 0.5f);
 
-                            PFcolor colSrc = pfGetTexturePixel(&texSrc, xSrc, ySrc);
-                            PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
-                            texTarget->pixelSetter(texTarget->pixels, xyOffset, currentCtx->blendFunction(colSrc, colDst));
+                            zBuffer[xyDstOffset] = rasterPos[2];
+                            PFcolor colSrc = getPixelSrc(pixels, xySrcOffset);
+                            PFcolor colDst = texDst->pixelGetter(texDst->pixels, xyDstOffset);
+                            texDst->pixelSetter(texDst->pixels, xyDstOffset, currentCtx->blendFunction(colSrc, colDst));
                         }
                     }
+
+                    yDstOffset++;
                 }
             }
         }
