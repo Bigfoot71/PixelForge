@@ -21,13 +21,33 @@
 #include <stdlib.h>
 #include <float.h>
 
+/* Including internal function prototypes */
+
+PFerrcode* pfInternal_GetErrorPtr(void);
+
+
+/* Framebuffer functions */
+
 PFframebuffer pfGenFramebuffer(PFuint width, PFuint height, PFpixelformat format)
 {
     PFtexture texture = pfGenTextureBuffer(width, height, format);
+    if (!texture.pixels) return (PFframebuffer) { 0 };
 
     PFsizei size = width*height;
     PFfloat *zbuffer = (PFfloat*)PF_MALLOC(size*sizeof(PFfloat));
-    for (PFsizei i = 0; i < size; i++) zbuffer[i] = FLT_MAX;
+
+    if (!zbuffer)
+    {
+        *pfInternal_GetErrorPtr() = PF_ERROR_OUT_OF_MEMORY;
+        pfDeleteTexture(&texture);
+
+        return (PFframebuffer) { 0 };
+    }
+
+    for (PFsizei i = 0; i < size; i++)
+    {
+        zbuffer[i] = FLT_MAX;
+    }
 
     return (PFframebuffer) { texture, zbuffer };
 }

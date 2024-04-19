@@ -108,7 +108,9 @@ struct PFctx {
     PFushort vertexAttribState;                 // State of vertex attributes
     PFushort state;                             // Current rendering state
 
-    PFface cullFace;                           // Faces to cull
+    PFface cullFace;                            // Faces to cull
+
+    PFerrcode errCode;                          // Contains the last error code that occurred
 
 };
 
@@ -167,6 +169,7 @@ static void Helper_GetModelView(PFMmat4 outModelview, PFMmat4 outMatNormal, PFMm
 PFctx* pfCreateContext(void* screenBuffer, PFuint screenWidth, PFuint screenHeight, PFpixelformat screenFormat)
 {
     PFctx *ctx = (PFctx*)PF_MALLOC(sizeof(PFctx));
+    if (!ctx) return NULL;
 
     ctx->screenBuffer = (PFframebuffer) { 0 };
 
@@ -175,14 +178,23 @@ PFctx* pfCreateContext(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
 
     const PFsizei bufferSize = screenWidth*screenHeight;
     ctx->screenBuffer.zbuffer = (PFfloat*)PF_MALLOC(bufferSize*sizeof(PFctx));
-    for (PFsizei i = 0; i < bufferSize; i++) ctx->screenBuffer.zbuffer[i] = FLT_MAX;
+
+    if (!ctx->screenBuffer.zbuffer)
+    {
+        PF_FREE(ctx);
+        return NULL;
+    }
+
+    for (PFsizei i = 0; i < bufferSize; i++)
+    {
+        ctx->screenBuffer.zbuffer[i] = FLT_MAX;
+    }
 
     ctx->currentFramebuffer = &ctx->screenBuffer;
 
-    ctx->viewportX = 0;
-    ctx->viewportY = 0;
     ctx->viewportW = screenWidth - 1;
     ctx->viewportH = screenHeight - 1;
+    ctx->viewportX = ctx->viewportY = 0;
 
     ctx->currentDrawMode = 0;
     ctx->blendFunction = pfBlendDisabled;
@@ -280,6 +292,19 @@ void pfDisable(PFstate state)
 }
 
 
+/* Error management API functions */
+
+PFerrcode pfGetError(void)
+{
+    return currentCtx->errCode;
+}
+
+PFerrcode* pfInternal_GetErrorPtr(void)
+{
+    return &currentCtx->errCode;
+}
+
+
 /* Matrix management API functions */
 
 void pfMatrixMode(PFmatrixmode mode)
@@ -293,6 +318,10 @@ void pfMatrixMode(PFmatrixmode mode)
         case PF_MODELVIEW:
             currentCtx->currentMatrix = &currentCtx->modelview;
             break;
+
+        default:
+            currentCtx->errCode = PF_INVALID_ENUM;
+            return;
     }
 
     currentCtx->currentMatrixMode = mode;
@@ -302,7 +331,7 @@ void pfPushMatrix(void)
 {
     if (currentCtx->stackCounter >= PF_MAX_MATRIX_STACK_SIZE)
     {
-        PF_LOG(PF_LOG_ERROR, "[pfPushMatrix] Matrix stack overflow (PF_MAX_MATRIX_STACK_SIZE=%i)", PF_MAX_MATRIX_STACK_SIZE);
+        currentCtx->errCode = PF_STACK_OVERFLOW;
     }
 
     if (currentCtx->currentMatrixMode == PF_MODELVIEW)
@@ -440,15 +469,30 @@ void pfEnableStatePointer(PFarraytype vertexAttribType, const void* buffer)
         return;
     }
 
-    currentCtx->vertexAttribState |= vertexAttribType;
-
     switch (vertexAttribType)
     {
-        case PF_VERTEX_ARRAY: currentCtx->vertexAttribs.positions = buffer; break;
-        case PF_NORMAL_ARRAY: currentCtx->vertexAttribs.normals = buffer; break;
-        case PF_COLOR_ARRAY: currentCtx->vertexAttribs.colors = buffer; break;
-        case PF_TEXTURE_COORD_ARRAY: currentCtx->vertexAttribs.texcoords = buffer; break;
+        case PF_VERTEX_ARRAY:
+            currentCtx->vertexAttribs.positions = buffer;
+            break;
+
+        case PF_NORMAL_ARRAY:
+            currentCtx->vertexAttribs.normals = buffer;
+            break;
+
+        case PF_COLOR_ARRAY:
+            currentCtx->vertexAttribs.colors = buffer;
+            break;
+
+        case PF_TEXTURE_COORD_ARRAY:
+            currentCtx->vertexAttribs.texcoords = buffer;
+            break;
+
+        default:
+            currentCtx->errCode = PF_INVALID_ENUM;
+            return;
     }
+
+    currentCtx->vertexAttribState |= vertexAttribType;
 }
 
 void pfDisableStatePointer(PFarraytype vertexAttribType)
@@ -457,10 +501,25 @@ void pfDisableStatePointer(PFarraytype vertexAttribType)
 
     switch (vertexAttribType)
     {
-        case PF_VERTEX_ARRAY: currentCtx->vertexAttribs.positions = NULL; break;
-        case PF_NORMAL_ARRAY: currentCtx->vertexAttribs.normals = NULL; break;
-        case PF_COLOR_ARRAY: currentCtx->vertexAttribs.colors = NULL; break;
-        case PF_TEXTURE_COORD_ARRAY: currentCtx->vertexAttribs.texcoords = NULL; break;
+        case PF_VERTEX_ARRAY:
+            currentCtx->vertexAttribs.positions = NULL;
+            break;
+
+        case PF_NORMAL_ARRAY:
+            currentCtx->vertexAttribs.normals = NULL;
+            break;
+
+        case PF_COLOR_ARRAY:
+            currentCtx->vertexAttribs.colors = NULL;
+            break;
+
+        case PF_TEXTURE_COORD_ARRAY:
+            currentCtx->vertexAttribs.texcoords = NULL;
+            break;
+
+        default:
+            currentCtx->errCode = PF_INVALID_ENUM;
+            break;
     }
 }
 
@@ -561,11 +620,10 @@ void pfLightfv(PFuint light, PFuint param, const void* value)
                 };
                 break;
 
-            case PF_AMBIENT_AND_DIFFUSE:
-                PF_LOG(PF_LOG_WARNING, "[pfLightfv] The definition 'PF_AMBIENT_AND_DIFFUSE' is reserved for 'pfMaterialfv'");
+            default:
+                // NOTE: The definition 'PF_AMBIENT_AND_DIFFUSE' is reserved for 'pfMaterialfv'
+                currentCtx->errCode = PF_INVALID_ENUM;
                 break;
-
-            default: break;
         }
     }
 }
@@ -592,7 +650,9 @@ void pfMaterialf(PFface face, PFuint param, PFfloat value)
             material1 = &currentCtx->backMaterial;
             break;
 
-        default: return;
+        default:
+            currentCtx->errCode = PF_INVALID_ENUM;
+            return;
     }
 
     switch (param)
@@ -652,7 +712,9 @@ void pfMaterialf(PFface face, PFuint param, PFfloat value)
             };
             break;
 
-        default: break;
+        default:
+            currentCtx->errCode = PF_INVALID_ENUM;
+            break;
     }
 }
 
@@ -678,7 +740,9 @@ void pfMaterialfv(PFface face, PFuint param, const void *value)
             material1 = &currentCtx->backMaterial;
             break;
 
-        default: return;
+        default:
+            currentCtx->errCode = PF_INVALID_ENUM;
+            return;
     }
 
     switch (param)
@@ -738,7 +802,9 @@ void pfMaterialfv(PFface face, PFuint param, const void *value)
             };
             break;
 
-        default: break;
+        default:
+            currentCtx->errCode = PF_INVALID_ENUM;
+            break;
     }
 }
 

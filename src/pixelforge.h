@@ -119,36 +119,6 @@ typedef uintptr_t   PFsizeiptr;
 typedef float       PFfloat;
 typedef double      PFdouble;
 
-/* Log system definitions */
-
-typedef enum {
-    PF_LOG_DEBUG,
-    PF_LOG_INFO,
-    PF_LOG_WARNING,
-    PF_LOG_ERROR
-} PFlog;
-
-#ifndef PF_LOG
-#   include <stdio.h>
-#   define PF_LOG(level, format, ...)                                   \
-        switch(level) {                                                 \
-            case PF_LOG_DEBUG:                                          \
-                printf("DEBUG: " format "\n", ##__VA_ARGS__);           \
-                break;                                                  \
-            case PF_LOG_INFO:                                           \
-                printf("INFO: " format "\n", ##__VA_ARGS__);            \
-                break;                                                  \
-            case PF_LOG_WARNING:                                        \
-                printf("WARNING: " format "\n", ##__VA_ARGS__);         \
-                break;                                                  \
-            case PF_LOG_ERROR:                                          \
-                fprintf(stderr, "ERROR: " format "\n", ##__VA_ARGS__);  \
-                break;                                                  \
-            default:                                                    \
-                break;                                                  \
-        }
-#endif //PF_LOG
-
 /* Context defintions */
 
 typedef struct PFctx PFctx;     // NOTE: This type is opaque, API functions are used to modify its state
@@ -160,6 +130,15 @@ typedef enum {
     PF_CULL_FACE    = 0x08,
     PF_LIGHTING     = 0x10
 } PFstate;
+
+/* Error enum */
+
+typedef enum {
+    PF_NO_ERROR,
+    PF_INVALID_ENUM,
+    PF_STACK_OVERFLOW,
+    PF_ERROR_OUT_OF_MEMORY
+} PFerrcode;
 
 /* Render definitions */
 
@@ -287,6 +266,10 @@ PF_API void pfMakeCurrent(PFctx* ctx);
 
 PF_API void pfEnable(PFstate state);
 PF_API void pfDisable(PFstate state);
+
+/* Error management API functions */
+
+PF_API PFerrcode pfGetError(void);
 
 /* Matrix management API functions */
 
