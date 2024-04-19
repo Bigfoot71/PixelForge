@@ -1231,7 +1231,6 @@ void pfNormal3fv(const PFfloat* v)
 
 /* Drawing pixels functions */
 
-// TODO: Review, down-scale issue
 void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
 {
     // Generate a temporary texture from the provided pixels
@@ -1259,21 +1258,24 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
     PFfloat xPixelZoom = currentCtx->pixelZoom[0];
     PFfloat yPixelZoom = currentCtx->pixelZoom[1];
 
+    PFfloat xIncSrc = (xPixelZoom < 1.0f) ? 1.0f / xPixelZoom : 1.0f;
+    PFfloat yIncSrc = (yPixelZoom < 1.0f) ? 1.0f / yPixelZoom : 1.0f;
+
     if (currentCtx->state & PF_DEPTH_TEST)
     {
-        for (PFint ySrc = 0; ySrc < height; ySrc++)
+        for (PFfloat ySrc = 0; ySrc < height; ySrc += yIncSrc)
         {
-            PFfloat yMinTarget = yScreen + (PFfloat)ySrc * yPixelZoom;
+            PFfloat yMinTarget = yScreen + ySrc * yPixelZoom;
             PFfloat yMaxTarget = yMinTarget + yPixelZoom;
 
-            for (PFint xSrc = 0; xSrc < width; xSrc++)
+            for (PFfloat xSrc = 0; xSrc < width; xSrc += xIncSrc)
             {
-                PFfloat xMinTarget = xScreen + (PFfloat)xSrc * xPixelZoom;
+                PFfloat xMinTarget = xScreen + xSrc * xPixelZoom;
                 PFfloat xMaxTarget = xMinTarget + xPixelZoom;
 
                 for (PFfloat yTarget = yMinTarget; yTarget < yMaxTarget; yTarget++)
                 {
-                    PFint yOffset = (PFint)yTarget * wTarget;
+                    PFint yOffset = (PFint)(yTarget + 0.5f) * wTarget;
 
                     for (PFfloat xTarget = xMinTarget; xTarget < xMaxTarget; xTarget++)
                     {
@@ -1296,25 +1298,25 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
     }
     else
     {
-        for (PFint ySrc = 0; ySrc < height; ySrc++)
+        for (PFfloat ySrc = 0; ySrc < height; ySrc += yIncSrc)
         {
-            PFfloat yMinTarget = yScreen + (PFfloat)ySrc * yPixelZoom;
+            PFfloat yMinTarget = yScreen + ySrc * yPixelZoom;
             PFfloat yMaxTarget = yMinTarget + yPixelZoom;
 
-            for (PFint xSrc = 0; xSrc < width; xSrc++)
+            for (PFfloat xSrc = 0; xSrc < width; xSrc += xIncSrc)
             {
-                PFfloat xMinTarget = xScreen + (PFfloat)xSrc * xPixelZoom;
+                PFfloat xMinTarget = xScreen + xSrc * xPixelZoom;
                 PFfloat xMaxTarget = xMinTarget + xPixelZoom;
 
                 for (PFfloat yTarget = yMinTarget; yTarget < yMaxTarget; yTarget++)
                 {
-                    PFint yOffset = (PFint)yTarget * wTarget;
+                    PFint yOffset = (PFint)(yTarget + 0.5f) * wTarget;
 
                     for (PFfloat xTarget = xMinTarget; xTarget < xMaxTarget; xTarget++)
                     {
                         if (xTarget >= 0 && xTarget < wTarget && yTarget >= 0 && yTarget < hTarget)
                         {
-                            PFint xyOffset = yOffset + (PFint)xTarget;
+                            PFint xyOffset = yOffset + (PFint)(xTarget + 0.5f);
                             zBuffer[xyOffset] = rasterPos[2];
 
                             PFcolor colSrc = pfGetTexturePixel(&texSrc, xSrc, ySrc);
