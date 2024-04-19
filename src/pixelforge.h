@@ -426,6 +426,7 @@ PF_API void pfDeleteTexture(PFtexture* texture);
 PF_API void pfSetTexturePixel(PFtexture* texture, PFuint x, PFuint y, PFcolor color);
 PF_API PFcolor pfGetTexturePixel(const PFtexture* texture, PFuint x, PFuint y);
 
+// NOTE: To use these functions correctly, textures must be POT
 PF_API void pfSetTextureSample(PFtexture* texture, PFfloat u, PFfloat v, PFcolor color);
 PF_API PFcolor pfGetTextureSample(const PFtexture* texture, PFfloat u, PFfloat v);
 
