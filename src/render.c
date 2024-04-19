@@ -254,6 +254,8 @@ PFctx* pfCreateContext(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     ctx->state |= PF_CULL_FACE;
     ctx->cullFace = PF_BACK;
 
+    ctx->errCode = PF_NO_ERROR;
+
     return ctx;
 }
 
@@ -296,7 +298,9 @@ void pfDisable(PFstate state)
 
 PFerrcode pfGetError(void)
 {
-    return currentCtx->errCode;
+    PFerrcode errCode = currentCtx->errCode;
+    currentCtx->errCode = PF_NO_ERROR;
+    return errCode;
 }
 
 PFerrcode* pfInternal_GetErrorPtr(void)
