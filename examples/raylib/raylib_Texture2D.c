@@ -1,3 +1,4 @@
+#include "pixelforge.h"
 #define PF_RAYLIB_COMMON_IMPL
 #include "raylib_common.h"
 
@@ -26,13 +27,20 @@ int main(void)
     // Create a rendering buffer in RAM as well as in VRAM (see raylib_common.h)
     PF_TargetBuffer target = PF_LoadTargetBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
     PFctx *ctx = PF_InitFromTargetBuffer(target); // PixelForge context
+    PF_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
+    pfSetBlendFunction(pfBlendAlpha);
 
-    // We load background and arrow textures
-    PFtexture texBG = PF_LoadTexture(RESOURCES_PATH "images/PixelForge.png");
+    // We load background as an raylib Image to draw it with pfDrawPixels
+    Image imBG = LoadImage(RESOURCES_PATH "images/PixelForge.png");
+
+    // We load arrow texture
     PFtexture texArrow = PF_LoadTexture(RESOURCES_PATH "images/arrow.png");
 
     // We create an arrow that will follow the mouse cursor
     Arrow arrow = Arrow_Create();
+
+    // Enable texture rendering
+    pfEnable(PF_TEXTURE_2D);
 
     // Main loop
     while (!WindowShouldClose())
@@ -42,8 +50,12 @@ int main(void)
         // Clear the destination buffer (RAM)
         pfClear(PF_COLOR_BUFFER_BIT);
 
-        // Draw something on each iteration of the main loop
-        PF_DrawTexture(&texBG, 0, SCREEN_HEIGHT - 400, 800, 400);
+        // Draw the background with pfDrawPixels
+        pfRasterPos2i(0, SCREEN_HEIGHT - 400);
+        pfPixelZoom(800.0f/imBG.width, 400.0f/imBG.height);
+        pfDrawPixels(imBG.width, imBG.height, imBG.format, imBG.data);
+
+        // Draw the arrow entity
         Arrow_Draw(&arrow, &texArrow);
 
         // Texture rendering via raylib
@@ -55,8 +67,8 @@ int main(void)
     }
 
     // Unload assets
-    pfDeleteTexture(&texBG);
     pfDeleteTexture(&texArrow);
+    UnloadImage(imBG);
 
     // Unload the PixelForge context and the target buffer
     pfDeleteContext(ctx);

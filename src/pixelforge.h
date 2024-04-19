@@ -390,6 +390,24 @@ PF_API void pfTexCoordfv(const PFfloat* v);
 PF_API void pfNormal3f(PFfloat x, PFfloat y, PFfloat z);
 PF_API void pfNormal3fv(const PFfloat* v);
 
+/* Drawing pixels functions */
+
+PF_API void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels);
+
+PF_API void pfPixelZoom(PFfloat xfactor, PFfloat yfactor);
+
+PF_API void pfRasterPos2i(PFint x, PFint y);
+PF_API void pfRasterPos2f(PFfloat x, PFfloat y);
+PF_API void pfRasterPos2fv(const PFfloat* v);
+
+PF_API void pfRasterPos3i(PFint x, PFint y, PFint z);
+PF_API void pfRasterPos3f(PFfloat x, PFfloat y, PFfloat z);
+PF_API void pfRasterPos3fv(const PFfloat* v);
+
+PF_API void pfRasterPos4i(PFint x, PFint y, PFint z, PFint w);
+PF_API void pfRasterPos4f(PFfloat x, PFfloat y, PFfloat z, PFfloat w);
+PF_API void pfRasterPos4fv(const PFfloat* v);
+
 /* Blending functions */
 
 PF_API PFcolor pfBlendDisabled(PFcolor source, PFcolor destination);
