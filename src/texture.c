@@ -310,68 +310,68 @@ void pfInternal_DefineGetterSetter(PFpixelgetter* getter, PFpixelsetter* setter,
     switch (format)
     {
         case PF_PIXELFORMAT_GRAYSCALE:
-            *getter = GetGrayscale;
-            *setter = SetGrayscale;
+            if (getter) *getter = GetGrayscale;
+            if (setter) *setter = SetGrayscale;
             break;
 
         case PF_PIXELFORMAT_GRAY_ALPHA:
-            *getter = GetGrayAlpha;
-            *setter = SetGrayAlpha;
+            if (getter) *getter = GetGrayAlpha;
+            if (setter) *setter = SetGrayAlpha;
             break;
 
         case PF_PIXELFORMAT_R5G6B5:
-            *getter = GetR5G6B5;
-            *setter = SetR5G6B5;
+            if (getter) *getter = GetR5G6B5;
+            if (setter) *setter = SetR5G6B5;
             break;
 
         case PF_PIXELFORMAT_R5G5B5A1:
-            *getter = GetR5G5B5A1;
-            *setter = SetR5G5B5A1;
+            if (getter) *getter = GetR5G5B5A1;
+            if (setter) *setter = SetR5G5B5A1;
             break;
 
         case PF_PIXELFORMAT_R4G4B4A4:
-            *getter = GetR4G4B4A4;
-            *setter = SetR4G4B4A4;
+            if (getter) *getter = GetR4G4B4A4;
+            if (setter) *setter = SetR4G4B4A4;
             break;
 
         case PF_PIXELFORMAT_R8G8B8:
-            *getter = GetR8G8B8;
-            *setter = SetR8G8B8;
+            if (getter) *getter = GetR8G8B8;
+            if (setter) *setter = SetR8G8B8;
             break;
 
         case PF_PIXELFORMAT_R8G8B8A8:
-            *getter = GetR8G8B8A8;
-            *setter = SetR8G8B8A8;
+            if (getter) *getter = GetR8G8B8A8;
+            if (setter) *setter = SetR8G8B8A8;
             break;
 
         case PF_PIXELFORMAT_R32:
-            *getter = GetR32;
-            *setter = SetR32;
+            if (getter) *getter = GetR32;
+            if (setter) *setter = SetR32;
             break;
 
         case PF_PIXELFORMAT_R32G32B32:
-            *getter = GetR32G32B32;
-            *setter = SetR32G32B32;
+            if (getter) *getter = GetR32G32B32;
+            if (setter) *setter = SetR32G32B32;
             break;
 
         case PF_PIXELFORMAT_R32G32B32A32:
-            *getter = GetR32G32B32A32;
-            *setter = SetR32G32B32A32;
+            if (getter) *getter = GetR32G32B32A32;
+            if (setter) *setter = SetR32G32B32A32;
             break;
 
         case PF_PIXELFORMAT_R16:
-            *getter = GetR16;
-            *setter = SetR16;
+            if (getter) *getter = GetR16;
+            if (setter) *setter = SetR16;
             break;
 
         case PF_PIXELFORMAT_R16G16B16:
-            *getter = GetR16G16B16;
-            *setter = SetR16G16B16;
+            if (getter) *getter = GetR16G16B16;
+            if (setter) *setter = SetR16G16B16;
             break;
 
         case PF_PIXELFORMAT_R16G16B16A16:
-            *getter = GetR16G16B16A16;
-            *setter = SetR16G16B16A16;
+            if (getter) *getter = GetR16G16B16A16;
+            if (setter) *setter = SetR16G16B16A16;
             break;
 
         default:
