@@ -13,6 +13,7 @@ int main(void)
     // Create a rendering buffer in RAM as well as in VRAM (see raylib_common.h)
     PF_TargetBuffer target = PF_LoadTargetBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
     PFctx *ctx = PF_InitFromTargetBuffer(target); // PixelForge context
+    PF_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Create framebuffer
     PFframebuffer fbTarget = pfGenFramebuffer(
@@ -22,6 +23,9 @@ int main(void)
     // Define the camera position and a phase for the rotation
     Vector3 camPos = { -2.0f, 1.5f, -2.0f };
     float timer = 0;
+
+    // Enable texture rendering
+    pfEnable(PF_TEXTURE_2D);
 
     while (!WindowShouldClose())
     {
@@ -48,8 +52,14 @@ int main(void)
         pfClear(PF_COLOR_BUFFER_BIT);
 
         // Rendering the framebuffer in the main buffer with a different scale
-        pfColor3ub(255, 255, 255);
-        PF_DrawTexture(&fbTarget.texture, (SCREEN_WIDTH - 400) / 2.0f, (SCREEN_HEIGHT - 300) / 2.0f, 400, 300);
+        pfPixelZoom(0.5f, 0.5f);
+        pfRasterPos2f((SCREEN_WIDTH - 400) / 2.0f, (SCREEN_HEIGHT - 300) / 2.0f);
+        pfDrawPixels(SCREEN_WIDTH, SCREEN_HEIGHT, fbTarget.texture.format, fbTarget.texture.pixels);
+
+        // NOTE: We can also render the framebuffer texture onto a quad directly
+        // but then the dimensions of the framebuffer texture must be powers of 2.
+        //pfColor3ub(255, 255, 255);
+        //PF_DrawTexture(&fbTarget.texture, (SCREEN_WIDTH - 400) / 2.0f, (SCREEN_HEIGHT - 300) / 2.0f, 400, 300);
 
         // Texture rendering via raylib
         BeginDrawing();
