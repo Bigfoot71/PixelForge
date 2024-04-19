@@ -1,6 +1,6 @@
 # Variables
 CC := gcc
-CFLAGS := -Wall -Wextra -pedantic -std=c99 -O3 -Wno-sign-compare
+CFLAGS := -Wall -Wextra -pedantic -std=c99 -O3
 LDFLAGS :=
 
 # Build options
