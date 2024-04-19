@@ -125,7 +125,13 @@ typedef enum {
 /* Current thread local-thread declaration */
 
 #if defined(__GNUC__) || defined(__clang__)
-    static __thread PFctx *currentCtx = NULL;
+#   if defined(PF_USE_OPENMP) && defined(__GNUC__)
+        // TODO: Using a static global variable with __thread in GCC 11.4 seems to cause segmentation faults at runtime.
+        //       I haven't been able to obtain more information through debugging and some research. To investigate further.
+        static PFctx *currentCtx = NULL;
+#   else
+        static __thread PFctx *currentCtx = NULL;
+#   endif
 #elif defined(_MSC_VER)
     __declspec(thread) static PFctx *currentCtx = NULL;
 #else

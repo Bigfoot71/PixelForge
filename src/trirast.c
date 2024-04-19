@@ -17,7 +17,6 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-
 // Macros for preparing rendering areas as well as
 // barycentric coordinates and their incrementation steps
 
@@ -152,6 +151,10 @@
     const PFfloat invWSum = 1.0f/(w1Row + w2Row + w3Row);
 
 
+// Rasterization loop implementation
+
+#ifndef PF_USE_OPENMP
+
 // Begin/End flat triangle rasterizer macros
 
 #define PF_BEGIN_TRIANGLE_FLAT_LOOP() \
@@ -257,3 +260,125 @@
             w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3; \
         } \
     }
+
+
+#else //PF_USE_OPENMP
+
+// Begin/End flat triangle rasterizer macros
+
+#define PF_BEGIN_TRIANGLE_FLAT_LOOP() \
+    PFtexture *texTarget = &currentCtx->currentFramebuffer->texture; \
+    _Pragma("omp parallel for") \
+    for (PFuint y = yMin; y <= yMax; y++) \
+    { \
+        const PFuint yOffset = y*texTarget->width; \
+        PFint i = y - yMin; \
+        PFint w1 = w1Row + i*stepWY1; \
+        PFint w2 = w2Row + i*stepWY2; \
+        PFint w3 = w3Row + i*stepWY3; \
+        for (PFuint x = xMin; x <= xMax; x++) \
+        { \
+            if ((w1 | w2 | w3) >= 0) \
+            { \
+                PFcolor finalColor; \
+                const PFuint xyOffset = yOffset + x; \
+                const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
+                const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]);
+
+#define PF_END_TRIANGLE_FLAT_LOOP() \
+                texTarget->pixelSetter(texTarget->pixels, xyOffset, finalColor); \
+                currentCtx->currentFramebuffer->zbuffer[xyOffset] = z; \
+            } \
+            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
+        } \
+    }
+
+
+// Begin/End depth triangle rasterizer macros
+
+#define PF_BEGIN_TRIANGLE_DEPTH_LOOP() \
+    PFtexture *texTarget = &currentCtx->currentFramebuffer->texture; \
+    _Pragma("omp parallel for") \
+    for (PFuint y = yMin; y <= yMax; y++) \
+    { \
+        const PFuint yOffset = y*texTarget->width; \
+        PFint i = y - yMin; \
+        PFint w1 = w1Row + i*stepWY1; \
+        PFint w2 = w2Row + i*stepWY2; \
+        PFint w3 = w3Row + i*stepWY3; \
+        for (PFuint x = xMin; x <= xMax; x++) \
+        { \
+            if ((w1 | w2 | w3) >= 0) \
+            { \
+                PFcolor finalColor; \
+                const PFuint xyOffset = yOffset + x; \
+                const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
+                const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]); \
+                if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset]) \
+                {
+
+#define PF_END_TRIANGLE_DEPTH_LOOP() \
+                    texTarget->pixelSetter(texTarget->pixels, xyOffset, finalColor); \
+                    currentCtx->currentFramebuffer->zbuffer[xyOffset] = z; \
+                } \
+            } \
+            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
+        } \
+    }
+
+// Begin/End flat triangle light rasterizer macros
+
+#define PF_BEGIN_TRIANGLE_FLAT_LIGHT_LOOP(material) \
+    for (int i = 0; i <= currentCtx->lastActiveLight; i++) \
+    { \
+        const PFlight* light = &currentCtx->lights[i]; \
+        if (!light->active) continue; \
+        const PFcolor ambient = pfBlendMultiplicative(light->ambient, (material).ambient); \
+        PF_BEGIN_TRIANGLE_FLAT_LOOP(); \
+
+#define PF_END_TRIANGLE_FLAT_LIGHT_LOOP() \
+        PF_END_TRIANGLE_FLAT_LOOP(); \
+    }
+
+
+// Begin/End depth triangle light rasterizer macros
+
+#define PF_BEGIN_TRIANGLE_DEPTH_LIGHT_LOOP(material) \
+    for (int i = 0; i <= currentCtx->lastActiveLight; i++) \
+    { \
+        const PFlight* light = &currentCtx->lights[i]; \
+        if (!light->active) continue; \
+        const PFcolor ambient = pfBlendMultiplicative(light->ambient, (material).ambient); \
+        PFtexture *texTarget = &currentCtx->currentFramebuffer->texture; \
+        _Pragma("omp parallel for") \
+        for (PFuint y = yMin; y <= yMax; y++) \
+        { \
+            const PFuint yOffset = y*texTarget->width; \
+            PFint i = y - yMin; \
+            PFint w1 = w1Row + i*stepWY1; \
+            PFint w2 = w2Row + i*stepWY2; \
+            PFint w3 = w3Row + i*stepWY3; \
+            for (PFuint x = xMin; x <= xMax; x++) \
+            { \
+                if ((w1 | w2 | w3) >= 0) \
+                { \
+                    PFcolor finalColor; \
+                    const PFuint xyOffset = yOffset + x; \
+                    const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
+                    const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]); \
+                    if (z < currentCtx->currentFramebuffer->zbuffer[xyOffset]) \
+                    {
+
+#define PF_END_TRIANGLE_DEPTH_LIGHT_LOOP() \
+                        texTarget->pixelSetter(texTarget->pixels, xyOffset, finalColor); \
+                        currentCtx->currentFramebuffer->zbuffer[xyOffset] = z; \
+                    } \
+                } \
+                w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
+            } \
+            w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3; \
+        } \
+    }
+
+
+#endif //PF_USE_OPENMP
