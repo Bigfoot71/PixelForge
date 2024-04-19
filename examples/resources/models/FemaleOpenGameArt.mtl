@@ -1,0 +1,24 @@
+# Blender MTL File: 'FemaleOpenGameArt.blend'
+# Material Count: 2
+
+newmtl Girl02
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.010000 0.010000 0.010000
+Ni 1.000000
+d 1.000000
+illum 2
+map_Kd Kz_UV.png
+map_Disp Kz_UV.png
+
+newmtl Hair
+Ns 96.078431
+Ka 0.000000 0.000000 0.000000
+Kd 0.013916 0.013916 0.013916
+Ks 0.000000 0.000000 0.000000
+Ni 1.000000
+d 0.000000
+illum 1
+map_Kd Hair01.png
+map_d Hair01.png

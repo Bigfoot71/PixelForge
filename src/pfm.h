@@ -460,7 +460,7 @@ PFM_API void pfmMat4Mul(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
 PFM_API void pfmMat4Translate(PFMmat4 dst, PFM_FLOAT x, PFM_FLOAT y, PFM_FLOAT z)
 {
     memset(dst, 0, sizeof(PFMmat4));
-    dst[3] = x, dst[7] = y, dst[11] = z;
+    dst[12] = x, dst[13] = y, dst[14] = z;
     dst[0] = dst[5] = dst[10] = dst[15] = 1.0;
 }
 

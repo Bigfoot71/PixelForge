@@ -15,7 +15,7 @@ int main(void)
     PFctx *ctx = PF_InitFromTargetBuffer(target); // PixelForge context
 
     // Load a 3D model with raylib
-    Model model = LoadModel(RESOURCES_PATH "models/castle.obj");
+    Model model = LoadModel(RESOURCES_PATH "models/FemaleOpenGameArt.obj");
     PFtexture modelDiffuse = PF_LoadTexture(RESOURCES_PATH "images/castle_diffuse.png");
 
     // Define the camera position and a phase for the rotation
