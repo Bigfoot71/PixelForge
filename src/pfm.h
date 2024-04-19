@@ -30,7 +30,7 @@
 #   define PFM_API static inline
 #endif //PFM_API
 
-#ifdef PFM_DOUBLE
+#ifdef PFM_USE_DOUBLE
 #   define PFM_FLOAT double
 #else
 #   define PFM_FLOAT float
