@@ -1263,23 +1263,32 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
     {
         for (PFint ySrc = 0; ySrc < height; ySrc++)
         {
-            PFfloat yTarget = yScreen + (PFfloat)ySrc * yPixelZoom;
-            PFint yOffset = (PFint)yTarget * wTarget;
+            PFfloat yMinTarget = yScreen + (PFfloat)ySrc * yPixelZoom;
+            PFfloat yMaxTarget = yMinTarget + yPixelZoom;
 
             for (PFint xSrc = 0; xSrc < width; xSrc++)
             {
-                PFfloat xTarget = xScreen + (PFfloat)xSrc * xPixelZoom;
+                PFfloat xMinTarget = xScreen + (PFfloat)xSrc * xPixelZoom;
+                PFfloat xMaxTarget = xMinTarget + xPixelZoom;
 
-                if (xTarget >= 0 && xTarget < wTarget && yTarget >= 0 && yTarget < hTarget)
+                for (PFfloat yTarget = yMinTarget; yTarget < yMaxTarget; yTarget++)
                 {
-                    PFint xyOffset = yOffset + (PFint)xTarget;
+                    PFint yOffset = (PFint)yTarget * wTarget;
 
-                    if (rasterPos[2] < zBuffer[xyOffset])
+                    for (PFfloat xTarget = xMinTarget; xTarget < xMaxTarget; xTarget++)
                     {
-                        zBuffer[xyOffset] = rasterPos[2];
-                        PFcolor colSrc = pfGetTexturePixel(&texSrc, xSrc, ySrc);
-                        PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
-                        texTarget->pixelSetter(texTarget->pixels, xyOffset, currentCtx->blendFunction(colSrc, colDst));
+                        if (xTarget >= 0 && xTarget < wTarget && yTarget >= 0 && yTarget < hTarget)
+                        {
+                            PFint xyOffset = yOffset + (PFint)xTarget;
+
+                            if (rasterPos[2] < zBuffer[xyOffset])
+                            {
+                                zBuffer[xyOffset] = rasterPos[2];
+                                PFcolor colSrc = pfGetTexturePixel(&texSrc, xSrc, ySrc);
+                                PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+                                texTarget->pixelSetter(texTarget->pixels, xyOffset, currentCtx->blendFunction(colSrc, colDst));
+                            }
+                        }
                     }
                 }
             }
@@ -1289,21 +1298,30 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
     {
         for (PFint ySrc = 0; ySrc < height; ySrc++)
         {
-            PFfloat yTarget = yScreen + (PFfloat)ySrc * yPixelZoom;
-            PFint yOffset = (PFint)yTarget * wTarget;
+            PFfloat yMinTarget = yScreen + (PFfloat)ySrc * yPixelZoom;
+            PFfloat yMaxTarget = yMinTarget + yPixelZoom;
 
             for (PFint xSrc = 0; xSrc < width; xSrc++)
             {
-                PFfloat xTarget = xScreen + (PFfloat)xSrc * xPixelZoom;
+                PFfloat xMinTarget = xScreen + (PFfloat)xSrc * xPixelZoom;
+                PFfloat xMaxTarget = xMinTarget + xPixelZoom;
 
-                if (xTarget >= 0 && xTarget < wTarget && yTarget >= 0 && yTarget < hTarget)
+                for (PFfloat yTarget = yMinTarget; yTarget < yMaxTarget; yTarget++)
                 {
-                    PFint xyOffset = yOffset + xTarget;
-                    zBuffer[xyOffset] = rasterPos[2];
+                    PFint yOffset = (PFint)yTarget * wTarget;
 
-                    PFcolor colSrc = pfGetTexturePixel(&texSrc, xSrc, ySrc);
-                    PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
-                    texTarget->pixelSetter(texTarget->pixels, xyOffset, currentCtx->blendFunction(colSrc, colDst));
+                    for (PFfloat xTarget = xMinTarget; xTarget < xMaxTarget; xTarget++)
+                    {
+                        if (xTarget >= 0 && xTarget < wTarget && yTarget >= 0 && yTarget < hTarget)
+                        {
+                            PFint xyOffset = yOffset + (PFint)xTarget;
+                            zBuffer[xyOffset] = rasterPos[2];
+
+                            PFcolor colSrc = pfGetTexturePixel(&texSrc, xSrc, ySrc);
+                            PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+                            texTarget->pixelSetter(texTarget->pixels, xyOffset, currentCtx->blendFunction(colSrc, colDst));
+                        }
+                    }
                 }
             }
         }
