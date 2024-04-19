@@ -42,7 +42,7 @@ typedef struct {
 typedef struct {
     PFMvec4 homogeneous;
     PFMvec2 screen;
-    PFMvec3 position;
+    PFMvec4 position;
     PFMvec3 normal;
     PFMvec2 texcoord;
     PFcolor color;
@@ -807,6 +807,7 @@ void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer
         // Fill the vertex with given vertices data
 
         memcpy(vertex->position, *(positions + j), sizeof(PFMvec3));
+        vertex->position[3] = 1.0f;
 
         if (normals) memcpy(vertex->normal, *(normals + j), sizeof(PFMvec3));
         else memset(vertex->normal, 0, sizeof(PFMvec3));
@@ -858,6 +859,7 @@ void pfDrawVertexArray(PFsizei offset, PFsizei count)
         // Fill the vertex with given vertices data
 
         memcpy(vertex->position, *(positions + i), sizeof(PFMvec3));
+        vertex->position[3] = 1.0f;
 
         if (normals) memcpy(vertex->normal, *(normals + i), sizeof(PFMvec3));
         else memset(vertex->normal, 0, sizeof(PFMvec3));
@@ -896,29 +898,53 @@ void pfEnd(void)
 
 void pfVertex2i(PFint x, PFint y)
 {
-    PFMvec3 v = { (PFfloat)x, (PFfloat)y, 0.0f };
-    pfVertexfv(v);
+    PFMvec4 v = { (PFfloat)x, (PFfloat)y, 0.0f, 1.0f };
+    pfVertex4fv(v);
 }
 
 void pfVertex2f(PFfloat x, PFfloat y)
 {
-    PFMvec3 v = { x, y, 0.0f };
-    pfVertexfv(v);
+    PFMvec4 v = { x, y, 0.0f, 1.0f };
+    pfVertex4fv(v);
 }
 
 void pfVertex2fv(const PFfloat* v)
 {
-    PFMvec3 v3 = { v[0], v[1], 0.0f };
-    pfVertexfv(v3);
+    PFMvec4 v4 = { v[0], v[1], 0.0f, 1.0f };
+    pfVertex4fv(v4);
+}
+
+void pfVertex3i(PFint x, PFint y, PFint z)
+{
+    PFMvec4 v = { (PFfloat)x, (PFfloat)y, (PFfloat)z, 1.0f };
+    pfVertex4fv(v);
 }
 
 void pfVertex3f(PFfloat x, PFfloat y, PFfloat z)
 {
-    PFMvec3 v = { x, y, z };
-    pfVertexfv(v);
+    PFMvec4 v = { x, y, z, 1.0f };
+    pfVertex4fv(v);
 }
 
-void pfVertexfv(const PFfloat* v)
+void pfVertex3fv(const PFfloat* v)
+{
+    PFMvec4 v4 = { v[0], v[1], v[2], 1.0f };
+    pfVertex4fv(v4);
+}
+
+void pfVertex4i(PFint x, PFint y, PFint z, PFint w)
+{
+    PFMvec4 v = { (PFfloat)x, (PFfloat)y, (PFfloat)z, (PFfloat)w };
+    pfVertex4fv(v);
+}
+
+void pfVertex4f(PFfloat x, PFfloat y, PFfloat z, PFfloat w)
+{
+    PFMvec4 v = { x, y, z, w };
+    pfVertex4fv(v);
+}
+
+void pfVertex4fv(const PFfloat* v)
 {
     // Get the pointer of the current vertex of the batch and pad it with zero
 
@@ -926,7 +952,7 @@ void pfVertexfv(const PFfloat* v)
 
     // Fill the vertex with given vertices data
 
-    memcpy(vertex->position, v, sizeof(PFMvec3));
+    memcpy(vertex->position, v, sizeof(PFMvec4));
     memcpy(vertex->normal, currentCtx->currentNormal, sizeof(PFMvec3));
     memcpy(vertex->texcoord, currentCtx->currentTexcoord, sizeof(PFMvec2));
     memcpy(&vertex->color, &currentCtx->currentColor, sizeof(PFcolor));
@@ -936,7 +962,7 @@ void pfVertexfv(const PFfloat* v)
     if (currentCtx->vertexCount == currentCtx->currentDrawMode)
     {
         PFMmat4 modelview, matNormal, mvp; // TODO: Review this, modelview is not used
-        (void)Helper_GetModelView(modelview, matNormal, mvp);
+        Helper_GetModelView(modelview, matNormal, mvp);
 
         currentCtx->vertexCount = 0;
         ProcessRasterize(mvp, matNormal);
@@ -1466,9 +1492,7 @@ static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, int_fast8_t*
 
 static PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFMmat4 mvp)
 {
-    memcpy(v->homogeneous, v->position, sizeof(PFMvec3));
-    v->homogeneous[3] = 1.0f;
-
+    memcpy(v->homogeneous, v->position, sizeof(PFMvec4));
     pfmVec4Transform(v->homogeneous, v->homogeneous, mvp);
 
     if (v->homogeneous[3] != 1.0f)
@@ -1493,9 +1517,7 @@ static void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* res
     {
         PFvertex *v = line + i;
 
-        memcpy(v->homogeneous, v->position, sizeof(PFMvec3));
-        v->homogeneous[3] = 1.0f;
-
+        memcpy(v->homogeneous, v->position, sizeof(PFMvec4));
         pfmVec4Transform(v->homogeneous, v->homogeneous, mvp);
     }
 
@@ -1537,9 +1559,7 @@ static PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_
     {
         PFvertex *v = polygon + i;
 
-        memcpy(v->homogeneous, v->position, sizeof(PFMvec3));
-        v->homogeneous[3] = 1.0f;
-
+        memcpy(v->homogeneous, v->position, sizeof(PFMvec4));
         pfmVec4Transform(v->homogeneous, v->homogeneous, mvp);
     }
 

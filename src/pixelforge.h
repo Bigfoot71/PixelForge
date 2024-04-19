@@ -352,8 +352,13 @@ PF_API void pfVertex2i(PFint x, PFint y);
 PF_API void pfVertex2f(PFfloat x, PFfloat y);
 PF_API void pfVertex2fv(const PFfloat* v);
 
+PF_API void pfVertex3i(PFint x, PFint y, PFint z);
 PF_API void pfVertex3f(PFfloat x, PFfloat y, PFfloat z);
-PF_API void pfVertexfv(const PFfloat* v);
+PF_API void pfVertex3fv(const PFfloat* v);
+
+PF_API void pfVertex4i(PFint x, PFint y, PFint z, PFint w);
+PF_API void pfVertex4f(PFfloat x, PFfloat y, PFfloat z, PFfloat w);
+PF_API void pfVertex4fv(const PFfloat* v);
 
 PF_API void pfColor3ub(PFubyte r, PFubyte g, PFubyte b);
 PF_API void pfColor3ubv(const PFubyte* v);
