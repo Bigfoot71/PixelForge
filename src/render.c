@@ -1250,8 +1250,15 @@ void pfNormal3fv(const PFfloat* v)
 void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
 {
     // Retrieve the appropriate pixel getter function for the given buffer format
-    PFpixelgetter getPixelSrc;
+    PFpixelgetter getPixelSrc = NULL;
     pfInternal_DefineGetterSetter(&getPixelSrc, NULL, format);
+
+    // Checked if we were able to get the pixel getter
+    if (!getPixelSrc)
+    {
+        currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
 
     // Get the transformation matrix from model to view (ModelView) and projection
     PFMmat4 matNormal, mvp;
