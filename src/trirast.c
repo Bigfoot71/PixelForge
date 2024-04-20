@@ -268,7 +268,7 @@
 
 #define PF_BEGIN_TRIANGLE_FLAT_LOOP() \
     PFtexture *texTarget = &currentCtx->currentFramebuffer->texture; \
-    _Pragma("omp parallel for") \
+    _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_PIXEL_RASTER_THRESHOLD)") \
     for (PFuint y = yMin; y <= yMax; y++) \
     { \
         const PFuint yOffset = y*texTarget->width; \
@@ -298,7 +298,7 @@
 
 #define PF_BEGIN_TRIANGLE_DEPTH_LOOP() \
     PFtexture *texTarget = &currentCtx->currentFramebuffer->texture; \
-    _Pragma("omp parallel for") \
+    _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_PIXEL_RASTER_THRESHOLD)") \
     for (PFuint y = yMin; y <= yMax; y++) \
     { \
         const PFuint yOffset = y*texTarget->width; \
@@ -350,7 +350,7 @@
         if (!light->active) continue; \
         const PFcolor ambient = pfBlendMultiplicative(light->ambient, (material).ambient); \
         PFtexture *texTarget = &currentCtx->currentFramebuffer->texture; \
-        _Pragma("omp parallel for") \
+        _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_PIXEL_RASTER_THRESHOLD)") \
         for (PFuint y = yMin; y <= yMax; y++) \
         { \
             const PFuint yOffset = y*texTarget->width; \

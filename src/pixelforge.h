@@ -73,6 +73,13 @@
 #   define PF_CLIP_EPSILON 1e-5f
 #endif //PF_CLIP_EPSILON
 
+#ifdef PF_USE_OPENMP
+//  Pixel threshold for parallelizing the rasterization loop
+#   ifndef PF_OPENMP_PIXEL_RASTER_THRESHOLD
+#       define PF_OPENMP_PIXEL_RASTER_THRESHOLD 1024
+#   endif //PF_OPENMP_PIXEL_RASTER_THRESHOLD
+#endif //PF_USE_OPENMP
+
 #ifndef INV_255
 #   define INV_255 (1.0 / 255)
 #endif //INV_255
