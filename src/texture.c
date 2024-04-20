@@ -374,6 +374,9 @@ void pfInternal_DefineGetterSetter(PFpixelgetter* getter, PFpixelsetter* setter,
             if (setter) *setter = SetR16G16B16A16;
             break;
 
+        case PF_PIXELFORMAT_UNKNOWN:
+            break;
+
         default:
             *pfInternal_GetErrorPtr() = PF_INVALID_ENUM;
             break;
