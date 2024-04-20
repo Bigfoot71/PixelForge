@@ -473,10 +473,14 @@ void pfDeleteTexture(PFtexture* texture)
             PF_FREE(texture->pixels);
         }
 
-        texture->pixels = NULL;
-        texture->width = texture->height = 0;
-        texture->format = PF_PIXELFORMAT_UNKNOWN;
+        *texture = (PFtexture) { 0 };
     }
+}
+
+PFboolean pfIsValidTexture(PFtexture* texture)
+{
+    return texture->pixels && texture->format &&
+           texture->width > 0 && texture->height > 0;
 }
 
 void pfSetTexturePixel(PFtexture* texture, PFuint x, PFuint y, PFcolor color)

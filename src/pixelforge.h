@@ -415,6 +415,8 @@ PF_API PFcolor pfBlendMultiplicative(PFcolor source, PFcolor destination);
 PFframebuffer pfGenFramebuffer(PFuint width, PFuint height, PFpixelformat format);
 PF_API void pfDeleteFramebuffer(PFframebuffer* framebuffer);
 
+PF_API PFboolean pfIsValidFramebuffer(PFframebuffer* framebuffer);
+
 // NOTE: This function clears the color as well as depth buffer
 PF_API void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color);
 
@@ -431,6 +433,8 @@ PF_API PFtexture pfGenTextureBuffer(PFuint width, PFuint height, PFpixelformat f
 PF_API PFtexture pfGenColorTextureBuffer(PFuint width, PFuint height, PFcolor color, PFpixelformat format);
 
 PF_API void pfDeleteTexture(PFtexture* texture);
+
+PF_API PFboolean pfIsValidTexture(PFtexture* texture);
 
 PF_API void pfSetTexturePixel(PFtexture* texture, PFuint x, PFuint y, PFcolor color);
 PF_API PFcolor pfGetTexturePixel(const PFtexture* texture, PFuint x, PFuint y);

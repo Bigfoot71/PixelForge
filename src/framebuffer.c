@@ -66,6 +66,12 @@ void pfDeleteFramebuffer(PFframebuffer* framebuffer)
     }
 }
 
+PFboolean pfIsValidFramebuffer(PFframebuffer* framebuffer)
+{
+    return framebuffer->zbuffer &&
+        pfIsValidTexture(&framebuffer->texture);
+}
+
 void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color)
 {
     PFsizei size = framebuffer->texture.width*framebuffer->texture.height;
