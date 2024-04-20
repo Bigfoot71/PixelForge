@@ -271,6 +271,8 @@ PF_API void pfDeleteContext(PFctx* ctx);
 PF_API PFctx* pfGetCurrentContext(void);
 PF_API void pfMakeCurrent(PFctx* ctx);
 
+PF_API PFboolean pfIsEnabled(PFstate state);
+
 PF_API void pfEnable(PFstate state);
 PF_API void pfDisable(PFstate state);
 

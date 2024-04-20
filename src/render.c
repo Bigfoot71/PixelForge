@@ -299,6 +299,11 @@ void pfMakeCurrent(PFctx* ctx)
     currentCtx = ctx;
 }
 
+PFboolean pfIsEnabled(PFstate state)
+{
+    return currentCtx->state & state;
+}
+
 void pfEnable(PFstate state)
 {
     currentCtx->state |= state;
