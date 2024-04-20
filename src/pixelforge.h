@@ -382,7 +382,18 @@ PF_API void pfTexCoordfv(const PFfloat* v);
 PF_API void pfNormal3f(PFfloat x, PFfloat y, PFfloat z);
 PF_API void pfNormal3fv(const PFfloat* v);
 
-/* Drawing pixels functions */
+/* Supplementary primitive drawing API functions */
+
+PF_API void pfRects(PFshort x1, PFshort y1, PFshort x2, PFshort y2);
+PF_API void pfRectsv(const PFshort* v1, const PFshort* v2);
+
+PF_API void pfRecti(PFint x1, PFint y1, PFint x2, PFint y2);
+PF_API void pfRectiv(const PFint* v1, const PFint* v2);
+
+PF_API void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2);
+PF_API void pfRectfv(const PFfloat* v1, const PFfloat* v2);
+
+/* Drawing pixels API functions */
 
 PF_API void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels);
 

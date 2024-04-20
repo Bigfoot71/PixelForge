@@ -1250,7 +1250,83 @@ void pfNormal3fv(const PFfloat* v)
 }
 
 
-/* Drawing pixels functions */
+/* Supplementary primitive drawing API functions */
+
+void pfRects(PFshort x1, PFshort y1, PFshort x2, PFshort y2)
+{
+    pfRectf(x1, y1, x2, y2);
+}
+
+void pfRectsv(const PFshort* v1, const PFshort* v2)
+{
+    pfRectf(v1[0], v1[1], v2[0], v2[1]);
+}
+
+void pfRecti(PFint x1, PFint y1, PFint x2, PFint y2)
+{
+    pfRectf(x1, y1, x2, y2);
+}
+
+void pfRectiv(const PFint* v1, const PFint* v2)
+{
+    pfRectf(v1[0], v1[1], v2[0], v2[1]);
+}
+
+void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2)
+{
+    // Get the transformation matrix from model to view (ModelView) and projection
+    PFMmat4 mvp;
+    Helper_GetModelView(NULL, NULL, mvp);
+
+    // Project corner points
+    PFMvec4 v1 = { x1, y1, 0.0f, 1.0f };
+    PFMvec4 v2 = { x2, y2, 0.0f, 1.0f };
+    pfmVec4Transform(v1, v1, mvp);
+    pfmVec4Transform(v2, v2, mvp);
+
+    // Calculate screen coordinates from projected coordinates
+    PFint iX1 = currentCtx->viewportX + (v1[0] + 1.0f) * 0.5f * currentCtx->viewportW;
+    PFint iY1 = currentCtx->viewportY + (1.0f - v1[1]) * 0.5f * currentCtx->viewportH;
+    PFint iX2 = currentCtx->viewportX + (v2[0] + 1.0f) * 0.5f * currentCtx->viewportW;
+    PFint iY2 = currentCtx->viewportY + (1.0f - v2[1]) * 0.5f * currentCtx->viewportH;
+
+    // Ensure iX1 <= iX2 and iY1 <= iY2
+    if (iX2 < iX1) iX1 ^= iX2, iX2 ^= iX1, iX1 ^= iX2;
+    if (iY2 < iY1) iY1 ^= iY2, iY2 ^= iY1, iY1 ^= iY2;
+
+    // Clamp screen coordinates to viewport boundaries
+    iX1 = CLAMP(iX1, (PFint)currentCtx->viewportX, (PFint)currentCtx->viewportW);
+    iY1 = CLAMP(iY1, (PFint)currentCtx->viewportY, (PFint)currentCtx->viewportH);
+    iX2 = CLAMP(iX2, (PFint)currentCtx->viewportX, (PFint)currentCtx->viewportW);
+    iY2 = CLAMP(iY2, (PFint)currentCtx->viewportY, (PFint)currentCtx->viewportH);
+
+    // Retrieve framebuffer information
+    PFint wDst = currentCtx->currentFramebuffer->texture.width;
+    void *bufDst = currentCtx->currentFramebuffer->texture.pixels;
+    PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
+
+    // Retrieve current drawing color
+    PFcolor color = currentCtx->currentColor;
+
+    // Draw rectangle
+    for (PFint y = iY1; y <= iY2; y++)
+    {
+        PFint yOffset = y * wDst;
+
+        for (PFint x = iX1; x <= iX2; x++)
+        {
+            pixelSetter(bufDst, yOffset + x, color);
+        }
+    }
+}
+
+void pfRectfv(const PFfloat* v1, const PFfloat* v2)
+{
+    pfRectf(v1[0], v1[1], v2[0], v2[1]);
+}
+
+
+/* Drawing pixels API functions */
 
 void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
 {
@@ -1266,8 +1342,8 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
     }
 
     // Get the transformation matrix from model to view (ModelView) and projection
-    PFMmat4 matNormal, mvp;
-    Helper_GetModelView(NULL, matNormal, mvp);
+    PFMmat4 mvp;
+    Helper_GetModelView(NULL, NULL, mvp);
 
     // Project raster point
     PFMvec4 rasterPos = { currentCtx->rasterPos[0], currentCtx->rasterPos[1], currentCtx->rasterPos[2], 1.0f };
