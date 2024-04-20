@@ -482,8 +482,9 @@ void pfDeleteTexture(PFtexture* texture)
 
 PFboolean pfIsValidTexture(PFtexture* texture)
 {
-    return texture->pixels && texture->format &&
-           texture->width > 0 && texture->height > 0;
+    return texture->pixels &&
+           texture->width > 0 && texture->height > 0 &&
+           texture->pixelGetter && texture->pixelSetter;
 }
 
 void pfSetTexturePixel(PFtexture* texture, PFuint x, PFuint y, PFcolor color)
