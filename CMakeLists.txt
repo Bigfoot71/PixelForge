@@ -8,14 +8,19 @@ set(CMAKE_C_STANDARD 99)
 set(PF_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 set(PF_IS_MAIN ${PROJECT_IS_TOP_LEVEL})
 
-# Setting build options
+# Set build options
 option(PF_INSTALL "Install PixelForge library and headers" OFF)
 option(PF_BUILD_STATIC "Build PixelForge as a static library" ON)
 option(PF_BUILD_SHARED "Build PixelForge as a shared library" OFF)
-option(PF_BUILD_EXAMPLES_RAYLIB "Build PixelForge examples for raylib" ${PF_IS_MAIN})
-option(PF_BUILD_EXAMPLES_SDL2 "Build PixelForge examples for SDL2" ${PF_IS_MAIN})
-option(PF_BUILD_EXAMPLES_X11 "Build PixelForge examples for X11" ${PF_IS_MAIN})
+
+# Set optional supports
 option(PF_USE_OPENMP "Enable support for OpenMP parallelization" OFF)
+
+# Set example builds
+option(PF_BUILD_EXAMPLES_RAYLIB "Build PixelForge examples for raylib" OFF)
+option(PF_BUILD_EXAMPLES_WINAPI "Build PixelForge examples for WINAPI" OFF)
+option(PF_BUILD_EXAMPLES_SDL2 "Build PixelForge examples for SDL2" OFF)
+option(PF_BUILD_EXAMPLES_X11 "Build PixelForge examples for X11" OFF)
 
 # Defining source files
 file(GLOB SRCS
