@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(PixelForge)
+project(pixelforge)
 
 # C standard definition
 set(CMAKE_C_STANDARD 99)
@@ -10,7 +10,6 @@ set(PF_IS_MAIN ${PROJECT_IS_TOP_LEVEL})
 
 # Set build options
 option(PF_INSTALL "Install PixelForge library and headers" OFF)
-option(PF_BUILD_STATIC "Build PixelForge as a static library" ON)
 option(PF_BUILD_SHARED "Build PixelForge as a shared library" OFF)
 
 # Set optional supports
@@ -36,50 +35,33 @@ file(GLOB HDRS
 # Common compilation options
 add_compile_options(-Wall -Wextra -pedantic)
 
-# Adding source files to static target
-if(PF_BUILD_STATIC)
-    add_library(pixelforge_static STATIC ${SRCS} ${HDRS})
-    target_compile_definitions(pixelforge_static PUBLIC PF_BUILD_STATIC)
-endif()
-
-# Adding source files to the dynamic target
+# Adding source files to the target based on the chosen option (shared or static)
 if(PF_BUILD_SHARED)
-    add_library(pixelforge_dynamic SHARED ${SRCS} ${HDRS})
-    target_compile_definitions(pixelforge_dynamic PUBLIC PF_BUILD_SHARED)
-    set_property(TARGET pixelforge_dynamic PROPERTY POSITION_INDEPENDENT_CODE ON)   # Add -fPIC
+    add_library(${PROJECT_NAME} SHARED ${SRCS} ${HDRS})
+    target_compile_definitions(${PROJECT_NAME} PUBLIC PF_BUILD_SHARED)
+    set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)   # Add -fPIC
+else()
+    add_library(${PROJECT_NAME} STATIC ${SRCS} ${HDRS})
+    target_compile_definitions(${PROJECT_NAME} PUBLIC PF_BUILD_STATIC)
 endif()
 
 # Enable OpenMP support if PF_USE_OPENMP is ON
 if(PF_USE_OPENMP)
     find_package(OpenMP)
     if (OPENMP_FOUND)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
-        if(PF_BUILD_STATIC)
-            target_compile_definitions(pixelforge_static PUBLIC PF_USE_OPENMP)
-        endif()
-        if(PF_BUILD_SHARED)
-            target_compile_definitions(pixelforge_dynamic PUBLIC PF_USE_OPENMP)
-        endif()
+        target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_C)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC PF_USE_OPENMP)
     endif()
 endif()
 
 # Installation if option is enabled
 if(PF_INSTALL)
-    # Installing static libraries if the STATIC option is enabled
-    if(PF_BUILD_STATIC)
-        install(TARGETS pixelforge_static ARCHIVE DESTINATION /usr/local/lib)
-		set_target_properties(pixelforge_static PROPERTIES OUTPUT_NAME pixelforge)
-    endif()
-
-    # Installing shared libraries if the SHARED option is enabled
-    if(PF_BUILD_SHARED)
-        install(TARGETS pixelforge_dynamic LIBRARY DESTINATION /usr/local/lib)
-		set_target_properties(pixelforge_shared PROPERTIES OUTPUT_NAME pixelforge)
-    endif()
-
-    # Installing header files
+    # Installing the library and headers
+    install(TARGETS ${PROJECT_NAME}
+            ARCHIVE DESTINATION /usr/local/lib
+            LIBRARY DESTINATION /usr/local/lib
+            RUNTIME DESTINATION /usr/local/bin
+    )
     install(FILES ${HDRS} DESTINATION /usr/local/include)
 endif()
 

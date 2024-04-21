@@ -5,10 +5,10 @@ add_definitions(-DRESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../resources/")
 
 # Basic 2D example
 add_executable(WinAPI_2D ${PF_ROOT_PATH}/examples/WinAPI/WinAPI_2D.c)
-target_link_libraries(WinAPI_2D PRIVATE pixelforge_static user32 gdi32 m)
+target_link_libraries(WinAPI_2D PRIVATE pixelforge user32 gdi32 m)
 target_include_directories(WinAPI_2D PRIVATE ${PF_ROOT_PATH}/src)
 
 # Basic 3D example
 add_executable(WinAPI_3D ${PF_ROOT_PATH}/examples/WinAPI/WinAPI_3D.c)
-target_link_libraries(WinAPI_3D PRIVATE pixelforge_static user32 gdi32 m)
+target_link_libraries(WinAPI_3D PRIVATE pixelforge user32 gdi32 m)
 target_include_directories(WinAPI_3D PRIVATE ${PF_ROOT_PATH}/src)
