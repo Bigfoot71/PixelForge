@@ -146,6 +146,7 @@ typedef void (*RasterizeTriangleLightFunc)(const PFvertex*, const PFvertex*, con
 /* Including internal function prototypes */
 
 void pfInternal_DefineGetterSetter(PFpixelgetter* getter, PFpixelsetter* setter, PFpixelformat format);
+PFsizei pfInternal_GetPixelBytes(PFpixelformat format);
 
 /* Internal processing and rasterization function declarations */
 
@@ -1370,7 +1371,7 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
     {
         for (PFfloat ySrc = 0; ySrc < height; ySrc += ySrcInc)
         {
-            PFint ySrcOffset = (PFint)(ySrc + 0.5f) * width;
+            PFint ySrcOffset = (PFint)ySrc * width;
             PFfloat yDstMin = yScreen + ySrc * yPixelZoom;
             PFfloat yDstMax = yDstMin + yPixelZoom;
 
@@ -1386,11 +1387,11 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
                     {
                         if (xDst >= 0 && xDst < wDst && yDst >= 0 && yDst < hDst)
                         {
-                            PFint xyDstOffset = yDstOffset + (PFint)xDst;
+                            PFint xyDstOffset = yDstOffset + (PFint)(xDst + 0.5f);
 
                             if (rasterPos[2] < zBuffer[xyDstOffset])
                             {
-                                PFint xySrcOffset = ySrcOffset + (PFint)(xSrc + 0.5f);
+                                PFint xySrcOffset = ySrcOffset + (PFint)xSrc;
 
                                 zBuffer[xyDstOffset] = rasterPos[2];
                                 PFcolor colSrc = getPixelSrc(pixels, xySrcOffset);
@@ -1409,7 +1410,7 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
     {
         for (PFfloat ySrc = 0; ySrc < height; ySrc += ySrcInc)
         {
-            PFint ySrcOffset = (PFint)(ySrc + 0.5f) * width;
+            PFint ySrcOffset = (PFint)ySrc * width;
             PFfloat yDstMin = yScreen + ySrc * yPixelZoom;
             PFfloat yDstMax = yDstMin + yPixelZoom;
 
@@ -1425,7 +1426,7 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
                     {
                         if (xDst >= 0 && xDst < wDst && yDst >= 0 && yDst < hDst)
                         {
-                            PFint xySrcOffset = ySrcOffset + (PFint)(xSrc + 0.5f);
+                            PFint xySrcOffset = ySrcOffset + (PFint)xSrc;
                             PFint xyDstOffset = yDstOffset + (PFint)(xDst + 0.5f);
 
                             zBuffer[xyDstOffset] = rasterPos[2];
@@ -1514,6 +1515,50 @@ void pfRasterPos4fv(const PFfloat* v)
     memcpy(currentCtx->rasterPos, v, sizeof(PFMvec4));
 }
 
+/* Misc API functions */
+
+void pfReadPixels(PFint x, PFint y, PFint width, PFint height, PFpixelformat format, void* pixels)
+{
+    // Get the pixel setter function for the given buffer format
+    PFpixelsetter pixelSetter = NULL;
+    pfInternal_DefineGetterSetter(NULL, &pixelSetter, format);
+
+    // Check if pixel setter function was successfully obtained
+    if (!pixelSetter)
+    {
+        currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
+
+    // Get the number of bytes per pixel for the destination and source formats
+    PFsizei dstPixelBytes = pfInternal_GetPixelBytes(format);
+    PFsizei srcPixelBytes = pfInternal_GetPixelBytes(currentCtx->currentFramebuffer->texture.format);
+
+    // Check if the source pixel format is unknown
+    if (srcPixelBytes == 0) // TODO REVIEW: Possible issue if the current framebuffer has a PF_PIXELFORMAT_UNKNOWN format
+    {
+        currentCtx->errCode = PF_INVALID_OPERATION;
+        return;
+    }
+
+    // Clamp the coordinates and dimensions to fit within the framebuffer boundaries
+    const PFframebuffer *curFB = currentCtx->currentFramebuffer;
+    x = CLAMP(x, 0, (PFint)curFB->texture.width - 1);
+    y = CLAMP(y, 0, (PFint)curFB->texture.height - 1);
+    width = CLAMP(width, 0, (PFint)curFB->texture.width - 1);
+    height = CLAMP(height, 0, (PFint)curFB->texture.height - 1);
+
+    // Move to the beginning of the specified region in the framebuffer
+    PFint wSrc = curFB->texture.width;
+    const char* src = (char*)curFB->texture.pixels + (y * wSrc + x) * srcPixelBytes;
+
+    // Copy pixels from the specified region of the framebuffer to the location specified by 'pixels'
+    for (PFint i = 0; i < height; i++)
+    {
+        memcpy((char*)pixels + i * width * dstPixelBytes, src, width * srcPixelBytes);
+        src += wSrc * srcPixelBytes;
+    }
+}
 
 /* Internal helper function definitions */
 

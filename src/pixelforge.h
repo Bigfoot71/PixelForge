@@ -144,6 +144,7 @@ typedef enum {
     PF_NO_ERROR,
     PF_INVALID_ENUM,
     PF_STACK_OVERFLOW,
+    PF_INVALID_OPERATION,
     PF_ERROR_OUT_OF_MEMORY
 } PFerrcode;
 
@@ -410,6 +411,11 @@ PF_API void pfRasterPos3fv(const PFfloat* v);
 PF_API void pfRasterPos4i(PFint x, PFint y, PFint z, PFint w);
 PF_API void pfRasterPos4f(PFfloat x, PFfloat y, PFfloat z, PFfloat w);
 PF_API void pfRasterPos4fv(const PFfloat* v);
+
+/* Misc API functions */
+
+// Makes a copy of the current framebuffer to a buffer whose format must be specified.
+PF_API void pfReadPixels(PFint x, PFint y, PFint width, PFint height, PFpixelformat format, void* pixels);
 
 /* Blending functions */
 
