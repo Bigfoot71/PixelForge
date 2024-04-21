@@ -16,12 +16,12 @@ void PF_SetPixel(void* pixels, PFsizei offset, PFcolor color);
 /* Window management */
 
 typedef struct {
-	WNDCLASS wc;
-	HWND hwnd;
-	HDC hdc;
-	BYTE *pixels;
-	BITMAPINFO bmi;
-	int w, h;
+    WNDCLASS wc;
+    HWND hwnd;
+    HDC hdc;
+    BYTE *pixels;
+    BITMAPINFO bmi;
+    int w, h;
 } Window;
 
 Window Window_Create(const char* title, int w, int h, HINSTANCE hInstance, int nCmdShow);
@@ -61,9 +61,9 @@ void PF_SetPixel(void* pixels, PFsizei offset, PFcolor color)
 
 Window Window_Create(const char* title, int w, int h, HINSTANCE hInstance, int nCmdShow)
 {
-	Window win = { 0 };
+    Window win = { 0 };
 
-	const char* className = "WindowClass";
+    const char* className = "WindowClass";
 
     // Register window class
     win.wc.lpfnWndProc = DefWindowProc;
@@ -108,10 +108,10 @@ void Window_Destroy(Window* window)
 
 void Window_Update(Window* window)
 {
-	SetDIBitsToDevice(window->hdc,
-		0, 0, window->w, window->h,
-		0, 0, 0, window->h, window->pixels,
-		&window->bmi, DIB_RGB_COLORS);
+    SetDIBitsToDevice(window->hdc,
+        0, 0, window->w, window->h,
+        0, 0, 0, window->h, window->pixels,
+        &window->bmi, DIB_RGB_COLORS);
 }
 
 /* PixelForge context management */

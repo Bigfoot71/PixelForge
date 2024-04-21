@@ -7,15 +7,15 @@
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
     // Create Window
-	Window win = Window_Create("PixelForge - Basic 3D", SCREEN_WIDTH, SCREEN_HEIGHT, hInstance, nCmdShow);
+    Window win = Window_Create("PixelForge - Basic 3D", SCREEN_WIDTH, SCREEN_HEIGHT, hInstance, nCmdShow);
 
-	// Create a timer to update the window periodically
-	SetTimer(win.hwnd, 1, 16, NULL);
+    // Create a timer to update the window periodically
+    SetTimer(win.hwnd, 1, 16, NULL);
 
     // Creating the PixelForge context
-	PFctx *ctx = PF_InitFromWindow(&win);
+    PFctx *ctx = PF_InitFromWindow(&win);
 
-	// Define the camera position and a phase for the rotation
+    // Define the camera position and a phase for the rotation
     PFMvec3 camPos = { -2.0f, 1.5f, -2.0f };
     float timer = 0;
 
@@ -24,21 +24,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     BOOL bRet;
     while ((bRet = GetMessage(&msg, NULL, 0, 0)) != 0)
     {
-		// Handle the error and possibly exit
+        // Handle the error and possibly exit
         if (bRet == -1)
         {
             continue;
         }
 
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-		
-		// Check if the message is WM_QUIT (indicating window close)
-		if (msg.message == WM_QUIT)
-		{
-			break;
-		}
-		
+        TranslateMessage(&msg);
+        DispatchMessage(&msg);
+        
+        // Check if the message is WM_QUIT (indicating window close)
+        if (msg.message == WM_QUIT)
+        {
+            break;
+        }
+        
         // Update camera position
         camPos[0] = 2.0f * cosf(timer);
         camPos[2] = 2.0f * sinf(timer);
@@ -57,7 +57,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         Window_Update(&win);
     }
 
-	pfDeleteContext(ctx);
+    pfDeleteContext(ctx);
     Window_Destroy(&win);
 
     return msg.wParam;
