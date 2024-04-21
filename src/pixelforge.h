@@ -396,7 +396,7 @@ PF_API void pfRectfv(const PFfloat* v1, const PFfloat* v2);
 
 /* Drawing pixels API functions */
 
-PF_API void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels);
+PF_API void pfDrawPixels(PFint width, PFint height, PFpixelformat format, const void* pixels);
 
 PF_API void pfPixelZoom(PFfloat xfactor, PFfloat yfactor);
 

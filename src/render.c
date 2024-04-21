@@ -1329,7 +1329,7 @@ void pfRectfv(const PFfloat* v1, const PFfloat* v2)
 
 /* Drawing pixels API functions */
 
-void pfDrawPixels(PFint width, PFint height, PFpixelformat format, void* pixels)
+void pfDrawPixels(PFint width, PFint height, PFpixelformat format, const void* pixels)
 {
     // Retrieve the appropriate pixel getter function for the given buffer format
     PFpixelgetter getPixelSrc = NULL;
