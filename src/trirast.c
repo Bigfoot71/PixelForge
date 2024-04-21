@@ -35,10 +35,10 @@
     /*
         Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
     */ \
-    const PFuint xMin = (PFuint)CLAMP(MIN(x1, MIN(x2, x3)), (PFint)currentCtx->viewportX, (PFint)(currentCtx->viewportX + currentCtx->viewportW)); \
-    const PFuint yMin = (PFuint)CLAMP(MIN(y1, MIN(y2, y3)), (PFint)currentCtx->viewportY, (PFint)(currentCtx->viewportY + currentCtx->viewportH)); \
-    const PFuint xMax = (PFuint)CLAMP(MAX(x1, MAX(x2, x3)), (PFint)currentCtx->viewportX, (PFint)(currentCtx->viewportX + currentCtx->viewportW)); \
-    const PFuint yMax = (PFuint)CLAMP(MAX(y1, MAX(y2, y3)), (PFint)currentCtx->viewportY, (PFint)(currentCtx->viewportY + currentCtx->viewportH)); \
+    const PFsizei xMin = (PFsizei)CLAMP(MIN(x1, MIN(x2, x3)), MAX(currentCtx->viewportX, 0), currentCtx->viewportX + (PFint)currentCtx->viewportW); \
+    const PFsizei yMin = (PFsizei)CLAMP(MIN(y1, MIN(y2, y3)), MAX(currentCtx->viewportY, 0), currentCtx->viewportY + (PFint)currentCtx->viewportH); \
+    const PFsizei xMax = (PFsizei)CLAMP(MAX(x1, MAX(x2, x3)), MAX(currentCtx->viewportX, 0), currentCtx->viewportX + (PFint)currentCtx->viewportW); \
+    const PFsizei yMax = (PFsizei)CLAMP(MAX(y1, MAX(y2, y3)), MAX(currentCtx->viewportY, 0), currentCtx->viewportY + (PFint)currentCtx->viewportH); \
     /*
         If triangle is entirely outside the viewport we can stop now
     */ \

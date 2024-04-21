@@ -412,7 +412,7 @@ PFsizei pfInternal_GetPixelBytes(PFpixelformat format)
 
 /* Texture functions */
 
-PFtexture pfGenTexture(void* pixels, PFuint width, PFuint height, PFpixelformat format)
+PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelformat format)
 {
     PFtexture texture = { NULL, NULL, pixels, width, height, format };
     if (format == PF_PIXELFORMAT_UNKNOWN) return texture;
@@ -422,7 +422,7 @@ PFtexture pfGenTexture(void* pixels, PFuint width, PFuint height, PFpixelformat 
     return texture;
 }
 
-PFtexture pfGenTextureBuffer(PFuint width, PFuint height, PFpixelformat format)
+PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat format)
 {
     PFtexture texture = { NULL, NULL, NULL, width, height, format };
     if (format == PF_PIXELFORMAT_UNKNOWN) return texture;
@@ -446,7 +446,7 @@ PFtexture pfGenTextureBuffer(PFuint width, PFuint height, PFpixelformat format)
     return texture;
 }
 
-PFtexture pfGenTextureBufferColor(PFuint width, PFuint height, PFcolor color, PFpixelformat format)
+PFtexture pfGenTextureBufferColor(PFsizei width, PFsizei height, PFcolor color, PFpixelformat format)
 {
     PFtexture texture = { NULL, NULL, NULL, width, height, format };
     if (format == PF_PIXELFORMAT_UNKNOWN) return texture;
@@ -490,26 +490,26 @@ PFboolean pfIsValidTexture(PFtexture* texture)
            texture->pixelGetter && texture->pixelSetter;
 }
 
-void pfSetTexturePixel(PFtexture* texture, PFuint x, PFuint y, PFcolor color)
+void pfSetTexturePixel(PFtexture* texture, PFsizei x, PFsizei y, PFcolor color)
 {
     texture->pixelSetter(texture->pixels, y*texture->width + x, color);
 }
 
-PFcolor pfGetTexturePixel(const PFtexture* texture, PFuint x, PFuint y)
+PFcolor pfGetTexturePixel(const PFtexture* texture, PFsizei x, PFsizei y)
 {
     return texture->pixelGetter(texture->pixels, y*texture->width + x);
 }
 
 void pfSetTextureSample(PFtexture* texture, PFfloat u, PFfloat v, PFcolor color)
 {
-    PFuint x = (PFuint)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
-    PFuint y = (PFuint)((v - (PFint)v)*(texture->height - 1)) & (texture->height - 1);
+    PFsizei x = (PFsizei)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
+    PFsizei y = (PFsizei)((v - (PFint)v)*(texture->height - 1)) & (texture->height - 1);
     texture->pixelSetter(texture->pixels, y*texture->width + x, color);
 }
 
 PFcolor pfGetTextureSample(const PFtexture* texture, PFfloat u, PFfloat v)
 {
-    PFuint x = (PFuint)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
-    PFuint y = (PFuint)((v - (PFint)v)*(texture->height - 1)) & (texture->height - 1);
+    PFsizei x = (PFsizei)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
+    PFsizei y = (PFsizei)((v - (PFint)v)*(texture->height - 1)) & (texture->height - 1);
     return texture->pixelGetter(texture->pixels, y*texture->width + x);
 }

@@ -28,7 +28,7 @@ PFerrcode* pfInternal_GetErrorPtr(void);
 
 /* Framebuffer functions */
 
-PFframebuffer pfGenFramebuffer(PFuint width, PFuint height, PFpixelformat format)
+PFframebuffer pfGenFramebuffer(PFsizei width, PFsizei height, PFpixelformat format)
 {
     PFtexture texture = pfGenTextureBuffer(width, height, format);
     if (!texture.pixels) return (PFframebuffer) { 0 };
@@ -83,7 +83,7 @@ void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color)
     }
 }
 
-void pfSetFramebufferPixelDepth(PFframebuffer* framebuffer, PFuint x, PFuint y, PFfloat z, PFcolor color)
+void pfSetFramebufferPixelDepth(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color)
 {
     PFsizei offset = y*framebuffer->texture.width + x;
     PFfloat *zp = framebuffer->zbuffer + offset;
@@ -95,17 +95,17 @@ void pfSetFramebufferPixelDepth(PFframebuffer* framebuffer, PFuint x, PFuint y, 
     }
 }
 
-PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFuint x, PFuint y)
+PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x, PFsizei y)
 {
     return framebuffer->zbuffer[y*framebuffer->texture.width + x];
 }
 
-void pfSetFramebufferPixel(PFframebuffer* framebuffer, PFuint x, PFuint y, PFcolor color)
+void pfSetFramebufferPixel(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFcolor color)
 {
     framebuffer->texture.pixelSetter(framebuffer->texture.pixels, y*framebuffer->texture.width + x, color);
 }
 
-PFcolor pfGetFramebufferPixel(const PFframebuffer* framebuffer, PFuint x, PFuint y)
+PFcolor pfGetFramebufferPixel(const PFframebuffer* framebuffer, PFsizei x, PFsizei y)
 {
     return framebuffer->texture.pixelGetter(framebuffer->texture.pixels, y*framebuffer->texture.width + x);;
 }

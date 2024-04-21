@@ -70,8 +70,8 @@ struct PFctx {
     PFframebuffer screenBuffer;                 // Screen buffer for rendering
     PFframebuffer *currentFramebuffer;          // Pointer to the current framebuffer
 
-    PFuint viewportX, viewportY;                // X and Y coordinates of the viewport
-    PFuint viewportW, viewportH;                // Width and height of the viewport
+    PFint viewportX, viewportY;                 // X and Y coordinates of the viewport
+    PFsizei viewportW, viewportH;               // Width and height of the viewport
 
     PFdrawmode currentDrawMode;                 // Current drawing mode (e.g., lines, triangles)
     PFblendfunc blendFunction;                  // Blend function for alpha blending
@@ -82,7 +82,7 @@ struct PFctx {
     PFcolor currentColor;                       // Current color for vertex rendering
 
     PFvertex vertexBuffer[6];                   // Vertex buffer for geometry
-    PFuint vertexCount;                         // Number of vertices in the buffer
+    PFsizei vertexCount;                        // Number of vertices in the buffer
 
     PFMvec4 rasterPos;                          // Current raster position (for pfDrawPixels)
     PFMvec2 pixelZoom;                          // Pixel zoom factor (for pfDrawPixels)
@@ -100,7 +100,7 @@ struct PFctx {
     PFMmat4 transform;                          // Transformation matrix for translation, rotation, and scaling
     PFboolean transformRequired;                // Flag indicating whether transformation is required for vertices
     PFMmat4 stack[PF_MAX_MATRIX_STACK_SIZE];    // Matrix stack for push/pop operations
-    PFint stackCounter;                         // Counter for matrix stack operations
+    PFsizei stackCounter;                       // Counter for matrix stack operations
 
     PFvertexattribs vertexAttribs;              // Vertex attributes (e.g., normal, texture coordinates)
     PFtexture *currentTexture;                  // Pointer to the current texture
@@ -183,7 +183,7 @@ static void Helper_GetModelView(PFMmat4 outModelview, PFMmat4 outMatNormal, PFMm
 
 /* Context API functions */
 
-PFctx* pfCreateContext(void* screenBuffer, PFuint screenWidth, PFuint screenHeight, PFpixelformat screenFormat)
+PFctx* pfCreateContext(void* screenBuffer, PFsizei screenWidth, PFsizei screenHeight, PFpixelformat screenFormat)
 {
     PFctx *ctx = (PFctx*)PF_MALLOC(sizeof(PFctx));
     if (!ctx) return NULL;
@@ -226,7 +226,7 @@ PFctx* pfCreateContext(void* screenBuffer, PFuint screenWidth, PFuint screenHeig
     memset(ctx->rasterPos, 0, sizeof(PFMvec4));
     ctx->pixelZoom[0] = ctx->pixelZoom[1] = 1.0f;
 
-    for (PFuint i = 0; i < PF_MAX_LIGHTS; i++)
+    for (PFsizei i = 0; i < PF_MAX_LIGHTS; i++)
     {
         ctx->lights[i] = (PFlight) {
             .position = { 0 },
@@ -440,7 +440,7 @@ void pfOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdou
 
 /* Render configuration API functions */
 
-void pfGetViewport(PFuint* x, PFuint* y, PFuint* width, PFuint* height)
+void pfGetViewport(PFint* x, PFint* y, PFsizei* width, PFsizei* height)
 {
     *x = currentCtx->viewportX;
     *y = currentCtx->viewportY;
@@ -448,7 +448,7 @@ void pfGetViewport(PFuint* x, PFuint* y, PFuint* width, PFuint* height)
     *height = currentCtx->viewportH + 1;
 }
 
-void pfViewport(PFuint x, PFuint y, PFuint width, PFuint height)
+void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height)
 {
     currentCtx->viewportX = x;
     currentCtx->viewportY = y;
@@ -575,7 +575,7 @@ void pfBindTexture(PFtexture* texture)
     currentCtx->currentTexture = texture;
 }
 
-void pfEnableLight(PFuint light)
+void pfEnableLight(PFsizei light)
 {
     if (light < PF_MAX_LIGHTS)
     {
@@ -589,7 +589,7 @@ void pfEnableLight(PFuint light)
     }
 }
 
-void pfDisableLight(PFuint light)
+void pfDisableLight(PFsizei light)
 {
     if (light < PF_MAX_LIGHTS)
     {
@@ -603,7 +603,7 @@ void pfDisableLight(PFuint light)
     }
 }
 
-void pfLightfv(PFuint light, PFuint param, const void* value)
+void pfLightfv(PFsizei light, PFenum param, const void* value)
 {
     if (light < PF_MAX_LIGHTS)
     {
@@ -654,7 +654,7 @@ void pfLightfv(PFuint light, PFuint param, const void* value)
     }
 }
 
-void pfMaterialf(PFface face, PFuint param, PFfloat value)
+void pfMaterialf(PFface face, PFenum param, PFfloat value)
 {
     PFmaterial *material0 = NULL;
     PFmaterial *material1 = NULL;
@@ -744,7 +744,7 @@ void pfMaterialf(PFface face, PFuint param, PFfloat value)
     }
 }
 
-void pfMaterialfv(PFface face, PFuint param, const void *value)
+void pfMaterialfv(PFface face, PFenum param, const void *value)
 {
     PFmaterial *material0 = NULL;
     PFmaterial *material1 = NULL;
@@ -1329,7 +1329,7 @@ void pfRectfv(const PFfloat* v1, const PFfloat* v2)
 
 /* Drawing pixels API functions */
 
-void pfDrawPixels(PFint width, PFint height, PFpixelformat format, const void* pixels)
+void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, const void* pixels)
 {
     // Retrieve the appropriate pixel getter function for the given buffer format
     PFpixelgetter getPixelSrc = NULL;
@@ -1358,8 +1358,8 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, const void* p
     PFtexture *texDst = &currentCtx->currentFramebuffer->texture;
     PFfloat *zBuffer = currentCtx->currentFramebuffer->zbuffer;
 
-    PFint wDst = texDst->width;
-    PFint hDst = texDst->height;
+    PFsizei wDst = texDst->width;
+    PFsizei hDst = texDst->height;
 
     PFfloat xPixelZoom = currentCtx->pixelZoom[0];
     PFfloat yPixelZoom = currentCtx->pixelZoom[1];
@@ -1371,13 +1371,13 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, const void* p
     {
         for (PFfloat ySrc = 0; ySrc < height; ySrc += ySrcInc)
         {
-            PFint ySrcOffset = (PFint)ySrc * width;
+            PFsizei ySrcOffset = (PFsizei)ySrc * width;
             PFfloat yDstMin = yScreen + ySrc * yPixelZoom;
             PFfloat yDstMax = yDstMin + yPixelZoom;
 
             for (PFfloat xSrc = 0; xSrc < width; xSrc += xSrcInc)
             {
-                PFint yDstOffset = (PFint)(yDstMin + 0.5f) * wDst;
+                PFsizei yDstOffset = (PFsizei)(yDstMin + 0.5f) * wDst;
                 PFfloat xDstMin = xScreen + xSrc * xPixelZoom;
                 PFfloat xDstMax = xDstMin + xPixelZoom;
 
@@ -1387,11 +1387,11 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, const void* p
                     {
                         if (xDst >= 0 && xDst < wDst && yDst >= 0 && yDst < hDst)
                         {
-                            PFint xyDstOffset = yDstOffset + (PFint)(xDst + 0.5f);
+                            PFsizei xyDstOffset = yDstOffset + (PFsizei)(xDst + 0.5f);
 
                             if (rasterPos[2] < zBuffer[xyDstOffset])
                             {
-                                PFint xySrcOffset = ySrcOffset + (PFint)xSrc;
+                                PFsizei xySrcOffset = ySrcOffset + (PFsizei)xSrc;
 
                                 zBuffer[xyDstOffset] = rasterPos[2];
                                 PFcolor colSrc = getPixelSrc(pixels, xySrcOffset);
@@ -1410,13 +1410,13 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, const void* p
     {
         for (PFfloat ySrc = 0; ySrc < height; ySrc += ySrcInc)
         {
-            PFint ySrcOffset = (PFint)ySrc * width;
+            PFsizei ySrcOffset = (PFsizei)ySrc * width;
             PFfloat yDstMin = yScreen + ySrc * yPixelZoom;
             PFfloat yDstMax = yDstMin + yPixelZoom;
 
             for (PFfloat xSrc = 0; xSrc < width; xSrc += xSrcInc)
             {
-                PFint yDstOffset = (PFint)(yDstMin + 0.5f) * wDst;
+                PFsizei yDstOffset = (PFsizei)(yDstMin + 0.5f) * wDst;
                 PFfloat xDstMin = xScreen + xSrc * xPixelZoom;
                 PFfloat xDstMax = xDstMin + xPixelZoom;
 
@@ -1426,8 +1426,8 @@ void pfDrawPixels(PFint width, PFint height, PFpixelformat format, const void* p
                     {
                         if (xDst >= 0 && xDst < wDst && yDst >= 0 && yDst < hDst)
                         {
-                            PFint xySrcOffset = ySrcOffset + (PFint)xSrc;
-                            PFint xyDstOffset = yDstOffset + (PFint)(xDst + 0.5f);
+                            PFsizei xySrcOffset = ySrcOffset + (PFsizei)xSrc;
+                            PFsizei xyDstOffset = yDstOffset + (PFsizei)(xDst + 0.5f);
 
                             zBuffer[xyDstOffset] = rasterPos[2];
                             PFcolor colSrc = getPixelSrc(pixels, xySrcOffset);
@@ -1517,7 +1517,7 @@ void pfRasterPos4fv(const PFfloat* v)
 
 /* Misc API functions */
 
-void pfReadPixels(PFint x, PFint y, PFint width, PFint height, PFpixelformat format, void* pixels)
+void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat format, void* pixels)
 {
     // Get the pixel setter function for the given buffer format
     PFpixelsetter pixelSetter = NULL;
@@ -1543,17 +1543,19 @@ void pfReadPixels(PFint x, PFint y, PFint width, PFint height, PFpixelformat for
 
     // Clamp the coordinates and dimensions to fit within the framebuffer boundaries
     const PFframebuffer *curFB = currentCtx->currentFramebuffer;
+
     x = CLAMP(x, 0, (PFint)curFB->texture.width - 1);
     y = CLAMP(y, 0, (PFint)curFB->texture.height - 1);
-    width = CLAMP(width, 0, (PFint)curFB->texture.width - 1);
-    height = CLAMP(height, 0, (PFint)curFB->texture.height - 1);
+
+    width = MIN(width, curFB->texture.width - 1);
+    height = MIN(height, curFB->texture.height - 1);
 
     // Move to the beginning of the specified region in the framebuffer
     PFint wSrc = curFB->texture.width;
     const char* src = (char*)curFB->texture.pixels + (y * wSrc + x) * srcPixelBytes;
 
     // Copy pixels from the specified region of the framebuffer to the location specified by 'pixels'
-    for (PFint i = 0; i < height; i++)
+    for (PFsizei i = 0; i < height; i++)
     {
         memcpy((char*)pixels + i * width * dstPixelBytes, src, width * srcPixelBytes);
         src += wSrc * srcPixelBytes;
