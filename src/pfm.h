@@ -607,23 +607,23 @@ PFM_API void pfmMat4Scale(PFMmat4 dst, PFM_FLOAT x, PFM_FLOAT y, PFM_FLOAT z)
     dst[0] = x, dst[5] = y, dst[10] = z, dst[15] = 1.0;
 }
 
-PFM_API void pfmMat4Frustum(PFMmat4 dst, PFM_FLOAT left, PFM_FLOAT right, PFM_FLOAT bottom, PFM_FLOAT top, PFM_FLOAT near, PFM_FLOAT far)
+PFM_API void pfmMat4Frustum(PFMmat4 dst, PFM_FLOAT fLeft, PFM_FLOAT fRight, PFM_FLOAT fBottom, PFM_FLOAT fTop, PFM_FLOAT fNear, PFM_FLOAT fFar)
 {
     memset(dst, 0, sizeof(PFMmat4));
 
-    PFM_FLOAT rl = right - left;
-    PFM_FLOAT tb = top - bottom;
-    PFM_FLOAT fn = far - near;
+    PFM_FLOAT rl = fRight - fLeft;
+    PFM_FLOAT tb = fTop - fBottom;
+    PFM_FLOAT fn = fFar - fNear;
 
-    dst[0] = (near*2.0f)/rl;
-    dst[5] = (near*2.0f)/tb;
+    dst[0] = (fNear*2.0f)/rl;
+    dst[5] = (fNear*2.0f)/tb;
 
-    dst[8] = (right + left)/rl;
-    dst[9] = (top + bottom)/tb;
-    dst[10] = -(far + near)/fn;
+    dst[8] = (fRight + fLeft)/rl;
+    dst[9] = (fTop + fBottom)/tb;
+    dst[10] = -(fFar + fNear)/fn;
     dst[11] = -1.0f;
 
-    dst[14] = -(far*near*2.0f)/fn;
+    dst[14] = -(fFar*fNear*2.0f)/fn;
 }
 
 // NOTE: Fovy angle must be provided in radians
