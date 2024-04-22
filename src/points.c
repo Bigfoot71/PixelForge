@@ -50,17 +50,105 @@ PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFMmat4 mvp)
 
 void Rasterize_PointFlat(const PFvertex* point)
 {
-    // TODO: Implement a more complete point "rasterization"
-    pfSetFramebufferPixel(pfGetCurrentContext()->currentFramebuffer,
-        point->screen[0], point->screen[1],
-        point->color);
+    const PFctx *ctx = pfGetCurrentContext();
+    PFframebuffer *fbDst = ctx->currentFramebuffer;
+
+    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
+    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFblendfunc blendFunc = ctx->blendFunction;
+
+    void *bufDst = fbDst->texture.pixels;
+    PFsizei wDst = fbDst->texture.width;
+    PFfloat *zbDst = fbDst->zbuffer;
+
+    PFint cx = point->screen[0];
+    PFint cy = point->screen[1];
+    PFfloat z = point->homogeneous[2];
+    PFcolor color = point->color;
+
+    if (ctx->pointSize <= 1.0f)
+    {
+        PFsizei pOffset = cy*wDst + cx;
+        pixelSetter(bufDst, pOffset, blendFunc(color, pixelGetter(bufDst, pOffset)));
+        zbDst[pOffset] = z;
+        return;
+    }
+
+    PFfloat r = ctx->pointSize*0.5f;
+    PFfloat rSq = r*r;
+
+    for (PFint y = -r; y <= r; y++)
+    {
+        for (PFint x = -r; x <= r; x++)
+        {
+            if (y*y + x*x <= rSq)
+            {
+                PFint px = cx + x, py = cy + y;
+                if (px >= 0 && px < wDst && py >= 0 && py < wDst)
+                {
+                    PFsizei pOffset = py * wDst + px;
+                    pixelSetter(bufDst, pOffset, blendFunc(color, pixelGetter(bufDst, pOffset)));
+                    zbDst[pOffset] = z;
+                }
+            }
+        }
+    }
 }
 
 void Rasterize_PointDepth(const PFvertex* point)
 {
-    // TODO: Implement a more complete point "rasterization"
-    pfSetFramebufferPixelDepth(pfGetCurrentContext()->currentFramebuffer,
-        point->screen[0], point->screen[1],
-        point->homogeneous[2],
-        point->color);
+    const PFctx *ctx = pfGetCurrentContext();
+    PFframebuffer *fbDst = ctx->currentFramebuffer;
+
+    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
+    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFblendfunc blendFunc = ctx->blendFunction;
+
+    void *bufDst = fbDst->texture.pixels;
+    PFsizei wDst = fbDst->texture.width;
+    PFfloat *zbDst = fbDst->zbuffer;
+
+    PFint cx = point->screen[0];
+    PFint cy = point->screen[1];
+    PFfloat z = point->homogeneous[2];
+    PFcolor color = point->color;
+
+    if (ctx->pointSize <= 1.0f)
+    {
+        PFsizei pOffset = cy*wDst + cx;
+        PFfloat *zp = zbDst + pOffset;
+
+        if (z < *zp)
+        {
+            pixelSetter(bufDst, pOffset, blendFunc(color, pixelGetter(bufDst, pOffset)));
+            zbDst[pOffset] = z;
+        }
+
+        return;
+    }
+
+    PFfloat r = ctx->pointSize*0.5f;
+    PFfloat rSq = r*r;
+
+    for (PFint y = -r; y <= r; y++)
+    {
+        for (PFint x = -r; x <= r; x++)
+        {
+            if (y*y + x*x <= rSq)
+            {
+                PFint px = cx + x, py = cy + y;
+                if (px >= 0 && px < wDst && py >= 0 && py < wDst)
+                {
+                    PFsizei pOffset = py * wDst + px;
+                    PFfloat *zp = zbDst + pOffset;
+
+                    if (z < *zp)
+                    {
+                        pixelSetter(bufDst, pOffset, blendFunc(color, pixelGetter(bufDst, pOffset)));
+                        zbDst[pOffset] = z;
+                    }
+                }
+            }
+        }
+    }
 }

@@ -51,6 +51,8 @@ struct PFctx {
     PFblendfunc blendFunction;                  // Blend function for alpha blending
     PFcolor clearColor;                         // Color used to clear the screen
 
+    PFfloat pointSize;                          // Rasterized point size
+
     PFMvec3 currentNormal;                      // Current normal vector for lighting calculations
     PFMvec2 currentTexcoord;                    // Current texture coordinates
     PFcolor currentColor;                       // Current color for vertex rendering

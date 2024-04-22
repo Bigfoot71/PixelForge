@@ -143,6 +143,7 @@ typedef enum {
 typedef enum {
     PF_NO_ERROR,
     PF_INVALID_ENUM,
+    PF_INVALID_VALUE,
     PF_STACK_OVERFLOW,
     PF_INVALID_OPERATION,
     PF_ERROR_OUT_OF_MEMORY
@@ -307,14 +308,14 @@ PF_API void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height);
 PF_API void pfSetDefaultPixelGetter(PFpixelgetter func);
 PF_API void pfSetDefaultPixelSetter(PFpixelsetter func);
 
+PF_API PFfloat pfGetPointSize(void);
+PF_API void pfPointSize(PFfloat size);
+
 PF_API PFblendfunc pfGetBlendFunction(void);
 PF_API void pfSetBlendFunction(PFblendfunc func);
 
 PF_API PFface pfGetCullFace(void);
 PF_API void pfSetCullFace(PFface face);
-
-PF_API void pfEnableStatePointer(PFarraytype vertexAttribType, const void* buffer);
-PF_API void pfDisableStatePointer(PFarraytype vertexAttribType);
 
 PF_API PFframebuffer* pfGetActiveFramebuffer(void);
 PF_API void pfEnableFramebuffer(PFframebuffer* framebuffer);
@@ -332,6 +333,11 @@ PF_API void pfMaterialfv(PFface face, PFenum param, const void* value);
 
 PF_API void pfClear(PFclearflag flag);
 PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
+
+PF_API void pfEnableStatePointer(PFarraytype vertexAttribType, const void* buffer);
+PF_API void pfDisableStatePointer(PFarraytype vertexAttribType);
+
+/* Vertex array drawing API functions */
 
 PF_API void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer);
 PF_API void pfDrawVertexArray(PFsizei offset, PFsizei count);

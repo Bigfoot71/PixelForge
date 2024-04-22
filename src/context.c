@@ -95,6 +95,8 @@ PFctx* pfCreateContext(void* screenBuffer, PFsizei screenWidth, PFsizei screenHe
     ctx->blendFunction = pfBlendDisabled;
     ctx->clearColor = (PFcolor) { 0 };
 
+    ctx->pointSize = 1.0f;
+
     memset(ctx->currentNormal, 0, sizeof(PFMvec3));
     memset(ctx->currentTexcoord, 0, sizeof(PFMvec2));
     ctx->currentColor = (PFcolor) { 255, 255, 255, 255 };
@@ -344,6 +346,22 @@ void pfSetDefaultPixelSetter(PFpixelsetter func)
     currentCtx->screenBuffer.texture.pixelSetter = func;
 }
 
+PFfloat pfGetPointSize(void)
+{
+    return currentCtx->pointSize;
+}
+
+void pfPointSize(PFfloat size)
+{
+    if (size <= 0.0f)
+    {
+        currentCtx->errCode = PF_INVALID_VALUE;
+        return;
+    }
+
+    currentCtx->pointSize = size;
+}
+
 PFblendfunc pfGetBlendFunction(void)
 {
     return currentCtx->blendFunction;
@@ -363,68 +381,6 @@ void pfSetCullFace(PFface face)
 {
     if (face < PF_FRONT || face > PF_BACK) return;
     currentCtx->cullFace = face;
-}
-
-void pfEnableStatePointer(PFarraytype vertexAttribType, const void* buffer)
-{
-    if (!buffer)
-    {
-        pfDisableStatePointer(vertexAttribType);
-        return;
-    }
-
-    switch (vertexAttribType)
-    {
-        case PF_VERTEX_ARRAY:
-            currentCtx->vertexAttribs.positions = buffer;
-            break;
-
-        case PF_NORMAL_ARRAY:
-            currentCtx->vertexAttribs.normals = buffer;
-            break;
-
-        case PF_COLOR_ARRAY:
-            currentCtx->vertexAttribs.colors = buffer;
-            break;
-
-        case PF_TEXTURE_COORD_ARRAY:
-            currentCtx->vertexAttribs.texcoords = buffer;
-            break;
-
-        default:
-            currentCtx->errCode = PF_INVALID_ENUM;
-            return;
-    }
-
-    currentCtx->vertexAttribState |= vertexAttribType;
-}
-
-void pfDisableStatePointer(PFarraytype vertexAttribType)
-{
-    currentCtx->vertexAttribState &= ~vertexAttribType;
-
-    switch (vertexAttribType)
-    {
-        case PF_VERTEX_ARRAY:
-            currentCtx->vertexAttribs.positions = NULL;
-            break;
-
-        case PF_NORMAL_ARRAY:
-            currentCtx->vertexAttribs.normals = NULL;
-            break;
-
-        case PF_COLOR_ARRAY:
-            currentCtx->vertexAttribs.colors = NULL;
-            break;
-
-        case PF_TEXTURE_COORD_ARRAY:
-            currentCtx->vertexAttribs.texcoords = NULL;
-            break;
-
-        default:
-            currentCtx->errCode = PF_INVALID_ENUM;
-            break;
-    }
 }
 
 PFframebuffer* pfGetActiveFramebuffer(void)
@@ -752,6 +708,71 @@ void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
 {
     currentCtx->clearColor = (PFcolor) { r, g, b, a };
 }
+
+void pfEnableStatePointer(PFarraytype vertexAttribType, const void* buffer)
+{
+    if (!buffer)
+    {
+        pfDisableStatePointer(vertexAttribType);
+        return;
+    }
+
+    switch (vertexAttribType)
+    {
+        case PF_VERTEX_ARRAY:
+            currentCtx->vertexAttribs.positions = buffer;
+            break;
+
+        case PF_NORMAL_ARRAY:
+            currentCtx->vertexAttribs.normals = buffer;
+            break;
+
+        case PF_COLOR_ARRAY:
+            currentCtx->vertexAttribs.colors = buffer;
+            break;
+
+        case PF_TEXTURE_COORD_ARRAY:
+            currentCtx->vertexAttribs.texcoords = buffer;
+            break;
+
+        default:
+            currentCtx->errCode = PF_INVALID_ENUM;
+            return;
+    }
+
+    currentCtx->vertexAttribState |= vertexAttribType;
+}
+
+void pfDisableStatePointer(PFarraytype vertexAttribType)
+{
+    currentCtx->vertexAttribState &= ~vertexAttribType;
+
+    switch (vertexAttribType)
+    {
+        case PF_VERTEX_ARRAY:
+            currentCtx->vertexAttribs.positions = NULL;
+            break;
+
+        case PF_NORMAL_ARRAY:
+            currentCtx->vertexAttribs.normals = NULL;
+            break;
+
+        case PF_COLOR_ARRAY:
+            currentCtx->vertexAttribs.colors = NULL;
+            break;
+
+        case PF_TEXTURE_COORD_ARRAY:
+            currentCtx->vertexAttribs.texcoords = NULL;
+            break;
+
+        default:
+            currentCtx->errCode = PF_INVALID_ENUM;
+            break;
+    }
+}
+
+
+/* Vertex array drawing API functions */
 
 void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer)
 {

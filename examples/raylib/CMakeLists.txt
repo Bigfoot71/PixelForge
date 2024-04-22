@@ -13,6 +13,11 @@ add_executable(raylib_3D ${PF_ROOT_PATH}/examples/raylib/raylib_3D.c)
 target_link_libraries(raylib_3D PRIVATE pixelforge raylib m)
 target_include_directories(raylib_3D PRIVATE ${PF_ROOT_PATH}/src)
 
+# Points example
+add_executable(raylib_Points ${PF_ROOT_PATH}/examples/raylib/raylib_Points.c)
+target_link_libraries(raylib_Points PRIVATE pixelforge raylib m)
+target_include_directories(raylib_Points PRIVATE ${PF_ROOT_PATH}/src)
+
 # Framebuffer example
 add_executable(raylib_Framebuffer ${PF_ROOT_PATH}/examples/raylib/raylib_Framebuffer.c)
 target_link_libraries(raylib_Framebuffer PRIVATE pixelforge raylib m)
