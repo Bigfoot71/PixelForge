@@ -19,11 +19,9 @@
 
 #include "internal/context.h"
 
-
 /* Including internal function prototypes */
 
 extern void pfInternal_HomogeneousToScreen(PFvertex* restrict v);
-
 
 /* Main functions declaration used by 'context.c' */
 
@@ -43,7 +41,6 @@ void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFvertex* v2, 
 void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
 void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
 void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
-
 
 /* Internal helper function declarations */
 
@@ -355,11 +352,18 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
 
 #define PF_BEGIN_TRIANGLE_FLAT_LOOP() \
     PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
-    PFtexture *texTarget = &fbTarget->texture; \
+    PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
+    PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
+    const PFsizei wDst = fbTarget->texture.width; \
+    void *bufTarget = fbTarget->texture.pixels; \
     PFfloat *zbTarget = fbTarget->zbuffer; \
+    const PFfloat z1 = v1->homogeneous[2]; \
+    const PFfloat z2 = v2->homogeneous[2]; \
+    const PFfloat z3 = v3->homogeneous[2]; \
+    \
     for (PFuint y = yMin; y <= yMax; y++) \
     { \
-        const PFuint yOffset = y*texTarget->width; \
+        const PFuint yOffset = y*wDst; \
         PFint w1 = w1Row, w2 = w2Row, w3 = w3Row; \
         for (PFuint x = xMin; x <= xMax; x++) \
         { \
@@ -368,10 +372,10 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
                 PFcolor finalColor; \
                 const PFuint xyOffset = yOffset + x; \
                 const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
-                const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]);
+                const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3);
 
 #define PF_END_TRIANGLE_FLAT_LOOP() \
-                texTarget->pixelSetter(texTarget->pixels, xyOffset, finalColor); \
+                pixelSetter(bufTarget, xyOffset, finalColor); \
                 zbTarget[xyOffset] = z; \
             } \
             w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
@@ -384,11 +388,18 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
 
 #define PF_BEGIN_TRIANGLE_DEPTH_LOOP() \
     PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
-    PFtexture *texTarget = &fbTarget->texture; \
+    PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
+    PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
+    const PFsizei wDst = fbTarget->texture.width; \
+    void *bufTarget = fbTarget->texture.pixels; \
     PFfloat *zbTarget = fbTarget->zbuffer; \
+    const PFfloat z1 = v1->homogeneous[2]; \
+    const PFfloat z2 = v2->homogeneous[2]; \
+    const PFfloat z3 = v3->homogeneous[2]; \
+    \
     for (PFuint y = yMin; y <= yMax; y++) \
     { \
-        const PFuint yOffset = y*texTarget->width; \
+        const PFuint yOffset = y*wDst; \
         PFint w1 = w1Row, w2 = w2Row, w3 = w3Row; \
         for (PFuint x = xMin; x <= xMax; x++) \
         { \
@@ -397,12 +408,12 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
                 PFcolor finalColor; \
                 const PFuint xyOffset = yOffset + x; \
                 const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
-                const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]); \
+                const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
                 if (z < zbTarget[xyOffset]) \
                 {
 
 #define PF_END_TRIANGLE_DEPTH_LOOP() \
-                    texTarget->pixelSetter(texTarget->pixels, xyOffset, finalColor); \
+                    pixelSetter(bufTarget, xyOffset, finalColor); \
                     zbTarget[xyOffset] = z; \
                 } \
             } \
@@ -437,11 +448,18 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
         const PFcolor ambient = pfBlendMultiplicative(light->ambient, (material).ambient); \
         \
         PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
-        PFtexture *texTarget = &fbTarget->texture; \
+        PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
+        PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
+        const PFsizei wDst = fbTarget->texture.width; \
+        void *bufTarget = fbTarget->texture.pixels; \
         PFfloat *zbTarget = fbTarget->zbuffer; \
+        const PFfloat z1 = v1->homogeneous[2]; \
+        const PFfloat z2 = v2->homogeneous[2]; \
+        const PFfloat z3 = v3->homogeneous[2]; \
+        \
         for (PFuint y = yMin; y <= yMax; y++) \
         { \
-            const PFuint yOffset = y*texTarget->width; \
+            const PFuint yOffset = y*wDst; \
             PFint w1 = w1Row, w2 = w2Row, w3 = w3Row; \
             for (PFuint x = xMin; x <= xMax; x++) \
             { \
@@ -450,12 +468,12 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
                     PFcolor finalColor; \
                     const PFuint xyOffset = yOffset + x; \
                     const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
-                    const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]); \
+                    const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
                     if (z < zbTarget[xyOffset]) \
                     {
 
 #define PF_END_TRIANGLE_DEPTH_LIGHT_LOOP() \
-                        texTarget->pixelSetter(texTarget->pixels, xyOffset, finalColor); \
+                        pixelSetter(bufTarget, xyOffset, finalColor); \
                         zbTarget[xyOffset] = z; \
                     } \
                 } \
@@ -472,12 +490,19 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
 
 #define PF_BEGIN_TRIANGLE_FLAT_LOOP() \
     PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
-    PFtexture *texTarget = &fbTarget->texture; \
+    PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
+    PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
+    const PFsizei wDst = fbTarget->texture.width; \
+    void *bufTarget = fbTarget->texture.pixels; \
     PFfloat *zbTarget = fbTarget->zbuffer; \
+    const PFfloat z1 = v1->homogeneous[2]; \
+    const PFfloat z2 = v2->homogeneous[2]; \
+    const PFfloat z3 = v3->homogeneous[2]; \
+    \
     _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_PIXEL_RASTER_THRESHOLD)") \
     for (PFuint y = yMin; y <= yMax; y++) \
     { \
-        const PFuint yOffset = y*texTarget->width; \
+        const PFuint yOffset = y*wDst; \
         PFint i = y - yMin; \
         PFint w1 = w1Row + i*stepWY1; \
         PFint w2 = w2Row + i*stepWY2; \
@@ -489,10 +514,10 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
                 PFcolor finalColor; \
                 const PFuint xyOffset = yOffset + x; \
                 const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
-                const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]);
+                const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3);
 
 #define PF_END_TRIANGLE_FLAT_LOOP() \
-                texTarget->pixelSetter(texTarget->pixels, xyOffset, finalColor); \
+                pixelSetter(bufTarget, xyOffset, finalColor); \
                 zbTarget[xyOffset] = z; \
             } \
             w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
@@ -504,12 +529,19 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
 
 #define PF_BEGIN_TRIANGLE_DEPTH_LOOP() \
     PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
-    PFtexture *texTarget = &fbTarget->texture; \
+    PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
+    PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
+    const PFsizei wDst = fbTarget->texture.width; \
+    void *bufTarget = fbTarget->texture.pixels; \
     PFfloat *zbTarget = fbTarget->zbuffer; \
+    const PFfloat z1 = v1->homogeneous[2]; \
+    const PFfloat z2 = v2->homogeneous[2]; \
+    const PFfloat z3 = v3->homogeneous[2]; \
+    \
     _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_PIXEL_RASTER_THRESHOLD)") \
     for (PFuint y = yMin; y <= yMax; y++) \
     { \
-        const PFuint yOffset = y*texTarget->width; \
+        const PFuint yOffset = y*wDst; \
         PFint i = y - yMin; \
         PFint w1 = w1Row + i*stepWY1; \
         PFint w2 = w2Row + i*stepWY2; \
@@ -521,12 +553,12 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
                 PFcolor finalColor; \
                 const PFuint xyOffset = yOffset + x; \
                 const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
-                const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]); \
+                const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
                 if (z < zbTarget[xyOffset]) \
                 {
 
 #define PF_END_TRIANGLE_DEPTH_LOOP() \
-                    texTarget->pixelSetter(texTarget->pixels, xyOffset, finalColor); \
+                    pixelSetter(bufTarget, xyOffset, finalColor); \
                     zbTarget[xyOffset] = z; \
                 } \
             } \
@@ -560,12 +592,19 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
         const PFcolor ambient = pfBlendMultiplicative(light->ambient, (material).ambient); \
         \
         PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
-        PFtexture *texTarget = &fbTarget->texture; \
+        PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
+        PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
+        const PFsizei wDst = fbTarget->texture.width; \
+        void *bufTarget = fbTarget->texture.pixels; \
         PFfloat *zbTarget = fbTarget->zbuffer; \
+        const PFfloat z1 = v1->homogeneous[2]; \
+        const PFfloat z2 = v2->homogeneous[2]; \
+        const PFfloat z3 = v3->homogeneous[2]; \
+        \
         _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_PIXEL_RASTER_THRESHOLD)") \
         for (PFuint y = yMin; y <= yMax; y++) \
         { \
-            const PFuint yOffset = y*texTarget->width; \
+            const PFuint yOffset = y*wDst; \
             PFint i = y - yMin; \
             PFint w1 = w1Row + i*stepWY1; \
             PFint w2 = w2Row + i*stepWY2; \
@@ -577,12 +616,12 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
                     PFcolor finalColor; \
                     const PFuint xyOffset = yOffset + x; \
                     const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
-                    const PFfloat z = 1.0f/(aW1*v1->homogeneous[2] + aW2*v2->homogeneous[2] + aW3*v3->homogeneous[2]); \
+                    const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
                     if (z < zbTarget[xyOffset]) \
                     {
 
 #define PF_END_TRIANGLE_DEPTH_LIGHT_LOOP() \
-                        texTarget->pixelSetter(texTarget->pixels, xyOffset, finalColor); \
+                        pixelSetter(bufTarget, xyOffset, finalColor); \
                         zbTarget[xyOffset] = z; \
                     } \
                 } \
@@ -610,7 +649,8 @@ void Rasterize_TriangleColorFlat2D(const PFvertex* v1, const PFvertex* v2, const
     const PFcolor emission = ctx->frontMaterial.emission;
 
     // The BEGIN_XXX_LOOP macro provides access to certain useful variables and constants, including:
-    //      - `PFtexture texTarget`, which is the destination buffer
+    //      - `void *bufTarget`, which is the destination pixel buffer
+    //      - `PFpixelgetter pixelGetter`, which allows you to obtain a pixel in the destination buffer
     //      - `PFcolor finalColor`, which stores the color that will be put
     //      - `const PFfloat aW1, aW2, aW3` allowing barycentric interpolation
     //      - `const PFfloat z`, which is the interpolated depth
@@ -618,7 +658,7 @@ void Rasterize_TriangleColorFlat2D(const PFvertex* v1, const PFvertex* v2, const
     PF_BEGIN_TRIANGLE_FLAT_LOOP();
     {
         const PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-        const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+        const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
         finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
     }
@@ -636,7 +676,7 @@ void Rasterize_TriangleColorDepth2D(const PFvertex* v1, const PFvertex* v2, cons
     PF_BEGIN_TRIANGLE_DEPTH_LOOP();
     {
         const PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-        const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+        const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
         finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
     }
@@ -657,7 +697,7 @@ void Rasterize_TriangleTextureFlat2D(const PFvertex* v1, const PFvertex* v2, con
         Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
         PFcolor texel = pfGetTextureSample(ctx->currentTexture, texcoord[0], texcoord[1]);
 
-        const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+        const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
         PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
         colSrc = pfBlendMultiplicative(texel, colSrc);
 
@@ -680,7 +720,7 @@ void Rasterize_TriangleTextureDepth2D(const PFvertex* v1, const PFvertex* v2, co
         Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
         PFcolor texel = pfGetTextureSample(ctx->currentTexture, texcoord[0], texcoord[1]);
 
-        const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+        const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
         PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
         colSrc = pfBlendMultiplicative(texel, colSrc);
 
@@ -707,7 +747,7 @@ void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2, const
         PF_BEGIN_TRIANGLE_FLAT_LOOP();
         {
             const PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
@@ -723,7 +763,7 @@ void Rasterize_TriangleColorFlat3D(const PFvertex* v1, const PFvertex* v2, const
         PF_BEGIN_TRIANGLE_FLAT_LOOP();
         {
             const PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
@@ -746,7 +786,7 @@ void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v2, cons
         PF_BEGIN_TRIANGLE_DEPTH_LOOP();
         {
             const PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
@@ -762,7 +802,7 @@ void Rasterize_TriangleColorDepth3D(const PFvertex* v1, const PFvertex* v2, cons
         PF_BEGIN_TRIANGLE_DEPTH_LOOP();
         {
             const PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
@@ -792,7 +832,7 @@ void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* v2, con
             PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             colSrc = pfBlendMultiplicative(texel, colSrc);
 
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
         PF_END_TRIANGLE_FLAT_LOOP();
@@ -814,7 +854,7 @@ void Rasterize_TriangleTextureFlat3D(const PFvertex* v1, const PFvertex* v2, con
             PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             colSrc = pfBlendMultiplicative(texel, colSrc);
 
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
         PF_END_TRIANGLE_FLAT_LOOP();
@@ -843,7 +883,7 @@ void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex* v2, co
             PFcolor texel = pfGetTextureSample(ctx->currentTexture, texcoord[0], texcoord[1]);
             colSrc = pfBlendMultiplicative(texel, colSrc);
 
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
         PF_END_TRIANGLE_DEPTH_LOOP();
@@ -865,7 +905,7 @@ void Rasterize_TriangleTextureDepth3D(const PFvertex* v1, const PFvertex* v2, co
             PFcolor texel = pfGetTextureSample(ctx->currentTexture, texcoord[0], texcoord[1]);
             colSrc = pfBlendMultiplicative(texel, colSrc);
 
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
         PF_END_TRIANGLE_DEPTH_LOOP();
@@ -949,7 +989,7 @@ void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFvertex* v2, 
         PF_BEGIN_TRIANGLE_FLAT_LIGHT_LOOP(ctx->frontMaterial);
         {
             const PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
             PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
@@ -975,7 +1015,7 @@ void Rasterize_TriangleColorFlatLight3D(const PFvertex* v1, const PFvertex* v2, 
         PF_BEGIN_TRIANGLE_FLAT_LIGHT_LOOP(ctx->backMaterial);
         {
             const PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
             PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
@@ -1004,7 +1044,7 @@ void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvertex* v2,
         PF_BEGIN_TRIANGLE_DEPTH_LIGHT_LOOP(ctx->frontMaterial);
         {
             const PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
             PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
@@ -1026,7 +1066,7 @@ void Rasterize_TriangleColorDepthLight3D(const PFvertex* v1, const PFvertex* v2,
         PF_BEGIN_TRIANGLE_DEPTH_LIGHT_LOOP(ctx->backMaterial);
         {
             const PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
             PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
@@ -1062,7 +1102,7 @@ void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFvertex* v2
             PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             colSrc = pfBlendMultiplicative(texel, colSrc);
 
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
             PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
@@ -1091,7 +1131,7 @@ void Rasterize_TriangleTextureFlatLight3D(const PFvertex* v1, const PFvertex* v2
             PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             colSrc = pfBlendMultiplicative(texel, colSrc);
 
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
             PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
@@ -1127,7 +1167,7 @@ void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFvertex* v
             PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             colSrc = pfBlendMultiplicative(texel, colSrc);
 
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
             PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
@@ -1156,7 +1196,7 @@ void Rasterize_TriangleTextureDepthLight3D(const PFvertex* v1, const PFvertex* v
             PFcolor colSrc = Helper_InterpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             colSrc = pfBlendMultiplicative(texel, colSrc);
 
-            const PFcolor colDst = texTarget->pixelGetter(texTarget->pixels, xyOffset);
+            const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
 
             PFMvec3 normal, vertex;
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
