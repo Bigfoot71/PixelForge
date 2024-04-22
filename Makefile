@@ -15,11 +15,7 @@ ifeq ($(PF_USE_OPENMP),1)
 endif
 
 # Source files
-SRCS := \
-	src/blend.c \
-	src/render.c \
-	src/texture.c \
-	src/framebuffer.c
+SRCS := $(wildcard src/*.c)
 
 # Header files
 HDRS := $(wildcard src/*.h)

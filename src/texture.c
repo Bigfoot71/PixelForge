@@ -27,7 +27,7 @@
 
 /* Including internal function prototypes */
 
-PFerrcode* pfInternal_GetErrorPtr(void);
+extern PFerrcode* pfInternal_GetErrorPtr(void);
 
 
 /* Internal convert functions */
@@ -305,7 +305,7 @@ static PFcolor GetR16G16B16A16(const void* pixels, PFsizei offset)
 
 /* Internal helper functions */
 
-void pfInternal_DefineGetterSetter(PFpixelgetter* getter, PFpixelsetter* setter, PFpixelformat format)
+void pfInternal_GetPixelGetterSetter(PFpixelgetter* getter, PFpixelsetter* setter, PFpixelformat format)
 {
     switch (format)
     {
@@ -417,7 +417,7 @@ PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelforma
     PFtexture texture = { NULL, NULL, pixels, width, height, format };
     if (format == PF_PIXELFORMAT_UNKNOWN) return texture;
 
-    pfInternal_DefineGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format);
+    pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format);
 
     return texture;
 }
@@ -427,7 +427,7 @@ PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat format
     PFtexture texture = { NULL, NULL, NULL, width, height, format };
     if (format == PF_PIXELFORMAT_UNKNOWN) return texture;
 
-    pfInternal_DefineGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format);
+    pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format);
 
     PFsizei size = width*height;
     texture.pixels = PF_MALLOC(size*pfInternal_GetPixelBytes(format));
@@ -451,7 +451,7 @@ PFtexture pfGenTextureBufferColor(PFsizei width, PFsizei height, PFcolor color, 
     PFtexture texture = { NULL, NULL, NULL, width, height, format };
     if (format == PF_PIXELFORMAT_UNKNOWN) return texture;
 
-    pfInternal_DefineGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format);
+    pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format);
 
     PFsizei size = width*height;
     texture.pixels = PF_MALLOC(size*pfInternal_GetPixelBytes(format));
