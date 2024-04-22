@@ -58,8 +58,10 @@ void Rasterize_PointFlat(const PFvertex* point)
     PFblendfunc blendFunc = ctx->blendFunction;
 
     void *bufDst = fbDst->texture.pixels;
-    PFsizei wDst = fbDst->texture.width;
     PFfloat *zbDst = fbDst->zbuffer;
+
+    PFsizei wDst = fbDst->texture.width;
+    PFsizei hDst = fbDst->texture.height;
 
     PFint cx = point->screen[0];
     PFint cy = point->screen[1];
@@ -84,9 +86,9 @@ void Rasterize_PointFlat(const PFvertex* point)
             if (y*y + x*x <= rSq)
             {
                 PFint px = cx + x, py = cy + y;
-                if (px >= 0 && px < wDst && py >= 0 && py < wDst)
+                if (px >= 0 && px < wDst && py >= 0 && py < hDst)
                 {
-                    PFsizei pOffset = py * wDst + px;
+                    PFsizei pOffset = py*wDst + px;
                     pixelSetter(bufDst, pOffset, blendFunc(color, pixelGetter(bufDst, pOffset)));
                     zbDst[pOffset] = z;
                 }
@@ -105,8 +107,10 @@ void Rasterize_PointDepth(const PFvertex* point)
     PFblendfunc blendFunc = ctx->blendFunction;
 
     void *bufDst = fbDst->texture.pixels;
-    PFsizei wDst = fbDst->texture.width;
     PFfloat *zbDst = fbDst->zbuffer;
+
+    PFsizei wDst = fbDst->texture.width;
+    PFsizei hDst = fbDst->texture.height;
 
     PFint cx = point->screen[0];
     PFint cy = point->screen[1];
@@ -121,7 +125,7 @@ void Rasterize_PointDepth(const PFvertex* point)
         if (z < *zp)
         {
             pixelSetter(bufDst, pOffset, blendFunc(color, pixelGetter(bufDst, pOffset)));
-            zbDst[pOffset] = z;
+            *zp = z;
         }
 
         return;
@@ -137,15 +141,15 @@ void Rasterize_PointDepth(const PFvertex* point)
             if (y*y + x*x <= rSq)
             {
                 PFint px = cx + x, py = cy + y;
-                if (px >= 0 && px < wDst && py >= 0 && py < wDst)
+                if (px >= 0 && px < wDst && py >= 0 && py < hDst)
                 {
-                    PFsizei pOffset = py * wDst + px;
+                    PFsizei pOffset = py*wDst + px;
                     PFfloat *zp = zbDst + pOffset;
 
                     if (z < *zp)
                     {
                         pixelSetter(bufDst, pOffset, blendFunc(color, pixelGetter(bufDst, pOffset)));
-                        zbDst[pOffset] = z;
+                        *zp = z;
                     }
                 }
             }
