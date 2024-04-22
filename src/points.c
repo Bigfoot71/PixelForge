@@ -18,7 +18,6 @@
  */
 
 #include "internal/context.h"
-#include "pixelforge.h"
 
 /* Including internal function prototypes */
 
