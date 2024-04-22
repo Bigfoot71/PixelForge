@@ -50,7 +50,7 @@ PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFMmat4 mvp)
 
 void Rasterize_PointFlat(const PFvertex* point)
 {
-    const PFctx *ctx = pfGetCurrentContext();
+    PFctx *ctx = pfGetCurrentContext();
     PFframebuffer *fbDst = ctx->currentFramebuffer;
 
     PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
@@ -99,7 +99,7 @@ void Rasterize_PointFlat(const PFvertex* point)
 
 void Rasterize_PointDepth(const PFvertex* point)
 {
-    const PFctx *ctx = pfGetCurrentContext();
+    PFctx *ctx = pfGetCurrentContext();
     PFframebuffer *fbDst = ctx->currentFramebuffer;
 
     PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
