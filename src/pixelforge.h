@@ -133,7 +133,6 @@ typedef struct PFctx PFctx;     // NOTE: This type is opaque, API functions are 
 typedef enum {
     PF_TEXTURE_2D   = 0x01,
     PF_DEPTH_TEST   = 0x02,
-    PF_WIRE_MODE    = 0x04,
     PF_CULL_FACE    = 0x08,
     PF_LIGHTING     = 0x10
 } PFstate;
@@ -176,8 +175,14 @@ typedef enum {
 } PFdrawmode;
 
 typedef enum {
-    PF_FRONT,
-    PF_BACK,
+    PF_POINT,
+    PF_LINE,
+    PF_FILL
+} PFpolygonmode;
+
+typedef enum {                  // NOTE 1: PF_FRONT and PF_BACK are used as indices internally for `ctx->polygonMode`.
+    PF_FRONT            = 0,    // NOTE 2: Also, we can invert PF_FRONT in code using '!' to obtain PF_BACK.
+    PF_BACK             = 1,    // NOTE 3: Similarly, this can be done for PF_BACK to obtain PF_FRONT.
     PF_FRONT_AND_BACK
 } PFface;
 
@@ -307,6 +312,9 @@ PF_API void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height);
 
 PF_API void pfSetDefaultPixelGetter(PFpixelgetter func);
 PF_API void pfSetDefaultPixelSetter(PFpixelsetter func);
+
+PF_API PFpolygonmode pfGetPolygonMode(PFface face);
+PF_API void pfPolygonMode(PFface face, PFpolygonmode mode);
 
 PF_API PFfloat pfGetPointSize(void);
 PF_API void pfPointSize(PFfloat size);

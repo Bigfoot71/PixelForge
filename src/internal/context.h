@@ -52,6 +52,7 @@ struct PFctx {
     PFcolor clearColor;                         // Color used to clear the screen
 
     PFfloat pointSize;                          // Rasterized point size
+    PFpolygonmode polygonMode[2];               // Polygon mode for faces [0: front] [1: back]
 
     PFMvec3 currentNormal;                      // Current normal vector for lighting calculations
     PFMvec2 currentTexcoord;                    // Current texture coordinates

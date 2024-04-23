@@ -1,3 +1,4 @@
+#include "pixelforge.h"
 #define PF_RAYLIB_COMMON_IMPL
 #include "raylib_common.h"
 
@@ -45,9 +46,9 @@ int main(void)
 
             PF_DrawGrid(10.0f, 10.0f);
 
-            pfEnable(PF_WIRE_MODE);
+            pfPolygonMode(PF_FRONT, PF_LINE);
                 PF_DrawModel(model, (Vector3) { 0 }, 5.0f, WHITE);
-            pfDisable(PF_WIRE_MODE);
+            pfPolygonMode(PF_FRONT, PF_FILL);
         }
         PF_End3D();
 
