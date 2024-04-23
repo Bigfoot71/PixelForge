@@ -1,6 +1,7 @@
 #ifndef PF_RAYLIB_COMMON_H
 #define PF_RAYLIB_COMMON_H
 
+#include "pixelforge.h"
 #ifdef PF_RAYLIB_COMMON_H
 #   define PF_COMMON_IMPL
 #endif //PF_RAYLIB_COMMON_H
@@ -169,8 +170,8 @@ void PF_DrawMesh(Mesh mesh, Material material, Matrix transform)
                    material.maps[MATERIAL_MAP_DIFFUSE].color.b,
                    material.maps[MATERIAL_MAP_DIFFUSE].color.a);
 
-        if (mesh.indices != NULL) pfDrawVertexArrayElements(0, mesh.triangleCount*3, mesh.indices);
-        else pfDrawVertexArray(0, mesh.vertexCount);
+        if (mesh.indices != NULL) pfDrawElements(PF_TRIANGLES, mesh.triangleCount*3, PF_UNSIGNED_SHORT, mesh.indices);
+        else pfDrawArrays(PF_TRIANGLES, 0, mesh.vertexCount);
     pfPopMatrix();
 
     pfDisableStatePointer(PF_VERTEX_ARRAY);

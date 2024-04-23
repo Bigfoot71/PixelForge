@@ -817,28 +817,42 @@ void pfDisableStatePointer(PFarraytype vertexAttribType)
 
 /* Vertex array drawing API functions */
 
-void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer)
+void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void* indices)
 {
+    if (!(type == PF_UNSIGNED_BYTE || type == PF_UNSIGNED_SHORT || type == PF_UNSIGNED_INT))
+    {
+        currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
+
     if (!(currentCtx->vertexAttribState & PF_VERTEX_ARRAY)) return;
-    const PFMvec3 *positions = (const PFMvec3*)(currentCtx->vertexAttribs.positions) + offset;
+    const PFMvec3 *positions = (const PFMvec3*)(currentCtx->vertexAttribs.positions);
 
     const PFMvec3 *normals = (currentCtx->vertexAttribState & PF_NORMAL_ARRAY)
-        ? (const PFMvec3*)(currentCtx->vertexAttribs.normals) + offset : NULL;
+        ? (const PFMvec3*)(currentCtx->vertexAttribs.normals) : NULL;
 
     const PFcolor *colors = (currentCtx->vertexAttribState & PF_COLOR_ARRAY)
-        ? (const PFcolor*)(currentCtx->vertexAttribs.colors) + offset : NULL;
+        ? (const PFcolor*)(currentCtx->vertexAttribs.colors) : NULL;
 
     const PFMvec2 *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
-        ? (const PFMvec2*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
+        ? (const PFMvec2*)(currentCtx->vertexAttribs.texcoords) : NULL;
 
     PFMmat4 mvp, matNormal;
     GetMVP(mvp, matNormal, NULL);
 
-    pfBegin(PF_TRIANGLES);
+    pfBegin(mode);
 
     for (PFsizei i = 0; i < count; i++)
     {
-        const PFushort j = ((PFushort*)buffer)[i];
+        const void *p = (const PFubyte*)indices + i * type;
+
+        PFsizei j;
+        switch(type)
+        {
+            case PF_UNSIGNED_BYTE:  j = *((const PFubyte*)p);  break;
+            case PF_UNSIGNED_SHORT: j = *((const PFushort*)p); break;
+            case PF_UNSIGNED_INT:   j = *((const PFuint*)p);   break;
+        }
 
         // Get the pointer of the current vertex of the batch and pad it with zero
 
@@ -870,24 +884,24 @@ void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer
     pfEnd();
 }
 
-void pfDrawVertexArray(PFsizei offset, PFsizei count)
+void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
 {
     if (!(currentCtx->vertexAttribState & PF_VERTEX_ARRAY)) return;
-    const PFMvec3 *positions = (const PFMvec3*)(currentCtx->vertexAttribs.positions) + offset;
+    const PFMvec3 *positions = (const PFMvec3*)(currentCtx->vertexAttribs.positions) + first;
 
     const PFMvec3 *normals = (currentCtx->vertexAttribState & PF_NORMAL_ARRAY)
-        ? (const PFMvec3*)(currentCtx->vertexAttribs.normals) + offset : NULL;
+        ? (const PFMvec3*)(currentCtx->vertexAttribs.normals) + first : NULL;
 
     const PFcolor *colors = (currentCtx->vertexAttribState & PF_COLOR_ARRAY)
-        ? (const PFcolor*)(currentCtx->vertexAttribs.colors) + offset : NULL;
+        ? (const PFcolor*)(currentCtx->vertexAttribs.colors) + first : NULL;
 
     const PFMvec2 *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
-        ? (const PFMvec2*)(currentCtx->vertexAttribs.texcoords) + offset : NULL;
+        ? (const PFMvec2*)(currentCtx->vertexAttribs.texcoords) + first : NULL;
 
     PFMmat4 mvp, matNormal;
     GetMVP(mvp, matNormal, NULL);
 
-    pfBegin(PF_TRIANGLES);
+    pfBegin(mode);
 
     for (PFsizei i = 0; i < count; i++)
     {

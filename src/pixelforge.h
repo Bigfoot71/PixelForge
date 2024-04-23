@@ -126,6 +126,12 @@ typedef uintptr_t   PFsizeiptr;
 typedef float       PFfloat;
 typedef double      PFdouble;
 
+typedef enum {
+    PF_UNSIGNED_BYTE    = sizeof(PFubyte),
+    PF_UNSIGNED_SHORT   = sizeof(PFushort),
+    PF_UNSIGNED_INT     = sizeof(PFuint)
+} PFdatatype;
+
 /* Context defintions */
 
 typedef struct PFctx PFctx;     // NOTE: This type is opaque, API functions are used to modify its state
@@ -347,8 +353,8 @@ PF_API void pfDisableStatePointer(PFarraytype vertexAttribType);
 
 /* Vertex array drawing API functions */
 
-PF_API void pfDrawVertexArrayElements(PFsizei offset, PFsizei count, const void *buffer);
-PF_API void pfDrawVertexArray(PFsizei offset, PFsizei count);
+PF_API void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void* indices);
+PF_API void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count);
 
 /* Primitives drawing API functions */
 
