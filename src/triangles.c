@@ -224,7 +224,7 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
         Check if vertices are in anti-clockwise order or degenerate,
         in which case the triangle cannot be rendered
     */ \
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return; \
+    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) goto skip_front_face; \
     /*
         Calculate the 2D bounding box of the triangle clamped to the viewport dimensions
     */ \
@@ -317,7 +317,7 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
         Check if vertices are in anti-clockwise order or degenerate,
         in which case the triangle cannot be rendered
     */ \
-    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) return; \
+    if ((x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1) >= 0) goto skip_front_face; \
     /*
         Calculate the 2D bounding box of the triangle
     */ \
@@ -712,8 +712,11 @@ void Rasterize_TriangleColorFlat2D(PFface faceToRender, const PFvertex* v1, cons
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
         PF_END_TRIANGLE_FLAT_LOOP();
+
+        return; // If we have rendered the front face, there is no need to render the back face.
     }
 
+    skip_front_face:
     if (faceToRender == PF_FRONT_AND_BACK || faceToRender == PF_BACK)
     {
         PF_PREPARE_TRIANGLE_BACK_2D();
@@ -749,8 +752,11 @@ void Rasterize_TriangleColorDepth2D(PFface faceToRender, const PFvertex* v1, con
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
         PF_END_TRIANGLE_DEPTH_LOOP();
+
+        return; // If we have rendered the front face, there is no need to render the back face.
     }
 
+    skip_front_face:
     if (faceToRender == PF_FRONT_AND_BACK || faceToRender == PF_BACK)
     {
         PF_PREPARE_TRIANGLE_BACK_2D();
@@ -791,8 +797,11 @@ void Rasterize_TriangleTextureFlat2D(PFface faceToRender, const PFvertex* v1, co
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
         PF_END_TRIANGLE_FLAT_LOOP();
+
+        return; // If we have rendered the front face, there is no need to render the back face.
     }
 
+    skip_front_face:
     if (faceToRender == PF_FRONT_AND_BACK || faceToRender == PF_BACK)
     {
         PF_PREPARE_TRIANGLE_BACK_2D();
@@ -838,8 +847,11 @@ void Rasterize_TriangleTextureDepth2D(PFface faceToRender, const PFvertex* v1, c
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
         PF_END_TRIANGLE_DEPTH_LOOP();
+
+        return; // If we have rendered the front face, there is no need to render the back face.
     }
 
+    skip_front_face:
     if (faceToRender == PF_FRONT_AND_BACK || faceToRender == PF_BACK)
     {
         PF_PREPARE_TRIANGLE_BACK_2D();
@@ -883,8 +895,11 @@ void Rasterize_TriangleColorFlat3D(PFface faceToRender, const PFvertex* v1, cons
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
         PF_END_TRIANGLE_FLAT_LOOP();
+
+        return; // If we have rendered the front face, there is no need to render the back face.
     }
 
+    skip_front_face:
     if (faceToRender == PF_FRONT_AND_BACK || faceToRender == PF_BACK)
     {
         PF_PREPARE_TRIANGLE_BACK_3D();
@@ -920,8 +935,11 @@ void Rasterize_TriangleColorDepth3D(PFface faceToRender, const PFvertex* v1, con
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
         PF_END_TRIANGLE_DEPTH_LOOP();
+
+        return; // If we have rendered the front face, there is no need to render the back face.
     }
 
+    skip_front_face:
     if (faceToRender == PF_FRONT_AND_BACK || faceToRender == PF_BACK)
     {
         PF_PREPARE_TRIANGLE_BACK_3D();
@@ -963,8 +981,11 @@ void Rasterize_TriangleTextureFlat3D(PFface faceToRender, const PFvertex* v1, co
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
         PF_END_TRIANGLE_FLAT_LOOP();
+
+        return; // If we have rendered the front face, there is no need to render the back face.
     }
 
+    skip_front_face:
     if (faceToRender == PF_FRONT_AND_BACK || faceToRender == PF_BACK)
     {
         PF_PREPARE_TRIANGLE_BACK_3D();
@@ -1012,8 +1033,11 @@ void Rasterize_TriangleTextureDepth3D(PFface faceToRender, const PFvertex* v1, c
             finalColor = pfBlendAdditive(ctx->blendFunction(colSrc, colDst), emission);
         }
         PF_END_TRIANGLE_DEPTH_LOOP();
+
+        return; // If we have rendered the front face, there is no need to render the back face.
     }
 
+    skip_front_face:
     if (faceToRender == PF_FRONT_AND_BACK || faceToRender == PF_BACK)
     {
         PF_PREPARE_TRIANGLE_BACK_3D();
@@ -1122,8 +1146,11 @@ void Rasterize_TriangleColorFlatLight3D(PFface faceToRender, const PFvertex* v1,
             finalColor = pfBlendAdditive(finalColor, emission);
         }
         PF_END_TRIANGLE_FLAT_LIGHT_LOOP();
+
+        return; // If we have rendered the front face, there is no need to render the back face.
     }
 
+    skip_front_face:
     if (faceToRender == PF_FRONT_AND_BACK || faceToRender == PF_BACK)
     {
         PF_PREPARE_TRIANGLE_BACK_3D();
@@ -1175,8 +1202,11 @@ void Rasterize_TriangleColorDepthLight3D(PFface faceToRender, const PFvertex* v1
             finalColor = pfBlendAdditive(finalColor, emission);
         }
         PF_END_TRIANGLE_DEPTH_LIGHT_LOOP();
+
+        return; // If we have rendered the front face, there is no need to render the back face.
     }
 
+    skip_front_face:
     if (faceToRender == PF_FRONT_AND_BACK || faceToRender == PF_BACK)
     {
         PF_PREPARE_TRIANGLE_BACK_3D();
@@ -1231,8 +1261,11 @@ void Rasterize_TriangleTextureFlatLight3D(PFface faceToRender, const PFvertex* v
             finalColor = pfBlendAdditive(finalColor, emission);
         }
         PF_END_TRIANGLE_FLAT_LIGHT_LOOP();
+
+        return; // If we have rendered the front face, there is no need to render the back face.
     }
 
+    skip_front_face:
     if (faceToRender == PF_FRONT_AND_BACK || faceToRender == PF_BACK)
     {
         PF_PREPARE_TRIANGLE_BACK_3D();
@@ -1294,8 +1327,11 @@ void Rasterize_TriangleTextureDepthLight3D(PFface faceToRender, const PFvertex* 
             finalColor = pfBlendAdditive(finalColor, emission);
         }
         PF_END_TRIANGLE_DEPTH_LIGHT_LOOP();
+
+        return; // If we have rendered the front face, there is no need to render the back face.
     }
 
+    skip_front_face:
     if (faceToRender == PF_FRONT_AND_BACK || faceToRender == PF_BACK)
     {
         PF_PREPARE_TRIANGLE_BACK_3D();
