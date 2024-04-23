@@ -10,7 +10,7 @@ int main(void)
 {
     // Init raylib window and set target FPS
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "PixelForge - First Person");
-    //SetTargetFPS(60);
+    SetTargetFPS(60);
     DisableCursor();
 
     // Create a rendering buffer in RAM as well as in VRAM (see raylib_common.h)
