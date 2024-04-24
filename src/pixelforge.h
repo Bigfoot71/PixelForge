@@ -57,9 +57,17 @@
 #   define PF_MAX_MATRIX_STACK_SIZE 8
 #endif //PF_MAX_MATRIX_STACK_SIZE
 
-#ifndef PF_MAX_LIGHTS
-#   define PF_MAX_LIGHTS 8
-#endif //PF_MAX_LIGHTS
+//#ifndef PF_MAX_MATRIX_PROJECTION_STACK_SIZE
+//#   define PF_MAX_MATRIX_PROJECTION_STACK_SIZE 8
+//#endif //PF_MAX_MATRIX_PROJECTION_STACK_SIZE
+
+//#ifndef PF_MAX_MATRIX_MODELVIEW_STACK_SIZE
+//#   define PF_MAX_MATRIX_MODELVIEW_STACK_SIZE 8
+//#endif //PF_MAX_MATRIX_MODELVIEW_STACK_SIZE
+
+#ifndef PF_MAX_LIGHT_STACK
+#   define PF_MAX_LIGHT_STACK 8
+#endif //PF_MAX_LIGHT_STACK
 
 #ifndef PF_MAX_CLIPPED_POLYGON_VERTICES
 #   define PF_MAX_CLIPPED_POLYGON_VERTICES 12
@@ -127,31 +135,134 @@ typedef float       PFfloat;
 typedef double      PFdouble;
 
 typedef enum {
-    PF_UNSIGNED_BYTE    = sizeof(PFubyte),
-    PF_UNSIGNED_SHORT   = sizeof(PFushort),
-    PF_UNSIGNED_INT     = sizeof(PFuint)
+    PF_UNSIGNED_BYTE,
+    PF_UNSIGNED_SHORT,
+    PF_UNSIGNED_INT,
+    PF_BYTE,
+    PF_SHORT,
+    PF_INT,
+    PF_FLOAT,
+    PF_DOUBLE
 } PFdatatype;
 
-/* Context defintions */
+/* Context definitions */
 
 typedef struct PFctx PFctx;     // NOTE: This type is opaque, API functions are used to modify its state
 
 typedef enum {
-    PF_TEXTURE_2D   = 0x01,
-    PF_DEPTH_TEST   = 0x02,
-    PF_CULL_FACE    = 0x08,
-    PF_LIGHTING     = 0x10
+    PF_TEXTURE_2D           = 0x0001,
+    PF_DEPTH_TEST           = 0x0002,
+    PF_CULL_FACE            = 0x0008,
+    PF_NORMALIZE            = 0x0010,
+    PF_LIGHTING             = 0x0020,
+    PF_COLOR_MATERIAL       = 0x0040,
+    //PF_FOG                = 0x0080,
+    PF_VERTEX_ARRAY         = 0x0100,
+    PF_NORMAL_ARRAY         = 0x0200,
+    PF_COLOR_ARRAY          = 0x0400,
+    PF_TEXTURE_COORD_ARRAY  = 0x0800,
+    //PF_INDEX_ARRAY        = 0x1000,
 } PFstate;
+
+typedef enum {
+    PF_BLEND                            = 10000,      // TODO REVIEW: Move to PFstate if you decide to review the color mixing mechanism
+    PF_VIEWPORT,
+    PF_COLOR_CLEAR_VALUE,
+    //PF_INDEX_CLEAR_VALUE,
+    PF_DEPTH_CLEAR_VALUE,
+    PF_CULL_FACE_MODE,
+    PF_CURRENT_COLOR,
+    //PF_CURRENT_INDEX,
+    PF_CURRENT_NORMAL,
+    PF_CURRENT_TEXTURE_COORDS,
+    //PF_CURRENT_RASTER_COLOR,
+    //PF_CURRENT_RASTER_DISTANCE,
+    //PF_CURRENT_RASTER_INDEX,
+    PF_CURRENT_RASTER_POSITION,
+    //PF_CURRENT_RASTER_POSITION_VALID,
+    //PF_CURRENT_RASTER_TEXTURE_COORDS,
+    PF_BLEND_FUNC,
+    PF_DEPTH_FUNC,
+    //PF_FOG_COLOR,
+    //PF_FOG_DENSITY,
+    //PF_FOG_START,
+    //PF_FOG_END,
+    //PF_FOG_HINT,
+    //PF_FOG_INDEX,
+    //PF_FOG_MODE,
+    PF_POLYGON_MODE,
+    //PF_POLYGON_OFFSET_FACTOR,
+    //PF_POLYGON_OFFSET_UNITS,
+    //PF_POLYGON_OFFSET_FILL,
+    //PF_POLYGON_OFFSET_LINE,
+    //PF_POLYGON_OFFSET_POINT,
+    //PF_POLYGON_SMOOTH,
+    //PF_POLYGON_SMOOTH_HINT,
+    //PF_POLYGON_STIPPLE,
+    PF_POINT_SIZE,
+    //PF_POINT_SIZE_GRANULARITY,
+    //PF_POINT_SIZE_RANGE,
+    //PF_POINT_SMOOTH,
+    //PF_POINT_SMOOTH_HINT,
+    //PF_LIGHT_MODEL_AMBIENT,
+    //PF_LIGHT_MODEL_LOCAL_VIEWER,
+    //PF_LIGHT_MODEL_TWO_SIDE,
+    //PF_LINE_SMOOTH,
+    //PF_LINE_SMOOTH_HINT,
+    //PF_LINE_STIPPLE,
+    //PF_LINE_STIPPLE_PATTERN,
+    //PF_LINE_STIPPLE_REPEAT,
+    //PF_LINE_WIDTH,
+    //PF_LINE_WIDTH_GRANULARITY,
+    //PF_LINE_WIDTH_RANGE,
+    PF_MATRIX_MODE,
+    PF_PROJECTION_MATRIX,
+    PF_MODELVIEW_MATRIX,
+    PF_MAX_MATRIX_STACK_DEPTH,          // TODO REVIEW: Removed if we implement a separate array for each matrix type (?)
+    //PF_MAX_PROJECTION_STACK_DEPTH,
+    //PF_MAX_MODELVIEW_STACK_DEPTH,
+    //PF_MAX_TEXTURE_STACK_DEPTH,
+    PF_MAX_LIGHTS,
+    PF_VERTEX_ARRAY_SIZE,
+    PF_VERTEX_ARRAY_STRIDE,
+    PF_VERTEX_ARRAY_TYPE,
+    PF_NORMAL_ARRAY_STRIDE,
+    PF_NORMAL_ARRAY_TYPE,
+    //PF_TEXTURE_COORD_ARRAY_SIZE,
+    PF_TEXTURE_COORD_ARRAY_STRIDE,
+    PF_TEXTURE_COORD_ARRAY_TYPE,
+    PF_COLOR_ARRAY_SIZE,
+    PF_COLOR_ARRAY_STRIDE,
+    PF_COLOR_ARRAY_TYPE,
+    //PF_INDEX_ARRAY_STRIDE,
+    //PF_INDEX_ARRAY_TYPE,
+    //PF_INDEX_MODE,
+    //PF_INDEX_OFFSET,
+    //PF_INDEX_SHIFT,
+    PF_ZOOM_X,
+    PF_ZOOM_Y
+} PFgettable;
 
 /* Error enum */
 
 typedef enum {
+
     PF_NO_ERROR,
     PF_INVALID_ENUM,
     PF_INVALID_VALUE,
     PF_STACK_OVERFLOW,
     PF_INVALID_OPERATION,
-    PF_ERROR_OUT_OF_MEMORY
+    PF_ERROR_OUT_OF_MEMORY,
+
+#ifndef NDEBUG
+    PF_DEBUG_NO_ERROR,
+    PF_DEBUG_INVALID_ENUM,
+    PF_DEBUG_INVALID_VALUE,
+    PF_DEBUG_STACK_OVERFLOW,
+    PF_DEBUG_INVALID_OPERATION,
+    PF_DEBUG_ERROR_OUT_OF_MEMORY,
+#endif //NDEBUG
+
 } PFerrcode;
 
 /* Render definitions */
@@ -160,13 +271,6 @@ typedef enum {
     PF_COLOR_BUFFER_BIT = 0x01,
     PF_DEPTH_BUFFER_BIT = 0x02
 } PFclearflag;
-
-typedef enum {
-    PF_VERTEX_ARRAY         = 0x01,
-    PF_NORMAL_ARRAY         = 0x02,
-    PF_COLOR_ARRAY          = 0x04,
-    PF_TEXTURE_COORD_ARRAY  = 0x08
-} PFarraytype;
 
 typedef enum {
     PF_MODELVIEW,
@@ -205,32 +309,33 @@ typedef enum {
 } PFlights;
 
 typedef enum {  // NOTE: Common to light and material
-    PF_AMBIENT                  = 1,
-    PF_DIFFUSE                  = 2,
-    PF_SPECULAR                 = 3,
-    PF_AMBIENT_AND_DIFFUSE      = 4
-} PFrenderparam;
+    PF_AMBIENT_AND_DIFFUSE      = 1,
+    PF_AMBIENT                  = 2,
+    PF_DIFFUSE                  = 3,
+    PF_SPECULAR                 = 4
+} PFrendercolor;
 
 typedef enum {
-    PF_POSITION                 = 5,
-    PF_SPOT_DIRECTION           = 6,
-    //PF_SPOT_EXPONENT          = 7,
-    //PF_SPOT_CUTOFF            = 8,
-    //PF_CONSTANT_ATTENUATION   = 9,
-    //PF_LINEAR_ATTENUATION     = 10,
-    //PF_QUADRATIC_ATTENUATION  = 11
-} PFlightparam;
-
-typedef enum {
-    PF_EMISSION                 = 12,
-    PF_SHININESS                = 13
+    PF_EMISSION                 = 5,
+    PF_SHININESS                = 6
 } PFmaterialparam;
+
+typedef enum {
+    PF_POSITION                 = 7,
+    PF_SPOT_DIRECTION           = 8,
+    //PF_SPOT_EXPONENT          = 9,
+    //PF_SPOT_CUTOFF            = 10,
+    //PF_CONSTANT_ATTENUATION   = 11,
+    //PF_LINEAR_ATTENUATION     = 12,
+    //PF_QUADRATIC_ATTENUATION  = 13
+} PFlightparam;
 
 typedef struct {
     PFubyte r, g, b, a;
 } PFcolor;
 
 typedef PFcolor (*PFblendfunc)(PFcolor, PFcolor);
+typedef PFboolean (*PFdepthfunc)(PFfloat, PFfloat);
 
 /* Texture definitions */
 
@@ -289,7 +394,15 @@ PF_API PFboolean pfIsEnabled(PFstate state);
 PF_API void pfEnable(PFstate state);
 PF_API void pfDisable(PFstate state);
 
-/* Error management API functions */
+/* Getter API functions */
+
+PF_API void pfGetBooleanv(PFenum pname, PFboolean* params);
+PF_API void pfGetIntegerv(PFenum pname, PFint* params);
+
+PF_API void pfGetFloatv(PFenum pname, PFfloat* params);
+PF_API void pfGetDoublev(PFenum pname, PFdouble* params);
+
+PF_API void pfGetPointerv(PFenum pname, const void** params);
 
 PF_API PFerrcode pfGetError(void);
 
@@ -313,23 +426,18 @@ PF_API void pfOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top
 
 /* Render configuration API functions */
 
-PF_API void pfGetViewport(PFint* x, PFint* y, PFsizei* width, PFsizei* height);
 PF_API void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height);
 
 PF_API void pfSetDefaultPixelGetter(PFpixelgetter func);
 PF_API void pfSetDefaultPixelSetter(PFpixelsetter func);
 
-PF_API PFpolygonmode pfGetPolygonMode(PFface face);
 PF_API void pfPolygonMode(PFface face, PFpolygonmode mode);
-
-PF_API PFfloat pfGetPointSize(void);
 PF_API void pfPointSize(PFfloat size);
 
-PF_API PFblendfunc pfGetBlendFunction(void);
-PF_API void pfSetBlendFunction(PFblendfunc func);
+PF_API void pfBlendFunc(PFblendfunc func);
+PF_API void pfDepthFunc(PFdepthfunc func);
 
-PF_API PFface pfGetCullFace(void);
-PF_API void pfSetCullFace(PFface face);
+PF_API void pfCullFace(PFface face);
 
 PF_API PFframebuffer* pfGetActiveFramebuffer(void);
 PF_API void pfEnableFramebuffer(PFframebuffer* framebuffer);
@@ -340,6 +448,7 @@ PF_API void pfBindTexture(PFtexture* texture);
 
 PF_API void pfEnableLight(PFsizei light);
 PF_API void pfDisableLight(PFsizei light);
+PF_API PFboolean pfIsEnabledLight(PFsizei light);
 PF_API void pfLightfv(PFsizei light, PFenum param, const void* value);
 
 PF_API void pfMaterialf(PFface face, PFenum param, PFfloat value);
@@ -347,14 +456,29 @@ PF_API void pfMaterialfv(PFface face, PFenum param, const void* value);
 
 PF_API void pfClear(PFclearflag flag);
 PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
+PF_API void pfClearDepth(PFfloat depth);
 
-PF_API void pfEnableStatePointer(PFarraytype vertexAttribType, const void* buffer);
-PF_API void pfDisableStatePointer(PFarraytype vertexAttribType);
+// size: is the number of coordinates per vertex. The size value must be 2, 3 or 4.
+// type: can be PF_SHORT, PF_INT, PF_FLOAT or PF_DOUBLE
+PF_API void pfVertexPointer(PFint size, PFenum type, PFsizei stride, const void* pointer);
+
+// type: can be PF_FLOAT or PF_DOUBLE
+PF_API void pfNormalPointer(PFenum type, PFsizei stride, const void* pointer);
+
+// type: can be PF_FLOAT or PF_DOUBLE
+PF_API void pfTexCoordPointer(PFenum type, PFsizei stride, const void* pointer);
+
+// size: is the number of coordinates per vertex. The size value should be 3 or 4.
+// type: PF_UNSIGNED_BYTE, PF_UNSIGNED_SHORT, PF_UNSIGNED_INT, PF_FLOAT ou PF_DOUBLE.
+PF_API void pfColorPointer(PFint size, PFenum type, PFsizei stride, const void* pointer);
 
 /* Vertex array drawing API functions */
 
 PF_API void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void* indices);
 PF_API void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count);
+
+// NOTE: This function causes the current color to be followed by a material color.
+PF_API void pfColorMaterial(PFface face, PFenum mode);
 
 /* Primitives drawing API functions */
 
@@ -446,6 +570,15 @@ PF_API PFcolor pfBlendAlpha(PFcolor source, PFcolor destination);
 PF_API PFcolor pfBlendAdditive(PFcolor source, PFcolor destination);
 PF_API PFcolor pfBlendSubtractive(PFcolor source, PFcolor destination);
 PF_API PFcolor pfBlendMultiplicative(PFcolor source, PFcolor destination);
+
+/* Depth testing functions */
+
+PF_API PFboolean pfDepthLess(PFfloat source, PFfloat destination);
+PF_API PFboolean pfDepthEqual(PFfloat source, PFfloat destination);
+PF_API PFboolean pfDepthLequal(PFfloat source, PFfloat destination);
+PF_API PFboolean pfDepthGreater(PFfloat source, PFfloat destination);
+PF_API PFboolean pfDepthNotequal(PFfloat source, PFfloat destination);
+PF_API PFboolean pfDepthGequal(PFfloat source, PFfloat destination);
 
 /* Framebuffer functions */
 

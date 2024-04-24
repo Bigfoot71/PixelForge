@@ -88,7 +88,7 @@ void pfSetFramebufferPixelDepth(PFframebuffer* framebuffer, PFsizei x, PFsizei y
     PFsizei offset = y*framebuffer->texture.width + x;
     PFfloat *zp = framebuffer->zbuffer + offset;
 
-    if (z < *zp)
+    if (z < *zp) // TODO: Review this, with depthFunc
     {
         framebuffer->texture.pixelSetter(framebuffer->texture.pixels, offset, color);
         *zp = z;

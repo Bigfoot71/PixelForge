@@ -147,21 +147,53 @@ void PF_EndMode3D(void)
 
 /* Draw meshes/models functions */
 
+void PF_EnableStatePointer(PFstate state, const void* pointer)
+{
+    pfEnable(state);
+
+    switch (state)
+    {
+        case PF_VERTEX_ARRAY:
+            pfVertexPointer(3, PF_FLOAT, 0, pointer);
+            break;
+        
+        case PF_NORMAL_ARRAY:
+            pfNormalPointer(PF_FLOAT, 0, pointer);
+            break;
+
+        case PF_TEXTURE_COORD_ARRAY:
+            pfTexCoordPointer(PF_FLOAT, 0, pointer);
+            break;
+
+        case PF_COLOR_ARRAY:
+            pfColorPointer(4, PF_UNSIGNED_BYTE, 0, pointer);
+            break;
+
+        default:
+            break;
+    }
+}
+
+void PF_DisableStatePointer(PFstate state)
+{
+    pfDisable(state);
+}
+
 void PF_DrawMesh(Mesh mesh, Material material, Matrix transform)
 {
     if (mesh.animVertices)
     {
-        pfEnableStatePointer(PF_VERTEX_ARRAY, mesh.animVertices);
-        pfEnableStatePointer(PF_NORMAL_ARRAY, mesh.animNormals);
+        PF_EnableStatePointer(PF_VERTEX_ARRAY, mesh.animVertices);
+        PF_EnableStatePointer(PF_NORMAL_ARRAY, mesh.animNormals);
     }
     else
     {
-        pfEnableStatePointer(PF_VERTEX_ARRAY, mesh.vertices);
-        pfEnableStatePointer(PF_NORMAL_ARRAY, mesh.normals);
+        PF_EnableStatePointer(PF_VERTEX_ARRAY, mesh.vertices);
+        PF_EnableStatePointer(PF_NORMAL_ARRAY, mesh.normals);
     }
 
-    pfEnableStatePointer(PF_TEXTURE_COORD_ARRAY, mesh.texcoords);
-    pfEnableStatePointer(PF_COLOR_ARRAY, mesh.colors);
+    PF_EnableStatePointer(PF_TEXTURE_COORD_ARRAY, mesh.texcoords);
+    PF_EnableStatePointer(PF_COLOR_ARRAY, mesh.colors);
 
     pfPushMatrix();
         pfMultMatrixf((float*)(&transform));
@@ -174,10 +206,10 @@ void PF_DrawMesh(Mesh mesh, Material material, Matrix transform)
         else pfDrawArrays(PF_TRIANGLES, 0, mesh.vertexCount);
     pfPopMatrix();
 
-    pfDisableStatePointer(PF_VERTEX_ARRAY);
-    pfDisableStatePointer(PF_TEXTURE_COORD_ARRAY);
-    pfDisableStatePointer(PF_NORMAL_ARRAY);
-    pfDisableStatePointer(PF_COLOR_ARRAY);
+    PF_DisableStatePointer(PF_VERTEX_ARRAY);
+    PF_DisableStatePointer(PF_TEXTURE_COORD_ARRAY);
+    PF_DisableStatePointer(PF_NORMAL_ARRAY);
+    PF_DisableStatePointer(PF_COLOR_ARRAY);
 }
 
 void PF_DrawModel(Model model, Vector3 position, float scale, Color tint)

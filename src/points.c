@@ -84,8 +84,8 @@ void Rasterize_PointFlat(const PFvertex* point)
         {
             if (y*y + x*x <= rSq)
             {
-                PFint px = cx + x, py = cy + y;
-                if (px >= 0 && px < wDst && py >= 0 && py < hDst)
+                PFsizei px = cx + x, py = cy + y;
+                if (px < wDst && py < hDst)
                 {
                     PFsizei pOffset = py*wDst + px;
                     pixelSetter(bufDst, pOffset, blendFunc(color, pixelGetter(bufDst, pOffset)));
@@ -121,7 +121,7 @@ void Rasterize_PointDepth(const PFvertex* point)
         PFsizei pOffset = cy*wDst + cx;
         PFfloat *zp = zbDst + pOffset;
 
-        if (z < *zp)
+        if (ctx->depthFunction(z, *zp))
         {
             pixelSetter(bufDst, pOffset, blendFunc(color, pixelGetter(bufDst, pOffset)));
             *zp = z;
@@ -139,13 +139,13 @@ void Rasterize_PointDepth(const PFvertex* point)
         {
             if (y*y + x*x <= rSq)
             {
-                PFint px = cx + x, py = cy + y;
-                if (px >= 0 && px < wDst && py >= 0 && py < hDst)
+                PFsizei px = cx + x, py = cy + y;
+                if (px < wDst && py < hDst)
                 {
                     PFsizei pOffset = py*wDst + px;
                     PFfloat *zp = zbDst + pOffset;
 
-                    if (z < *zp)
+                    if (ctx->depthFunction(z, *zp))
                     {
                         pixelSetter(bufDst, pOffset, blendFunc(color, pixelGetter(bufDst, pOffset)));
                         *zp = z;

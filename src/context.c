@@ -26,7 +26,7 @@
 #include <float.h>
 #include <math.h>
 
-// TODO: Review the API pfGet/pfSet functions
+// TODO: Review all enums to give them unique values
 
 /* Current thread local-thread declaration */
 
@@ -59,6 +59,40 @@ extern PFsizei pfInternal_GetPixelBytes(PFpixelformat format);
 static void GetMVP(PFMmat4 outMVP, PFMmat4 outMatNormal, PFMmat4 outTransformedModelview);
 static void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal);
 
+/* Some helper functions */
+
+static PFsizei Helper_GetDataTypeSize(PFdatatype type)
+{
+    switch (type)
+    {
+        case PF_UNSIGNED_BYTE:
+            return sizeof(PFubyte);
+
+        case PF_UNSIGNED_SHORT:
+            return sizeof(PFushort);
+
+        case PF_UNSIGNED_INT:
+            return sizeof(PFuint);
+
+        case PF_BYTE:
+            return sizeof(PFbyte);
+
+        case PF_SHORT:
+            return sizeof(PFshort);
+
+        case PF_INT:
+            return sizeof(PFint);
+
+        case PF_FLOAT:
+            return sizeof(PFfloat);
+
+        case PF_DOUBLE:
+            return sizeof(PFdouble);
+    }
+
+    return 0;
+}
+
 /* Context API functions */
 
 PFctx* pfCreateContext(void* screenBuffer, PFsizei screenWidth, PFsizei screenHeight, PFpixelformat screenFormat)
@@ -72,7 +106,7 @@ PFctx* pfCreateContext(void* screenBuffer, PFsizei screenWidth, PFsizei screenHe
         screenBuffer, screenWidth, screenHeight, screenFormat);
 
     const PFsizei bufferSize = screenWidth*screenHeight;
-    ctx->screenBuffer.zbuffer = (PFfloat*)PF_MALLOC(bufferSize*sizeof(PFctx));
+    ctx->screenBuffer.zbuffer = (PFfloat*)PF_MALLOC(bufferSize*sizeof(PFfloat));
 
     if (!ctx->screenBuffer.zbuffer)
     {
@@ -93,7 +127,9 @@ PFctx* pfCreateContext(void* screenBuffer, PFsizei screenWidth, PFsizei screenHe
 
     ctx->currentDrawMode = 0;
     ctx->blendFunction = pfBlendDisabled;
+    ctx->depthFunction = pfDepthLess;
     ctx->clearColor = (PFcolor) { 0 };
+    ctx->clearDepth = FLT_MAX;
 
     ctx->pointSize = 1.0f;
 
@@ -109,7 +145,7 @@ PFctx* pfCreateContext(void* screenBuffer, PFsizei screenWidth, PFsizei screenHe
     memset(ctx->rasterPos, 0, sizeof(PFMvec4));
     ctx->pixelZoom[0] = ctx->pixelZoom[1] = 1.0f;
 
-    for (PFsizei i = 0; i < PF_MAX_LIGHTS; i++)
+    for (PFsizei i = 0; i < PF_MAX_LIGHT_STACK; i++)
     {
         ctx->lights[i] = (PFlight) {
             .position = { 0 },
@@ -123,16 +159,21 @@ PFctx* pfCreateContext(void* screenBuffer, PFsizei screenWidth, PFsizei screenHe
 
     ctx->lastActiveLight = -1;
 
-    ctx->frontMaterial = (PFmaterial) {
+    ctx->faceMaterial[0] = ctx->faceMaterial[1] = (PFmaterial) {
         .ambient = (PFcolor) { 255, 255, 255, 255 },
         .diffuse = (PFcolor) { 255, 255, 255, 255 },
         .specular = (PFcolor) { 255, 255, 255, 255 },
         .emission = (PFcolor) { 0, 0, 0, 255 },
 #   ifdef PF_NO_BLINN_PHONG
-        .shininess = 16.0f
+        .shininess = 16.0f,
 #   else
-        .shininess = 64.0f
+        .shininess = 64.0f,
 #   endif
+    };
+
+    ctx->materialColorFollowing = (PFmatcolfollowing) {
+        .face = PF_FRONT_AND_BACK,
+        .mode = PF_AMBIENT_AND_DIFFUSE
     };
 
     ctx->currentMatrixMode = PF_MODELVIEW;
@@ -148,7 +189,6 @@ PFctx* pfCreateContext(void* screenBuffer, PFsizei screenWidth, PFsizei screenHe
     ctx->vertexAttribs = (PFvertexattribs) { 0 };
     ctx->currentTexture = NULL;
 
-    ctx->vertexAttribState = 0x00;
     ctx->state = 0x00;
 
     ctx->state |= PF_CULL_FACE;
@@ -199,7 +239,7 @@ void pfDisable(PFstate state)
 }
 
 
-/* Error management API functions */
+/* Getter API functions (see also 'getter.c') */
 
 PFerrcode pfGetError(void)
 {
@@ -323,14 +363,6 @@ void pfOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdou
 
 /* Render configuration API functions */
 
-void pfGetViewport(PFint* x, PFint* y, PFsizei* width, PFsizei* height)
-{
-    *x = currentCtx->viewportX;
-    *y = currentCtx->viewportY;
-    *width = currentCtx->viewportW + 1;
-    *height = currentCtx->viewportH + 1;
-}
-
 void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height)
 {
     currentCtx->viewportX = x;
@@ -347,17 +379,6 @@ void pfSetDefaultPixelGetter(PFpixelgetter func)
 void pfSetDefaultPixelSetter(PFpixelsetter func)
 {
     currentCtx->screenBuffer.texture.pixelSetter = func;
-}
-
-PFpolygonmode pfGetPolygonMode(PFface face)
-{
-    if (face < PF_BACK && face > PF_FRONT)
-    {
-        currentCtx->errCode = PF_INVALID_ENUM;
-        return 0;
-    }
-
-    return currentCtx->polygonMode[face];
 }
 
 void pfPolygonMode(PFface face, PFpolygonmode mode)
@@ -389,11 +410,6 @@ void pfPolygonMode(PFface face, PFpolygonmode mode)
     }
 }
 
-PFfloat pfGetPointSize(void)
-{
-    return currentCtx->pointSize;
-}
-
 void pfPointSize(PFfloat size)
 {
     if (size <= 0.0f)
@@ -405,22 +421,17 @@ void pfPointSize(PFfloat size)
     currentCtx->pointSize = size;
 }
 
-PFblendfunc pfGetBlendFunction(void)
-{
-    return currentCtx->blendFunction;
-}
-
-void pfSetBlendFunction(PFblendfunc func)
+void pfBlendFunc(PFblendfunc func)
 {
     currentCtx->blendFunction = func;
 }
 
-PFface pfGetCullFace(void)
+void pfDepthFunc(PFdepthfunc func)
 {
-    return currentCtx->cullFace;
+    currentCtx->depthFunction = func;
 }
 
-void pfSetCullFace(PFface face)
+void pfCullFace(PFface face)
 {
     if (face < PF_FRONT || face > PF_BACK) return;
     currentCtx->cullFace = face;
@@ -454,12 +465,12 @@ void pfBindTexture(PFtexture* texture)
 
 void pfEnableLight(PFsizei light)
 {
-    if (light < PF_MAX_LIGHTS)
+    if (light < PF_MAX_LIGHT_STACK)
     {
         currentCtx->lights[light].active = PF_TRUE;
         currentCtx->lastActiveLight = -1;
 
-        for (PFint i = PF_MAX_LIGHTS - 1; i > currentCtx->lastActiveLight; i--)
+        for (PFint i = PF_MAX_LIGHT_STACK - 1; i > currentCtx->lastActiveLight; i--)
         {
             if (currentCtx->lights[i].active) currentCtx->lastActiveLight = i;
         }
@@ -468,21 +479,26 @@ void pfEnableLight(PFsizei light)
 
 void pfDisableLight(PFsizei light)
 {
-    if (light < PF_MAX_LIGHTS)
+    if (light < PF_MAX_LIGHT_STACK)
     {
         currentCtx->lights[light].active = PF_FALSE;
         currentCtx->lastActiveLight = -1;
 
-        for (PFint i = PF_MAX_LIGHTS - 1; i > currentCtx->lastActiveLight; i--)
+        for (PFint i = PF_MAX_LIGHT_STACK - 1; i > currentCtx->lastActiveLight; i--)
         {
             if (currentCtx->lights[i].active) currentCtx->lastActiveLight = i;
         }
     }
 }
 
+PFboolean pfIsEnabledLight(PFsizei light)
+{
+    return currentCtx->lights[light].active;
+}
+
 void pfLightfv(PFsizei light, PFenum param, const void* value)
 {
-    if (light < PF_MAX_LIGHTS)
+    if (light < PF_MAX_LIGHT_STACK)
     {
         PFlight *l = &currentCtx->lights[light];
 
@@ -539,18 +555,18 @@ void pfMaterialf(PFface face, PFenum param, PFfloat value)
     switch (face)
     {
         case PF_FRONT:
-            material0 = &currentCtx->frontMaterial;
-            material1 = &currentCtx->frontMaterial;
+            material0 = &currentCtx->faceMaterial[PF_FRONT];
+            material1 = &currentCtx->faceMaterial[PF_FRONT];
             break;
 
         case PF_BACK:
-            material0 = &currentCtx->backMaterial;
-            material1 = &currentCtx->backMaterial;
+            material0 = &currentCtx->faceMaterial[PF_BACK];
+            material1 = &currentCtx->faceMaterial[PF_BACK];
             break;
 
         case PF_FRONT_AND_BACK:
-            material0 = &currentCtx->frontMaterial;
-            material1 = &currentCtx->backMaterial;
+            material0 = &currentCtx->faceMaterial[PF_FRONT];
+            material1 = &currentCtx->faceMaterial[PF_BACK];
             break;
 
         default:
@@ -629,18 +645,18 @@ void pfMaterialfv(PFface face, PFenum param, const void *value)
     switch (face)
     {
         case PF_FRONT:
-            material0 = &currentCtx->frontMaterial;
-            material1 = &currentCtx->frontMaterial;
+            material0 = &currentCtx->faceMaterial[PF_FRONT];
+            material1 = &currentCtx->faceMaterial[PF_FRONT];
             break;
 
         case PF_BACK:
-            material0 = &currentCtx->backMaterial;
-            material1 = &currentCtx->backMaterial;
+            material0 = &currentCtx->faceMaterial[PF_BACK];
+            material1 = &currentCtx->faceMaterial[PF_BACK];
             break;
 
         case PF_FRONT_AND_BACK:
-            material0 = &currentCtx->frontMaterial;
-            material1 = &currentCtx->backMaterial;
+            material0 = &currentCtx->faceMaterial[PF_FRONT];
+            material1 = &currentCtx->faceMaterial[PF_BACK];
             break;
 
         default:
@@ -727,7 +743,7 @@ void pfClear(PFclearflag flag)
         for (PFsizei i = 0; i < size; i++)
         {
             texture->pixelSetter(texture->pixels, i, color);
-            zbuffer[i] = FLT_MAX;
+            zbuffer[i] = currentCtx->clearDepth;
         }
     }
     else if (flag & PF_COLOR_BUFFER_BIT)
@@ -743,7 +759,7 @@ void pfClear(PFclearflag flag)
     else if (flag & PF_DEPTH_BUFFER_BIT)
     {
         PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
-        for (PFsizei i = 0; i < size; i++) zbuffer[i] = FLT_MAX;
+        for (PFsizei i = 0; i < size; i++) zbuffer[i] = currentCtx->clearDepth;
     }
 }
 
@@ -752,66 +768,87 @@ void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
     currentCtx->clearColor = (PFcolor) { r, g, b, a };
 }
 
-void pfEnableStatePointer(PFarraytype vertexAttribType, const void* buffer)
+void pfClearDepth(PFfloat depth)
 {
-    if (!buffer)
+    currentCtx->clearDepth = depth;
+}
+
+void pfVertexPointer(PFint size, PFenum type, PFsizei stride, const void* pointer)
+{
+    if (size < 2 || size > 4)
     {
-        pfDisableStatePointer(vertexAttribType);
+        currentCtx->errCode = PF_INVALID_VALUE;
         return;
     }
 
-    switch (vertexAttribType)
+
+    if (!(type == PF_SHORT || type == PF_INT || type == PF_FLOAT || type == PF_DOUBLE))
     {
-        case PF_VERTEX_ARRAY:
-            currentCtx->vertexAttribs.positions = buffer;
-            break;
-
-        case PF_NORMAL_ARRAY:
-            currentCtx->vertexAttribs.normals = buffer;
-            break;
-
-        case PF_COLOR_ARRAY:
-            currentCtx->vertexAttribs.colors = buffer;
-            break;
-
-        case PF_TEXTURE_COORD_ARRAY:
-            currentCtx->vertexAttribs.texcoords = buffer;
-            break;
-
-        default:
-            currentCtx->errCode = PF_INVALID_ENUM;
-            return;
+        currentCtx->errCode = PF_INVALID_ENUM;
+        return;
     }
 
-    currentCtx->vertexAttribState |= vertexAttribType;
+    currentCtx->vertexAttribs.positions = (PFvertexattribbuffer) {
+        .buffer = pointer,
+        .stride = stride,
+        .size = size,
+        .type = type
+    };
 }
 
-void pfDisableStatePointer(PFarraytype vertexAttribType)
+void pfNormalPointer(PFenum type, PFsizei stride, const void* pointer)
 {
-    currentCtx->vertexAttribState &= ~vertexAttribType;
-
-    switch (vertexAttribType)
+    if (!(type == PF_FLOAT || type == PF_DOUBLE))
     {
-        case PF_VERTEX_ARRAY:
-            currentCtx->vertexAttribs.positions = NULL;
-            break;
-
-        case PF_NORMAL_ARRAY:
-            currentCtx->vertexAttribs.normals = NULL;
-            break;
-
-        case PF_COLOR_ARRAY:
-            currentCtx->vertexAttribs.colors = NULL;
-            break;
-
-        case PF_TEXTURE_COORD_ARRAY:
-            currentCtx->vertexAttribs.texcoords = NULL;
-            break;
-
-        default:
-            currentCtx->errCode = PF_INVALID_ENUM;
-            break;
+        currentCtx->errCode = PF_INVALID_ENUM;
+        return;
     }
+
+    currentCtx->vertexAttribs.normals = (PFvertexattribbuffer) {
+        .buffer = pointer,
+        .stride = stride,
+        .size = 3,
+        .type = type
+    };
+}
+
+void pfTexCoordPointer(PFenum type, PFsizei stride, const void* pointer)
+{
+    if (!(type == PF_FLOAT || type == PF_DOUBLE))
+    {
+        currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
+
+    currentCtx->vertexAttribs.texcoords = (PFvertexattribbuffer) {
+        .buffer = pointer,
+        .stride = stride,
+        .size = 2,
+        .type = type
+    };
+}
+
+void pfColorPointer(PFint size, PFenum type, PFsizei stride, const void* pointer)
+{
+    if (size < 3 || size > 4)
+    {
+        currentCtx->errCode = PF_INVALID_VALUE;
+        return;
+    }
+
+    if (!(type == PF_UNSIGNED_BYTE || type == PF_UNSIGNED_SHORT || type == PF_UNSIGNED_INT ||
+          type == PF_FLOAT || type == PF_DOUBLE))
+    {
+        currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
+
+    currentCtx->vertexAttribs.colors = (PFvertexattribbuffer) {
+        .buffer = pointer,
+        .stride = stride,
+        .size = size,
+        .type = type
+    };
 }
 
 
@@ -825,26 +862,37 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
         return;
     }
 
-    if (!(currentCtx->vertexAttribState & PF_VERTEX_ARRAY)) return;
-    const PFMvec3 *positions = (const PFMvec3*)(currentCtx->vertexAttribs.positions);
+    if (!(currentCtx->state & PF_VERTEX_ARRAY))
+    {
+        currentCtx->errCode = PF_INVALID_OPERATION;
+        return;
+    }
 
-    const PFMvec3 *normals = (currentCtx->vertexAttribState & PF_NORMAL_ARRAY)
-        ? (const PFMvec3*)(currentCtx->vertexAttribs.normals) : NULL;
+    const PFvertexattribbuffer *positions = &currentCtx->vertexAttribs.positions;
+    const PFvertexattribbuffer *texcoords = &currentCtx->vertexAttribs.texcoords;
+    const PFvertexattribbuffer *normals = &currentCtx->vertexAttribs.normals;
+    const PFvertexattribbuffer *colors = &currentCtx->vertexAttribs.colors;
 
-    const PFcolor *colors = (currentCtx->vertexAttribState & PF_COLOR_ARRAY)
-        ? (const PFcolor*)(currentCtx->vertexAttribs.colors) : NULL;
-
-    const PFMvec2 *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
-        ? (const PFMvec2*)(currentCtx->vertexAttribs.texcoords) : NULL;
+    PFsizei indicesTypeSize = Helper_GetDataTypeSize(type);
 
     PFMmat4 mvp, matNormal;
     GetMVP(mvp, matNormal, NULL);
+
+    for (int_fast8_t i = 0; i < (int_fast8_t)mode; i++)
+    {
+        currentCtx->vertexBuffer[i] = (PFvertex) { 0 };
+        currentCtx->vertexBuffer[i].color = currentCtx->currentColor;
+    }
 
     pfBegin(mode);
 
     for (PFsizei i = 0; i < count; i++)
     {
-        const void *p = (const PFubyte*)indices + i * type;
+        PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCount++);
+
+        // Get vertex index
+
+        const void *p = (const PFubyte*)indices + i*indicesTypeSize;
 
         PFsizei j;
         switch(type)
@@ -852,25 +900,169 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
             case PF_UNSIGNED_BYTE:  j = *((const PFubyte*)p);  break;
             case PF_UNSIGNED_SHORT: j = *((const PFushort*)p); break;
             case PF_UNSIGNED_INT:   j = *((const PFuint*)p);   break;
+            default: break;
         }
-
-        // Get the pointer of the current vertex of the batch and pad it with zero
-
-        PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCount++);
 
         // Fill the vertex with given vertices data
 
-        memcpy(vertex->position, *(positions + j), sizeof(PFMvec3));
+        memset(&vertex->position, 0, sizeof(PFMvec3));
         vertex->position[3] = 1.0f;
 
-        if (normals) memcpy(vertex->normal, *(normals + j), sizeof(PFMvec3));
-        else memset(vertex->normal, 0, sizeof(PFMvec3));
+        switch (positions->type)
+        {
+            case PF_SHORT:
+            {
+                for (int_fast8_t k = 0; k < positions->size; k++)
+                {
+                    vertex->position[k] = ((const PFshort*)positions->buffer)[j*positions->size + k];
+                }
+            }
+            break;
 
-        if (texcoords) memcpy(vertex->texcoord, *(texcoords + j), sizeof(PFMvec2));
-        else memset(vertex->texcoord, 0, sizeof(PFMvec2));
+            case PF_INT:
+            {
+                for (int_fast8_t k = 0; k < positions->size; k++)
+                {
+                    vertex->position[k] = ((const PFint*)positions->buffer)[j*positions->size + k];
+                }
+            }
+            break;
 
-        if (colors) memcpy(&vertex->color, colors + j, sizeof(PFcolor));
-        else memcpy(&vertex->color, &currentCtx->currentColor, sizeof(PFcolor));
+            case PF_FLOAT:
+            {
+                for (int_fast8_t k = 0; k < positions->size; k++)
+                {
+                    vertex->position[k] = ((const PFfloat*)positions->buffer)[j*positions->size + k];
+                }
+            }
+            break;
+
+            case PF_DOUBLE:
+            {
+                for (int_fast8_t k = 0; k < positions->size; k++)
+                {
+                    vertex->position[k] = ((const PFdouble*)positions->buffer)[j*positions->size + k];
+                }
+            }
+            break;
+
+            default:
+                break;
+        }
+
+        if (currentCtx->state & PF_NORMAL_ARRAY && normals->buffer)
+        {
+            memset(&vertex->normal, 0, sizeof(PFMvec3));
+
+            switch (normals->type)
+            {
+                case PF_FLOAT:
+                {
+                    for (int_fast8_t k = 0; k < 3; k++)
+                    {
+                        vertex->normal[k] = ((const PFfloat*)normals->buffer)[j*3 + k];
+                    }
+                }
+                break;
+
+                case PF_DOUBLE:
+                {
+                    for (int_fast8_t k = 0; k < 3; k++)
+                    {
+                        vertex->normal[k] = ((const PFdouble*)normals->buffer)[j*3 + k];
+                    }
+                }
+                break;
+
+                default:
+                    break;
+            }
+        }
+
+        if (currentCtx->state & PF_TEXTURE_COORD_ARRAY && texcoords->buffer)
+        {
+            memset(&vertex->texcoord, 0, sizeof(PFMvec2));
+
+            switch (texcoords->type)
+            {
+                case PF_FLOAT:
+                {
+                    for (int_fast8_t k = 0; k < 2; k++)
+                    {
+                        vertex->texcoord[k] = ((const PFfloat*)texcoords->buffer)[j*2 + k];
+                    }
+                }
+                break;
+
+                case PF_DOUBLE:
+                {
+                    for (int_fast8_t k = 0; k < 2; k++)
+                    {
+                        vertex->texcoord[k] = ((const PFdouble*)texcoords->buffer)[j*2 + k];
+                    }
+                }
+                break;
+
+                default:
+                    break;
+            }
+        }
+
+        if (currentCtx->state & PF_COLOR_ARRAY && colors->buffer)
+        {
+            memset(&vertex->color, 0xFF, sizeof(PFcolor));
+
+            switch (colors->type)
+            {
+                case PF_UNSIGNED_BYTE:
+                {
+                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    {
+                        ((PFubyte*)&vertex->color)[k] = ((const PFubyte*)colors->buffer)[j*positions->size + k];
+                    }
+                }
+                break;
+
+                case PF_UNSIGNED_SHORT:
+                {
+                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    {
+                        ((PFubyte*)&vertex->color)[k] = ((const PFushort*)colors->buffer)[j*positions->size + k] >> 8;
+                    }
+                }
+                break;
+
+                case PF_UNSIGNED_INT:
+                {
+                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    {
+                        ((PFubyte*)&vertex->color)[k] = ((const PFuint*)colors->buffer)[j*positions->size + k] >> 24;
+                    }
+                }
+                break;
+
+                case PF_FLOAT:
+                {
+                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    {
+                        ((PFubyte*)&vertex->color)[k] = ((const PFfloat*)colors->buffer)[j*positions->size + k] * 255;
+                    }
+                }
+                break;
+
+                case PF_DOUBLE:
+                {
+                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    {
+                        ((PFubyte*)&vertex->color)[k] = ((const PFdouble*)colors->buffer)[j*positions->size + k] * 255;
+                    }
+                }
+                break;
+
+                default:
+                    break;
+            }
+        }
 
         // If the number of vertices has reached that necessary for, we process the shape
 
@@ -886,43 +1078,205 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
 
 void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
 {
-    if (!(currentCtx->vertexAttribState & PF_VERTEX_ARRAY)) return;
-    const PFMvec3 *positions = (const PFMvec3*)(currentCtx->vertexAttribs.positions) + first;
+    if (!(currentCtx->state & PF_VERTEX_ARRAY))
+    {
+        currentCtx->errCode = PF_INVALID_OPERATION;
+        return;
+    }
 
-    const PFMvec3 *normals = (currentCtx->vertexAttribState & PF_NORMAL_ARRAY)
-        ? (const PFMvec3*)(currentCtx->vertexAttribs.normals) + first : NULL;
-
-    const PFcolor *colors = (currentCtx->vertexAttribState & PF_COLOR_ARRAY)
-        ? (const PFcolor*)(currentCtx->vertexAttribs.colors) + first : NULL;
-
-    const PFMvec2 *texcoords = (currentCtx->vertexAttribState & PF_TEXTURE_COORD_ARRAY)
-        ? (const PFMvec2*)(currentCtx->vertexAttribs.texcoords) + first : NULL;
+    const PFvertexattribbuffer *positions = &currentCtx->vertexAttribs.positions;
+    const PFvertexattribbuffer *texcoords = &currentCtx->vertexAttribs.texcoords;
+    const PFvertexattribbuffer *normals = &currentCtx->vertexAttribs.normals;
+    const PFvertexattribbuffer *colors = &currentCtx->vertexAttribs.colors;
 
     PFMmat4 mvp, matNormal;
     GetMVP(mvp, matNormal, NULL);
+
+    for (int_fast8_t i = 0; i < (int_fast8_t)mode; i++)
+    {
+        currentCtx->vertexBuffer[i] = (PFvertex) { 0 };
+        currentCtx->vertexBuffer[i].color = currentCtx->currentColor;
+    }
 
     pfBegin(mode);
 
     for (PFsizei i = 0; i < count; i++)
     {
-        // Get the pointer of the current vertex of the batch and pad it with zero
-
         PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCount++);
-        memset(vertex, 0, sizeof(PFvertex));
 
         // Fill the vertex with given vertices data
 
-        memcpy(vertex->position, *(positions + i), sizeof(PFMvec3));
+        memset(&vertex->position, 0, sizeof(PFMvec3));
         vertex->position[3] = 1.0f;
 
-        if (normals) memcpy(vertex->normal, *(normals + i), sizeof(PFMvec3));
-        else memset(vertex->normal, 0, sizeof(PFMvec3));
+        switch (positions->type)
+        {
+            case PF_SHORT:
+            {
+                for (int_fast8_t k = 0; k < positions->size; k++)
+                {
+                    vertex->position[k] =
+                        ((const PFshort*)positions->buffer + first*positions->size)[i*positions->size + k];
+                }
+            }
+            break;
 
-        if (texcoords) memcpy(vertex->texcoord, *(texcoords + i), sizeof(PFMvec2));
-        else memset(vertex->texcoord, 0, sizeof(PFMvec2));
+            case PF_INT:
+            {
+                for (int_fast8_t k = 0; k < positions->size; k++)
+                {
+                    vertex->position[k] =
+                        ((const PFint*)positions->buffer + first*positions->size)[i*positions->size + k];
+                }
+            }
+            break;
 
-        if (colors) memcpy(&vertex->color, colors + i, sizeof(PFcolor));
-        else memcpy(&vertex->color, &currentCtx->currentColor, sizeof(PFcolor));
+            case PF_FLOAT:
+            {
+                for (int_fast8_t k = 0; k < positions->size; k++)
+                {
+                    vertex->position[k] =
+                        ((const PFfloat*)positions->buffer + first*positions->size)[i*positions->size + k];
+                }
+            }
+            break;
+
+            case PF_DOUBLE:
+            {
+                for (int_fast8_t k = 0; k < positions->size; k++)
+                {
+                    vertex->position[k] =
+                        ((const PFdouble*)positions->buffer + first*positions->size)[i*positions->size + k];
+                }
+            }
+            break;
+
+            default:
+                break;
+        }
+
+        if (currentCtx->state & PF_NORMAL_ARRAY && normals->buffer)
+        {
+            memset(&vertex->normal, 0, sizeof(PFMvec3));
+
+            switch (normals->type)
+            {
+                case PF_FLOAT:
+                {
+                    for (int_fast8_t k = 0; k < 3; k++)
+                    {
+                        vertex->normal[k] =
+                            ((const PFfloat*)normals->buffer + first*positions->size)[i*3 + k];
+                    }
+                }
+                break;
+
+                case PF_DOUBLE:
+                {
+                    for (int_fast8_t k = 0; k < 3; k++)
+                    {
+                        vertex->normal[k] =
+                            ((const PFdouble*)normals->buffer + first*positions->size)[i*3 + k];
+                    }
+                }
+                break;
+
+                default:
+                    break;
+            }
+        }
+
+        if (currentCtx->state & PF_TEXTURE_COORD_ARRAY && texcoords->buffer)
+        {
+            memset(&vertex->texcoord, 0, sizeof(PFMvec2));
+
+            switch (texcoords->type)
+            {
+                case PF_FLOAT:
+                {
+                    for (int_fast8_t k = 0; k < 2; k++)
+                    {
+                        vertex->texcoord[k] =
+                            ((const PFfloat*)texcoords->buffer + first*positions->size)[i*2 + k];
+                    }
+                }
+                break;
+
+                case PF_DOUBLE:
+                {
+                    for (int_fast8_t k = 0; k < 2; k++)
+                    {
+                        vertex->texcoord[k] =
+                            ((const PFdouble*)texcoords->buffer + first*positions->size)[i*2 + k];
+                    }
+                }
+                break;
+
+                default:
+                    break;
+            }
+        }
+
+        if (currentCtx->state & PF_COLOR_ARRAY && colors->buffer)
+        {
+            memset(&vertex->color, 0xFF, sizeof(PFcolor));
+
+            switch (colors->type)
+            {
+                case PF_UNSIGNED_BYTE:
+                {
+                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    {
+                        ((PFubyte*)&vertex->color)[k] =
+                            ((const PFubyte*)colors->buffer + first*positions->size)[i*positions->size + k];
+                    }
+                }
+                break;
+
+                case PF_UNSIGNED_SHORT:
+                {
+                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    {
+                        ((PFubyte*)&vertex->color)[k] =
+                            ((const PFushort*)colors->buffer + first*positions->size)[i*positions->size + k] >> 8;
+                    }
+                }
+                break;
+
+                case PF_UNSIGNED_INT:
+                {
+                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    {
+                        ((PFubyte*)&vertex->color)[k] =
+                            ((const PFuint*)colors->buffer + first*positions->size)[i*positions->size + k] >> 24;
+                    }
+                }
+                break;
+
+                case PF_FLOAT:
+                {
+                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    {
+                        ((PFubyte*)&vertex->color)[k] =
+                            ((const PFfloat*)colors->buffer + first*positions->size)[i*positions->size + k] * 255;
+                    }
+                }
+                break;
+
+                case PF_DOUBLE:
+                {
+                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    {
+                        ((PFubyte*)&vertex->color)[k] =
+                            ((const PFdouble*)colors->buffer + first*positions->size)[i*positions->size + k] * 255;
+                    }
+                }
+                break;
+
+                default:
+                    break;
+            }
+        }
 
         // If the number of vertices has reached that necessary for, we process the shape
 
@@ -934,6 +1288,24 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
     }
 
     pfEnd();
+}
+
+void pfColorMaterial(PFface face, PFenum mode)
+{
+    if (face < PF_FRONT || face > PF_FRONT_AND_BACK)
+    {
+        currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
+
+    if (mode < PF_AMBIENT_AND_DIFFUSE || mode > PF_EMISSION)
+    {
+        currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
+
+    currentCtx->materialColorFollowing.face = face;
+    currentCtx->materialColorFollowing.mode = mode;
 }
 
 
@@ -1030,164 +1402,360 @@ void pfVertex4fv(const PFfloat* v)
     }
 }
 
+// NOTE: Used by `pfColor` to define material colors
+static void Helper_SetMaterialColor(PFcolor color)
+{
+    PFmaterial *m1 = NULL, *m2 = NULL;
+
+    switch (currentCtx->materialColorFollowing.face)
+    {
+        case PF_BACK:
+        case PF_FRONT:
+            m1 = m2 = &currentCtx->faceMaterial
+                [currentCtx->materialColorFollowing.face];
+            break;
+
+        case PF_FRONT_AND_BACK:
+            m1 = &currentCtx->faceMaterial[PF_FRONT];
+            m2 = &currentCtx->faceMaterial[PF_BACK];
+            break;
+    }
+
+#ifndef NDEBUG
+    if (m1 == NULL)
+    {
+        currentCtx->errCode = PF_DEBUG_INVALID_OPERATION;
+        return;
+    }
+#endif //NDEBUG
+
+    switch (currentCtx->materialColorFollowing.mode)
+    {
+        case PF_AMBIENT_AND_DIFFUSE:
+            m1->ambient = m2->ambient = color;
+            m1->diffuse = m2->diffuse = color;
+            break;
+
+        case PF_AMBIENT:
+            m1->ambient = m2->ambient = color;
+            break;
+
+        case PF_DIFFUSE:
+            m1->diffuse = m2->diffuse = color;
+            break;
+
+        case PF_SPECULAR:
+            m1->specular = m2->specular = color;
+            break;
+
+        case PF_EMISSION:
+            m1->emission = m2->emission = color;
+            break;
+    }
+}
+
 void pfColor3ub(PFubyte r, PFubyte g, PFubyte b)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         r,
         g,
         b,
         255
     };
+
+    if (currentCtx->state & PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor3ubv(const PFubyte* v)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         v[0],
         v[1],
         v[2],
         255
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor3us(PFushort r, PFushort g, PFushort b)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         (PFubyte)(r >> 8),
         (PFubyte)(g >> 8),
         (PFubyte)(b >> 8),
         255
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor3usv(const PFushort* v)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         (PFubyte)(v[0] >> 8),
         (PFubyte)(v[1] >> 8),
         (PFubyte)(v[2] >> 8),
         255
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor3ui(PFuint r, PFuint g, PFuint b)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         (PFubyte)(r >> 24),
         (PFubyte)(g >> 24),
         (PFubyte)(b >> 24),
         255
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor3uiv(const PFuint* v)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         (PFubyte)(v[0] >> 24),
         (PFubyte)(v[1] >> 24),
         (PFubyte)(v[2] >> 24),
         255
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor3f(PFfloat r, PFfloat g, PFfloat b)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         (PFubyte)(r*255),
         (PFubyte)(g*255),
         (PFubyte)(b*255),
         255
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor3fv(const PFfloat* v)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         (PFubyte)(v[0]*255),
         (PFubyte)(v[1]*255),
         (PFubyte)(v[2]*255),
         255
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor4ub(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         r,
         g,
         b,
         a
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor4ubv(const PFubyte* v)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         v[0],
         v[1],
         v[2],
         v[3]
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor4us(PFushort r, PFushort g, PFushort b, PFushort a)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         (PFubyte)(r >> 8),
         (PFubyte)(g >> 8),
         (PFubyte)(b >> 8),
         (PFubyte)(a >> 8)
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor4usv(const PFushort* v)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         (PFubyte)(v[0] >> 8),
         (PFubyte)(v[1] >> 8),
         (PFubyte)(v[2] >> 8),
         (PFubyte)(v[3] >> 8)
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor4ui(PFuint r, PFuint g, PFuint b, PFuint a)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         (PFubyte)(r >> 24),
         (PFubyte)(g >> 24),
         (PFubyte)(b >> 24),
         (PFubyte)(a >> 24)
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor4uiv(const PFuint* v)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         (PFubyte)(v[0] >> 24),
         (PFubyte)(v[1] >> 24),
         (PFubyte)(v[2] >> 24),
         (PFubyte)(v[3] >> 24)
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor4f(PFfloat r, PFfloat g, PFfloat b, PFfloat a)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         (PFubyte)(r*255),
         (PFubyte)(g*255),
         (PFubyte)(b*255),
         (PFubyte)(a*255)
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfColor4fv(const PFfloat* v)
 {
-    currentCtx->currentColor = (PFcolor) {
+    PFcolor color = {
         (PFubyte)(v[0]*255),
         (PFubyte)(v[1]*255),
         (PFubyte)(v[2]*255),
         (PFubyte)(v[3]*255)
     };
+
+    if (currentCtx->state &PF_COLOR_MATERIAL)
+    {
+        Helper_SetMaterialColor(color);
+    }
+    else
+    {
+        currentCtx->currentColor = color;
+    }
 }
 
 void pfTexCoord2f(PFfloat u, PFfloat v)
@@ -1206,6 +1774,13 @@ void pfNormal3f(PFfloat x, PFfloat y, PFfloat z)
     currentCtx->currentNormal[0] = x;
     currentCtx->currentNormal[1] = y;
     currentCtx->currentNormal[2] = z;
+
+    if (currentCtx->state & PF_NORMALIZE)
+    {
+        pfmVec3Normalize(
+            currentCtx->currentNormal,
+            currentCtx->currentNormal);
+    }
 }
 
 void pfNormal3fv(const PFfloat* v)
@@ -1648,14 +2223,6 @@ static void ProcessRasterize_Line(const PFMmat4 mvp)
     Process_ProjectAndClipLine(processed, &processedCounter, mvp);
     if (processedCounter != 2) return;
 
-    // Multiply vertices color with material diffuse
-
-    for (int_fast8_t i = 0; i < processedCounter; i++)
-    {
-        processed[i].color = pfBlendMultiplicative(
-            processed[i].color, currentCtx->frontMaterial.diffuse);
-    }
-
     // Rasterize line
 
     if (currentCtx->state & (PF_DEPTH_TEST))
@@ -1684,14 +2251,6 @@ static void ProcessRasterize_PolygonLines(const PFMmat4 mvp, int_fast8_t vertexC
         Process_ProjectAndClipLine(processed, &processedCounter, mvp);
         if (processedCounter != 2) return;
 
-        // Multiply vertices color with material diffuse
-
-        for (int_fast8_t i = 0; i < processedCounter; i++)
-        {
-            processed[i].color = pfBlendMultiplicative(
-                processed[i].color, currentCtx->frontMaterial.diffuse);
-        }
-
         // Rasterize line
 
         if (currentCtx->state & (PF_DEPTH_TEST))
@@ -1707,6 +2266,15 @@ static void ProcessRasterize_PolygonLines(const PFMmat4 mvp, int_fast8_t vertexC
 
 static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp, const PFMmat4 matNormal)
 {
+#ifndef NDEBUG
+    if (faceToRender == PF_FRONT_AND_BACK)
+    {
+        // WARNING: This should not be called with PF_FRONT_AND_BACK
+        currentCtx->errCode = PF_DEBUG_INVALID_OPERATION;
+        return;
+    }
+#endif
+
     int_fast8_t processedCounter = 3;
 
     PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES] = {
@@ -1715,23 +2283,24 @@ static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp
         currentCtx->vertexBuffer[2]
     };
 
-    // Transform normals if needed
+    // Performs certain additional preparation
+    // operations in case of light management
 
     if (currentCtx->state & PF_LIGHTING)
     {
+        // Transform normals
         for (int_fast8_t i = 0; i < processedCounter; i++)
         {
             pfmVec3Transform(processed[i].normal, processed[i].normal, matNormal);
             pfmVec3Normalize(processed[i].normal, processed[i].normal);
         }
-    }
 
-    // Multiply vertices color with material diffuse
-
-    for (int_fast8_t i = 0; i < processedCounter; i++)
-    {
-        processed[i].color = pfBlendMultiplicative(
-            processed[i].color, currentCtx->frontMaterial.diffuse);
+        // Multiply vertex color with diffuse color
+        for (int_fast8_t i = 0; i < processedCounter; i++)
+        {
+            processed[i].color = pfBlendMultiplicative(processed[i].color,
+                currentCtx->faceMaterial[faceToRender].diffuse);
+        }
     }
 
     // Process vertices
@@ -1775,7 +2344,7 @@ static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp
             // Pre-calculation of specularity tints
             // by multiplying those of light and material
 
-            PFcolor oldLightSpecTints[PF_MAX_LIGHTS];
+            PFcolor oldLightSpecTints[PF_MAX_LIGHT_STACK];
 
             for (PFint i = 0; i <= currentCtx->lastActiveLight; i++)
             {
@@ -1783,7 +2352,7 @@ static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp
                 oldLightSpecTints[i] = l->specular;
 
                 if (l->active) l->specular = pfBlendMultiplicative(
-                    l->specular, currentCtx->frontMaterial.specular);
+                    l->specular, currentCtx->faceMaterial[PF_FRONT].specular);
             }
 
             // Get camera/view position
@@ -1859,6 +2428,15 @@ static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp
 
 static void ProcessRasterize_QuadFill(PFface faceToRender, const PFMmat4 mvp, const PFMmat4 matNormal)
 {
+#ifndef NDEBUG
+    if (faceToRender == PF_FRONT_AND_BACK)
+    {
+        // WARNING: This should not be called with PF_FRONT_AND_BACK
+        currentCtx->errCode = PF_DEBUG_INVALID_OPERATION;
+        return;
+    }
+#endif
+
     for (PFint i = 0; i < 2; i++)
     {
         int_fast8_t processedCounter = 3;
@@ -1869,23 +2447,24 @@ static void ProcessRasterize_QuadFill(PFface faceToRender, const PFMmat4 mvp, co
             currentCtx->vertexBuffer[i + 2]
         };
 
-        // Transform normals if needed
+        // Performs certain additional preparation
+        // operations in case of light management
 
         if (currentCtx->state & PF_LIGHTING)
         {
-            for (int_fast8_t j = 0; j < processedCounter; j++)
+            // Transform normals
+            for (int_fast8_t i = 0; i < processedCounter; i++)
             {
-                pfmVec3Transform(processed[j].normal, processed[j].normal, matNormal);
-                pfmVec3Normalize(processed[j].normal, processed[j].normal);
+                pfmVec3Transform(processed[i].normal, processed[i].normal, matNormal);
+                pfmVec3Normalize(processed[i].normal, processed[i].normal);
             }
-        }
 
-        // Multiply vertices color with material diffuse
-
-        for (int_fast8_t j = 0; j < processedCounter; j++)
-        {
-            processed[j].color = pfBlendMultiplicative(
-                processed[j].color, currentCtx->frontMaterial.diffuse);
+            // Multiply vertex color with diffuse color
+            for (int_fast8_t i = 0; i < processedCounter; i++)
+            {
+                processed[i].color = pfBlendMultiplicative(processed[i].color,
+                    currentCtx->faceMaterial[faceToRender].diffuse);
+            }
         }
 
         // Process vertices
@@ -1929,7 +2508,7 @@ static void ProcessRasterize_QuadFill(PFface faceToRender, const PFMmat4 mvp, co
                 // Pre-calculation of specularity tints
                 // by multiplying those of light and material
 
-                PFcolor oldLightSpecTints[PF_MAX_LIGHTS];
+                PFcolor oldLightSpecTints[PF_MAX_LIGHT_STACK];
 
                 for (PFint j = 0; j <= currentCtx->lastActiveLight; j++)
                 {
@@ -1937,7 +2516,7 @@ static void ProcessRasterize_QuadFill(PFface faceToRender, const PFMmat4 mvp, co
                     oldLightSpecTints[j] = l->specular;
 
                     if (l->active) l->specular = pfBlendMultiplicative(
-                        l->specular, currentCtx->frontMaterial.specular);
+                        l->specular, currentCtx->faceMaterial[PF_FRONT].specular);
                 }
 
                 // Get camera/view position
@@ -2115,7 +2694,7 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
                         break;
 
                     case PF_FILL:
-                        ProcessRasterize_TriangleFill(faceToRender, mvp, matNormal);
+                        ProcessRasterize_QuadFill(faceToRender, mvp, matNormal);
                         break;
                 }
             }

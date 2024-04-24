@@ -28,7 +28,7 @@ int main(void)
     PF_TargetBuffer target = PF_LoadTargetBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
     PFctx *ctx = PF_InitFromTargetBuffer(target); // PixelForge context
     PF_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
-    pfSetBlendFunction(pfBlendAlpha);
+    pfBlendFunc(pfBlendAlpha);
 
     // We load background as an raylib Image to draw it with pfDrawPixels
     Image imBG = LoadImage(RESOURCES_PATH "images/PixelForge.png");

@@ -350,7 +350,7 @@ void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
             PFsizei pOffset = y*wDst + x;
             PFfloat *zp = zbDst + pOffset;
 
-            if (z < *zp)
+            if (ctx->depthFunction(z, *zp))
             {
                 pixelSetter(bufDst, pOffset, blendFunc(
                     Helper_LerpColor(v1->color, v2->color, t),
@@ -387,7 +387,7 @@ void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
             PFsizei pOffset = y*wDst + x;
             PFfloat *zp = zbDst + pOffset;
 
-            if (z < *zp)
+            if (ctx->depthFunction(z, *zp))
             {
                 pixelSetter(bufDst, pOffset, blendFunc(
                     Helper_LerpColor(v1->color, v2->color, t),
