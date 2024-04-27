@@ -475,14 +475,15 @@ void pfClear(PFclearflag flag)
         PFtexture *texture = &currentCtx->currentFramebuffer->texture;
         PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
         PFcolor color = currentCtx->clearColor;
+        PFfloat depth = currentCtx->clearDepth;
 
 #       ifdef PF_USE_OPENMP
-#           pragma omp parallel for
+#           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
 #       endif //PF_USE_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
             texture->pixelSetter(texture->pixels, i, color);
-            zbuffer[i] = currentCtx->clearDepth;
+            zbuffer[i] = depth;
         }
     }
     else if (flag & PF_COLOR_BUFFER_BIT)
@@ -491,7 +492,7 @@ void pfClear(PFclearflag flag)
         PFcolor color = currentCtx->clearColor;
 
 #       ifdef PF_USE_OPENMP
-#           pragma omp parallel for
+#           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
 #       endif //PF_USE_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
@@ -501,13 +502,14 @@ void pfClear(PFclearflag flag)
     else if (flag & PF_DEPTH_BUFFER_BIT)
     {
         PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
+        PFfloat depth = currentCtx->clearDepth;
 
 #       ifdef PF_USE_OPENMP
-#           pragma omp parallel for
+#           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
 #       endif //PF_USE_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
-            zbuffer[i] = currentCtx->clearDepth;
+            zbuffer[i] = depth;
         }
     }
 }
