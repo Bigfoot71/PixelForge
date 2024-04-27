@@ -476,6 +476,9 @@ void pfClear(PFclearflag flag)
         PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
         PFcolor color = currentCtx->clearColor;
 
+#       ifdef PF_USE_OPENMP
+#           pragma omp parallel for
+#       endif //PF_USE_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
             texture->pixelSetter(texture->pixels, i, color);
@@ -487,6 +490,9 @@ void pfClear(PFclearflag flag)
         PFtexture *texture = &currentCtx->currentFramebuffer->texture;
         PFcolor color = currentCtx->clearColor;
 
+#       ifdef PF_USE_OPENMP
+#           pragma omp parallel for
+#       endif //PF_USE_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
             texture->pixelSetter(texture->pixels, i, color);
@@ -495,7 +501,14 @@ void pfClear(PFclearflag flag)
     else if (flag & PF_DEPTH_BUFFER_BIT)
     {
         PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
-        for (PFsizei i = 0; i < size; i++) zbuffer[i] = currentCtx->clearDepth;
+
+#       ifdef PF_USE_OPENMP
+#           pragma omp parallel for
+#       endif //PF_USE_OPENMP
+        for (PFsizei i = 0; i < size; i++)
+        {
+            zbuffer[i] = currentCtx->clearDepth;
+        }
     }
 }
 
