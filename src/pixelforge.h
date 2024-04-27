@@ -446,6 +446,12 @@ PF_API void pfDisableFramebuffer(void);
 PF_API PFtexture* pfGetActiveTexture(void);
 PF_API void pfBindTexture(PFtexture* texture);
 
+PF_API void pfClear(PFclearflag flag);
+PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
+PF_API void pfClearDepth(PFfloat depth);
+
+/* Light management API functions */
+
 PF_API void pfEnableLight(PFsizei light);
 PF_API void pfDisableLight(PFsizei light);
 PF_API PFboolean pfIsEnabledLight(PFsizei light);
@@ -454,9 +460,10 @@ PF_API void pfLightfv(PFsizei light, PFenum param, const void* value);
 PF_API void pfMaterialf(PFface face, PFenum param, PFfloat value);
 PF_API void pfMaterialfv(PFface face, PFenum param, const void* value);
 
-PF_API void pfClear(PFclearflag flag);
-PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
-PF_API void pfClearDepth(PFfloat depth);
+// NOTE: This function causes the current color to be followed by a material color.
+PF_API void pfColorMaterial(PFface face, PFenum mode);
+
+/* Vertex array drawing API functions */
 
 // size: is the number of coordinates per vertex. The size value must be 2, 3 or 4.
 // type: can be PF_SHORT, PF_INT, PF_FLOAT or PF_DOUBLE
@@ -472,13 +479,8 @@ PF_API void pfTexCoordPointer(PFenum type, PFsizei stride, const void* pointer);
 // type: PF_UNSIGNED_BYTE, PF_UNSIGNED_SHORT, PF_UNSIGNED_INT, PF_FLOAT ou PF_DOUBLE.
 PF_API void pfColorPointer(PFint size, PFenum type, PFsizei stride, const void* pointer);
 
-/* Vertex array drawing API functions */
-
 PF_API void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void* indices);
 PF_API void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count);
-
-// NOTE: This function causes the current color to be followed by a material color.
-PF_API void pfColorMaterial(PFface face, PFenum mode);
 
 /* Primitives drawing API functions */
 

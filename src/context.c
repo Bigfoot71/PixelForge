@@ -61,7 +61,7 @@ static void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal);
 
 /* Some helper functions */
 
-static PFsizei Helper_GetDataTypeSize(PFdatatype type)
+static PFsizei pfInternal_GetDataTypeSize(PFdatatype type)
 {
     switch (type)
     {
@@ -463,6 +463,55 @@ void pfBindTexture(PFtexture* texture)
     currentCtx->currentTexture = texture;
 }
 
+void pfClear(PFclearflag flag)
+{
+    if (!flag) return;
+
+    PFframebuffer *framebuffer = currentCtx->currentFramebuffer;
+    PFsizei size = framebuffer->texture.width*framebuffer->texture.height;
+
+    if (flag & (PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT))
+    {
+        PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+        PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
+        PFcolor color = currentCtx->clearColor;
+
+        for (PFsizei i = 0; i < size; i++)
+        {
+            texture->pixelSetter(texture->pixels, i, color);
+            zbuffer[i] = currentCtx->clearDepth;
+        }
+    }
+    else if (flag & PF_COLOR_BUFFER_BIT)
+    {
+        PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+        PFcolor color = currentCtx->clearColor;
+
+        for (PFsizei i = 0; i < size; i++)
+        {
+            texture->pixelSetter(texture->pixels, i, color);
+        }
+    }
+    else if (flag & PF_DEPTH_BUFFER_BIT)
+    {
+        PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
+        for (PFsizei i = 0; i < size; i++) zbuffer[i] = currentCtx->clearDepth;
+    }
+}
+
+void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
+{
+    currentCtx->clearColor = (PFcolor) { r, g, b, a };
+}
+
+void pfClearDepth(PFfloat depth)
+{
+    currentCtx->clearDepth = depth;
+}
+
+
+/* Light management API functions */
+
 void pfEnableLight(PFsizei light)
 {
     if (light < PF_MAX_LIGHT_STACK)
@@ -727,51 +776,26 @@ void pfMaterialfv(PFface face, PFenum param, const void *value)
     }
 }
 
-void pfClear(PFclearflag flag)
+void pfColorMaterial(PFface face, PFenum mode)
 {
-    if (!flag) return;
-
-    PFframebuffer *framebuffer = currentCtx->currentFramebuffer;
-    PFsizei size = framebuffer->texture.width*framebuffer->texture.height;
-
-    if (flag & (PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT))
+    if (face < PF_FRONT || face > PF_FRONT_AND_BACK)
     {
-        PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-        PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
-        PFcolor color = currentCtx->clearColor;
+        currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
 
-        for (PFsizei i = 0; i < size; i++)
-        {
-            texture->pixelSetter(texture->pixels, i, color);
-            zbuffer[i] = currentCtx->clearDepth;
-        }
-    }
-    else if (flag & PF_COLOR_BUFFER_BIT)
+    if (mode < PF_AMBIENT_AND_DIFFUSE || mode > PF_EMISSION)
     {
-        PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-        PFcolor color = currentCtx->clearColor;
+        currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
 
-        for (PFsizei i = 0; i < size; i++)
-        {
-            texture->pixelSetter(texture->pixels, i, color);
-        }
-    }
-    else if (flag & PF_DEPTH_BUFFER_BIT)
-    {
-        PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
-        for (PFsizei i = 0; i < size; i++) zbuffer[i] = currentCtx->clearDepth;
-    }
+    currentCtx->materialColorFollowing.face = face;
+    currentCtx->materialColorFollowing.mode = mode;
 }
 
-void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
-{
-    currentCtx->clearColor = (PFcolor) { r, g, b, a };
-}
 
-void pfClearDepth(PFfloat depth)
-{
-    currentCtx->clearDepth = depth;
-}
+/* Vertex array drawing API functions */
 
 void pfVertexPointer(PFint size, PFenum type, PFsizei stride, const void* pointer)
 {
@@ -851,9 +875,6 @@ void pfColorPointer(PFint size, PFenum type, PFsizei stride, const void* pointer
     };
 }
 
-
-/* Vertex array drawing API functions */
-
 void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void* indices)
 {
     if (!(type == PF_UNSIGNED_BYTE || type == PF_UNSIGNED_SHORT || type == PF_UNSIGNED_INT))
@@ -873,7 +894,11 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
     const PFvertexattribbuffer *normals = &currentCtx->vertexAttribs.normals;
     const PFvertexattribbuffer *colors = &currentCtx->vertexAttribs.colors;
 
-    PFsizei indicesTypeSize = Helper_GetDataTypeSize(type);
+    PFboolean useTexCoordArray = currentCtx->state & PF_TEXTURE_COORD_ARRAY && texcoords->buffer;
+    PFboolean useNormalArray = currentCtx->state & PF_NORMAL_ARRAY && normals->buffer;
+    PFboolean useColorArray = currentCtx->state & PF_COLOR_ARRAY && colors->buffer;
+
+    PFsizei indicesTypeSize = pfInternal_GetDataTypeSize(type);
 
     PFMmat4 mvp, matNormal;
     GetMVP(mvp, matNormal, NULL);
@@ -950,7 +975,7 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
                 break;
         }
 
-        if (currentCtx->state & PF_NORMAL_ARRAY && normals->buffer)
+        if (useNormalArray)
         {
             memset(&vertex->normal, 0, sizeof(PFMvec3));
 
@@ -979,7 +1004,7 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
             }
         }
 
-        if (currentCtx->state & PF_TEXTURE_COORD_ARRAY && texcoords->buffer)
+        if (useTexCoordArray)
         {
             memset(&vertex->texcoord, 0, sizeof(PFMvec2));
 
@@ -1008,7 +1033,7 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
             }
         }
 
-        if (currentCtx->state & PF_COLOR_ARRAY && colors->buffer)
+        if (useColorArray)
         {
             memset(&vertex->color, 0xFF, sizeof(PFcolor));
 
@@ -1089,6 +1114,10 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
     const PFvertexattribbuffer *normals = &currentCtx->vertexAttribs.normals;
     const PFvertexattribbuffer *colors = &currentCtx->vertexAttribs.colors;
 
+    PFboolean useTexCoordArray = currentCtx->state & PF_TEXTURE_COORD_ARRAY && texcoords->buffer;
+    PFboolean useNormalArray = currentCtx->state & PF_NORMAL_ARRAY && normals->buffer;
+    PFboolean useColorArray = currentCtx->state & PF_COLOR_ARRAY && colors->buffer;
+
     PFMmat4 mvp, matNormal;
     GetMVP(mvp, matNormal, NULL);
 
@@ -1155,7 +1184,7 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
                 break;
         }
 
-        if (currentCtx->state & PF_NORMAL_ARRAY && normals->buffer)
+        if (useNormalArray)
         {
             memset(&vertex->normal, 0, sizeof(PFMvec3));
 
@@ -1186,7 +1215,7 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
             }
         }
 
-        if (currentCtx->state & PF_TEXTURE_COORD_ARRAY && texcoords->buffer)
+        if (useTexCoordArray)
         {
             memset(&vertex->texcoord, 0, sizeof(PFMvec2));
 
@@ -1217,7 +1246,7 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
             }
         }
 
-        if (currentCtx->state & PF_COLOR_ARRAY && colors->buffer)
+        if (useColorArray)
         {
             memset(&vertex->color, 0xFF, sizeof(PFcolor));
 
@@ -1288,24 +1317,6 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
     }
 
     pfEnd();
-}
-
-void pfColorMaterial(PFface face, PFenum mode)
-{
-    if (face < PF_FRONT || face > PF_FRONT_AND_BACK)
-    {
-        currentCtx->errCode = PF_INVALID_ENUM;
-        return;
-    }
-
-    if (mode < PF_AMBIENT_AND_DIFFUSE || mode > PF_EMISSION)
-    {
-        currentCtx->errCode = PF_INVALID_ENUM;
-        return;
-    }
-
-    currentCtx->materialColorFollowing.face = face;
-    currentCtx->materialColorFollowing.mode = mode;
 }
 
 
@@ -1402,8 +1413,9 @@ void pfVertex4fv(const PFfloat* v)
     }
 }
 
-// NOTE: Used by `pfColor` to define material colors
-static void Helper_SetMaterialColor(PFcolor color)
+// NOTE: Used by `pfColor` to assign material colors
+//       when the `PF_COLOR_MATERIAL` state is enabled.
+static void pfInternal_SetMaterialColor(PFcolor color)
 {
     PFmaterial *m1 = NULL, *m2 = NULL;
 
@@ -1454,308 +1466,164 @@ static void Helper_SetMaterialColor(PFcolor color)
     }
 }
 
-void pfColor3ub(PFubyte r, PFubyte g, PFubyte b)
+static inline void pfInternal_ColorStruct(PFcolor color)
 {
-    PFcolor color = {
-        r,
-        g,
-        b,
-        255
-    };
-
     if (currentCtx->state & PF_COLOR_MATERIAL)
     {
-        Helper_SetMaterialColor(color);
+        pfInternal_SetMaterialColor(color);
     }
     else
     {
         currentCtx->currentColor = color;
     }
+}
+
+void pfColor3ub(PFubyte r, PFubyte g, PFubyte b)
+{
+    pfInternal_ColorStruct((PFcolor) {
+        r, g, b, 255
+    });
 }
 
 void pfColor3ubv(const PFubyte* v)
 {
-    PFcolor color = {
-        v[0],
-        v[1],
-        v[2],
-        255
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    pfInternal_ColorStruct((PFcolor) {
+        v[0], v[1], v[2], 255
+    });
 }
 
 void pfColor3us(PFushort r, PFushort g, PFushort b)
 {
-    PFcolor color = {
+    pfInternal_ColorStruct((PFcolor) {
         (PFubyte)(r >> 8),
         (PFubyte)(g >> 8),
         (PFubyte)(b >> 8),
         255
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    });
 }
 
 void pfColor3usv(const PFushort* v)
 {
-    PFcolor color = {
+    pfInternal_ColorStruct((PFcolor) {
         (PFubyte)(v[0] >> 8),
         (PFubyte)(v[1] >> 8),
         (PFubyte)(v[2] >> 8),
         255
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    });
 }
 
 void pfColor3ui(PFuint r, PFuint g, PFuint b)
 {
-    PFcolor color = {
+    pfInternal_ColorStruct((PFcolor) {
         (PFubyte)(r >> 24),
         (PFubyte)(g >> 24),
         (PFubyte)(b >> 24),
         255
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    });
 }
 
 void pfColor3uiv(const PFuint* v)
 {
-    PFcolor color = {
+    pfInternal_ColorStruct((PFcolor) {
         (PFubyte)(v[0] >> 24),
         (PFubyte)(v[1] >> 24),
         (PFubyte)(v[2] >> 24),
         255
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    });
 }
 
 void pfColor3f(PFfloat r, PFfloat g, PFfloat b)
 {
-    PFcolor color = {
+    pfInternal_ColorStruct((PFcolor) {
         (PFubyte)(r*255),
         (PFubyte)(g*255),
         (PFubyte)(b*255),
         255
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    });
 }
 
 void pfColor3fv(const PFfloat* v)
 {
-    PFcolor color = {
+    pfInternal_ColorStruct((PFcolor) {
         (PFubyte)(v[0]*255),
         (PFubyte)(v[1]*255),
         (PFubyte)(v[2]*255),
         255
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    });
 }
 
 void pfColor4ub(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
 {
-    PFcolor color = {
-        r,
-        g,
-        b,
-        a
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    pfInternal_ColorStruct((PFcolor) {
+        r, g, b, a
+    });
 }
 
 void pfColor4ubv(const PFubyte* v)
 {
-    PFcolor color = {
-        v[0],
-        v[1],
-        v[2],
-        v[3]
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    pfInternal_ColorStruct((PFcolor) {
+        v[0], v[1], v[2], v[3]
+    });
 }
 
 void pfColor4us(PFushort r, PFushort g, PFushort b, PFushort a)
 {
-    PFcolor color = {
+    pfInternal_ColorStruct((PFcolor) {
         (PFubyte)(r >> 8),
         (PFubyte)(g >> 8),
         (PFubyte)(b >> 8),
         (PFubyte)(a >> 8)
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    });
 }
 
 void pfColor4usv(const PFushort* v)
 {
-    PFcolor color = {
+    pfInternal_ColorStruct((PFcolor) {
         (PFubyte)(v[0] >> 8),
         (PFubyte)(v[1] >> 8),
         (PFubyte)(v[2] >> 8),
         (PFubyte)(v[3] >> 8)
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    });
 }
 
 void pfColor4ui(PFuint r, PFuint g, PFuint b, PFuint a)
 {
-    PFcolor color = {
+    pfInternal_ColorStruct((PFcolor) {
         (PFubyte)(r >> 24),
         (PFubyte)(g >> 24),
         (PFubyte)(b >> 24),
         (PFubyte)(a >> 24)
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    });
 }
 
 void pfColor4uiv(const PFuint* v)
 {
-    PFcolor color = {
+    pfInternal_ColorStruct((PFcolor) {
         (PFubyte)(v[0] >> 24),
         (PFubyte)(v[1] >> 24),
         (PFubyte)(v[2] >> 24),
         (PFubyte)(v[3] >> 24)
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    });
 }
 
 void pfColor4f(PFfloat r, PFfloat g, PFfloat b, PFfloat a)
 {
-    PFcolor color = {
+    pfInternal_ColorStruct((PFcolor) {
         (PFubyte)(r*255),
         (PFubyte)(g*255),
         (PFubyte)(b*255),
         (PFubyte)(a*255)
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    });
 }
 
 void pfColor4fv(const PFfloat* v)
 {
-    PFcolor color = {
+    pfInternal_ColorStruct((PFcolor) {
         (PFubyte)(v[0]*255),
         (PFubyte)(v[1]*255),
         (PFubyte)(v[2]*255),
         (PFubyte)(v[3]*255)
-    };
-
-    if (currentCtx->state &PF_COLOR_MATERIAL)
-    {
-        Helper_SetMaterialColor(color);
-    }
-    else
-    {
-        currentCtx->currentColor = color;
-    }
+    });
 }
 
 void pfTexCoord2f(PFfloat u, PFfloat v)
@@ -1834,10 +1702,10 @@ void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2)
     if (iY2 < iY1) iY1 ^= iY2, iY2 ^= iY1, iY1 ^= iY2;
 
     // Clamp screen coordinates to viewport boundaries
-    iX1 = CLAMP(iX1, (PFint)currentCtx->viewportX, (PFint)currentCtx->viewportW);
-    iY1 = CLAMP(iY1, (PFint)currentCtx->viewportY, (PFint)currentCtx->viewportH);
-    iX2 = CLAMP(iX2, (PFint)currentCtx->viewportX, (PFint)currentCtx->viewportW);
-    iY2 = CLAMP(iY2, (PFint)currentCtx->viewportY, (PFint)currentCtx->viewportH);
+    iX1 = CLAMP(iX1, MAX(currentCtx->viewportX, 0), currentCtx->viewportX + (PFint)currentCtx->viewportW);
+    iY1 = CLAMP(iY1, MAX(currentCtx->viewportY, 0), currentCtx->viewportY + (PFint)currentCtx->viewportH);
+    iX2 = CLAMP(iX2, MAX(currentCtx->viewportX, 0), currentCtx->viewportX + (PFint)currentCtx->viewportW);
+    iY2 = CLAMP(iY2, MAX(currentCtx->viewportY, 0), currentCtx->viewportY + (PFint)currentCtx->viewportH);
 
     // Retrieve framebuffer information
     PFint wDst = currentCtx->currentFramebuffer->texture.width;
@@ -1850,7 +1718,7 @@ void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2)
     // Draw rectangle
     for (PFint y = iY1; y <= iY2; y++)
     {
-        PFint yOffset = y * wDst;
+        PFsizei yOffset = y * wDst;
 
         for (PFint x = iX1; x <= iX2; x++)
         {
@@ -1891,6 +1759,7 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, const voi
     // Calculate screen coordinates from projected coordinates
     PFint xScreen = currentCtx->viewportX + (rasterPos[0] + 1.0f) * 0.5f * currentCtx->viewportW;
     PFint yScreen = currentCtx->viewportY + (1.0f - rasterPos[1]) * 0.5f * currentCtx->viewportH;
+    PFfloat zPos = rasterPos[2];
 
     // Draw pixels on current framebuffer
     PFtexture *texDst = &currentCtx->currentFramebuffer->texture;
@@ -1905,77 +1774,41 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, const voi
     PFfloat xSrcInc = (xPixelZoom < 1.0f) ? 1.0f / xPixelZoom : 1.0f;
     PFfloat ySrcInc = (yPixelZoom < 1.0f) ? 1.0f / yPixelZoom : 1.0f;
 
-    if (currentCtx->state & PF_DEPTH_TEST)
+    PFboolean noDepthTest = !(currentCtx->state & PF_DEPTH_TEST);
+
+    for (PFfloat ySrc = 0; ySrc < height; ySrc += ySrcInc)
     {
-        for (PFfloat ySrc = 0; ySrc < height; ySrc += ySrcInc)
+        PFsizei ySrcOffset = (PFsizei)ySrc * width;
+        PFfloat yDstMin = yScreen + ySrc * yPixelZoom;
+        PFfloat yDstMax = yDstMin + yPixelZoom;
+
+        for (PFfloat xSrc = 0; xSrc < width; xSrc += xSrcInc)
         {
-            PFsizei ySrcOffset = (PFsizei)ySrc * width;
-            PFfloat yDstMin = yScreen + ySrc * yPixelZoom;
-            PFfloat yDstMax = yDstMin + yPixelZoom;
+            PFsizei yDstOffset = (PFsizei)(yDstMin + 0.5f) * wDst;
+            PFfloat xDstMin = xScreen + xSrc * xPixelZoom;
+            PFfloat xDstMax = xDstMin + xPixelZoom;
 
-            for (PFfloat xSrc = 0; xSrc < width; xSrc += xSrcInc)
+            for (PFfloat yDst = yDstMin; yDst < yDstMax; yDst++)
             {
-                PFsizei yDstOffset = (PFsizei)(yDstMin + 0.5f) * wDst;
-                PFfloat xDstMin = xScreen + xSrc * xPixelZoom;
-                PFfloat xDstMax = xDstMin + xPixelZoom;
-
-                for (PFfloat yDst = yDstMin; yDst < yDstMax; yDst++)
+                for (PFfloat xDst = xDstMin; xDst < xDstMax; xDst++)
                 {
-                    for (PFfloat xDst = xDstMin; xDst < xDstMax; xDst++)
+                    if (xDst >= 0 && xDst < wDst && yDst >= 0 && yDst < hDst)
                     {
-                        if (xDst >= 0 && xDst < wDst && yDst >= 0 && yDst < hDst)
-                        {
-                            PFsizei xyDstOffset = yDstOffset + (PFsizei)(xDst + 0.5f);
+                        PFsizei xyDstOffset = yDstOffset + (PFsizei)(xDst + 0.5f);
 
-                            if (rasterPos[2] < zBuffer[xyDstOffset])
-                            {
-                                PFsizei xySrcOffset = ySrcOffset + (PFsizei)xSrc;
-
-                                zBuffer[xyDstOffset] = rasterPos[2];
-                                PFcolor colSrc = getPixelSrc(pixels, xySrcOffset);
-                                PFcolor colDst = texDst->pixelGetter(texDst->pixels, xyDstOffset);
-                                texDst->pixelSetter(texDst->pixels, xyDstOffset, currentCtx->blendFunction(colSrc, colDst));
-                            }
-                        }
-                    }
-
-                    yDstOffset++;
-                }
-            }
-        }
-    }
-    else
-    {
-        for (PFfloat ySrc = 0; ySrc < height; ySrc += ySrcInc)
-        {
-            PFsizei ySrcOffset = (PFsizei)ySrc * width;
-            PFfloat yDstMin = yScreen + ySrc * yPixelZoom;
-            PFfloat yDstMax = yDstMin + yPixelZoom;
-
-            for (PFfloat xSrc = 0; xSrc < width; xSrc += xSrcInc)
-            {
-                PFsizei yDstOffset = (PFsizei)(yDstMin + 0.5f) * wDst;
-                PFfloat xDstMin = xScreen + xSrc * xPixelZoom;
-                PFfloat xDstMax = xDstMin + xPixelZoom;
-
-                for (PFfloat yDst = yDstMin; yDst < yDstMax; yDst++)
-                {
-                    for (PFfloat xDst = xDstMin; xDst < xDstMax; xDst++)
-                    {
-                        if (xDst >= 0 && xDst < wDst && yDst >= 0 && yDst < hDst)
+                        if (noDepthTest || currentCtx->depthFunction(zPos, zBuffer[xyDstOffset]))
                         {
                             PFsizei xySrcOffset = ySrcOffset + (PFsizei)xSrc;
-                            PFsizei xyDstOffset = yDstOffset + (PFsizei)(xDst + 0.5f);
 
-                            zBuffer[xyDstOffset] = rasterPos[2];
+                            zBuffer[xyDstOffset] = zPos;
                             PFcolor colSrc = getPixelSrc(pixels, xySrcOffset);
                             PFcolor colDst = texDst->pixelGetter(texDst->pixels, xyDstOffset);
                             texDst->pixelSetter(texDst->pixels, xyDstOffset, currentCtx->blendFunction(colSrc, colDst));
                         }
                     }
-
-                    yDstOffset++;
                 }
+
+                yDstOffset++;
             }
         }
     }
@@ -2186,12 +2019,11 @@ static void ProcessRasterize_Point(const PFMmat4 mvp)
 {
     PFvertex *processed = currentCtx->vertexBuffer;
 
-    if (!Process_ProjectPoint(processed, mvp)) return;
-
-    (currentCtx->state & (PF_DEPTH_TEST)
-        ? Rasterize_PointDepth
-        : Rasterize_PointFlat)
-        (processed);
+    if (Process_ProjectPoint(processed, mvp))
+    {
+        (currentCtx->state & PF_DEPTH_TEST ?
+            Rasterize_PointDepth : Rasterize_PointFlat)(processed);
+    }
 }
 
 static void ProcessRasterize_PolygonPoints(const PFMmat4 mvp, int_fast8_t vertexCount)
@@ -2200,19 +2032,17 @@ static void ProcessRasterize_PolygonPoints(const PFMmat4 mvp, int_fast8_t vertex
     {
         PFvertex *processed = currentCtx->vertexBuffer + i;
 
-        if (!Process_ProjectPoint(processed, mvp)) return;
-
-        (currentCtx->state & (PF_DEPTH_TEST)
-            ? Rasterize_PointDepth
-            : Rasterize_PointFlat)
-            (processed);
+        if (Process_ProjectPoint(processed, mvp))
+        {
+            (currentCtx->state & PF_DEPTH_TEST ?
+                Rasterize_PointDepth : Rasterize_PointFlat)(processed);
+        }
     }
 }
 
 static void ProcessRasterize_Line(const PFMmat4 mvp)
 {
     // Process vertices
-
     int_fast8_t processedCounter = 2;
 
     PFvertex processed[2] = {
@@ -2224,15 +2054,8 @@ static void ProcessRasterize_Line(const PFMmat4 mvp)
     if (processedCounter != 2) return;
 
     // Rasterize line
-
-    if (currentCtx->state & (PF_DEPTH_TEST))
-    {
-        Rasterize_LineDepth(&processed[0], &processed[1]);
-    }
-    else
-    {
-        Rasterize_LineFlat(&processed[0], &processed[1]);
-    }
+    (currentCtx->state & PF_DEPTH_TEST ?
+        Rasterize_LineDepth : Rasterize_LineFlat)(&processed[0], &processed[1]);
 }
 
 static void ProcessRasterize_PolygonLines(const PFMmat4 mvp, int_fast8_t vertexCount)
@@ -2240,7 +2063,6 @@ static void ProcessRasterize_PolygonLines(const PFMmat4 mvp, int_fast8_t vertexC
     for (int_fast8_t i = 0; i < vertexCount; i++)
     {
         // Process vertices
-
         int_fast8_t processedCounter = 2;
 
         PFvertex processed[2] = {
@@ -2252,15 +2074,8 @@ static void ProcessRasterize_PolygonLines(const PFMmat4 mvp, int_fast8_t vertexC
         if (processedCounter != 2) return;
 
         // Rasterize line
-
-        if (currentCtx->state & (PF_DEPTH_TEST))
-        {
-            Rasterize_LineDepth(&processed[0], &processed[1]);
-        }
-        else
-        {
-            Rasterize_LineFlat(&processed[0], &processed[1]);
-        }
+        (currentCtx->state & PF_DEPTH_TEST ?
+            Rasterize_LineDepth : Rasterize_LineFlat)(&processed[0], &processed[1]);
     }
 }
 
@@ -2283,21 +2098,18 @@ static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp
         currentCtx->vertexBuffer[2]
     };
 
-    // Performs certain additional preparation
-    // operations in case of light management
+    // Performs certain operations that must be done before
+    // processing the vertices in case of light management
 
     if (currentCtx->state & PF_LIGHTING)
     {
         // Transform normals
+        // And multiply vertex color with diffuse color
         for (int_fast8_t i = 0; i < processedCounter; i++)
         {
             pfmVec3Transform(processed[i].normal, processed[i].normal, matNormal);
             pfmVec3Normalize(processed[i].normal, processed[i].normal);
-        }
 
-        // Multiply vertex color with diffuse color
-        for (int_fast8_t i = 0; i < processedCounter; i++)
-        {
             processed[i].color = pfBlendMultiplicative(processed[i].color,
                 currentCtx->faceMaterial[faceToRender].diffuse);
         }
@@ -2325,7 +2137,7 @@ static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp
         {
             rasterizer = Rasterize_TriangleTextureFlat2D;
         }
-        else if (currentCtx->state & (PF_DEPTH_TEST))
+        else if (currentCtx->state & PF_DEPTH_TEST)
         {
             rasterizer = Rasterize_TriangleColorDepth2D;
         }
@@ -2374,7 +2186,7 @@ static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp
             {
                 rasterizer = Rasterize_TriangleTextureFlatLight3D;
             }
-            else if (currentCtx->state & (PF_DEPTH_TEST))
+            else if (currentCtx->state & PF_DEPTH_TEST)
             {
                 rasterizer = Rasterize_TriangleColorDepthLight3D;
             }
@@ -2411,7 +2223,7 @@ static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp
             {
                 rasterizer = Rasterize_TriangleTextureFlat3D;
             }
-            else if (currentCtx->state & (PF_DEPTH_TEST))
+            else if (currentCtx->state & PF_DEPTH_TEST)
             {
                 rasterizer = Rasterize_TriangleColorDepth3D;
             }
@@ -2447,21 +2259,18 @@ static void ProcessRasterize_QuadFill(PFface faceToRender, const PFMmat4 mvp, co
             currentCtx->vertexBuffer[i + 2]
         };
 
-        // Performs certain additional preparation
-        // operations in case of light management
+        // Performs certain operations that must be done before
+        // processing the vertices in case of light management
 
         if (currentCtx->state & PF_LIGHTING)
         {
             // Transform normals
+            // And multiply vertex color with diffuse color
             for (int_fast8_t i = 0; i < processedCounter; i++)
             {
                 pfmVec3Transform(processed[i].normal, processed[i].normal, matNormal);
                 pfmVec3Normalize(processed[i].normal, processed[i].normal);
-            }
 
-            // Multiply vertex color with diffuse color
-            for (int_fast8_t i = 0; i < processedCounter; i++)
-            {
                 processed[i].color = pfBlendMultiplicative(processed[i].color,
                     currentCtx->faceMaterial[faceToRender].diffuse);
             }
@@ -2489,7 +2298,7 @@ static void ProcessRasterize_QuadFill(PFface faceToRender, const PFMmat4 mvp, co
             {
                 rasterizer = Rasterize_TriangleTextureFlat2D;
             }
-            else if (currentCtx->state & (PF_DEPTH_TEST))
+            else if (currentCtx->state & PF_DEPTH_TEST)
             {
                 rasterizer = Rasterize_TriangleColorDepth2D;
             }
@@ -2538,7 +2347,7 @@ static void ProcessRasterize_QuadFill(PFface faceToRender, const PFMmat4 mvp, co
                 {
                     rasterizer = Rasterize_TriangleTextureFlatLight3D;
                 }
-                else if (currentCtx->state & (PF_DEPTH_TEST))
+                else if (currentCtx->state & PF_DEPTH_TEST)
                 {
                     rasterizer = Rasterize_TriangleColorDepthLight3D;
                 }
@@ -2575,7 +2384,7 @@ static void ProcessRasterize_QuadFill(PFface faceToRender, const PFMmat4 mvp, co
                 {
                     rasterizer = Rasterize_TriangleTextureFlat3D;
                 }
-                else if (currentCtx->state & (PF_DEPTH_TEST))
+                else if (currentCtx->state & PF_DEPTH_TEST)
                 {
                     rasterizer = Rasterize_TriangleColorDepth3D;
                 }
