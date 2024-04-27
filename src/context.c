@@ -1056,7 +1056,7 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
                 {
                     for (int_fast8_t k = 0; k < colors->size; k++)
                     {
-                        ((PFubyte*)&vertex->color)[k] = ((const PFubyte*)colors->buffer)[j*positions->size + k];
+                        ((PFubyte*)&vertex->color)[k] = ((const PFubyte*)colors->buffer)[j*colors->size + k];
                     }
                 }
                 break;
@@ -1065,7 +1065,7 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
                 {
                     for (int_fast8_t k = 0; k < colors->size; k++)
                     {
-                        ((PFubyte*)&vertex->color)[k] = ((const PFushort*)colors->buffer)[j*positions->size + k] >> 8;
+                        ((PFubyte*)&vertex->color)[k] = ((const PFushort*)colors->buffer)[j*colors->size + k] >> 8;
                     }
                 }
                 break;
@@ -1074,7 +1074,7 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
                 {
                     for (int_fast8_t k = 0; k < colors->size; k++)
                     {
-                        ((PFubyte*)&vertex->color)[k] = ((const PFuint*)colors->buffer)[j*positions->size + k] >> 24;
+                        ((PFubyte*)&vertex->color)[k] = ((const PFuint*)colors->buffer)[j*colors->size + k] >> 24;
                     }
                 }
                 break;
@@ -1083,7 +1083,7 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
                 {
                     for (int_fast8_t k = 0; k < colors->size; k++)
                     {
-                        ((PFubyte*)&vertex->color)[k] = ((const PFfloat*)colors->buffer)[j*positions->size + k] * 255;
+                        ((PFubyte*)&vertex->color)[k] = ((const PFfloat*)colors->buffer)[j*colors->size + k] * 255;
                     }
                 }
                 break;
@@ -1092,7 +1092,7 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
                 {
                     for (int_fast8_t k = 0; k < colors->size; k++)
                     {
-                        ((PFubyte*)&vertex->color)[k] = ((const PFdouble*)colors->buffer)[j*positions->size + k] * 255;
+                        ((PFubyte*)&vertex->color)[k] = ((const PFdouble*)colors->buffer)[j*colors->size + k] * 255;
                     }
                 }
                 break;
@@ -1104,7 +1104,7 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
 
         // If the number of vertices has reached that necessary for, we process the shape
 
-        if (currentCtx->vertexCount == currentCtx->currentDrawMode)
+        if (currentCtx->vertexCount == mode)
         {
             currentCtx->vertexCount = 0;
             ProcessRasterize(mvp, matNormal);
@@ -1155,40 +1155,40 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
         {
             case PF_SHORT:
             {
-                for (int_fast8_t k = 0; k < positions->size; k++)
+                for (int_fast8_t j = 0; j < positions->size; j++)
                 {
-                    vertex->position[k] =
-                        ((const PFshort*)positions->buffer + first*positions->size)[i*positions->size + k];
+                    vertex->position[j] =
+                        ((const PFshort*)positions->buffer + first*positions->size)[i*positions->size + j];
                 }
             }
             break;
 
             case PF_INT:
             {
-                for (int_fast8_t k = 0; k < positions->size; k++)
+                for (int_fast8_t j = 0; j < positions->size; j++)
                 {
-                    vertex->position[k] =
-                        ((const PFint*)positions->buffer + first*positions->size)[i*positions->size + k];
+                    vertex->position[j] =
+                        ((const PFint*)positions->buffer + first*positions->size)[i*positions->size + j];
                 }
             }
             break;
 
             case PF_FLOAT:
             {
-                for (int_fast8_t k = 0; k < positions->size; k++)
+                for (int_fast8_t j = 0; j < positions->size; j++)
                 {
-                    vertex->position[k] =
-                        ((const PFfloat*)positions->buffer + first*positions->size)[i*positions->size + k];
+                    vertex->position[j] =
+                        ((const PFfloat*)positions->buffer + first*positions->size)[i*positions->size + j];
                 }
             }
             break;
 
             case PF_DOUBLE:
             {
-                for (int_fast8_t k = 0; k < positions->size; k++)
+                for (int_fast8_t j = 0; j < positions->size; j++)
                 {
-                    vertex->position[k] =
-                        ((const PFdouble*)positions->buffer + first*positions->size)[i*positions->size + k];
+                    vertex->position[j] =
+                        ((const PFdouble*)positions->buffer + first*positions->size)[i*positions->size + j];
                 }
             }
             break;
@@ -1205,20 +1205,20 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
             {
                 case PF_FLOAT:
                 {
-                    for (int_fast8_t k = 0; k < 3; k++)
+                    for (int_fast8_t j = 0; j < 3; j++)
                     {
-                        vertex->normal[k] =
-                            ((const PFfloat*)normals->buffer + first*positions->size)[i*3 + k];
+                        vertex->normal[j] =
+                            ((const PFfloat*)normals->buffer + first*3)[i*3 + j];
                     }
                 }
                 break;
 
                 case PF_DOUBLE:
                 {
-                    for (int_fast8_t k = 0; k < 3; k++)
+                    for (int_fast8_t j = 0; j < 3; j++)
                     {
-                        vertex->normal[k] =
-                            ((const PFdouble*)normals->buffer + first*positions->size)[i*3 + k];
+                        vertex->normal[j] =
+                            ((const PFdouble*)normals->buffer + first*3)[i*3 + j];
                     }
                 }
                 break;
@@ -1236,20 +1236,20 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
             {
                 case PF_FLOAT:
                 {
-                    for (int_fast8_t k = 0; k < 2; k++)
+                    for (int_fast8_t j = 0; j < 2; j++)
                     {
-                        vertex->texcoord[k] =
-                            ((const PFfloat*)texcoords->buffer + first*positions->size)[i*2 + k];
+                        vertex->texcoord[j] =
+                            ((const PFfloat*)texcoords->buffer + first*2)[i*2 + j];
                     }
                 }
                 break;
 
                 case PF_DOUBLE:
                 {
-                    for (int_fast8_t k = 0; k < 2; k++)
+                    for (int_fast8_t j = 0; j < 2; j++)
                     {
-                        vertex->texcoord[k] =
-                            ((const PFdouble*)texcoords->buffer + first*positions->size)[i*2 + k];
+                        vertex->texcoord[j] =
+                            ((const PFdouble*)texcoords->buffer + first*2)[i*2 + j];
                     }
                 }
                 break;
@@ -1267,50 +1267,50 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
             {
                 case PF_UNSIGNED_BYTE:
                 {
-                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    for (int_fast8_t j = 0; j < colors->size; j++)
                     {
-                        ((PFubyte*)&vertex->color)[k] =
-                            ((const PFubyte*)colors->buffer + first*positions->size)[i*positions->size + k];
+                        ((PFubyte*)&vertex->color)[j] =
+                            ((const PFubyte*)colors->buffer + first*colors->size)[i*colors->size + j];
                     }
                 }
                 break;
 
                 case PF_UNSIGNED_SHORT:
                 {
-                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    for (int_fast8_t j = 0; j < colors->size; j++)
                     {
-                        ((PFubyte*)&vertex->color)[k] =
-                            ((const PFushort*)colors->buffer + first*positions->size)[i*positions->size + k] >> 8;
+                        ((PFubyte*)&vertex->color)[j] =
+                            ((const PFushort*)colors->buffer + first*colors->size)[i*colors->size + j] >> 8;
                     }
                 }
                 break;
 
                 case PF_UNSIGNED_INT:
                 {
-                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    for (int_fast8_t j = 0; j < colors->size; j++)
                     {
-                        ((PFubyte*)&vertex->color)[k] =
-                            ((const PFuint*)colors->buffer + first*positions->size)[i*positions->size + k] >> 24;
+                        ((PFubyte*)&vertex->color)[j] =
+                            ((const PFuint*)colors->buffer + first*colors->size)[i*colors->size + j] >> 24;
                     }
                 }
                 break;
 
                 case PF_FLOAT:
                 {
-                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    for (int_fast8_t j = 0; j < colors->size; j++)
                     {
-                        ((PFubyte*)&vertex->color)[k] =
-                            ((const PFfloat*)colors->buffer + first*positions->size)[i*positions->size + k] * 255;
+                        ((PFubyte*)&vertex->color)[j] =
+                            ((const PFfloat*)colors->buffer + first*colors->size)[i*colors->size + j] * 255;
                     }
                 }
                 break;
 
                 case PF_DOUBLE:
                 {
-                    for (int_fast8_t k = 0; k < colors->size; k++)
+                    for (int_fast8_t j = 0; j < colors->size; j++)
                     {
-                        ((PFubyte*)&vertex->color)[k] =
-                            ((const PFdouble*)colors->buffer + first*positions->size)[i*positions->size + k] * 255;
+                        ((PFubyte*)&vertex->color)[j] =
+                            ((const PFdouble*)colors->buffer + first*colors->size)[i*colors->size + j] * 255;
                     }
                 }
                 break;
@@ -1322,7 +1322,7 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
 
         // If the number of vertices has reached that necessary for, we process the shape
 
-        if (currentCtx->vertexCount == currentCtx->currentDrawMode)
+        if (currentCtx->vertexCount == mode)
         {
             currentCtx->vertexCount = 0;
             ProcessRasterize(mvp, matNormal);
