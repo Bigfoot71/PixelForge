@@ -216,6 +216,7 @@ void pfGetIntegerv(PFenum pname, PFint* params)
 
         case PF_SHADE_MODEL:
             *params = ctx->shadingMode;
+            break;
 
         case PF_MAX_LIGHTS:
             *params = PF_MAX_LIGHT_STACK;
