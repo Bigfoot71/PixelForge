@@ -421,6 +421,12 @@ void pfPointSize(PFfloat size)
     currentCtx->pointSize = size;
 }
 
+void pfCullFace(PFface face)
+{
+    if (face < PF_FRONT || face > PF_BACK) return;
+    currentCtx->cullFace = face;
+}
+
 void pfBlendFunc(PFblendfunc func)
 {
     currentCtx->blendFunction = func;
@@ -429,12 +435,6 @@ void pfBlendFunc(PFblendfunc func)
 void pfDepthFunc(PFdepthfunc func)
 {
     currentCtx->depthFunction = func;
-}
-
-void pfCullFace(PFface face)
-{
-    if (face < PF_FRONT || face > PF_BACK) return;
-    currentCtx->cullFace = face;
 }
 
 PFframebuffer* pfGetActiveFramebuffer(void)
@@ -2435,8 +2435,7 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
             PFface faceToRender = (currentCtx->state & PF_CULL_FACE)
                 ? (!currentCtx->cullFace) : PF_FRONT_AND_BACK;
 
-            if (faceToRender == PF_FRONT_AND_BACK &&
-                currentCtx->polygonMode[0] != currentCtx->polygonMode[1])
+            if (faceToRender == PF_FRONT_AND_BACK)
             {
                 for (PFint iFace = 0; iFace < 2; iFace++)
                 {
@@ -2484,8 +2483,7 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
             PFface faceToRender = (currentCtx->state & PF_CULL_FACE)
                 ? (!currentCtx->cullFace) : PF_FRONT_AND_BACK;
 
-            if (faceToRender == PF_FRONT_AND_BACK &&
-                currentCtx->polygonMode[0] != currentCtx->polygonMode[1])
+            if (faceToRender == PF_FRONT_AND_BACK)
             {
                 for (PFint iFace = 0; iFace < 2; iFace++)
                 {
