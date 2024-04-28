@@ -61,33 +61,58 @@ static void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal);
 
 /* Some helper functions */
 
+static void pfInternal_ResetVertexBufferForNextElement()
+{
+    switch (currentCtx->currentDrawMode)
+    {
+        case PF_TRIANGLE_FAN:
+        case PF_TRIANGLE_STRIP:
+            currentCtx->vertexCount = 1;
+            currentCtx->vertexBuffer[0] = currentCtx->vertexBuffer[3];
+            break;
+
+        case PF_QUAD_FAN:
+        case PF_QUAD_STRIP:
+            currentCtx->vertexCount = 2;
+            currentCtx->vertexBuffer[0] = currentCtx->vertexBuffer[4];
+            currentCtx->vertexBuffer[1] = currentCtx->vertexBuffer[5];
+            break;
+
+        default:
+            currentCtx->vertexCount = 0;
+            break;
+    }
+}
+
+static int_fast8_t pfInternal_GetDrawModeVertexCount(PFdrawmode mode)
+{
+    switch (mode)
+    {
+        case PF_POINTS:         return 1;
+        case PF_LINES:          return 2;
+        case PF_TRIANGLES:      return 3;
+        case PF_TRIANGLE_FAN:
+        case PF_TRIANGLE_STRIP: return 4;
+        case PF_QUADS:          return 4;
+        case PF_QUAD_FAN:
+        case PF_QUAD_STRIP:     return 6;
+    }
+
+    return 0;
+}
+
 static PFsizei pfInternal_GetDataTypeSize(PFdatatype type)
 {
     switch (type)
     {
-        case PF_UNSIGNED_BYTE:
-            return sizeof(PFubyte);
-
-        case PF_UNSIGNED_SHORT:
-            return sizeof(PFushort);
-
-        case PF_UNSIGNED_INT:
-            return sizeof(PFuint);
-
-        case PF_BYTE:
-            return sizeof(PFbyte);
-
-        case PF_SHORT:
-            return sizeof(PFshort);
-
-        case PF_INT:
-            return sizeof(PFint);
-
-        case PF_FLOAT:
-            return sizeof(PFfloat);
-
-        case PF_DOUBLE:
-            return sizeof(PFdouble);
+        case PF_UNSIGNED_BYTE:  return sizeof(PFubyte);
+        case PF_UNSIGNED_SHORT: return sizeof(PFushort);
+        case PF_UNSIGNED_INT:   return sizeof(PFuint);
+        case PF_BYTE:           return sizeof(PFbyte);
+        case PF_SHORT:          return sizeof(PFshort);
+        case PF_INT:            return sizeof(PFint);
+        case PF_FLOAT:          return sizeof(PFfloat);
+        case PF_DOUBLE:         return sizeof(PFdouble);
     }
 
     return 0;
@@ -192,6 +217,7 @@ PFctx* pfCreateContext(void* screenBuffer, PFsizei screenWidth, PFsizei screenHe
     ctx->state = 0x00;
 
     ctx->state |= PF_CULL_FACE;
+    ctx->shadeMode = PF_SMOOTH;
     ctx->cullFace = PF_BACK;
 
     ctx->errCode = PF_NO_ERROR;
@@ -410,6 +436,11 @@ void pfPolygonMode(PFface face, PFpolygonmode mode)
     }
 }
 
+void pfShadeModel(PFshademode mode)
+{
+    currentCtx->shadeMode = mode;
+}
+
 void pfPointSize(PFfloat size)
 {
     if (size <= 0.0f)
@@ -514,14 +545,14 @@ void pfClear(PFclearflag flag)
     }
 }
 
-void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
-{
-    currentCtx->clearColor = (PFcolor) { r, g, b, a };
-}
-
 void pfClearDepth(PFfloat depth)
 {
     currentCtx->clearDepth = depth;
+}
+
+void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
+{
+    currentCtx->clearColor = (PFcolor) { r, g, b, a };
 }
 
 
@@ -820,7 +851,6 @@ void pfVertexPointer(PFint size, PFenum type, PFsizei stride, const void* pointe
         return;
     }
 
-
     if (!(type == PF_SHORT || type == PF_INT || type == PF_FLOAT || type == PF_DOUBLE))
     {
         currentCtx->errCode = PF_INVALID_ENUM;
@@ -918,7 +948,9 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
     PFMmat4 mvp, matNormal;
     GetMVP(mvp, matNormal, NULL);
 
-    for (int_fast8_t i = 0; i < (int_fast8_t)mode; i++)
+    int_fast8_t drawModeVertexCount = pfInternal_GetDrawModeVertexCount(mode);
+
+    for (int_fast8_t i = 0; i < drawModeVertexCount; i++)
     {
         currentCtx->vertexBuffer[i] = (PFvertex) { 0 };
         currentCtx->vertexBuffer[i].color = currentCtx->currentColor;
@@ -1106,10 +1138,10 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
 
         // If the number of vertices has reached that necessary for, we process the shape
 
-        if (currentCtx->vertexCount == mode)
+        if (currentCtx->vertexCount == drawModeVertexCount)
         {
-            currentCtx->vertexCount = 0;
             ProcessRasterize(mvp, matNormal);
+            pfInternal_ResetVertexBufferForNextElement();
         }
     }
 
@@ -1136,7 +1168,9 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
     PFMmat4 mvp, matNormal;
     GetMVP(mvp, matNormal, NULL);
 
-    for (int_fast8_t i = 0; i < (int_fast8_t)mode; i++)
+    int_fast8_t drawModeVertexCount = pfInternal_GetDrawModeVertexCount(mode);
+
+    for (int_fast8_t i = 0; i < drawModeVertexCount; i++)
     {
         currentCtx->vertexBuffer[i] = (PFvertex) { 0 };
         currentCtx->vertexBuffer[i].color = currentCtx->currentColor;
@@ -1324,10 +1358,10 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
 
         // If the number of vertices has reached that necessary for, we process the shape
 
-        if (currentCtx->vertexCount == mode)
+        if (currentCtx->vertexCount == drawModeVertexCount)
         {
-            currentCtx->vertexCount = 0;
             ProcessRasterize(mvp, matNormal);
+            pfInternal_ResetVertexBufferForNextElement();
         }
     }
 
@@ -1339,7 +1373,7 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
 
 void pfBegin(PFdrawmode mode)
 {
-    if (mode >= PF_POINTS && mode <= PF_QUADS)
+    if (mode >= PF_POINTS && mode <= PF_QUAD_STRIP)
     {
         currentCtx->currentDrawMode = mode;
         currentCtx->vertexCount = 0;
@@ -1418,13 +1452,12 @@ void pfVertex4fv(const PFfloat* v)
 
     // If the number of vertices has reached that necessary for, we process the shape
 
-    if (currentCtx->vertexCount == currentCtx->currentDrawMode)
+    if (currentCtx->vertexCount == pfInternal_GetDrawModeVertexCount(currentCtx->currentDrawMode))
     {
         PFMmat4 mvp, matNormal;
         GetMVP(mvp, matNormal, NULL);
-
-        currentCtx->vertexCount = 0;
         ProcessRasterize(mvp, matNormal);
+        pfInternal_ResetVertexBufferForNextElement();
     }
 }
 
@@ -1953,34 +1986,34 @@ void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat
 
 extern PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFMmat4 mvp);
 
-extern void Rasterize_PointFlat(const PFvertex* point);
-extern void Rasterize_PointDepth(const PFvertex* point);
+extern void Rasterize_Point_NODEPTH(const PFvertex* point);
+extern void Rasterize_Point_DEPTH(const PFvertex* point);
 
 /* Line processing and rasterization functions (lines.c) */
 
 extern void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict vertexCounter, const PFMmat4 mvp);
 
-extern void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2);
-extern void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2);
+extern void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2);
+extern void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2);
 
 /* Triangle processing and rasterization functions (triangles.c) */
 
 extern PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter, const PFMmat4 mvp);
 
-extern void Rasterize_TriangleColorFlat2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-extern void Rasterize_TriangleColorDepth2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-extern void Rasterize_TriangleTextureFlat2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-extern void Rasterize_TriangleTextureDepth2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_COLOR_SMOOTH_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
 
-extern void Rasterize_TriangleColorFlat3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-extern void Rasterize_TriangleColorDepth3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-extern void Rasterize_TriangleTextureFlat3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-extern void Rasterize_TriangleTextureDepth3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_COLOR_SMOOTH_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
 
-extern void Rasterize_TriangleColorFlatLight3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
-extern void Rasterize_TriangleColorDepthLight3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
-extern void Rasterize_TriangleTextureFlatLight3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
-extern void Rasterize_TriangleTextureDepthLight3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
+extern void Rasterize_Triangle_COLOR_SMOOTH_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
+extern void Rasterize_Triangle_COLOR_SMOOTH_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
+extern void Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
+extern void Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
 
 /* Internal helper function definitions */
 
@@ -2001,8 +2034,8 @@ void GetMVP(PFMmat4 outMVP, PFMmat4 outMatNormal, PFMmat4 outTransformedModelvie
 
     if (outMatNormal) // TODO REVIEW: Only calculate it when PF_LIGHTING state is activated??
     {
-        pfmMat4Invert(outMatNormal, currentCtx->transform);
-        pfmMat4Transpose(outMatNormal, outMatNormal);
+        pfmMat4Transpose(outMatNormal, currentCtx->transform);
+        pfmMat4Invert(outMatNormal, outMatNormal);
     }
 
     if (outTransformedModelview)
@@ -2037,7 +2070,7 @@ static void ProcessRasterize_Point(const PFMmat4 mvp)
     if (Process_ProjectPoint(processed, mvp))
     {
         (currentCtx->state & PF_DEPTH_TEST ?
-            Rasterize_PointDepth : Rasterize_PointFlat)(processed);
+            Rasterize_Point_DEPTH : Rasterize_Point_NODEPTH)(processed);
     }
 }
 
@@ -2050,7 +2083,7 @@ static void ProcessRasterize_PolygonPoints(const PFMmat4 mvp, int_fast8_t vertex
         if (Process_ProjectPoint(processed, mvp))
         {
             (currentCtx->state & PF_DEPTH_TEST ?
-                Rasterize_PointDepth : Rasterize_PointFlat)(processed);
+                Rasterize_Point_DEPTH : Rasterize_Point_NODEPTH)(processed);
         }
     }
 }
@@ -2070,7 +2103,7 @@ static void ProcessRasterize_Line(const PFMmat4 mvp)
 
     // Rasterize line
     (currentCtx->state & PF_DEPTH_TEST ?
-        Rasterize_LineDepth : Rasterize_LineFlat)(&processed[0], &processed[1]);
+        Rasterize_Line_DEPTH : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
 }
 
 static void ProcessRasterize_PolygonLines(const PFMmat4 mvp, int_fast8_t vertexCount)
@@ -2090,11 +2123,13 @@ static void ProcessRasterize_PolygonLines(const PFMmat4 mvp, int_fast8_t vertexC
 
         // Rasterize line
         (currentCtx->state & PF_DEPTH_TEST ?
-            Rasterize_LineDepth : Rasterize_LineFlat)(&processed[0], &processed[1]);
+            Rasterize_Line_DEPTH : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
     }
 }
 
-static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp, const PFMmat4 matNormal)
+// NOTE: An array of vertices with a total size equal to 'PF_MAX_CLIPPED_POLYGON_VERTICES' must be provided as a parameter
+//       with only the first three vertices defined; the extra space is used in case the triangle needs to be clipped.
+static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES], const PFMmat4 mvp, const PFMmat4 matNormal)
 {
 #ifndef NDEBUG
     if (faceToRender == PF_FRONT_AND_BACK)
@@ -2106,12 +2141,6 @@ static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp
 #endif
 
     int_fast8_t processedCounter = 3;
-
-    PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES] = {
-        currentCtx->vertexBuffer[0],
-        currentCtx->vertexBuffer[1],
-        currentCtx->vertexBuffer[2]
-    };
 
     // Performs certain operations that must be done before
     // processing the vertices in case of light management
@@ -2139,22 +2168,22 @@ static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp
 
     if (is2D)
     {
-        RasterizeTriangleFunc rasterizer = Rasterize_TriangleColorFlat2D;
+        RasterizeTriangleFunc rasterizer = Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_2D;
 
         // Selects the appropriate rasterization function
 
         if (currentCtx->currentTexture &&
             (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
         {
-            rasterizer = Rasterize_TriangleTextureDepth2D;
+            rasterizer = Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_2D;
         }
         else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
         {
-            rasterizer = Rasterize_TriangleTextureFlat2D;
+            rasterizer = Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_2D;
         }
         else if (currentCtx->state & PF_DEPTH_TEST)
         {
-            rasterizer = Rasterize_TriangleColorDepth2D;
+            rasterizer = Rasterize_Triangle_COLOR_SMOOTH_DEPTH_2D;
         }
 
         // Performs rasterization of triangles
@@ -2190,20 +2219,20 @@ static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp
 
             // Selects the appropriate rasterization function
 
-            RasterizeTriangleLightFunc rasterizer = Rasterize_TriangleColorFlatLight3D;
+            RasterizeTriangleLightFunc rasterizer = Rasterize_Triangle_COLOR_SMOOTH_LIGHT_NODEPTH_3D;
 
             if (currentCtx->currentTexture &&
                 (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
             {
-                rasterizer = Rasterize_TriangleTextureDepthLight3D;
+                rasterizer = Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_DEPTH_3D;
             }
             else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
             {
-                rasterizer = Rasterize_TriangleTextureFlatLight3D;
+                rasterizer = Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_NODEPTH_3D;
             }
             else if (currentCtx->state & PF_DEPTH_TEST)
             {
-                rasterizer = Rasterize_TriangleColorDepthLight3D;
+                rasterizer = Rasterize_Triangle_COLOR_SMOOTH_LIGHT_DEPTH_3D;
             }
 
             // Performs rasterization of triangles
@@ -2227,20 +2256,20 @@ static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp
         {
             // Selects the appropriate rasterization function
 
-            RasterizeTriangleFunc rasterizer = Rasterize_TriangleColorFlat3D;
+            RasterizeTriangleFunc rasterizer = Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_3D;
 
             if (currentCtx->currentTexture &&
                 (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
             {
-                rasterizer = Rasterize_TriangleTextureDepth3D;
+                rasterizer = Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_3D;
             }
             else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
             {
-                rasterizer = Rasterize_TriangleTextureFlat3D;
+                rasterizer = Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_3D;
             }
             else if (currentCtx->state & PF_DEPTH_TEST)
             {
-                rasterizer = Rasterize_TriangleColorDepth3D;
+                rasterizer = Rasterize_Triangle_COLOR_SMOOTH_DEPTH_3D;
             }
 
             // Performs rasterization of triangles
@@ -2253,165 +2282,47 @@ static void ProcessRasterize_TriangleFill(PFface faceToRender, const PFMmat4 mvp
     }
 }
 
-static void ProcessRasterize_QuadFill(PFface faceToRender, const PFMmat4 mvp, const PFMmat4 matNormal)
+static void ProcessRasterize_Triangle(PFface faceToRender, const PFMmat4 mvp, const PFMmat4 matNormal)
 {
-#ifndef NDEBUG
-    if (faceToRender == PF_FRONT_AND_BACK)
-    {
-        // WARNING: This should not be called with PF_FRONT_AND_BACK
-        currentCtx->errCode = PF_DEBUG_INVALID_OPERATION;
-        return;
-    }
-#endif
+    PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES];
+    memcpy(processed, currentCtx->vertexBuffer, 3 * sizeof(PFvertex));
+    ProcessRasterize_Triangle_IMPL(faceToRender, processed, mvp, matNormal);
+}
 
-    for (PFint i = 0; i < 2; i++)
+static void ProcessRasterize_TriangleFan(PFface faceToRender, int_fast8_t numTriangles, const PFMmat4 mvp, const PFMmat4 matNormal)
+{
+    for (int_fast8_t i = 0; i < numTriangles; i++)
     {
-        int_fast8_t processedCounter = 3;
-
         PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES] = {
             currentCtx->vertexBuffer[0],
             currentCtx->vertexBuffer[i + 1],
             currentCtx->vertexBuffer[i + 2]
         };
 
-        // Performs certain operations that must be done before
-        // processing the vertices in case of light management
+        ProcessRasterize_Triangle_IMPL(faceToRender, processed, mvp, matNormal);
+    }
+}
 
-        if (currentCtx->state & PF_LIGHTING)
+static void ProcessRasterize_TriangleStrip(PFface faceToRender, int_fast8_t numTriangles, const PFMmat4 mvp, const PFMmat4 matNormal)
+{
+    for (int_fast8_t i = 0; i < numTriangles; i++)
+    {
+        PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES];
+
+        if (i % 2 == 0)
         {
-            // Transform normals
-            // And multiply vertex color with diffuse color
-            for (int_fast8_t i = 0; i < processedCounter; i++)
-            {
-                pfmVec3Transform(processed[i].normal, processed[i].normal, matNormal);
-                pfmVec3Normalize(processed[i].normal, processed[i].normal);
-
-                processed[i].color = pfBlendMultiplicative(processed[i].color,
-                    currentCtx->faceMaterial[faceToRender].diffuse);
-            }
-        }
-
-        // Process vertices
-
-        PFboolean is2D = Process_ProjectAndClipTriangle(processed, &processedCounter, mvp);
-        if (processedCounter < 3) continue;
-
-        // Rasterize triangles
-
-        if (is2D)
-        {
-            // Selects the appropriate rasterization function
-
-            RasterizeTriangleFunc rasterizer = Rasterize_TriangleColorFlat2D;
-
-            if (currentCtx->currentTexture &&
-                (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
-            {
-                rasterizer = Rasterize_TriangleTextureDepth2D;
-            }
-            else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
-            {
-                rasterizer = Rasterize_TriangleTextureFlat2D;
-            }
-            else if (currentCtx->state & PF_DEPTH_TEST)
-            {
-                rasterizer = Rasterize_TriangleColorDepth2D;
-            }
-
-            // Performs rasterization of triangles
-
-            for (int_fast8_t j = 0; j < processedCounter - 2; j++)
-            {
-                rasterizer(faceToRender, &processed[0], &processed[j + 1], &processed[j + 2]);
-            }
+            processed[0] = currentCtx->vertexBuffer[i];
+            processed[1] = currentCtx->vertexBuffer[i + 1];
+            processed[2] = currentCtx->vertexBuffer[i + 2];
         }
         else
         {
-            if (currentCtx->state & PF_LIGHTING)
-            {
-                // Pre-calculation of specularity tints
-                // by multiplying those of light and material
-
-                PFcolor oldLightSpecTints[PF_MAX_LIGHT_STACK];
-
-                for (PFint j = 0; j <= currentCtx->lastActiveLight; j++)
-                {
-                    PFlight *l = &currentCtx->lights[j];
-                    oldLightSpecTints[j] = l->specular;
-
-                    if (l->active) l->specular = pfBlendMultiplicative(
-                        l->specular, currentCtx->faceMaterial[PF_FRONT].specular);
-                }
-
-                // Get camera/view position
-
-                PFMmat4 invMV;
-                pfmMat4Invert(invMV, currentCtx->modelview);
-                PFMvec3 viewPos = { invMV[12], invMV[13], invMV[14] };
-
-                // Selects the appropriate rasterization function
-
-                RasterizeTriangleLightFunc rasterizer = Rasterize_TriangleColorFlatLight3D;
-
-                if (currentCtx->currentTexture &&
-                    (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
-                {
-                    rasterizer = Rasterize_TriangleTextureDepthLight3D;
-                }
-                else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
-                {
-                    rasterizer = Rasterize_TriangleTextureFlatLight3D;
-                }
-                else if (currentCtx->state & PF_DEPTH_TEST)
-                {
-                    rasterizer = Rasterize_TriangleColorDepthLight3D;
-                }
-
-                // Performs rasterization of triangles
-
-                for (int_fast8_t j = 0; j < processedCounter - 2; j++)
-                {
-                    rasterizer(faceToRender, &processed[0], &processed[j + 1], &processed[j + 2], viewPos);
-                }
-
-                // Reset old light specular tints
-
-                for (PFint j = 0; j <= currentCtx->lastActiveLight; j++)
-                {
-                    if (currentCtx->lights[j].active)
-                    {
-                        currentCtx->lights[j].specular = oldLightSpecTints[j];
-                    }
-                }
-            }
-            else
-            {
-                // Selects the appropriate rasterization function
-
-                RasterizeTriangleFunc rasterizer = Rasterize_TriangleColorFlat3D;
-
-                if (currentCtx->currentTexture &&
-                    (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
-                {
-                    rasterizer = Rasterize_TriangleTextureDepth3D;
-                }
-                else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
-                {
-                    rasterizer = Rasterize_TriangleTextureFlat3D;
-                }
-                else if (currentCtx->state & PF_DEPTH_TEST)
-                {
-                    rasterizer = Rasterize_TriangleColorDepth3D;
-                }
-
-                // Performs rasterization of triangles
-
-                for (int_fast8_t j = 0; j < processedCounter - 2; j++)
-                {
-                    rasterizer(faceToRender, &processed[0], &processed[j + 1], &processed[j + 2]);
-                }
-            }
+            processed[0] = currentCtx->vertexBuffer[i + 2];
+            processed[1] = currentCtx->vertexBuffer[i + 1];
+            processed[2] = currentCtx->vertexBuffer[i];
         }
+
+        ProcessRasterize_Triangle_IMPL(faceToRender, processed, mvp, matNormal);
     }
 }
 
@@ -2450,7 +2361,7 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
                             break;
 
                         case PF_FILL:
-                            ProcessRasterize_TriangleFill(iFace, mvp, matNormal);
+                            ProcessRasterize_Triangle(iFace, mvp, matNormal);
                             break;
                     }
                 }
@@ -2468,9 +2379,53 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
                         break;
 
                     case PF_FILL:
-                        ProcessRasterize_TriangleFill(faceToRender, mvp, matNormal);
+                        ProcessRasterize_Triangle(faceToRender, mvp, matNormal);
                         break;
                 }
+            }
+        }
+        break;
+
+        case PF_TRIANGLE_FAN:
+        {
+            // Get faces to render
+            // NOTE: Here we invert cullFace, because PF_FRONT = 0,
+            //       !PF_FRONT = PF_BACK, and vice versa.
+            PFface faceToRender = (currentCtx->state & PF_CULL_FACE)
+                ? (!currentCtx->cullFace) : PF_FRONT_AND_BACK;
+
+            if (faceToRender == PF_FRONT_AND_BACK)
+            {
+                for (PFint iFace = 0; iFace < 2; iFace++)
+                {
+                    ProcessRasterize_TriangleFan(iFace, 2, mvp, matNormal);
+                }
+            }
+            else
+            {
+                ProcessRasterize_TriangleFan(faceToRender, 2, mvp, matNormal);
+            }
+        }
+        break;
+
+        case PF_TRIANGLE_STRIP:
+        {
+            // Get faces to render
+            // NOTE: Here we invert cullFace, because PF_FRONT = 0,
+            //       !PF_FRONT = PF_BACK, and vice versa.
+            PFface faceToRender = (currentCtx->state & PF_CULL_FACE)
+                ? (!currentCtx->cullFace) : PF_FRONT_AND_BACK;
+
+            if (faceToRender == PF_FRONT_AND_BACK)
+            {
+                for (PFint iFace = 0; iFace < 2; iFace++)
+                {
+                    ProcessRasterize_TriangleStrip(iFace, 2, mvp, matNormal);
+                }
+            }
+            else
+            {
+                ProcessRasterize_TriangleStrip(faceToRender, 2, mvp, matNormal);
             }
         }
         break;
@@ -2498,7 +2453,7 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
                             break;
 
                         case PF_FILL:
-                            ProcessRasterize_QuadFill(iFace, mvp, matNormal);
+                            ProcessRasterize_TriangleFan(iFace, 2, mvp, matNormal);
                             break;
                     }
                 }
@@ -2516,9 +2471,53 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
                         break;
 
                     case PF_FILL:
-                        ProcessRasterize_QuadFill(faceToRender, mvp, matNormal);
+                        ProcessRasterize_TriangleFan(faceToRender, 2, mvp, matNormal);
                         break;
                 }
+            }
+        }
+        break;
+
+        case PF_QUAD_FAN:
+        {
+            // Get faces to render
+            // NOTE: Here we invert cullFace, because PF_FRONT = 0,
+            //       !PF_FRONT = PF_BACK, and vice versa.
+            PFface faceToRender = (currentCtx->state & PF_CULL_FACE)
+                ? (!currentCtx->cullFace) : PF_FRONT_AND_BACK;
+
+            if (faceToRender == PF_FRONT_AND_BACK)
+            {
+                for (PFint iFace = 0; iFace < 2; iFace++)
+                {
+                    ProcessRasterize_TriangleFan(iFace, 4, mvp, matNormal);
+                }
+            }
+            else
+            {
+                ProcessRasterize_TriangleFan(faceToRender, 4, mvp, matNormal);
+            }
+        }
+        break;
+
+        case PF_QUAD_STRIP:
+        {
+            // Get faces to render
+            // NOTE: Here we invert cullFace, because PF_FRONT = 0,
+            //       !PF_FRONT = PF_BACK, and vice versa.
+            PFface faceToRender = (currentCtx->state & PF_CULL_FACE)
+                ? (!currentCtx->cullFace) : PF_FRONT_AND_BACK;
+
+            if (faceToRender == PF_FRONT_AND_BACK)
+            {
+                for (PFint iFace = 0; iFace < 2; iFace++)
+                {
+                    ProcessRasterize_TriangleStrip(iFace, 4, mvp, matNormal);
+                }
+            }
+            else
+            {
+                ProcessRasterize_TriangleStrip(faceToRender, 4, mvp, matNormal);
             }
         }
         break;

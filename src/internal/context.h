@@ -51,6 +51,8 @@ typedef struct {
     PFenum mode;                                        ///< Material color which must follow the current color (see 'pfColorMaterial')
 } PFmatcolfollowing;
 
+// TODO: Reorganize the context structure
+
 struct PFctx {
 
     PFframebuffer screenBuffer;                         ///< Screen buffer for rendering
@@ -73,7 +75,7 @@ struct PFctx {
     PFcolor currentColor;                               ///< Current color for vertex rendering
 
     PFvertex vertexBuffer[6];                           ///< Vertex buffer for geometry
-    PFsizei vertexCount;                                ///< Number of vertices in the buffer
+    int_fast8_t vertexCount;                            ///< Number of vertices in the buffer
 
     PFMvec4 rasterPos;                                  ///< Current raster position (for pfDrawPixels)
     PFMvec2 pixelZoom;                                  ///< Pixel zoom factor (for pfDrawPixels)
@@ -98,6 +100,7 @@ struct PFctx {
 
     PFushort state;                                     ///< Current context state
 
+    PFshademode shadeMode;                              ///< Defines the type of shading, whether the colors are interpolated or not
     PFface cullFace;                                    ///< Faces to cull
 
     PFerrcode errCode;                                  ///< Contains the last error code that occurred

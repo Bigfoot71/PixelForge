@@ -27,8 +27,8 @@ extern void pfInternal_HomogeneousToScreen(PFvertex* restrict v);
 
 void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict vertexCounter, const PFMmat4 mvp);
 
-void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2);
-void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2);
+void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2);
+void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2);
 
 /* Internal helper function declarations */
 
@@ -195,7 +195,7 @@ void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict v
 
 /* Internal line rasterizer function definitions */
 
-void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2)
+void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 {
     PFctx *ctx = pfGetCurrentContext();
     PFframebuffer *fbDst = ctx->currentFramebuffer;
@@ -290,7 +290,7 @@ void Rasterize_LineFlat(const PFvertex* v1, const PFvertex* v2)
     }
 }
 
-void Rasterize_LineDepth(const PFvertex* v1, const PFvertex* v2)
+void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
 {
     PFctx *ctx = pfGetCurrentContext();
     PFframebuffer *fbDst = ctx->currentFramebuffer;

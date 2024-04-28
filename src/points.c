@@ -47,7 +47,7 @@ PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFMmat4 mvp)
         && v->screen[1] <= ctx->viewportY + ctx->viewportH;
 }
 
-void Rasterize_PointFlat(const PFvertex* point)
+void Rasterize_Point_NODEPTH(const PFvertex* point)
 {
     PFctx *ctx = pfGetCurrentContext();
     PFframebuffer *fbDst = ctx->currentFramebuffer;
@@ -96,7 +96,7 @@ void Rasterize_PointFlat(const PFvertex* point)
     }
 }
 
-void Rasterize_PointDepth(const PFvertex* point)
+void Rasterize_Point_DEPTH(const PFvertex* point)
 {
     PFctx *ctx = pfGetCurrentContext();
     PFframebuffer *fbDst = ctx->currentFramebuffer;

@@ -282,10 +282,14 @@ typedef enum {
 } PFmatrixmode;
 
 typedef enum {
-    PF_POINTS    = 1,
-    PF_LINES     = 2,
-    PF_TRIANGLES = 3,
-    PF_QUADS     = 4,
+    PF_POINTS,
+    PF_LINES,
+    PF_TRIANGLES,
+    PF_TRIANGLE_FAN,
+    PF_TRIANGLE_STRIP,
+    PF_QUADS,
+    PF_QUAD_FAN,
+    PF_QUAD_STRIP
 } PFdrawmode;
 
 typedef enum {
@@ -293,6 +297,11 @@ typedef enum {
     PF_LINE,
     PF_FILL
 } PFpolygonmode;
+
+typedef enum {
+    PF_FLAT,
+    PF_SMOOTH
+} PFshademode;
 
 typedef enum {                  // NOTE 1: PF_FRONT and PF_BACK are used as indices internally for `ctx->polygonMode`.
     PF_FRONT            = 0,    // NOTE 2: Also, we can invert PF_FRONT in code using '!' to obtain PF_BACK.
@@ -436,12 +445,12 @@ PF_API void pfSetDefaultPixelGetter(PFpixelgetter func);
 PF_API void pfSetDefaultPixelSetter(PFpixelsetter func);
 
 PF_API void pfPolygonMode(PFface face, PFpolygonmode mode);
+PF_API void pfShadeModel(PFshademode mode);
 PF_API void pfPointSize(PFfloat size);
+PF_API void pfCullFace(PFface face);
 
 PF_API void pfBlendFunc(PFblendfunc func);
 PF_API void pfDepthFunc(PFdepthfunc func);
-
-PF_API void pfCullFace(PFface face);
 
 PF_API PFframebuffer* pfGetActiveFramebuffer(void);
 PF_API void pfEnableFramebuffer(PFframebuffer* framebuffer);
@@ -451,8 +460,8 @@ PF_API PFtexture* pfGetActiveTexture(void);
 PF_API void pfBindTexture(PFtexture* texture);
 
 PF_API void pfClear(PFclearflag flag);
-PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
 PF_API void pfClearDepth(PFfloat depth);
+PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
 
 /* Light management API functions */
 
