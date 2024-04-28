@@ -692,7 +692,7 @@ void Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_2D(PFface faceToRender, const PFver
 {
     const PFctx *ctx = pfGetCurrentContext();
 
-    InterpolateColorFunc interpolateColor = (ctx->shadeMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
     if (faceToRender == PF_FRONT)
@@ -740,7 +740,7 @@ void Rasterize_Triangle_COLOR_SMOOTH_DEPTH_2D(PFface faceToRender, const PFverte
 {
     const PFctx *ctx = pfGetCurrentContext();
 
-    InterpolateColorFunc interpolateColor = (ctx->shadeMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
     if (faceToRender == PF_FRONT)
@@ -777,7 +777,7 @@ void Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_2D(PFface faceToRender, const PFv
 {
     const PFctx *ctx = pfGetCurrentContext();
 
-    InterpolateColorFunc interpolateColor = (ctx->shadeMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
     if (faceToRender == PF_FRONT)
@@ -826,7 +826,7 @@ void Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_2D(PFface faceToRender, const PFver
 {
     const PFctx *ctx = pfGetCurrentContext();
 
-    InterpolateColorFunc interpolateColor = (ctx->shadeMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
     if (faceToRender == PF_FRONT)
@@ -878,7 +878,7 @@ void Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_3D(PFface faceToRender, const PFver
 {
     const PFctx *ctx = pfGetCurrentContext();
 
-    InterpolateColorFunc interpolateColor = (ctx->shadeMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
     if (faceToRender == PF_FRONT)
@@ -917,7 +917,7 @@ void Rasterize_Triangle_COLOR_SMOOTH_DEPTH_3D(PFface faceToRender, const PFverte
 {
     const PFctx *ctx = pfGetCurrentContext();
 
-    InterpolateColorFunc interpolateColor = (ctx->shadeMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
     if (faceToRender == PF_FRONT)
@@ -954,7 +954,7 @@ void Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_3D(PFface faceToRender, const PFv
 {
     const PFctx *ctx = pfGetCurrentContext();
 
-    InterpolateColorFunc interpolateColor = (ctx->shadeMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
     if (faceToRender == PF_FRONT)
@@ -1005,7 +1005,7 @@ void Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_3D(PFface faceToRender, const PFver
 {
     const PFctx *ctx = pfGetCurrentContext();
 
-    InterpolateColorFunc interpolateColor = (ctx->shadeMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
     if (faceToRender == PF_FRONT)
@@ -1113,7 +1113,7 @@ void Rasterize_Triangle_COLOR_SMOOTH_LIGHT_NODEPTH_3D(PFface faceToRender, const
 {
     const PFctx *ctx = pfGetCurrentContext();
 
-    InterpolateColorFunc interpolateColor = (ctx->shadeMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
     if (faceToRender == PF_FRONT)
@@ -1176,7 +1176,7 @@ void Rasterize_Triangle_COLOR_SMOOTH_LIGHT_DEPTH_3D(PFface faceToRender, const P
 {
     const PFctx *ctx = pfGetCurrentContext();
 
-    InterpolateColorFunc interpolateColor = (ctx->shadeMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
     if (faceToRender == PF_FRONT)
@@ -1231,7 +1231,7 @@ void Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_NODEPTH_3D(PFface faceToRender, con
 {
     const PFctx *ctx = pfGetCurrentContext();
 
-    InterpolateColorFunc interpolateColor = (ctx->shadeMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
     if (faceToRender == PF_FRONT)
@@ -1300,7 +1300,7 @@ void Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_DEPTH_3D(PFface faceToRender, const
 {
     const PFctx *ctx = pfGetCurrentContext();
 
-    InterpolateColorFunc interpolateColor = (ctx->shadeMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
     if (faceToRender == PF_FRONT)

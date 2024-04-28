@@ -214,6 +214,9 @@ void pfGetIntegerv(PFenum pname, PFint* params)
         //    *params = PF_MAX_MATRIX_TEXTURE_STACK_SIZE;
         //    break;
 
+        case PF_SHADE_MODEL:
+            *params = ctx->shadingMode;
+
         case PF_MAX_LIGHTS:
             *params = PF_MAX_LIGHT_STACK;
             break;

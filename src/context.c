@@ -217,7 +217,7 @@ PFctx* pfCreateContext(void* screenBuffer, PFsizei screenWidth, PFsizei screenHe
     ctx->state = 0x00;
 
     ctx->state |= PF_CULL_FACE;
-    ctx->shadeMode = PF_SMOOTH;
+    ctx->shadingMode = PF_SMOOTH;
     ctx->cullFace = PF_BACK;
 
     ctx->errCode = PF_NO_ERROR;
@@ -438,7 +438,7 @@ void pfPolygonMode(PFface face, PFpolygonmode mode)
 
 void pfShadeModel(PFshademode mode)
 {
-    currentCtx->shadeMode = mode;
+    currentCtx->shadingMode = mode;
 }
 
 void pfPointSize(PFfloat size)

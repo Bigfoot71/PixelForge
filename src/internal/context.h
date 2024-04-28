@@ -100,7 +100,7 @@ struct PFctx {
 
     PFushort state;                                     ///< Current context state
 
-    PFshademode shadeMode;                              ///< Defines the type of shading, whether the colors are interpolated or not
+    PFshademode shadingMode;                              ///< Defines the type of shading, whether the colors are interpolated or not
     PFface cullFace;                                    ///< Faces to cull
 
     PFerrcode errCode;                                  ///< Contains the last error code that occurred
