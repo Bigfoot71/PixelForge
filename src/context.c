@@ -2225,14 +2225,11 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
 
         // Selects the appropriate rasterization function
 
-        if (currentCtx->currentTexture &&
-            (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
+        if (currentCtx->currentTexture && currentCtx->state & PF_TEXTURE_2D)
         {
-            rasterizer = Rasterize_Triangle_TEXTURE_DEPTH_2D;
-        }
-        else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
-        {
-            rasterizer = Rasterize_Triangle_TEXTURE_NODEPTH_2D;
+            rasterizer = (currentCtx->state & PF_DEPTH_TEST)
+                ? Rasterize_Triangle_TEXTURE_DEPTH_2D
+                : Rasterize_Triangle_TEXTURE_NODEPTH_2D;
         }
         else if (currentCtx->state & PF_DEPTH_TEST)
         {
@@ -2274,14 +2271,11 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
 
             RasterizeTriangleLightFunc rasterizer = Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D;
 
-            if (currentCtx->currentTexture &&
-                (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
+            if (currentCtx->currentTexture && currentCtx->state & PF_TEXTURE_2D)
             {
-                rasterizer = Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D;
-            }
-            else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
-            {
-                rasterizer = Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D;
+                rasterizer = (currentCtx->state & PF_DEPTH_TEST)
+                    ? Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D
+                    : Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D;
             }
             else if (currentCtx->state & PF_DEPTH_TEST)
             {
@@ -2311,14 +2305,11 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
 
             RasterizeTriangleFunc rasterizer = Rasterize_Triangle_COLOR_NODEPTH_3D;
 
-            if (currentCtx->currentTexture &&
-                (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
+            if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
             {
-                rasterizer = Rasterize_Triangle_TEXTURE_DEPTH_3D;
-            }
-            else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
-            {
-                rasterizer = Rasterize_Triangle_TEXTURE_NODEPTH_3D;
+                rasterizer = (currentCtx->state & PF_DEPTH_TEST)
+                    ? Rasterize_Triangle_TEXTURE_DEPTH_3D
+                    : Rasterize_Triangle_TEXTURE_NODEPTH_3D;
             }
             else if (currentCtx->state & PF_DEPTH_TEST)
             {
