@@ -427,6 +427,7 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
     }
 }
 
+// TODO REVIEW: Can be highly optimized
 void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 {
     PFvertex tv1, tv2;
@@ -484,6 +485,7 @@ void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2)
     }
 }
 
+// TODO REVIEW: Can be highly optimized
 void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2)
 {
     PFvertex tv1, tv2;
