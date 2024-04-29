@@ -55,7 +55,7 @@ typedef struct {
 
 struct PFctx {
 
-    PFframebuffer screenBuffer;                         ///< Screen buffer for rendering
+    PFframebuffer mainFramebuffer;                      ///< Screen buffer for rendering
     PFframebuffer *currentFramebuffer;                  ///< Pointer to the current framebuffer
 
     PFint viewportX, viewportY;                         ///< X and Y coordinates of the viewport
@@ -100,7 +100,7 @@ struct PFctx {
 
     PFushort state;                                     ///< Current context state
 
-    PFshademode shadingMode;                              ///< Defines the type of shading, whether the colors are interpolated or not
+    PFshademode shadingMode;                            ///< Defines the type of shading, whether the colors are interpolated or not
     PFface cullFace;                                    ///< Faces to cull
 
     PFerrcode errCode;                                  ///< Contains the last error code that occurred

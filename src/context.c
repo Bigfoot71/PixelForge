@@ -120,20 +120,20 @@ static PFsizei pfInternal_GetDataTypeSize(PFdatatype type)
 
 /* Context API functions */
 
-PFctx* pfCreateContext(void* screenBuffer, PFsizei screenWidth, PFsizei screenHeight, PFpixelformat screenFormat)
+PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat)
 {
     PFctx *ctx = (PFctx*)PF_MALLOC(sizeof(PFctx));
     if (!ctx) return NULL;
 
-    ctx->screenBuffer = (PFframebuffer) { 0 };
+    ctx->mainFramebuffer = (PFframebuffer) { 0 };
 
-    ctx->screenBuffer.texture = pfGenTexture(
-        screenBuffer, screenWidth, screenHeight, screenFormat);
+    ctx->mainFramebuffer.texture = pfGenTexture(
+        targetBuffer, width, height, pixelFormat);
 
-    const PFsizei bufferSize = screenWidth*screenHeight;
-    ctx->screenBuffer.zbuffer = (PFfloat*)PF_MALLOC(bufferSize*sizeof(PFfloat));
+    const PFsizei bufferSize = width*height;
+    ctx->mainFramebuffer.zbuffer = (PFfloat*)PF_MALLOC(bufferSize*sizeof(PFfloat));
 
-    if (!ctx->screenBuffer.zbuffer)
+    if (!ctx->mainFramebuffer.zbuffer)
     {
         PF_FREE(ctx);
         return NULL;
@@ -141,13 +141,13 @@ PFctx* pfCreateContext(void* screenBuffer, PFsizei screenWidth, PFsizei screenHe
 
     for (PFsizei i = 0; i < bufferSize; i++)
     {
-        ctx->screenBuffer.zbuffer[i] = FLT_MAX;
+        ctx->mainFramebuffer.zbuffer[i] = FLT_MAX;
     }
 
-    ctx->currentFramebuffer = &ctx->screenBuffer;
+    ctx->currentFramebuffer = &ctx->mainFramebuffer;
 
-    ctx->viewportW = screenWidth - 1;
-    ctx->viewportH = screenHeight - 1;
+    ctx->viewportW = width - 1;
+    ctx->viewportH = height - 1;
     ctx->viewportX = ctx->viewportY = 0;
 
     ctx->currentDrawMode = 0;
@@ -229,14 +229,67 @@ void pfDeleteContext(PFctx* ctx)
 {
     if (ctx)
     {
-        if (ctx->screenBuffer.zbuffer)
+        if (ctx->mainFramebuffer.zbuffer)
         {
-            PF_FREE(ctx->screenBuffer.zbuffer);
-            ctx->screenBuffer = (PFframebuffer) { 0 };
+            PF_FREE(ctx->mainFramebuffer.zbuffer);
+            ctx->mainFramebuffer = (PFframebuffer) { 0 };
         }
 
         PF_FREE(ctx);
     }
+}
+
+void pfUpdateMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat)
+{
+    if (targetBuffer == NULL || width == 0 || height == 0)
+    {
+        currentCtx->errCode = PF_INVALID_VALUE;
+        return;
+    }
+
+    PFsizei oldWidth = currentCtx->mainFramebuffer.texture.width;
+    PFsizei oldHeight = currentCtx->mainFramebuffer.texture.height;
+
+    if (oldWidth != width || oldHeight != height)
+    {
+        const PFsizei bufferSize = width*height;
+        PFfloat *zbuffer = PF_REALLOC(currentCtx->mainFramebuffer.zbuffer, bufferSize);
+
+        if (zbuffer == NULL)
+        {
+            currentCtx->errCode = PF_ERROR_OUT_OF_MEMORY;
+            return;
+        }
+
+        if (width > oldWidth)
+        {
+            for (PFsizei y = 0; y < height; y++)
+            {
+                for (PFsizei x = oldWidth; x < width; x++)
+                {
+                    zbuffer[y*width + x] = currentCtx->clearDepth;
+                }
+            }
+        }
+
+        if (height > oldHeight)
+        {
+            const PFsizei xMax = (oldWidth > width) ? oldWidth : width;
+
+            for (PFsizei y = oldHeight; y < height; y++)
+            {
+                for (PFsizei x = 0; x < xMax; x++)
+                {
+                    zbuffer[y*width + x] = currentCtx->clearDepth;
+                }
+            }
+        }
+
+        currentCtx->mainFramebuffer.zbuffer = zbuffer;
+    }
+
+    currentCtx->mainFramebuffer.texture = pfGenTexture(
+        targetBuffer, width, height, pixelFormat);
 }
 
 PFctx* pfGetCurrentContext(void)
@@ -399,12 +452,12 @@ void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height)
 
 void pfSetDefaultPixelGetter(PFpixelgetter func)
 {
-    currentCtx->screenBuffer.texture.pixelGetter = func;
+    currentCtx->mainFramebuffer.texture.pixelGetter = func;
 }
 
 void pfSetDefaultPixelSetter(PFpixelsetter func)
 {
-    currentCtx->screenBuffer.texture.pixelSetter = func;
+    currentCtx->mainFramebuffer.texture.pixelSetter = func;
 }
 
 void pfPolygonMode(PFface face, PFpolygonmode mode)
@@ -481,7 +534,7 @@ void pfEnableFramebuffer(PFframebuffer* framebuffer)
 
 void pfDisableFramebuffer(void)
 {
-    currentCtx->currentFramebuffer = &currentCtx->screenBuffer;
+    currentCtx->currentFramebuffer = &currentCtx->mainFramebuffer;
 }
 
 PFtexture* pfGetActiveTexture(void)

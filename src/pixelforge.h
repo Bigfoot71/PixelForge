@@ -49,6 +49,10 @@
 #   define PF_CALLOC(count, size) calloc(count, size)
 #endif //PF_CALLOC
 
+#ifndef PF_REALLOC
+#   define PF_REALLOC(ptr, newSize) realloc(ptr, newSize)
+#endif //PF_REALLOC
+
 #ifndef PF_FREE
 #   define PF_FREE(size) free(size)
 #endif //PF_FREE
@@ -397,8 +401,13 @@ extern "C" {
 
 /* Context API functions */
 
-PF_API PFctx* pfCreateContext(void* screenBuffer, PFsizei screenWidth, PFsizei screenHeight, PFpixelformat screenFormat);
+PF_API PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat);
 PF_API void pfDeleteContext(PFctx* ctx);
+
+// NOTE 1: If you have defined custom pixel getters/setters, you will need to reassign them.
+// NOTE 2: If reallocation of the main depth buffer fails, the old pixel buffer will be retained.
+// NOTE 3: Does not free the previous pixel buffer provided, its lifespan management is your responsibility.
+PF_API void pfUpdateMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat);
 
 PF_API PFctx* pfGetCurrentContext(void);
 PF_API void pfMakeCurrent(PFctx* ctx);
