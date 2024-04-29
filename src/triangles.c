@@ -31,20 +31,20 @@ extern void pfInternal_HomogeneousToScreen(PFvertex* restrict v);
 
 PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter, const PFMmat4 mvp);
 
-void Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-void Rasterize_Triangle_COLOR_SMOOTH_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-void Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-void Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+void Rasterize_Triangle_COLOR_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+void Rasterize_Triangle_COLOR_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+void Rasterize_Triangle_TEXTURE_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+void Rasterize_Triangle_TEXTURE_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
 
-void Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-void Rasterize_Triangle_COLOR_SMOOTH_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-void Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-void Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+void Rasterize_Triangle_COLOR_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+void Rasterize_Triangle_COLOR_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+void Rasterize_Triangle_TEXTURE_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
 
-void Rasterize_Triangle_COLOR_SMOOTH_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
-void Rasterize_Triangle_COLOR_SMOOTH_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
-void Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
-void Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
+void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
+void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
+void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
+void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
 
 /* Internal helper function declarations */
 
@@ -688,7 +688,7 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
 
 /* Internal triangle 2D rasterizer function definitions */
 
-void Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+void Rasterize_Triangle_COLOR_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     const PFctx *ctx = pfGetCurrentContext();
 
@@ -736,7 +736,7 @@ void Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_2D(PFface faceToRender, const PFver
     }
 }
 
-void Rasterize_Triangle_COLOR_SMOOTH_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+void Rasterize_Triangle_COLOR_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     const PFctx *ctx = pfGetCurrentContext();
 
@@ -773,7 +773,7 @@ void Rasterize_Triangle_COLOR_SMOOTH_DEPTH_2D(PFface faceToRender, const PFverte
     }
 }
 
-void Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+void Rasterize_Triangle_TEXTURE_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     const PFctx *ctx = pfGetCurrentContext();
 
@@ -822,7 +822,7 @@ void Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_2D(PFface faceToRender, const PFv
     }
 }
 
-void Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+void Rasterize_Triangle_TEXTURE_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     const PFctx *ctx = pfGetCurrentContext();
 
@@ -874,7 +874,7 @@ void Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_2D(PFface faceToRender, const PFver
 
 /* Internal front triangle 3D rasterizer function definitions */
 
-void Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+void Rasterize_Triangle_COLOR_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     const PFctx *ctx = pfGetCurrentContext();
 
@@ -913,7 +913,7 @@ void Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_3D(PFface faceToRender, const PFver
     }
 }
 
-void Rasterize_Triangle_COLOR_SMOOTH_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+void Rasterize_Triangle_COLOR_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     const PFctx *ctx = pfGetCurrentContext();
 
@@ -950,7 +950,7 @@ void Rasterize_Triangle_COLOR_SMOOTH_DEPTH_3D(PFface faceToRender, const PFverte
     }
 }
 
-void Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+void Rasterize_Triangle_TEXTURE_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     const PFctx *ctx = pfGetCurrentContext();
 
@@ -1001,7 +1001,7 @@ void Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_3D(PFface faceToRender, const PFv
     }
 }
 
-void Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
+void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3)
 {
     const PFctx *ctx = pfGetCurrentContext();
 
@@ -1109,7 +1109,7 @@ static PFcolor Process_Light(const PFlight* light, PFcolor ambient, PFcolor texe
 
 /* Internal enlightened triangle 3D rasterizer function definitions */
 
-void Rasterize_Triangle_COLOR_SMOOTH_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
+void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
     const PFctx *ctx = pfGetCurrentContext();
 
@@ -1172,7 +1172,7 @@ void Rasterize_Triangle_COLOR_SMOOTH_LIGHT_NODEPTH_3D(PFface faceToRender, const
     }
 }
 
-void Rasterize_Triangle_COLOR_SMOOTH_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
+void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
     const PFctx *ctx = pfGetCurrentContext();
 
@@ -1227,7 +1227,7 @@ void Rasterize_Triangle_COLOR_SMOOTH_LIGHT_DEPTH_3D(PFface faceToRender, const P
     }
 }
 
-void Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
+void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
     const PFctx *ctx = pfGetCurrentContext();
 
@@ -1296,7 +1296,7 @@ void Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_NODEPTH_3D(PFface faceToRender, con
     }
 }
 
-void Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
+void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
     const PFctx *ctx = pfGetCurrentContext();
 

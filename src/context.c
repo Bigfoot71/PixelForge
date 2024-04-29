@@ -2053,20 +2053,20 @@ extern void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2);
 
 extern PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter, const PFMmat4 mvp);
 
-extern void Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-extern void Rasterize_Triangle_COLOR_SMOOTH_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-extern void Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-extern void Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_COLOR_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_COLOR_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_TEXTURE_NODEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_TEXTURE_DEPTH_2D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
 
-extern void Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-extern void Rasterize_Triangle_COLOR_SMOOTH_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-extern void Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
-extern void Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_COLOR_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_COLOR_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_TEXTURE_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
+extern void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3);
 
-extern void Rasterize_Triangle_COLOR_SMOOTH_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
-extern void Rasterize_Triangle_COLOR_SMOOTH_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
-extern void Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
-extern void Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
+extern void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
+extern void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
+extern void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
+extern void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
 
 /* Internal helper function definitions */
 
@@ -2221,22 +2221,22 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
 
     if (is2D)
     {
-        RasterizeTriangleFunc rasterizer = Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_2D;
+        RasterizeTriangleFunc rasterizer = Rasterize_Triangle_COLOR_NODEPTH_2D;
 
         // Selects the appropriate rasterization function
 
         if (currentCtx->currentTexture &&
             (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
         {
-            rasterizer = Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_2D;
+            rasterizer = Rasterize_Triangle_TEXTURE_DEPTH_2D;
         }
         else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
         {
-            rasterizer = Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_2D;
+            rasterizer = Rasterize_Triangle_TEXTURE_NODEPTH_2D;
         }
         else if (currentCtx->state & PF_DEPTH_TEST)
         {
-            rasterizer = Rasterize_Triangle_COLOR_SMOOTH_DEPTH_2D;
+            rasterizer = Rasterize_Triangle_COLOR_DEPTH_2D;
         }
 
         // Performs rasterization of triangles
@@ -2272,20 +2272,20 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
 
             // Selects the appropriate rasterization function
 
-            RasterizeTriangleLightFunc rasterizer = Rasterize_Triangle_COLOR_SMOOTH_LIGHT_NODEPTH_3D;
+            RasterizeTriangleLightFunc rasterizer = Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D;
 
             if (currentCtx->currentTexture &&
                 (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
             {
-                rasterizer = Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_DEPTH_3D;
+                rasterizer = Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D;
             }
             else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
             {
-                rasterizer = Rasterize_Triangle_TEXTURE_SMOOTH_LIGHT_NODEPTH_3D;
+                rasterizer = Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D;
             }
             else if (currentCtx->state & PF_DEPTH_TEST)
             {
-                rasterizer = Rasterize_Triangle_COLOR_SMOOTH_LIGHT_DEPTH_3D;
+                rasterizer = Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D;
             }
 
             // Performs rasterization of triangles
@@ -2309,20 +2309,20 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
         {
             // Selects the appropriate rasterization function
 
-            RasterizeTriangleFunc rasterizer = Rasterize_Triangle_COLOR_SMOOTH_NODEPTH_3D;
+            RasterizeTriangleFunc rasterizer = Rasterize_Triangle_COLOR_NODEPTH_3D;
 
             if (currentCtx->currentTexture &&
                 (currentCtx->state & (PF_TEXTURE_2D | PF_DEPTH_TEST)) == (PF_TEXTURE_2D | PF_DEPTH_TEST))
             {
-                rasterizer = Rasterize_Triangle_TEXTURE_SMOOTH_DEPTH_3D;
+                rasterizer = Rasterize_Triangle_TEXTURE_DEPTH_3D;
             }
             else if (currentCtx->currentTexture && currentCtx->state & (PF_TEXTURE_2D))
             {
-                rasterizer = Rasterize_Triangle_TEXTURE_SMOOTH_NODEPTH_3D;
+                rasterizer = Rasterize_Triangle_TEXTURE_NODEPTH_3D;
             }
             else if (currentCtx->state & PF_DEPTH_TEST)
             {
-                rasterizer = Rasterize_Triangle_COLOR_SMOOTH_DEPTH_3D;
+                rasterizer = Rasterize_Triangle_COLOR_DEPTH_3D;
             }
 
             // Performs rasterization of triangles
