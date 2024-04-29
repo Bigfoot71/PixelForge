@@ -34,6 +34,14 @@ PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFMmat4 mvp)
 
     if (v->homogeneous[3] != 1.0f)
     {
+        for (int_fast8_t i = 0; i < 3; i++)
+        {
+            if (v->homogeneous[i] < -v->homogeneous[3] || v->homogeneous[i] > v->homogeneous[3])
+            {
+                return PF_FALSE;
+            }
+        }
+
         PFfloat invW = 1.0f / v->homogeneous[3];
         v->homogeneous[0] *= invW;
         v->homogeneous[1] *= invW;
