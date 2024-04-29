@@ -13,9 +13,10 @@ PixelForge is a lightweight software rendering library written in standard C99, 
 - **Framebuffer Support**: Supports framebuffers, enabling rendering to various pixel buffers.
 - **Texture Rendering**: Supports rendering of textures using pixel buffers.
 - **Perspective Correction**: Applies perspective correction to texture coordinates during 3D rendering.
-- **Primitive Rendering**: Capable of rendering points, lines, triangles, quads, strips, and fans efficiently.
-- **Pixel Formats**: Provides support for various commonly used pixel formats, and allows users to supply their own getter/setter functions for each texture and framebuffer, enabling flexibility and customization.
-- **Blend Modes**: Offers several blend modes for color blending, such as addition, subtraction, multiplication, simple averaging, and alpha blending. Additionally, supports custom color blending functions.
+- **Primitive Rendering**: Efficiently renders points, lines, triangles, quads, strips, and fans. Additionally, it allows for adjusting point size, line width, and polygon mode, enabling rendering of triangles and quads as lines or points.
+- **Pixel Formats**: Supports various commonly used pixel formats and allows users to provide their own getter/setter functions for each texture and framebuffer via function pointers.
+- **Blend Modes**: Offers several blend modes for color blending, such as addition, subtraction, multiplication, simple averaging, and alpha blending. Additionally, supports custom color blending functions via function pointer.
+- **Depth Testing**: Enables toggling depth testing for 3D rendering management. Several basic depth testing functions are provided, but it's also possible to supply custom functions via function pointers. Additionally, the refresh depth value can be adjusted as needed.
 - **Material Support**: Rendering material support through `pfMaterialf` and `pfMaterialfv`, similar to OpenGL 1.
 - **Blinn-Phong Lighting**: Rendering multiple lights using `pfLightfv`, with a default support for up to 8 lights, adjustable via a macro. Additionally, support for Phong lighting with perfect reflection can be activated through another macro.
 - **Face Culling**: Supports selection of face culling _(back face culling, front face culling, "no culling")_.
@@ -53,3 +54,4 @@ Contributions are welcome! Please feel free to submit issues, feature requests, 
 ![PixelForge](examples/screenshots/ModelAnimation.png)
 ![PixelForge](examples/screenshots/ModelTextured.png)
 ![PixelForge](examples/screenshots/2D.png)
+![PixelForge](examples/screenshots/Gears.gif)
