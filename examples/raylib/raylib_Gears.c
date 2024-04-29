@@ -1,5 +1,8 @@
-#define PF_SDL2_COMMON_IMPL
-#include "SDL2_common.h"
+#define PF_RAYLIB_COMMON_IMPL
+#include "raylib_common.h"
+
+#define SCREEN_WIDTH    600
+#define SCREEN_HEIGHT   600
 
 static void Gear_Draw(float innerRadius, float outerRadius, float width, int teeth, float toothDepth)
 {
@@ -195,87 +198,45 @@ void Gears_Draw(void)
 
 int main(void)
 {
-    // Create Window
-    Window window = Window_Create("PixelForge - Gears",
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-        600, 600, SDL_WINDOW_SHOWN /*| SDL_WINDOW_RESIZABLE*/);
+    // Init raylib window and set target FPS
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "PixelForge - Gears");
+    SetTargetFPS(60);
 
-    // Init clock system
-    Clock clock = Clock_Create(60);
-
-    // Creating the PixelForge context
-    PFctx *ctx = PF_InitFromWindow(&window);
+    // Create a rendering buffer in RAM as well as in VRAM (see raylib_common.h)
+    PF_TargetBuffer target = PF_LoadTargetBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
+    PFctx *ctx = PF_InitFromTargetBuffer(target); // PixelForge context
 
     // Init and reshape
     Gears_Init();
-    Gears_Reshape(
-        window.surface->w,
-        window.surface->h);
+    Gears_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-    // Main loop
-    SDL_Event e;
-    int quit = 0;
-    while (!quit)
+    while (!WindowShouldClose())
     {
-        Clock_Begin(&clock);
-
-        // Waiting for an event
-        while (SDL_PollEvent(&e) != 0)
-        {
-            switch (e.type)
-            {
-                case SDL_QUIT:
-                    quit = 1;
-                    break;
-
-                case SDL_WINDOWEVENT:
-                    if (e.window.event == SDL_WINDOWEVENT_RESIZED)
-                    {
-                        // TODO: Handle this case with `pfUpdateMainBuffer`
-                    }
-                    break;
-
-                case SDL_KEYDOWN:
-                    switch (e.key.keysym.sym)
-                    {
-                        case SDLK_UP:
-                            viewRotX += 5.0f;
-                            break;
-                        case SDLK_DOWN:
-                            viewRotX -= 5.0f;
-                            break;
-                        case SDLK_LEFT:
-                            viewRotY += 5.0f;
-                            break;
-                        case SDLK_RIGHT:
-                            viewRotY -= 5.0f;
-                            break;
-                        case SDLK_z:
-                            viewRotZ += (SDL_GetModState() & KMOD_SHIFT)
-                                ? -5.0f : 5.0f;
-                        default:
-                            break;
-                    }
-                    break;
-
-                default:
-                    break;
-            }
-        }
+        if (IsKeyDown(KEY_UP)) viewRotX += 5.0f;
+        if (IsKeyDown(KEY_DOWN)) viewRotX -= 5.0f;
+        if (IsKeyDown(KEY_LEFT)) viewRotY += 5.0f;
+        if (IsKeyDown(KEY_RIGHT)) viewRotY -= 5.0f;
+        if (IsKeyDown(KEY_Z) && !IsKeyDown(KEY_LEFT_SHIFT)) viewRotZ += 5.0f;
+        if (IsKeyDown(KEY_Z) && IsKeyDown(KEY_LEFT_SHIFT)) viewRotZ -= 5.0f;
 
         // Update and draw
-        angle += 90 * (1.0f/clock.maxFPS);
+        angle += 90 * GetFrameTime();
         Gears_Draw();
 
-        // We update the surface of the window
-        Window_Update(&window);
-
-        Clock_End(&clock);
+        // Texture rendering via raylib
+        BeginDrawing();
+            ClearBackground(BLACK);
+            PF_DrawTargetBuffer(target, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+            DrawFPS(10, 10);
+        EndDrawing();
     }
 
-    // Freeing resources and closing SDL
+    // Unload the PixelForge context and the target buffer
     pfDeleteContext(ctx);
-    Window_Destroy(&window);
+    PF_UnloadTargetBuffer(target);
+
+    // Close raylib window
+    CloseWindow();
 
     return 0;
 }

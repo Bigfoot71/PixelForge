@@ -1,5 +1,8 @@
-#define PF_SDL2_COMMON_IMPL
-#include "SDL2_common.h"
+#define PF_X11_COMMON_IMPL
+#include "X11_common.h"
+
+#define SCREEN_WIDTH    600
+#define SCREEN_HEIGHT   600
 
 static void Gear_Draw(float innerRadius, float outerRadius, float width, int teeth, float toothDepth)
 {
@@ -195,87 +198,52 @@ void Gears_Draw(void)
 
 int main(void)
 {
-    // Create Window
-    Window window = Window_Create("PixelForge - Gears",
-        SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-        600, 600, SDL_WINDOW_SHOWN /*| SDL_WINDOW_RESIZABLE*/);
+    // Init X11 application
+    X11_App app = X11_InitApp(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    // Allocate destination buffer and init PixelForge context
+    PFctx *ctx = PF_InitFromX11App(&app);
+
+    // Init and reshape
+    Gears_Init();
+    Gears_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Init clock system
     Clock clock = Clock_Create(60);
 
-    // Creating the PixelForge context
-    PFctx *ctx = PF_InitFromWindow(&window);
-
-    // Init and reshape
-    Gears_Init();
-    Gears_Reshape(
-        window.surface->w,
-        window.surface->h);
-
     // Main loop
-    SDL_Event e;
-    int quit = 0;
-    while (!quit)
+    while (1)
     {
         Clock_Begin(&clock);
 
-        // Waiting for an event
-        while (SDL_PollEvent(&e) != 0)
+        // Check X11 window events
+        int windowClosed = 0;
+        while (XPending(app.dpy))
         {
-            switch (e.type)
+            XNextEvent(app.dpy, &app.e);
+            if (app.e.type == ClientMessage && app.e.xclient.data.l[0] == (int)app.wmDeleteMessage)
             {
-                case SDL_QUIT:
-                    quit = 1;
-                    break;
-
-                case SDL_WINDOWEVENT:
-                    if (e.window.event == SDL_WINDOWEVENT_RESIZED)
-                    {
-                        // TODO: Handle this case with `pfUpdateMainBuffer`
-                    }
-                    break;
-
-                case SDL_KEYDOWN:
-                    switch (e.key.keysym.sym)
-                    {
-                        case SDLK_UP:
-                            viewRotX += 5.0f;
-                            break;
-                        case SDLK_DOWN:
-                            viewRotX -= 5.0f;
-                            break;
-                        case SDLK_LEFT:
-                            viewRotY += 5.0f;
-                            break;
-                        case SDLK_RIGHT:
-                            viewRotY -= 5.0f;
-                            break;
-                        case SDLK_z:
-                            viewRotZ += (SDL_GetModState() & KMOD_SHIFT)
-                                ? -5.0f : 5.0f;
-                        default:
-                            break;
-                    }
-                    break;
-
-                default:
-                    break;
+                windowClosed = 1;
+                break;
             }
         }
+
+        // If the window is closed we break the main loop
+        if (windowClosed) break;
 
         // Update and draw
         angle += 90 * (1.0f/clock.maxFPS);
         Gears_Draw();
 
-        // We update the surface of the window
-        Window_Update(&window);
+        // We update the content of the window
+        X11_UpdateWindow(&app);
 
         Clock_End(&clock);
     }
 
-    // Freeing resources and closing SDL
+    // Freeing resources and closing X11_App
     pfDeleteContext(ctx);
-    Window_Destroy(&window);
+    X11_CloseApp(&app);
 
     return 0;
 }

@@ -12,3 +12,8 @@ target_include_directories(X11_2D PRIVATE ${PF_ROOT_PATH}/src)
 add_executable(X11_3D ${PF_ROOT_PATH}/examples/X11/X11_3D.c)
 target_link_libraries(X11_3D PRIVATE pixelforge X11 m)
 target_include_directories(X11_3D PRIVATE ${PF_ROOT_PATH}/src)
+
+# Gears example
+add_executable(X11_Gears ${PF_ROOT_PATH}/examples/X11/X11_Gears.c)
+target_link_libraries(X11_Gears PRIVATE pixelforge X11 m)
+target_include_directories(X11_Gears PRIVATE ${PF_ROOT_PATH}/src)
