@@ -18,6 +18,7 @@
  */
 
 #include "internal/context.h"
+#include "pixelforge.h"
 
 /* Including internal function prototypes */
 
@@ -29,6 +30,9 @@ void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict v
 
 void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2);
 void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2);
+
+void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2);
+void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2);
 
 /* Internal helper function declarations */
 
@@ -224,10 +228,16 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
     if (adx > ady)
     {
-        PFfloat invAdx = 1.0f / adx;
-        PFfloat slope = dy / dx;
+        PFfloat invAdx = 0;
+        PFfloat slope = 0;
 
-        PFint xMin, xMax;
+        if (adx > PF_CLIP_EPSILON)
+        {
+            invAdx = 1.0f/adx;
+            slope = dy/dx;
+        }
+
+        PFfloat xMin, xMax;
         PFfloat zMin, zMax;
         if (v1->screen[0] < v2->screen[0])
         {
@@ -240,11 +250,11 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
             zMin = v2->homogeneous[2], zMax = v1->homogeneous[2];
         }
 
-        for (PFint x = xMin; x <= xMax; x++)
+        for (PFfloat x = xMin; x <= xMax; x++)
         {
             PFfloat t = (x - xMin)*invAdx;
             PFfloat z = zMin + t*(zMax - zMin);
-            PFint y = v1->screen[1] + (x - v1->screen[0])*slope;
+            PFfloat y = v1->screen[1] + (x - v1->screen[0])*slope;
 
             PFsizei pOffset = y*wDst + x;
 
@@ -257,10 +267,16 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
     }
     else
     {
-        PFfloat invAdy = 1.0f / ady;
-        PFfloat slope = dx / dy;
+        PFfloat invAdy = 0;
+        PFfloat slope = 0;
 
-        PFint yMin, yMax;
+        if (ady > PF_CLIP_EPSILON)
+        {
+            invAdy = 1.0f/ady;
+            slope = dx/dy;
+        }
+
+        PFfloat yMin, yMax;
         PFfloat zMin, zMax;
         if (v1->screen[1] < v2->screen[1])
         {
@@ -273,11 +289,11 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
             zMin = v2->homogeneous[2], zMax = v1->homogeneous[2];
         }
 
-        for (PFint y = yMin; y <= yMax; y++)
+        for (PFfloat y = yMin; y <= yMax; y++)
         {
             PFfloat t = (y - yMin)*invAdy;
             PFfloat z = zMin + t*(zMax - zMin);
-            PFint x = v1->screen[0] + (y - v1->screen[1])*slope;
+            PFfloat x = v1->screen[0] + (y - v1->screen[1])*slope;
 
             PFsizei pOffset = y*wDst + x;
 
@@ -325,10 +341,16 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
 
     if (adx > ady)
     {
-        PFfloat invAdx = 1.0f / adx;
-        PFfloat slope = dy / dx;
+        PFfloat invAdx = 0;
+        PFfloat slope = 0;
 
-        PFint xMin, xMax;
+        if (adx > PF_CLIP_EPSILON)
+        {
+            invAdx = 1.0f/adx;
+            slope = dy/dx;
+        }
+
+        PFfloat xMin, xMax;
         PFfloat zMin, zMax;
         if (v1->screen[0] < v2->screen[0])
         {
@@ -341,13 +363,13 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
             zMin = v2->homogeneous[2], zMax = v1->homogeneous[2];
         }
 
-        for (PFint x = xMin; x <= xMax; x++)
+        for (PFfloat x = xMin; x <= xMax; x++)
         {
             PFfloat t = (x - xMin)*invAdx;
             PFfloat z = zMin + t*(zMax - zMin);
-            PFint y = v1->screen[1] + (x - v1->screen[0])*slope;
+            PFfloat y = v1->screen[1] + (x - v1->screen[0])*slope;
 
-            PFsizei pOffset = y*wDst + x;
+            PFsizei pOffset = (PFint)y*wDst + (PFint)x;
             PFfloat *zp = zbDst + pOffset;
 
             if (ctx->depthFunction(z, *zp))
@@ -362,10 +384,16 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
     }
     else
     {
-        PFfloat invAdy = 1.0f / ady;
-        PFfloat slope = dx / dy;
+        PFfloat invAdy = 0;
+        PFfloat slope = 0;
 
-        PFint yMin, yMax;
+        if (ady > PF_CLIP_EPSILON)
+        {
+            invAdy = 1.0f/ady;
+            slope = dx/dy;
+        }
+
+        PFfloat yMin, yMax;
         PFfloat zMin, zMax;
         if (v1->screen[1] < v2->screen[1])
         {
@@ -378,13 +406,13 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
             zMin = v2->homogeneous[2], zMax = v1->homogeneous[2];
         }
 
-        for (PFint y = yMin; y <= yMax; y++)
+        for (PFfloat y = yMin; y <= yMax; y++)
         {
             PFfloat t = (y - yMin)*invAdy;
             PFfloat z = zMin + t*(zMax - zMin);
-            PFint x = v1->screen[0] + (y - v1->screen[1])*slope;
+            PFfloat x = v1->screen[0] + (y - v1->screen[1])*slope;
 
-            PFsizei pOffset = y*wDst + x;
+            PFsizei pOffset = (PFint)y*wDst + (PFint)x;
             PFfloat *zp = zbDst + pOffset;
 
             if (ctx->depthFunction(z, *zp))
@@ -395,6 +423,120 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
 
                 *zp = z;
             }
+        }
+    }
+}
+
+void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2)
+{
+    PFvertex tv1, tv2;
+
+    PFint x1 = v1->screen[0];
+    PFint y1 = v1->screen[1];
+    PFint x2 = v2->screen[0];
+    PFint y2 = v2->screen[1];
+
+    PFint dx = x2 - x1;
+    PFint dy = y2 - y1;
+
+    PFfloat thickness =
+        pfGetCurrentContext()->lineWidth;
+
+    Rasterize_Line_NODEPTH(v1, v2);
+
+    if (dx > PF_CLIP_EPSILON && fabsf((float)dy/dx) < 1)
+    {
+        PFint wy = (thickness - 1)*sqrtf(dx*dx + dy*dy)/(2*fabsf((float)dx)) + 0.5f;
+
+        for (PFint i = 0; i < wy; i++)
+        {
+            tv1 = *v1, tv2 = *v2;
+            tv1.screen[1] -= i;
+            tv2.screen[1] -= i;
+
+            Rasterize_Line_NODEPTH(&tv1, &tv2);
+
+            tv1 = *v1, tv2 = *v2;
+            tv1.screen[1] += i;
+            tv2.screen[1] += i;
+
+            Rasterize_Line_NODEPTH(&tv1, &tv2);
+        }
+    }
+    else if (dy > PF_CLIP_EPSILON)
+    {
+        PFint wx = (thickness - 1)*sqrtf(dx*dx + dy*dy)/(2*fabsf((float)dy)) + 0.5f;
+
+        for(PFint i = 0; i < wx; i++)
+        {
+            tv1 = *v1, tv2 = *v2;
+            tv1.screen[0] -= i;
+            tv2.screen[0] -= i;
+
+            Rasterize_Line_NODEPTH(&tv1, &tv2);
+
+            tv1 = *v1, tv2 = *v2;
+            tv1.screen[0] += i;
+            tv2.screen[0] += i;
+
+            Rasterize_Line_NODEPTH(&tv1, &tv2);
+        }
+    }
+}
+
+void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2)
+{
+    PFvertex tv1, tv2;
+
+    PFint x1 = v1->screen[0];
+    PFint y1 = v1->screen[1];
+    PFint x2 = v2->screen[0];
+    PFint y2 = v2->screen[1];
+
+    PFint dx = x2 - x1;
+    PFint dy = y2 - y1;
+
+    PFfloat thickness =
+        pfGetCurrentContext()->lineWidth;
+
+    Rasterize_Line_DEPTH(v1, v2);
+
+    if (dx > PF_CLIP_EPSILON && fabsf((float)dy/dx) < 1)
+    {
+        PFint wy = (thickness - 1)*sqrtf(dx*dx + dy*dy)/(2*fabsf((float)dx)) + 0.5f;
+
+        for (PFint i = 0; i < wy; i++)
+        {
+            tv1 = *v1, tv2 = *v2;
+            tv1.screen[1] -= i;
+            tv2.screen[1] -= i;
+
+            Rasterize_Line_DEPTH(&tv1, &tv2);
+
+            tv1 = *v1, tv2 = *v2;
+            tv1.screen[1] += i;
+            tv2.screen[1] += i;
+
+            Rasterize_Line_DEPTH(&tv1, &tv2);
+        }
+    }
+    else if (dy > PF_CLIP_EPSILON)
+    {
+        PFint wx = (thickness - 1)*sqrtf(dx*dx + dy*dy)/(2*fabsf((float)dy)) + 0.5f;
+
+        for(PFint i = 0; i < wx; i++)
+        {
+            tv1 = *v1, tv2 = *v2;
+            tv1.screen[0] -= i;
+            tv2.screen[0] -= i;
+
+            Rasterize_Line_DEPTH(&tv1, &tv2);
+
+            tv1 = *v1, tv2 = *v2;
+            tv1.screen[0] += i;
+            tv2.screen[0] += i;
+
+            Rasterize_Line_DEPTH(&tv1, &tv2);
         }
     }
 }
@@ -419,9 +561,9 @@ static PFubyte Helper_EncodeClip2D(const PFMvec2 screen, PFint xMin, PFint yMin,
 {
     PFubyte code = CLIP_INSIDE;
     if (screen[0] < xMin) code |= CLIP_LEFT;
-    if (screen[0] > yMin) code |= CLIP_RIGHT;
-    if (screen[1] < xMax) code |= CLIP_BOTTOM;
-    if (screen[1] > yMax) code |= CLIP_TOP;
+    if (screen[0] > xMax) code |= CLIP_RIGHT;
+    if (screen[1] < yMin) code |= CLIP_TOP;
+    if (screen[1] > yMax) code |= CLIP_BOTTOM;
     return code;
 }
 

@@ -456,6 +456,7 @@ PF_API void pfSetDefaultPixelSetter(PFpixelsetter func);
 
 PF_API void pfPolygonMode(PFface face, PFpolygonmode mode);
 PF_API void pfShadeModel(PFshademode mode);
+PF_API void pfLineWidth(PFfloat width);
 PF_API void pfPointSize(PFfloat size);
 PF_API void pfCullFace(PFface face);
 

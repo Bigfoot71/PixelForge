@@ -157,6 +157,7 @@ PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixe
     ctx->clearDepth = FLT_MAX;
 
     ctx->pointSize = 1.0f;
+    ctx->lineWidth = 1.0f;
 
     ctx->polygonMode[0] = PF_FILL;
     ctx->polygonMode[1] = PF_FILL;
@@ -492,6 +493,17 @@ void pfPolygonMode(PFface face, PFpolygonmode mode)
 void pfShadeModel(PFshademode mode)
 {
     currentCtx->shadingMode = mode;
+}
+
+void pfLineWidth(PFfloat width)
+{
+    if (width <= 0.0f)
+    {
+        currentCtx->errCode = PF_INVALID_VALUE;
+        return;
+    }
+
+    currentCtx->lineWidth = width;
 }
 
 void pfPointSize(PFfloat size)
@@ -2049,6 +2061,9 @@ extern void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* res
 extern void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2);
 extern void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2);
 
+extern void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2);
+extern void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2);
+
 /* Triangle processing and rasterization functions (triangles.c) */
 
 extern PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter, const PFMmat4 mvp);
@@ -2154,9 +2169,17 @@ static void ProcessRasterize_Line(const PFMmat4 mvp)
     Process_ProjectAndClipLine(processed, &processedCounter, mvp);
     if (processedCounter != 2) return;
 
-    // Rasterize line
-    (currentCtx->state & PF_DEPTH_TEST ?
-        Rasterize_Line_DEPTH : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
+    // Rasterize line (review condition)
+    if (currentCtx->lineWidth > 1.0f + 1e-5f)
+    {
+        (currentCtx->state & PF_DEPTH_TEST ?
+            Rasterize_Line_THICK_DEPTH : Rasterize_Line_THICK_NODEPTH)(&processed[0], &processed[1]);
+    }
+    else
+    {
+        (currentCtx->state & PF_DEPTH_TEST ?
+            Rasterize_Line_DEPTH : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
+    }
 }
 
 static void ProcessRasterize_PolygonLines(const PFMmat4 mvp, int_fast8_t vertexCount)
@@ -2174,9 +2197,17 @@ static void ProcessRasterize_PolygonLines(const PFMmat4 mvp, int_fast8_t vertexC
         Process_ProjectAndClipLine(processed, &processedCounter, mvp);
         if (processedCounter != 2) return;
 
-        // Rasterize line
-        (currentCtx->state & PF_DEPTH_TEST ?
-            Rasterize_Line_DEPTH : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
+        // Rasterize line (review condition)
+        if (currentCtx->lineWidth > 1.0f + 1e-5f)
+        {
+            (currentCtx->state & PF_DEPTH_TEST ?
+                Rasterize_Line_THICK_DEPTH : Rasterize_Line_THICK_NODEPTH)(&processed[0], &processed[1]);
+        }
+        else
+        {
+            (currentCtx->state & PF_DEPTH_TEST ?
+                Rasterize_Line_DEPTH : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
+        }
     }
 }
 

@@ -86,6 +86,7 @@ struct PFctx {
     PFfloat clearDepth;
 
     PFfloat pointSize;                                  ///< Rasterized point size
+    PFfloat lineWidth;                                  ///< Rasterized line width
     PFpolygonmode polygonMode[2];                       ///< Polygon mode for faces [0: front] [1: back]
 
     PFMvec3 currentNormal;                              ///< Current normal vector for lighting calculations
