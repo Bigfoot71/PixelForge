@@ -53,5 +53,4 @@ Contributions are welcome! Please feel free to submit issues, feature requests, 
 ## Screenshots
 ![PixelForge](examples/screenshots/ModelAnimation.png)
 ![PixelForge](examples/screenshots/ModelTextured.png)
-![PixelForge](examples/screenshots/2D.png)
 ![PixelForge](examples/screenshots/Gears.gif)
