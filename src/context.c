@@ -57,7 +57,7 @@ extern PFsizei pfInternal_GetPixelBytes(PFpixelformat format);
 
 /* Internal processing and rasterization function declarations */
 
-static void GetMVP(PFMmat4 outMVP, PFMmat4 outMatNormal);
+static void GetMVP(PFMmat4 outMVP, PFMmat4 outMatNormal, PFMmat4 outModelview);
 static void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal);
 
 /* Some helper functions */
@@ -209,13 +209,15 @@ PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixe
     };
 
     ctx->currentMatrixMode = PF_MODELVIEW;
-    ctx->currentMatrix = &ctx->modelview;
+    ctx->currentMatrix = &ctx->view;
 
     pfmMat4Ortho(ctx->projection, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
-    pfmMat4Identity(ctx->modelview);
+    pfmMat4Identity(ctx->model);
+    pfmMat4Identity(ctx->view);
 
     ctx->stackModelviewCounter = 0;
     ctx->stackProjectionCounter = 0;
+    ctx->modelMatrixUsed = PF_FALSE;
 
     ctx->vertexAttribs = (PFvertexattribs) { 0 };
     ctx->currentTexture = NULL;
@@ -350,7 +352,8 @@ void pfMatrixMode(PFmatrixmode mode)
             break;
 
         case PF_MODELVIEW:
-            currentCtx->currentMatrix = &currentCtx->modelview;
+            currentCtx->currentMatrix = currentCtx->modelMatrixUsed
+                ? &currentCtx->model : &currentCtx->view;
             break;
 
         default:
@@ -386,8 +389,16 @@ void pfPushMatrix(void)
                 return;
             }
 
-            pfmMat4Copy(currentCtx->stackModelview[currentCtx->stackModelviewCounter], currentCtx->modelview);
-            currentCtx->stackModelviewCounter++;
+            if (currentCtx->modelMatrixUsed)
+            {
+                pfmMat4Copy(currentCtx->stackModelview[currentCtx->stackModelviewCounter], currentCtx->model);
+                currentCtx->stackModelviewCounter++;
+            }
+            else
+            {
+                currentCtx->currentMatrix = &currentCtx->model;
+                currentCtx->modelMatrixUsed = PF_TRUE;
+            }
         }
         break;
     }
@@ -412,14 +423,23 @@ void pfPopMatrix(void)
 
         case PF_MODELVIEW:
         {
-            if (currentCtx->stackModelviewCounter <= 0)
+            if (currentCtx->stackModelviewCounter == 0)
             {
-                currentCtx->errCode = PF_STACK_UNDERFLOW;
-                return;
-            }
+                if (!currentCtx->modelMatrixUsed)
+                {
+                    currentCtx->errCode = PF_STACK_UNDERFLOW;
+                    return;
+                }
 
-            currentCtx->stackModelviewCounter--;
-            pfmMat4Copy(currentCtx->modelview, currentCtx->stackModelview[currentCtx->stackModelviewCounter]);
+                pfmMat4Identity(currentCtx->model);
+                currentCtx->modelMatrixUsed = PF_FALSE;
+                currentCtx->currentMatrix = &currentCtx->view;
+            }
+            else
+            {
+                currentCtx->stackModelviewCounter--;
+                pfmMat4Copy(currentCtx->model, currentCtx->stackModelview[currentCtx->stackModelviewCounter]);
+            }
         }
         break;
     }
@@ -1145,7 +1165,7 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
     PFsizei indicesTypeSize = pfInternal_GetDataTypeSize(type);
 
     PFMmat4 mvp, matNormal;
-    GetMVP(mvp, matNormal);
+    GetMVP(mvp, matNormal, NULL);
 
     int_fast8_t drawModeVertexCount = pfInternal_GetDrawModeVertexCount(mode);
 
@@ -1365,7 +1385,7 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
     PFboolean useColorArray = currentCtx->state & PF_COLOR_ARRAY && colors->buffer;
 
     PFMmat4 mvp, matNormal;
-    GetMVP(mvp, matNormal);
+    GetMVP(mvp, matNormal, NULL);
 
     int_fast8_t drawModeVertexCount = pfInternal_GetDrawModeVertexCount(mode);
 
@@ -1654,7 +1674,7 @@ void pfVertex4fv(const PFfloat* v)
     if (currentCtx->vertexCount == pfInternal_GetDrawModeVertexCount(currentCtx->currentDrawMode))
     {
         PFMmat4 mvp, matNormal;
-        GetMVP(mvp, matNormal);
+        GetMVP(mvp, matNormal, NULL);
         ProcessRasterize(mvp, matNormal);
         pfInternal_ResetVertexBufferForNextElement();
     }
@@ -1930,7 +1950,7 @@ void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2)
 {
     // Get the transformation matrix from model to view (ModelView) and projection
     PFMmat4 mvp;
-    GetMVP(mvp, NULL);
+    GetMVP(mvp, NULL, NULL);
 
     // Project corner points
     PFMvec4 v1 = { x1, y1, 0.0f, 1.0f };
@@ -1997,7 +2017,7 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, const voi
 
     // Get the transformation matrix from model to view (ModelView) and projection
     PFMmat4 mvp;
-    GetMVP(mvp, NULL);
+    GetMVP(mvp, NULL, NULL);
 
     // Project raster point
     PFMvec4 rasterPos = { currentCtx->rasterPos[0], currentCtx->rasterPos[1], currentCtx->rasterPos[2], 1.0f };
@@ -2219,17 +2239,25 @@ extern void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const
 
 /* Internal helper function definitions */
 
-void GetMVP(PFMmat4 outMVP, PFMmat4 outMatNormal)
+void GetMVP(PFMmat4 outMVP, PFMmat4 outMatNormal, PFMmat4 outModelview)
 {
+    PFMmat4 modelview;
+    pfmMat4Mul(modelview, currentCtx->model, currentCtx->view);
+
     if (outMVP)
     {
-        pfmMat4Mul(outMVP, currentCtx->modelview, currentCtx->projection);
+        pfmMat4Mul(outMVP, modelview, currentCtx->projection);
     }
 
     if (outMatNormal) // TODO REVIEW: Only calculate it when PF_LIGHTING state is activated??
     {
-        pfmMat4Transpose(outMatNormal, currentCtx->modelview);
-        pfmMat4Invert(outMatNormal, outMatNormal);
+        pfmMat4Invert(outMatNormal, currentCtx->model);
+        pfmMat4Transpose(outMatNormal, outMatNormal);
+    }
+
+    if (outModelview)
+    {
+        pfmMat4Copy(outModelview, modelview);
     }
 }
 
@@ -2418,9 +2446,9 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
 
             // Get camera/view position
 
-            PFMmat4 invMV;
-            pfmMat4Invert(invMV, currentCtx->modelview);
-            PFMvec3 viewPos = { invMV[12], invMV[13], invMV[14] };
+            PFMmat4 invMatView;
+            pfmMat4Invert(invMatView, currentCtx->view);
+            PFMvec3 viewPos = { invMatView[12], invMatView[13], invMatView[14] };
 
             // Selects the appropriate rasterization function
 

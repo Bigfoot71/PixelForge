@@ -362,13 +362,16 @@ PFM_API PFM_FLOAT pfmMat4Trace(const PFMmat4 mat)
 
 PFM_API void pfmMat4Transpose(PFMmat4 dst, const PFMmat4 src)
 {
+    PFMmat4 result;
     for (int_fast8_t i = 0; i < 4; i++)
     {
         for (int_fast8_t j = 0; j < 4; j++)
         {
-            dst[i * 4 + j] = src[j * 4 + i];
+            result[i * 4 + j] = src[j * 4 + i];
         }
     }
+
+    memcpy(dst, result, sizeof(PFMmat4));
 }
 
 PFM_API void pfmMat4Invert(PFMmat4 dst, const PFMmat4 src)

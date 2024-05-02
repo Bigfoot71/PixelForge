@@ -18,6 +18,7 @@
  */
 
 #include "internal/context.h"
+#include <stdint.h>
 #include <string.h>
 
 void pfGetBooleanv(PFenum pname, PFboolean* params)
@@ -392,8 +393,12 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
             break;
 
         case PF_MODELVIEW_MATRIX:
-            memcpy(params, ctx->modelview, sizeof(PFMmat4));
-            break;
+        {
+            PFMmat4 modelview;
+            pfmMat4Mul(modelview, ctx->model, ctx->view);
+            memcpy(params, modelview, sizeof(PFMmat4));
+        }
+        break;
 
         case PF_ZOOM_X:
             *params = ctx->pixelZoom[0];
@@ -514,12 +519,25 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
         //  break;
 
         case PF_PROJECTION_MATRIX:
-            memcpy(params, ctx->projection, sizeof(PFMmat4));
-            break;
+        {
+            for (int_fast8_t i = 0; i < 16; i++)
+            {
+                params[i] = ctx->projection[i];
+            }
+        }
+        break;
 
         case PF_MODELVIEW_MATRIX:
-            memcpy(params, ctx->modelview, sizeof(PFMmat4));
-            break;
+        {
+            PFMmat4 modelview;
+            pfmMat4Mul(modelview, ctx->model, ctx->view);
+
+            for (int_fast8_t i = 0; i < 16; i++)
+            {
+                params[i] = modelview[i];
+            }
+        }
+        break;
 
         case PF_ZOOM_X:
             *params = ctx->pixelZoom[0];

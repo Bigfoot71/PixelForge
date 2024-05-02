@@ -113,11 +113,13 @@ struct PFctx {
     PFmatrixmode currentMatrixMode;                                 ///< Current matrix mode (e.g., PF_MODELVIEW, PF_PROJECTION)
     PFMmat4 *currentMatrix;                                         ///< Pointer to the current matrix
     PFMmat4 projection;                                             ///< Default projection matrix
-    PFMmat4 modelview;                                              ///< Default modelview matrix
+    PFMmat4 model;                                                  ///< Default model matrix (the one used if we push in GL_MODELVIEW mode)
+    PFMmat4 view;                                                   ///< Default view matrix (the default one used in GL_MODELVIEW mode)
     PFMmat4 stackProjection[PF_MAX_PROJECTION_STACK_SIZE];          ///< Projection matrix stack for push/pop operations
     PFMmat4 stackModelview[PF_MAX_MODELVIEW_STACK_SIZE];            ///< Modelview matrix stack for push/pop operations
     PFsizei stackProjectionCounter;                                 ///< Counter for matrix stack operations
     PFsizei stackModelviewCounter;                                  ///< Counter for matrix stack operations
+    PFboolean modelMatrixUsed;
 
     PFvertexattribs vertexAttribs;                                  ///< Vertex attributes (e.g., normal, texture coordinates)
     PFtexture *currentTexture;                                      ///< Pointer to the current texture
