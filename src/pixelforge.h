@@ -94,6 +94,7 @@
 
 //#define PF_SUPPORT_NO_POT_TEXTURE   // Allows fetching samples from texcoords on non-power-of-two textures
 //#define PF_PHONG_REFLECTION         // Disable the Blinn-Phong reflection model for Phong
+//#define PF_GOURAUD_SHADING          // Enable vertex shading for lighting instead of per-fragment shading
 
 #ifndef INV_255
 #   define INV_255 (1.0 / 255)
