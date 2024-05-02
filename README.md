@@ -18,7 +18,7 @@ PixelForge is a lightweight software rendering library written in standard C99, 
 - **Blend Modes**: Offers several blend modes for color blending, such as addition, subtraction, multiplication, simple averaging, and alpha blending. Additionally, supports custom color blending functions via function pointer.
 - **Depth Testing**: Enables toggling depth testing for 3D rendering management. Several basic depth testing functions are provided, but it's also possible to supply custom functions via function pointers. Additionally, the refresh depth value can be adjusted as needed.
 - **Material Support**: Rendering material support through `pfMaterialf` and `pfMaterialfv`, similar to OpenGL 1.
-- **Blinn-Phong Lighting**: Rendering multiple lights using `pfLightfv`, with a default support for up to 8 lights, adjustable via a macro. Additionally, support for Phong lighting with perfect reflection can be activated through another macro.
+- **Blinn-Phong Lighting**: Rendering multiple lights using `pfLightfv`, with a default support for up to 8 lights, adjustable via a definition. Additionally, support for Phong lighting with perfect reflection can be activated through another definition.
 - **Face Culling**: Supports selection of face culling _(back face culling, front face culling, "no culling")_.
 - **OpenMP Support**: Added support for OpenMP to parallelize triangle rasterization loops, with verification of the number of pixels to be rasterized _(adjustable)_ to activate this parallelization, significantly increasing rasterization performance for large triangles.
 

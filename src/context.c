@@ -196,7 +196,7 @@ PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixe
         .diffuse    = (PFcolor) { 255, 255, 255, 255 },
         .specular   = (PFcolor) { 255, 255, 255, 255 },
         .emission   = (PFcolor) { 0, 0, 0, 255 },
-#   ifdef PF_NO_BLINN_PHONG
+#   ifdef PF_PHONG_REFLECTION
         .shininess  = 16.0f,
 #   else
         .shininess  = 64.0f,

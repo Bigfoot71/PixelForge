@@ -93,7 +93,7 @@
 #endif //PF_SUPPORT_OPENMP
 
 //#define PF_SUPPORT_NO_POT_TEXTURE   // Allows fetching samples from texcoords on non-power-of-two textures
-//#define PF_NO_BLINN_PHONG           // Enables perfect reflection lighting, simple Phong lighting
+//#define PF_PHONG_REFLECTION         // Disable the Blinn-Phong reflection model for Phong
 
 #ifndef INV_255
 #   define INV_255 (1.0 / 255)
