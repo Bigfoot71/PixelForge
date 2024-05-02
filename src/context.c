@@ -18,6 +18,7 @@
  */
 
 #include "internal/context.h"
+#include "pfm.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -174,26 +175,31 @@ PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixe
     for (PFsizei i = 0; i < PF_MAX_LIGHT_STACK; i++)
     {
         ctx->lights[i] = (PFlight) {
-            .position = { 0 },
-            .direction = { 0 },
-            .ambient = (PFcolor) { 51, 51, 51, 255 },
-            .diffuse = (PFcolor) { 255, 255, 255, 255 },
-            .specular = (PFcolor) { 255, 255, 255, 255 },
-            .active = PF_FALSE
+            .position       = { 0 },
+            .direction      = { 0 },
+            .cutoff         = M_PI,
+            .outerCutoff    = M_PI,
+            .attConstant    = 1,
+            .attLinear      = 0,
+            .attQuadratic   = 0,
+            .ambient        = (PFcolor) { 51, 51, 51, 255 },
+            .diffuse        = (PFcolor) { 255, 255, 255, 255 },
+            .specular       = (PFcolor) { 255, 255, 255, 255 },
+            .active         = PF_FALSE
         };
     }
 
     ctx->lastActiveLight = -1;
 
     ctx->faceMaterial[0] = ctx->faceMaterial[1] = (PFmaterial) {
-        .ambient = (PFcolor) { 255, 255, 255, 255 },
-        .diffuse = (PFcolor) { 255, 255, 255, 255 },
-        .specular = (PFcolor) { 255, 255, 255, 255 },
-        .emission = (PFcolor) { 0, 0, 0, 255 },
+        .ambient    = (PFcolor) { 255, 255, 255, 255 },
+        .diffuse    = (PFcolor) { 255, 255, 255, 255 },
+        .specular   = (PFcolor) { 255, 255, 255, 255 },
+        .emission   = (PFcolor) { 0, 0, 0, 255 },
 #   ifdef PF_NO_BLINN_PHONG
-        .shininess = 16.0f,
+        .shininess  = 16.0f,
 #   else
-        .shininess = 64.0f,
+        .shininess  = 64.0f,
 #   endif
     };
 
@@ -656,54 +662,150 @@ PFboolean pfIsEnabledLight(PFsizei light)
     return currentCtx->lights[light].active;
 }
 
+void pfLightf(PFsizei light, PFenum param, PFfloat value)
+{
+    if (light >= PF_MAX_LIGHT_STACK)
+    {
+        currentCtx->errCode = PF_STACK_OVERFLOW;
+        return;
+    }
+
+    PFlight *l = &currentCtx->lights[light];
+
+    switch (param)
+    {
+        case PF_SPOT_CUTOFF:
+            if ((value >= 0 && value <= 90) || value == 180)
+            {
+                l->cutoff = DEG2RAD(value);
+            }
+            else
+            {
+                currentCtx->errCode = PF_INVALID_VALUE;
+            }
+            break;
+
+        case PF_SPOT_OUTER_CUTOFF:
+            if ((value >= 0 && value <= 90) || value == 180)
+            {
+                l->outerCutoff = DEG2RAD(value);
+            }
+            else
+            {
+                currentCtx->errCode = PF_INVALID_VALUE;
+            }
+            break;
+
+        case PF_CONSTANT_ATTENUATION:
+            l->attConstant = value;
+            break;
+
+        case PF_LINEAR_ATTENUATION:
+            l->attLinear = value;
+            break;
+
+        case PF_QUADRATIC_ATTENUATION:
+            l->attQuadratic = value;
+            break;
+
+        default:
+            // NOTE: The definition 'PF_AMBIENT_AND_DIFFUSE' is reserved for 'pfMaterialfv'
+            currentCtx->errCode = PF_INVALID_ENUM;
+            break;
+    }
+}
+
 void pfLightfv(PFsizei light, PFenum param, const void* value)
 {
-    if (light < PF_MAX_LIGHT_STACK)
+    if (light >= PF_MAX_LIGHT_STACK)
     {
-        PFlight *l = &currentCtx->lights[light];
+        currentCtx->errCode = PF_STACK_OVERFLOW;
+        return;
+    }
 
-        switch (param)
+    PFlight *l = &currentCtx->lights[light];
+
+    switch (param)
+    {
+        case PF_POSITION:
+            memcpy(l->position, value, sizeof(PFMvec3));
+            break;
+
+        case PF_SPOT_DIRECTION:
+            memcpy(l->direction, value, sizeof(PFMvec3));
+            break;
+
+        case PF_SPOT_CUTOFF:
         {
-            case PF_POSITION:
-                memcpy(l->position, value, sizeof(PFMvec3));
-                break;
-
-            case PF_SPOT_DIRECTION:
-                memcpy(l->direction, value, sizeof(PFMvec3));
-                break;
-
-            case PF_AMBIENT:
-                l->ambient = (PFcolor) {
-                    (PFubyte)(((PFfloat*)value)[0]*255.0f),
-                    (PFubyte)(((PFfloat*)value)[1]*255.0f),
-                    (PFubyte)(((PFfloat*)value)[2]*255.0f),
-                    255
-                };
-                break;
-
-            case PF_DIFFUSE:
-                l->diffuse = (PFcolor) {
-                    (PFubyte)(((PFfloat*)value)[0]*255.0f),
-                    (PFubyte)(((PFfloat*)value)[1]*255.0f),
-                    (PFubyte)(((PFfloat*)value)[2]*255.0f),
-                    255
-                };
-                break;
-
-            case PF_SPECULAR:
-                l->specular = (PFcolor) {
-                    (PFubyte)(((PFfloat*)value)[0]*255.0f),
-                    (PFubyte)(((PFfloat*)value)[1]*255.0f),
-                    (PFubyte)(((PFfloat*)value)[2]*255.0f),
-                    255
-                };
-                break;
-
-            default:
-                // NOTE: The definition 'PF_AMBIENT_AND_DIFFUSE' is reserved for 'pfMaterialfv'
-                currentCtx->errCode = PF_INVALID_ENUM;
-                break;
+            PFfloat v = *(PFfloat*)value;
+            if ((v >= 0 && v <= 90) || v == 180)
+            {
+                l->cutoff = DEG2RAD(v);
+            }
+            else
+            {
+                currentCtx->errCode = PF_INVALID_VALUE;
+            }
         }
+        break;
+
+        case PF_SPOT_OUTER_CUTOFF:
+        {
+            PFfloat v = *(PFfloat*)value;
+            if ((v >= 0 && v <= 90) || v == 180)
+            {
+                l->outerCutoff = DEG2RAD(v);
+            }
+            else
+            {
+                currentCtx->errCode = PF_INVALID_VALUE;
+            }
+        }
+        break;
+
+        case PF_CONSTANT_ATTENUATION:
+            l->attConstant = *(const PFfloat*)value;
+            break;
+
+        case PF_LINEAR_ATTENUATION:
+            l->attLinear = *(const PFfloat*)value;
+            break;
+
+        case PF_QUADRATIC_ATTENUATION:
+            l->attQuadratic = *(const PFfloat*)value;
+            break;
+
+        case PF_AMBIENT:
+            l->ambient = (PFcolor) {
+                (PFubyte)(((PFfloat*)value)[0]*255.0f),
+                (PFubyte)(((PFfloat*)value)[1]*255.0f),
+                (PFubyte)(((PFfloat*)value)[2]*255.0f),
+                255
+            };
+            break;
+
+        case PF_DIFFUSE:
+            l->diffuse = (PFcolor) {
+                (PFubyte)(((PFfloat*)value)[0]*255.0f),
+                (PFubyte)(((PFfloat*)value)[1]*255.0f),
+                (PFubyte)(((PFfloat*)value)[2]*255.0f),
+                255
+            };
+            break;
+
+        case PF_SPECULAR:
+            l->specular = (PFcolor) {
+                (PFubyte)(((PFfloat*)value)[0]*255.0f),
+                (PFubyte)(((PFfloat*)value)[1]*255.0f),
+                (PFubyte)(((PFfloat*)value)[2]*255.0f),
+                255
+            };
+            break;
+
+        default:
+            // NOTE: The definition 'PF_AMBIENT_AND_DIFFUSE' is reserved for 'pfMaterialfv'
+            currentCtx->errCode = PF_INVALID_ENUM;
+            break;
     }
 }
 
@@ -2229,7 +2331,7 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
     // Performs certain operations that must be done before
     // processing the vertices in case of light management
 
-    if (currentCtx->state & PF_LIGHTING)
+    if (currentCtx->state & PF_LIGHTING && currentCtx->lastActiveLight > -1)
     {
         // Transform normals
         // And multiply vertex color with diffuse color
@@ -2276,7 +2378,7 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
     }
     else
     {
-        if (currentCtx->state & PF_LIGHTING)
+        if (currentCtx->state & PF_LIGHTING && currentCtx->lastActiveLight > -1)
         {
             // Pre-calculation of specularity tints
             // by multiplying those of light and material

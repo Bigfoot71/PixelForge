@@ -18,6 +18,8 @@
  */
 
 #include "internal/context.h"
+#include "pfm.h"
+#include <math.h>
 
 /* Internal typedefs */
 
@@ -477,62 +479,95 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
 // Begin/End flat triangle light rasterizer macros
 
 #define PF_BEGIN_TRIANGLE_FLAT_LIGHT_LOOP(material) \
-    for (int i = 0; i <= ctx->lastActiveLight; i++) \
+    PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
+    PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
+    PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
+    const PFsizei wDst = fbTarget->texture.width; \
+    void *bufTarget = fbTarget->texture.pixels; \
+    PFfloat *zbTarget = fbTarget->zbuffer; \
+    const PFfloat z1 = v1->homogeneous[2]; \
+    const PFfloat z2 = v2->homogeneous[2]; \
+    const PFfloat z3 = v3->homogeneous[2]; \
+    \
+    for (PFuint y = yMin; y <= yMax; y++) \
     { \
-        const PFlight *light = &ctx->lights[i]; \
-        if (!light->active) continue; \
-        const PFcolor ambient = pfBlendMultiplicative(light->ambient, (material).ambient); \
-        PF_BEGIN_TRIANGLE_FLAT_LOOP(); \
+        const PFuint yOffset = y*wDst; \
+        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row; \
+        for (PFuint x = xMin; x <= xMax; x++) \
+        { \
+            if ((w1 | w2 | w3) >= 0) \
+            { \
+                PFcolor finalLightColor = { 0 }; \
+                const PFuint xyOffset = yOffset + x; \
+                const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
+                const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
+                for (PFint i = 0; i <= ctx->lastActiveLight; i++) \
+                { \
+                    const PFlight *light = &ctx->lights[i]; \
+                    if (!light->active) continue; \
+                    PFcolor finalColor; \
+                    \
+                    const PFcolor ambient = pfBlendMultiplicative( \
+                        light->ambient, (material).ambient); \
 
 #define PF_END_TRIANGLE_FLAT_LIGHT_LOOP() \
-        PF_END_TRIANGLE_FLAT_LOOP(); \
+                    finalLightColor = pfBlendAdditive(finalColor, finalLightColor); \
+                } \
+                pixelSetter(bufTarget, xyOffset, finalLightColor); \
+                zbTarget[xyOffset] = z; \
+            } \
+            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
+        } \
+        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3; \
     }
 
 
 // Begin/End depth triangle light rasterizer macros
 
 #define PF_BEGIN_TRIANGLE_DEPTH_LIGHT_LOOP(material) \
-    for (int i = 0; i <= ctx->lastActiveLight; i++) \
+    PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
+    PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
+    PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
+    const PFsizei wDst = fbTarget->texture.width; \
+    void *bufTarget = fbTarget->texture.pixels; \
+    PFfloat *zbTarget = fbTarget->zbuffer; \
+    const PFfloat z1 = v1->homogeneous[2]; \
+    const PFfloat z2 = v2->homogeneous[2]; \
+    const PFfloat z3 = v3->homogeneous[2]; \
+    \
+    for (PFuint y = yMin; y <= yMax; y++) \
     { \
-        const PFlight *light = &ctx->lights[i]; \
-        if (!light->active) continue; \
-        \
-        const PFcolor ambient = pfBlendMultiplicative(light->ambient, (material).ambient); \
-        \
-        PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
-        PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
-        PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
-        const PFsizei wDst = fbTarget->texture.width; \
-        void *bufTarget = fbTarget->texture.pixels; \
-        PFfloat *zbTarget = fbTarget->zbuffer; \
-        const PFfloat z1 = v1->homogeneous[2]; \
-        const PFfloat z2 = v2->homogeneous[2]; \
-        const PFfloat z3 = v3->homogeneous[2]; \
-        \
-        for (PFuint y = yMin; y <= yMax; y++) \
+        const PFuint yOffset = y*wDst; \
+        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row; \
+        for (PFuint x = xMin; x <= xMax; x++) \
         { \
-            const PFuint yOffset = y*wDst; \
-            PFint w1 = w1Row, w2 = w2Row, w3 = w3Row; \
-            for (PFuint x = xMin; x <= xMax; x++) \
+            if ((w1 | w2 | w3) >= 0) \
             { \
-                if ((w1 | w2 | w3) >= 0) \
+                PFcolor finalLightColor = { 0 }; \
+                const PFuint xyOffset = yOffset + x; \
+                const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
+                const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
+                if (ctx->depthFunction(z, zbTarget[xyOffset])) \
                 { \
-                    PFcolor finalColor; \
-                    const PFuint xyOffset = yOffset + x; \
-                    const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
-                    const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
-                    if (ctx->depthFunction(z, zbTarget[xyOffset])) \
-                    {
+                    for (PFint i = 0; i <= ctx->lastActiveLight; i++) \
+                    { \
+                        const PFlight *light = &ctx->lights[i]; \
+                        if (!light->active) continue; \
+                        PFcolor finalColor; \
+                        \
+                        const PFcolor ambient = pfBlendMultiplicative( \
+                            light->ambient, (material).ambient); \
 
 #define PF_END_TRIANGLE_DEPTH_LIGHT_LOOP() \
-                        pixelSetter(bufTarget, xyOffset, finalColor); \
-                        zbTarget[xyOffset] = z; \
+                        finalLightColor = pfBlendAdditive(finalColor, finalLightColor); \
                     } \
+                    pixelSetter(bufTarget, xyOffset, finalLightColor); \
+                    zbTarget[xyOffset] = z; \
                 } \
-                w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
             } \
-            w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3; \
+            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
         } \
+        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3; \
     }
 
 
@@ -621,66 +656,103 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
 // Begin/End flat triangle light rasterizer macros
 
 #define PF_BEGIN_TRIANGLE_FLAT_LIGHT_LOOP(material) \
-    for (int i = 0; i <= ctx->lastActiveLight; i++) \
+    PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
+    PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
+    PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
+    const PFsizei wDst = fbTarget->texture.width; \
+    void *bufTarget = fbTarget->texture.pixels; \
+    PFfloat *zbTarget = fbTarget->zbuffer; \
+    const PFfloat z1 = v1->homogeneous[2]; \
+    const PFfloat z2 = v2->homogeneous[2]; \
+    const PFfloat z3 = v3->homogeneous[2]; \
+    \
+    _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_PIXEL_RASTER_THRESHOLD)") \
+    for (PFuint y = yMin; y <= yMax; y++) \
     { \
-        const PFlight* light = &ctx->lights[i]; \
-        if (!light->active) continue; \
-        const PFcolor ambient = pfBlendMultiplicative(light->ambient, (material).ambient); \
-        PF_BEGIN_TRIANGLE_FLAT_LOOP(); \
+        const PFuint yOffset = y*wDst; \
+        PFint i = y - yMin; \
+        PFint w1 = w1Row + i*stepWY1; \
+        PFint w2 = w2Row + i*stepWY2; \
+        PFint w3 = w3Row + i*stepWY3; \
+        for (PFuint x = xMin; x <= xMax; x++) \
+        { \
+            if ((w1 | w2 | w3) >= 0) \
+            { \
+                PFcolor finalLightColor = { 0 }; \
+                const PFuint xyOffset = yOffset + x; \
+                const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
+                const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
+                for (PFint i = 0; i <= ctx->lastActiveLight; i++) \
+                { \
+                    const PFlight *light = &ctx->lights[i]; \
+                    if (!light->active) continue; \
+                    PFcolor finalColor; \
+                    \
+                    const PFcolor ambient = pfBlendMultiplicative( \
+                        light->ambient, (material).ambient); \
 
 #define PF_END_TRIANGLE_FLAT_LIGHT_LOOP() \
-        PF_END_TRIANGLE_FLAT_LOOP(); \
+                    finalLightColor = pfBlendAdditive(finalColor, finalLightColor); \
+                } \
+                pixelSetter(bufTarget, xyOffset, finalLightColor); \
+                zbTarget[xyOffset] = z; \
+            } \
+            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
+        } \
     }
 
 
 // Begin/End depth triangle light rasterizer macros
 
 #define PF_BEGIN_TRIANGLE_DEPTH_LIGHT_LOOP(material) \
-    for (int i = 0; i <= ctx->lastActiveLight; i++) \
+    PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
+    PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
+    PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
+    const PFsizei wDst = fbTarget->texture.width; \
+    void *bufTarget = fbTarget->texture.pixels; \
+    PFfloat *zbTarget = fbTarget->zbuffer; \
+    const PFfloat z1 = v1->homogeneous[2]; \
+    const PFfloat z2 = v2->homogeneous[2]; \
+    const PFfloat z3 = v3->homogeneous[2]; \
+    \
+    _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_PIXEL_RASTER_THRESHOLD)") \
+    for (PFuint y = yMin; y <= yMax; y++) \
     { \
-        const PFlight* light = &ctx->lights[i]; \
-        if (!light->active) continue; \
-        \
-        const PFcolor ambient = pfBlendMultiplicative(light->ambient, (material).ambient); \
-        \
-        PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
-        PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
-        PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
-        const PFsizei wDst = fbTarget->texture.width; \
-        void *bufTarget = fbTarget->texture.pixels; \
-        PFfloat *zbTarget = fbTarget->zbuffer; \
-        const PFfloat z1 = v1->homogeneous[2]; \
-        const PFfloat z2 = v2->homogeneous[2]; \
-        const PFfloat z3 = v3->homogeneous[2]; \
-        \
-        _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_PIXEL_RASTER_THRESHOLD)") \
-        for (PFuint y = yMin; y <= yMax; y++) \
+        const PFuint yOffset = y*wDst; \
+        PFint i = y - yMin; \
+        PFint w1 = w1Row + i*stepWY1; \
+        PFint w2 = w2Row + i*stepWY2; \
+        PFint w3 = w3Row + i*stepWY3; \
+        for (PFuint x = xMin; x <= xMax; x++) \
         { \
-            const PFuint yOffset = y*wDst; \
-            PFint i = y - yMin; \
-            PFint w1 = w1Row + i*stepWY1; \
-            PFint w2 = w2Row + i*stepWY2; \
-            PFint w3 = w3Row + i*stepWY3; \
-            for (PFuint x = xMin; x <= xMax; x++) \
+            if ((w1 | w2 | w3) >= 0) \
             { \
-                if ((w1 | w2 | w3) >= 0) \
+                PFcolor finalLightColor = { 0 }; \
+                const PFuint xyOffset = yOffset + x; \
+                const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
+                const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
+                if (ctx->depthFunction(z, zbTarget[xyOffset])) \
                 { \
-                    PFcolor finalColor; \
-                    const PFuint xyOffset = yOffset + x; \
-                    const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
-                    const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
-                    if (ctx->depthFunction(z, zbTarget[xyOffset])) \
-                    {
+                    for (PFint i = 0; i <= ctx->lastActiveLight; i++) \
+                    { \
+                        const PFlight *light = &ctx->lights[i]; \
+                        if (!light->active) continue; \
+                        PFcolor finalColor; \
+                        \
+                        const PFcolor ambient = pfBlendMultiplicative( \
+                            light->ambient, (material).ambient); \
 
 #define PF_END_TRIANGLE_DEPTH_LIGHT_LOOP() \
-                        pixelSetter(bufTarget, xyOffset, finalColor); \
-                        zbTarget[xyOffset] = z; \
+                        finalLightColor = pfBlendAdditive(finalColor, finalLightColor); \
                     } \
+                    pixelSetter(bufTarget, xyOffset, finalLightColor); \
+                    zbTarget[xyOffset] = z; \
                 } \
-                w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
             } \
+            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
         } \
     }
+
 
 
 #endif //PF_SUPPORT_OPENMP
@@ -1057,7 +1129,7 @@ void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1
 
 static PFcolor Process_Light(const PFlight* light, PFcolor ambient, PFcolor texel, const PFMvec3 viewPos, const PFMvec3 vertex, const PFMvec3 normal, PFfloat shininess)
 {
-    // Calculate view direction vector
+    // get view direction for this fragment position **(can be optimized)**
     PFMvec3 viewDir;
     pfmVec3Sub(viewDir, viewPos, vertex);
     pfmVec3Normalize(viewDir, viewDir);
@@ -1065,45 +1137,68 @@ static PFcolor Process_Light(const PFlight* light, PFcolor ambient, PFcolor texe
     // Compute ambient lighting contribution
     ambient = pfBlendMultiplicative(texel, ambient);
 
-    // Compute diffuse lighting
-    const PFfloat intensity = fmaxf(-pfmVec3Dot(light->direction, normal), 0.0f);
+    // diffuse
+    PFMvec3 lightFragPosDt;
+    pfmVec3Sub(lightFragPosDt, light->position, vertex);
 
-    const PFcolor diffuse = {
-        (PFubyte)(light->diffuse.r * intensity),
-        (PFubyte)(light->diffuse.g * intensity),
-        (PFubyte)(light->diffuse.b * intensity),
-        255
-    };
+    PFMvec3 lightDir;
+    pfmVec3Normalize(lightDir, lightFragPosDt);
 
-#ifdef PF_NO_BLINN_PHONG
-    PFMvec3 reflectDir;
-    pfmVec3Reflect(reflectDir, light->direction, normal);
-    const PFfloat spec = powf(fmaxf(pfmVec3Dot(reflectDir, viewDir), 0.0f), shininess);
-#else
-    // To work here we take the opposite direction
-    PFMvec3 negLightDir;
-    pfmVec3Neg(negLightDir, light->direction);
+    PFfloat diff = fmaxf(pfmVec3Dot(normal, lightDir), 0.0f);
 
-    // Compute half vector (Blinn vector)
-    PFMvec3 halfVec;
-    pfmVec3Add(halfVec, negLightDir, viewDir);
-    pfmVec3Normalize(halfVec, halfVec);
+    PFcolor diffuse = pfBlendMultiplicative(light->diffuse, texel);
+    diffuse.r = (PFubyte)((PFfloat)diffuse.r * diff);
+    diffuse.g = (PFubyte)((PFfloat)diffuse.g * diff);
+    diffuse.b = (PFubyte)((PFfloat)diffuse.b * diff);
 
-    // Compute specular term using half vector
-    const PFfloat spec = powf(fmaxf(pfmVec3Dot(normal, halfVec), 0.0f), shininess);
-#endif
+    // specular (Blinn-Phong)
+    PFMvec3 halfWayDir;
+    pfmVec3Add(halfWayDir, lightDir, viewDir);
+    pfmVec3Normalize(halfWayDir, halfWayDir);
+
+    PFfloat spec = powf(fmaxf(pfmVec3Dot(normal, halfWayDir), 0.0f), shininess);
 
     const PFcolor specular = {
-        (PFubyte)(light->specular.r * spec),
-        (PFubyte)(light->specular.g * spec),
-        (PFubyte)(light->specular.b * spec),
+        (PFubyte)((PFfloat)light->specular.r * spec),
+        (PFubyte)((PFfloat)light->specular.g * spec),
+        (PFubyte)((PFfloat)light->specular.b * spec),
         255
     };
 
-    // Combine ambient, diffuse, and specular components
-    PFcolor finalColor = pfBlendMultiplicative(texel, diffuse);
-    finalColor = pfBlendAdditive(finalColor, specular);
-    return pfBlendAdditive(finalColor, ambient);
+    // spotlight (soft edges)
+    PFfloat intensity = 1.0f;
+    if (light->cutoff != 180)
+    {
+        PFMvec3 negLightDir;
+        pfmVec3Neg(negLightDir, light->direction);
+
+        PFfloat theta = pfmVec3Dot(lightDir, negLightDir);
+        PFfloat epsilon = light->cutoff - light->outerCutoff;
+        intensity = 1.0f - CLAMP((theta - light->outerCutoff) / epsilon, 0.0f, 1.0f);
+    }
+
+    // attenuation
+    PFfloat attenuation = 1.0f;
+    if (light->attLinear != 0.0f || light->attQuadratic != 0.0f)
+    {
+        PFfloat distance = sqrtf(
+            lightFragPosDt[0]*lightFragPosDt[0] +
+            lightFragPosDt[1]*lightFragPosDt[1] +
+            lightFragPosDt[2]*lightFragPosDt[2]);
+
+        attenuation = 1.0f/(light->attConstant + light->attLinear*distance +
+            light->attQuadratic*(distance*distance));
+    }
+
+    // add final light color
+    PFcolor finalColor = pfBlendAdditive(diffuse, specular);
+    PFfloat factor = intensity*attenuation;
+
+    finalColor.r = (PFubyte)((PFfloat)finalColor.r*factor);
+    finalColor.g = (PFubyte)((PFfloat)finalColor.g*factor);
+    finalColor.b = (PFubyte)((PFfloat)finalColor.b*factor);
+
+    return pfBlendAdditive(ambient, finalColor);
 }
 
 

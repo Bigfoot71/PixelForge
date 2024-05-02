@@ -50,6 +50,11 @@ typedef struct {
 typedef struct {
     PFMvec3 position;
     PFMvec3 direction;
+    PFfloat cutoff;
+    PFfloat outerCutoff;
+    PFfloat attConstant;
+    PFfloat attLinear;
+    PFfloat attQuadratic;
     PFcolor ambient;
     PFcolor diffuse;
     PFcolor specular;

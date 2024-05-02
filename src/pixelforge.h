@@ -345,10 +345,11 @@ typedef enum {
     PF_POSITION                 = 7,
     PF_SPOT_DIRECTION           = 8,
     //PF_SPOT_EXPONENT          = 9,
-    //PF_SPOT_CUTOFF            = 10,
-    //PF_CONSTANT_ATTENUATION   = 11,
-    //PF_LINEAR_ATTENUATION     = 12,
-    //PF_QUADRATIC_ATTENUATION  = 13
+    PF_SPOT_CUTOFF              = 10,
+    PF_SPOT_OUTER_CUTOFF        = 11,
+    PF_CONSTANT_ATTENUATION     = 12,
+    PF_LINEAR_ATTENUATION       = 13,
+    PF_QUADRATIC_ATTENUATION    = 14
 } PFlightparam;
 
 typedef struct {
@@ -482,6 +483,7 @@ PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
 PF_API void pfEnableLight(PFsizei light);
 PF_API void pfDisableLight(PFsizei light);
 PF_API PFboolean pfIsEnabledLight(PFsizei light);
+PF_API void pfLightf(PFsizei light, PFenum param, PFfloat value);
 PF_API void pfLightfv(PFsizei light, PFenum param, const void* value);
 
 PF_API void pfMaterialf(PFface face, PFenum param, PFfloat value);
