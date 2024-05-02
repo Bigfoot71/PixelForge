@@ -198,17 +198,13 @@ void pfGetIntegerv(PFenum pname, PFint* params)
             *params = ctx->currentMatrixMode;
             break;
 
-        case PF_MAX_MATRIX_STACK_DEPTH:
-            *params = PF_MAX_MATRIX_STACK_SIZE;
+        case PF_MAX_PROJECTION_STACK_DEPTH:
+            *params = PF_MAX_PROJECTION_STACK_SIZE;
             break;
 
-        //case PF_MAX_PROJECTION_STACK_DEPTH:
-        //    *params = PF_MAX_MATRIX_PROJECTION_STACK_SIZE;
-        //    break;
-
-        //case PF_MAX_MODELVIEW_STACK_DEPTH:
-        //    *params = PF_MAX_MATRIX_MODELVIEW_STACK_SIZE;
-        //    break;
+        case PF_MAX_MODELVIEW_STACK_DEPTH:
+            *params = PF_MAX_MODELVIEW_STACK_SIZE;
+            break;
 
         //case PF_MAX_TEXTURE_STACK_DEPTH:
         //    *params = PF_MAX_MATRIX_TEXTURE_STACK_SIZE;

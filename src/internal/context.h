@@ -78,55 +78,55 @@ typedef struct {
 
 struct PFctx {
 
-    PFframebuffer mainFramebuffer;                      ///< Screen buffer for rendering
-    PFframebuffer *currentFramebuffer;                  ///< Pointer to the current framebuffer
+    PFframebuffer mainFramebuffer;                                  ///< Screen buffer for rendering
+    PFframebuffer *currentFramebuffer;                              ///< Pointer to the current framebuffer
 
-    PFint viewportX, viewportY;                         ///< X and Y coordinates of the viewport
-    PFsizei viewportW, viewportH;                       ///< Width and height of the viewport
+    PFint viewportX, viewportY;                                     ///< X and Y coordinates of the viewport
+    PFsizei viewportW, viewportH;                                   ///< Width and height of the viewport
 
-    PFdrawmode currentDrawMode;                         ///< Current drawing mode (e.g., lines, triangles)
-    PFblendfunc blendFunction;                          ///< Blend function for alpha blending
+    PFdrawmode currentDrawMode;                                     ///< Current drawing mode (e.g., lines, triangles)
+    PFblendfunc blendFunction;                                      ///< Blend function for alpha blending
     PFdepthfunc depthFunction;
-    PFcolor clearColor;                                 ///< Color used to clear the screen
+    PFcolor clearColor;                                             ///< Color used to clear the screen
     PFfloat clearDepth;
 
-    PFfloat pointSize;                                  ///< Rasterized point size
-    PFfloat lineWidth;                                  ///< Rasterized line width
-    PFpolygonmode polygonMode[2];                       ///< Polygon mode for faces [0: front] [1: back]
+    PFfloat pointSize;                                              ///< Rasterized point size
+    PFfloat lineWidth;                                              ///< Rasterized line width
+    PFpolygonmode polygonMode[2];                                   ///< Polygon mode for faces [0: front] [1: back]
 
-    PFMvec3 currentNormal;                              ///< Current normal vector for lighting calculations
-    PFMvec2 currentTexcoord;                            ///< Current texture coordinates
-    PFcolor currentColor;                               ///< Current color for vertex rendering
+    PFMvec3 currentNormal;                                          ///< Current normal vector for lighting calculations
+    PFMvec2 currentTexcoord;                                        ///< Current texture coordinates
+    PFcolor currentColor;                                           ///< Current color for vertex rendering
 
-    PFvertex vertexBuffer[6];                           ///< Vertex buffer for geometry
-    int_fast8_t vertexCount;                            ///< Number of vertices in the buffer
+    PFvertex vertexBuffer[6];                                       ///< Vertex buffer for geometry
+    int_fast8_t vertexCount;                                        ///< Number of vertices in the buffer
 
-    PFMvec4 rasterPos;                                  ///< Current raster position (for pfDrawPixels)
-    PFMvec2 pixelZoom;                                  ///< Pixel zoom factor (for pfDrawPixels)
+    PFMvec4 rasterPos;                                              ///< Current raster position (for pfDrawPixels)
+    PFMvec2 pixelZoom;                                              ///< Pixel zoom factor (for pfDrawPixels)
 
     PFlight lights[PF_MAX_LIGHT_STACK];
     PFint lastActiveLight;
 
     PFmaterial faceMaterial[2];
-    PFmatcolfollowing materialColorFollowing;           ///< Material color which must follow the current color (see 'pfColorMaterial')
+    PFmatcolfollowing materialColorFollowing;                       ///< Material color which must follow the current color (see 'pfColorMaterial')
 
-    PFmatrixmode currentMatrixMode;                     ///< Current matrix mode (e.g., PF_MODELVIEW, PF_PROJECTION)
-    PFMmat4 *currentMatrix;                             ///< Pointer to the current matrix
-    PFMmat4 projection;                                 ///< Default projection matrix
-    PFMmat4 modelview;                                  ///< Default modelview matrix
-    PFMmat4 transform;                                  ///< Transformation matrix for translation, rotation, and scaling
-    PFboolean transformRequired;                        ///< Flag indicating whether transformation is required for vertices
-    PFMmat4 stack[PF_MAX_MATRIX_STACK_SIZE];            ///< Matrix stack for push/pop operations
-    PFsizei stackCounter;                               ///< Counter for matrix stack operations
+    PFmatrixmode currentMatrixMode;                                 ///< Current matrix mode (e.g., PF_MODELVIEW, PF_PROJECTION)
+    PFMmat4 *currentMatrix;                                         ///< Pointer to the current matrix
+    PFMmat4 projection;                                             ///< Default projection matrix
+    PFMmat4 modelview;                                              ///< Default modelview matrix
+    PFMmat4 stackProjection[PF_MAX_PROJECTION_STACK_SIZE];          ///< Projection matrix stack for push/pop operations
+    PFMmat4 stackModelview[PF_MAX_MODELVIEW_STACK_SIZE];            ///< Modelview matrix stack for push/pop operations
+    PFsizei stackProjectionCounter;                                 ///< Counter for matrix stack operations
+    PFsizei stackModelviewCounter;                                  ///< Counter for matrix stack operations
 
-    PFvertexattribs vertexAttribs;                      ///< Vertex attributes (e.g., normal, texture coordinates)
-    PFtexture *currentTexture;                          ///< Pointer to the current texture
+    PFvertexattribs vertexAttribs;                                  ///< Vertex attributes (e.g., normal, texture coordinates)
+    PFtexture *currentTexture;                                      ///< Pointer to the current texture
 
-    PFushort state;                                     ///< Current context state
+    PFushort state;                                                 ///< Current context state
 
-    PFshademode shadingMode;                            ///< Defines the type of shading, whether the colors are interpolated or not
-    PFface cullFace;                                    ///< Faces to cull
+    PFshademode shadingMode;                                        ///< Defines the type of shading, whether the colors are interpolated or not
+    PFface cullFace;                                                ///< Faces to cull
 
-    PFerrcode errCode;                                  ///< Contains the last error code that occurred
+    PFerrcode errCode;                                              ///< Contains the last error code that occurred
 
 };
