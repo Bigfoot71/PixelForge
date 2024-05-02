@@ -398,7 +398,7 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
 
 // Rasterization loop implementation
 
-#ifndef PF_USE_OPENMP
+#ifndef PF_SUPPORT_OPENMP
 
 // Begin/End flat triangle rasterizer macros
 
@@ -536,7 +536,7 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
     }
 
 
-#else //PF_USE_OPENMP
+#else //PF_SUPPORT_OPENMP
 
 // Begin/End flat triangle rasterizer macros
 
@@ -683,7 +683,7 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
     }
 
 
-#endif //PF_USE_OPENMP
+#endif //PF_SUPPORT_OPENMP
 
 
 /* Internal triangle 2D rasterizer function definitions */

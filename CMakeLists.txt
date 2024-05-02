@@ -13,7 +13,7 @@ option(PF_INSTALL "Install PixelForge library and headers" OFF)
 option(PF_BUILD_SHARED "Build PixelForge as a shared library" OFF)
 
 # Set optional supports
-option(PF_USE_OPENMP "Enable support for OpenMP parallelization" OFF)
+option(PF_SUPPORT_OPENMP "Enable support for OpenMP parallelization" OFF)
 
 # Set example builds
 option(PF_BUILD_EXAMPLES_RAYLIB "Build PixelForge examples for raylib" OFF)
@@ -38,12 +38,12 @@ else()
     target_compile_definitions(${PROJECT_NAME} PUBLIC PF_BUILD_STATIC)
 endif()
 
-# Enable OpenMP support if PF_USE_OPENMP is ON
-if(PF_USE_OPENMP)
+# Enable OpenMP support if PF_SUPPORT_OPENMP is ON
+if(PF_SUPPORT_OPENMP)
     find_package(OpenMP)
     if (OPENMP_FOUND)
         target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_C)
-        target_compile_definitions(${PROJECT_NAME} PUBLIC PF_USE_OPENMP)
+        target_compile_definitions(${PROJECT_NAME} PUBLIC PF_SUPPORT_OPENMP)
     endif()
 endif()
 

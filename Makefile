@@ -7,10 +7,10 @@ LDFLAGS :=
 PF_INSTALL := 0
 PF_BUILD_STATIC := 1
 PF_BUILD_SHARED := 0
-PF_USE_OPENMP := 0
+PF_SUPPORT_OPENMP := 0
 
-# Check if PF_USE_OPENMP is enabled
-ifeq ($(PF_USE_OPENMP),1)
+# Check if PF_SUPPORT_OPENMP is enabled
+ifeq ($(PF_SUPPORT_OPENMP),1)
 	CFLAGS += -fopenmp
 endif
 

@@ -85,7 +85,7 @@
 #   define PF_CLIP_EPSILON 1e-5f
 #endif //PF_CLIP_EPSILON
 
-#ifdef PF_USE_OPENMP
+#ifdef PF_SUPPORT_OPENMP
 //  Pixel threshold for parallelizing the rasterization loop
 #   ifndef PF_OPENMP_PIXEL_RASTER_THRESHOLD
 #       define PF_OPENMP_PIXEL_RASTER_THRESHOLD 1024
@@ -94,7 +94,10 @@
 #   ifndef PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD
 #       define PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD 640*480
 #   endif //PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD
-#endif //PF_USE_OPENMP
+#endif //PF_SUPPORT_OPENMP
+
+//#define PF_SUPPORT_NO_POT_TEXTURE   // Allows fetching samples from texcoords on non-power-of-two textures
+//#define PF_NO_BLINN_PHONG           // Enables perfect reflection lighting, simple Phong lighting
 
 #ifndef INV_255
 #   define INV_255 (1.0 / 255)

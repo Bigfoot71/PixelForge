@@ -31,7 +31,7 @@
 /* Current thread local-thread declaration */
 
 #if defined(__GNUC__) || defined(__clang__)
-#   if defined(PF_USE_OPENMP) && defined(__GNUC__)
+#   if defined(PF_SUPPORT_OPENMP) && defined(__GNUC__)
         // TODO: Using a static global variable with __thread in GCC 11.4 seems to cause segmentation faults at runtime.
         //       I haven't been able to obtain more information through debugging and some research. To investigate further.
         static PFctx *currentCtx = NULL;
@@ -573,9 +573,9 @@ void pfClear(PFclearflag flag)
         PFcolor color = currentCtx->clearColor;
         PFfloat depth = currentCtx->clearDepth;
 
-#       ifdef PF_USE_OPENMP
+#       ifdef PF_SUPPORT_OPENMP
 #           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
-#       endif //PF_USE_OPENMP
+#       endif //PF_SUPPORT_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
             texture->pixelSetter(texture->pixels, i, color);
@@ -587,9 +587,9 @@ void pfClear(PFclearflag flag)
         PFtexture *texture = &currentCtx->currentFramebuffer->texture;
         PFcolor color = currentCtx->clearColor;
 
-#       ifdef PF_USE_OPENMP
+#       ifdef PF_SUPPORT_OPENMP
 #           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
-#       endif //PF_USE_OPENMP
+#       endif //PF_SUPPORT_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
             texture->pixelSetter(texture->pixels, i, color);
@@ -600,9 +600,9 @@ void pfClear(PFclearflag flag)
         PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
         PFfloat depth = currentCtx->clearDepth;
 
-#       ifdef PF_USE_OPENMP
+#       ifdef PF_SUPPORT_OPENMP
 #           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
-#       endif //PF_USE_OPENMP
+#       endif //PF_SUPPORT_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
             zbuffer[i] = depth;
