@@ -502,14 +502,26 @@ PFcolor pfGetTexturePixel(const PFtexture* texture, PFsizei x, PFsizei y)
 
 void pfSetTextureSample(PFtexture* texture, PFfloat u, PFfloat v, PFcolor color)
 {
+#ifdef PF_SUPPORT_NO_POT_TEXTURE
+    PFsizei x = (PFsizei)((u - (PFint)u)*(texture->width - 1)) % texture->width;
+    PFsizei y = (PFsizei)((v - (PFint)v)*(texture->height - 1)) % texture->height;
+#else
     PFsizei x = (PFsizei)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
     PFsizei y = (PFsizei)((v - (PFint)v)*(texture->height - 1)) & (texture->height - 1);
+#endif //PF_SUPPORT_NO_POT_TEXTURE
+
     texture->pixelSetter(texture->pixels, y*texture->width + x, color);
 }
 
 PFcolor pfGetTextureSample(const PFtexture* texture, PFfloat u, PFfloat v)
 {
+#ifdef PF_SUPPORT_NO_POT_TEXTURE
+    PFsizei x = (PFsizei)((u - (PFint)u)*(texture->width - 1)) % texture->width;
+    PFsizei y = (PFsizei)((v - (PFint)v)*(texture->height - 1)) % texture->height;
+#else
     PFsizei x = (PFsizei)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
     PFsizei y = (PFsizei)((v - (PFint)v)*(texture->height - 1)) & (texture->height - 1);
+#endif //PF_SUPPORT_NO_POT_TEXTURE
+
     return texture->pixelGetter(texture->pixels, y*texture->width + x);
 }
