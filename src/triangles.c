@@ -1153,9 +1153,9 @@ static PFcolor Process_Light(const PFlight* light, PFcolor ambient, PFcolor texe
     PFfloat diff = fmaxf(pfmVec3Dot(normal, lightDir), 0.0f);
 
     PFcolor diffuse = pfBlendMultiplicative(light->diffuse, texel);
-    diffuse.r = (PFubyte)((PFfloat)diffuse.r * diff);
-    diffuse.g = (PFubyte)((PFfloat)diffuse.g * diff);
-    diffuse.b = (PFubyte)((PFfloat)diffuse.b * diff);
+    diffuse.r = (PFubyte)((PFfloat)diffuse.r*diff);
+    diffuse.g = (PFubyte)((PFfloat)diffuse.g*diff);
+    diffuse.b = (PFubyte)((PFfloat)diffuse.b*diff);
 
     // specular
 #ifndef PF_PHONG_REFLECTION
@@ -1173,15 +1173,15 @@ static PFcolor Process_Light(const PFlight* light, PFcolor ambient, PFcolor texe
 #endif
 
     const PFcolor specular = {
-        (PFubyte)((PFfloat)light->specular.r * spec),
-        (PFubyte)((PFfloat)light->specular.g * spec),
-        (PFubyte)((PFfloat)light->specular.b * spec),
+        (PFubyte)((PFfloat)light->specular.r*spec),
+        (PFubyte)((PFfloat)light->specular.g*spec),
+        (PFubyte)((PFfloat)light->specular.b*spec),
         255
     };
 
     // spotlight (soft edges)
     PFfloat intensity = 1.0f;
-    if (light->cutoff != 180)
+    if (light->cutoff < 180)
     {
         PFMvec3 negLightDir;
         pfmVec3Neg(negLightDir, light->direction);
@@ -1193,15 +1193,15 @@ static PFcolor Process_Light(const PFlight* light, PFcolor ambient, PFcolor texe
 
     // attenuation
     PFfloat attenuation = 1.0f;
-    if (light->attLinear != 0.0f || light->attQuadratic != 0.0f)
+    if (light->attLinear || light->attQuadratic)
     {
-        PFfloat distance = sqrtf(
-            lightFragPosDt[0]*lightFragPosDt[0] +
-            lightFragPosDt[1]*lightFragPosDt[1] +
-            lightFragPosDt[2]*lightFragPosDt[2]);
+        PFfloat distanceSq = lightFragPosDt[0]*lightFragPosDt[0] +
+                             lightFragPosDt[1]*lightFragPosDt[1] +
+                             lightFragPosDt[2]*lightFragPosDt[2];
 
-        attenuation = 1.0f/(light->attConstant + light->attLinear*distance +
-            light->attQuadratic*(distance*distance));
+        PFfloat distance = sqrtf(distanceSq);
+
+        attenuation = 1.0f/(light->attConstant + light->attLinear*distance + light->attQuadratic*distanceSq);
     }
 
     // add final light color
