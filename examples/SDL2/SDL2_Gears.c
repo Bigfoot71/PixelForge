@@ -231,7 +231,7 @@ int main(void)
                 case SDL_WINDOWEVENT:
                     if (e.window.event == SDL_WINDOWEVENT_RESIZED)
                     {
-                        // TODO: Handle this case with `pfUpdateMainBuffer`
+                        // TODO: Handle this case with `pfSetMainBuffer`
                     }
                     break;
 
