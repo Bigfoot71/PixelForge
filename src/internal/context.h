@@ -80,6 +80,7 @@ struct PFctx {
 
     PFframebuffer mainFramebuffer;                                  ///< Screen buffer for rendering
     PFframebuffer *currentFramebuffer;                              ///< Pointer to the current framebuffer
+    void *auxFramebuffer;                                           ///< Auxiliary buffer for double buffering
 
     PFint viewportX, viewportY;                                     ///< X and Y coordinates of the viewport
     PFsizei viewportW, viewportH;                                   ///< Width and height of the viewport

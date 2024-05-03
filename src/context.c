@@ -247,7 +247,7 @@ void pfDeleteContext(PFctx* ctx)
     }
 }
 
-void pfUpdateMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat)
+void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat)
 {
     if (targetBuffer == NULL || width == 0 || height == 0)
     {
@@ -296,8 +296,31 @@ void pfUpdateMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpix
         currentCtx->mainFramebuffer.zbuffer = zbuffer;
     }
 
+    currentCtx->auxFramebuffer = NULL;
+
     currentCtx->mainFramebuffer.texture = pfGenTexture(
         targetBuffer, width, height, pixelFormat);
+}
+
+PF_API void pfSetAuxBuffer(void *auxFramebuffer)
+{
+    currentCtx->auxFramebuffer = auxFramebuffer;
+}
+
+PF_API void pfSwapBuffers(void)
+{
+    if (currentCtx->auxFramebuffer == NULL)
+    {
+        currentCtx->errCode = PF_INVALID_OPERATION;
+        return;
+    }
+
+    void *pM = currentCtx->currentFramebuffer->texture.pixels;
+    void *pA = currentCtx->auxFramebuffer;
+
+    pM = (void*)((uintptr_t)pM ^ (uintptr_t)pA);
+    pA = (void*)((uintptr_t)pM ^ (uintptr_t)pA);
+    pM = (void*)((uintptr_t)pM ^ (uintptr_t)pA);
 }
 
 PFctx* pfGetCurrentContext(void)

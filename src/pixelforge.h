@@ -409,7 +409,10 @@ PF_API void pfDeleteContext(PFctx* ctx);
 // NOTE 1: If you have defined custom pixel getters/setters, you will need to reassign them.
 // NOTE 2: If reallocation of the main depth buffer fails, the old pixel buffer will be retained.
 // NOTE 3: Does not free the previous pixel buffer provided, its lifespan management is your responsibility.
-PF_API void pfUpdateMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat);
+// NOTE 4: If you have defined an auxiliary buffer it will be automatically deactivated when changing the main buffer.
+PF_API void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat);
+PF_API void pfSetAuxBuffer(void *auxFramebuffer);
+PF_API void pfSwapBuffers(void);
 
 PF_API PFctx* pfGetCurrentContext(void);
 PF_API void pfMakeCurrent(PFctx* ctx);
