@@ -1779,5 +1779,5 @@ PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFcolor v3, PFflo
 
 PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
 {
-    return (w1 >= w2 && w1 >= w3) ? v1 : (w2 >= w3) ? v2 : v3;
+    return ((w1 > w2) & (w1 > w3)) ? v1 : (w2 >= w3) ? v2 : v3;
 }
