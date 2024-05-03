@@ -16,6 +16,7 @@ option(PF_BUILD_SHARED "Build PixelForge as a shared library" OFF)
 option(PF_SUPPORT_OPENMP "Enable support for OpenMP parallelization" OFF)
 
 # Set example builds
+option(PF_BUILD_EXAMPLES_LINUX_FB "Build PixelForge examples for Linux '/dev/fb0'" OFF)
 option(PF_BUILD_EXAMPLES_RAYLIB "Build PixelForge examples for raylib" OFF)
 option(PF_BUILD_EXAMPLES_WINAPI "Build PixelForge examples for WINAPI" OFF)
 option(PF_BUILD_EXAMPLES_SDL2 "Build PixelForge examples for SDL2" OFF)
