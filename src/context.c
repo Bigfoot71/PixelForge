@@ -315,12 +315,9 @@ PF_API void pfSwapBuffers(void)
         return;
     }
 
-    void *pM = currentCtx->currentFramebuffer->texture.pixels;
-    void *pA = currentCtx->auxFramebuffer;
-
-    pM = (void*)((uintptr_t)pM ^ (uintptr_t)pA);
-    pA = (void*)((uintptr_t)pM ^ (uintptr_t)pA);
-    pM = (void*)((uintptr_t)pM ^ (uintptr_t)pA);
+    void *tmp = currentCtx->currentFramebuffer->texture.pixels;
+    currentCtx->currentFramebuffer->texture.pixels = currentCtx->auxFramebuffer;
+    currentCtx->auxFramebuffer = tmp;
 }
 
 PFctx* pfGetCurrentContext(void)
