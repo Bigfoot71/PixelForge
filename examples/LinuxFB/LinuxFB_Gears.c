@@ -256,26 +256,6 @@ int main(void)
         exit(1);
     }
 
-    // Allocate two frame buffers
-    char* frontBuffer = (char*)malloc(screensize);
-    if (frontBuffer == NULL)
-    {
-        perror("Error allocating front buffer");
-        munmap(fbMem, screensize);
-        close(fbFd);
-        exit(1);
-    }
-
-    char* backBuffer = (char*)malloc(screensize);
-    if (backBuffer == NULL)
-    {
-        perror("Error allocating back buffer");
-        free(frontBuffer);
-        munmap(fbMem, screensize);
-        close(fbFd);
-        exit(1);
-    }
-
     // Opening keyboard input device
     // NOTE: event2 may change depending on your system
     /*
@@ -286,20 +266,28 @@ int main(void)
     }
     */
 
-    // Initialize frame buffers with framebuffer data
-    memcpy(frontBuffer, fbMem, screensize);
-    memcpy(backBuffer, fbMem, screensize);
+    // Allocate second buffer
+    // NOTE: to avoid tearing, this is not the best solution
+    char* buffer = (char*)malloc(screensize);
+    if (buffer == NULL)
+    {
+        perror("Error allocating back buffer");
+        free(buffer);
+        munmap(fbMem, screensize);
+        close(fbFd);
+        exit(1);
+    }
+
+    // Initialize buffer with framebuffer data
+    memcpy(buffer, fbMem, screensize);
 
     // Creating the PixelForge rendering context
-    PFctx *ctx = pfCreateContext(backBuffer, vinfo.xres_virtual, vinfo.yres_virtual, PF_PIXELFORMAT_R8G8B8);
+    PFctx *ctx = pfCreateContext(buffer, vinfo.xres_virtual, vinfo.yres_virtual, PF_PIXELFORMAT_R8G8B8);
     pfMakeCurrent(ctx);
 
     // Definition of custom pixel get/set function
     pfSetDefaultPixelGetter(PixelGetter);
     pfSetDefaultPixelSetter(PixelSetter);
-
-    // Set the backBuffer as auxiliary buffer
-    pfSetAuxBuffer(frontBuffer);
 
     // Init and reshape
     Gears_Init();
@@ -351,22 +339,15 @@ int main(void)
         angle += 90 * 0.016f;
         Gears_Draw();
 
-        // Swap buffers (frontBuffer becomes backBuffer and vice versa)
-        pfSwapBuffers();
-
-        // Copy the content of backBuffer into the framebuffer
-        memcpy(fbMem, backBuffer, screensize);
+        // Copy the content of buffer into the framebuffer
+        memcpy(fbMem, buffer, screensize);
 
         // Wait for a short while (about 16 ms)
         usleep(16000);
     }
 
     // Free allocated memory
-    free(frontBuffer);
-    free(backBuffer);
-
-    // Closing keyboard input device
-    //close(fd);
+    free(buffer);
 
     // Close framebuffer
     munmap(fbMem, screensize);
