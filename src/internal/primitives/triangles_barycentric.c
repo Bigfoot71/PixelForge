@@ -207,7 +207,7 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
                 // Division of texture coordinates by the Z axis (perspective correct)
                 pfmVec2Scale(polygon[i].texcoord, polygon[i].texcoord, polygon[i].homogeneous[2]);
 
-                // Division of XY coordinates by weight (perspective correct)
+                // Division of XY coordinates by weight
                 PFfloat invW = 1.0f / polygon[i].homogeneous[3];
                 polygon[i].homogeneous[0] *= invW;
                 polygon[i].homogeneous[1] *= invW;
