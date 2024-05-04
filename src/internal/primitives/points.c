@@ -17,7 +17,8 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "internal/context.h"
+#include "../context.h"
+#include "../../pfm.h"
 
 /* Including internal function prototypes */
 

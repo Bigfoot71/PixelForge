@@ -15,7 +15,15 @@ ifeq ($(PF_SUPPORT_OPENMP),1)
 endif
 
 # Source files
-SRCS := $(wildcard src/*.c)
+SRCS :=	src/internal/primitives/triangles.c \
+		src/internal/primitives/points.c	\
+		src/internal/primitives/lines.c		\
+		src/framebuffer.c					\
+		src/texture.c						\
+		src/context.c						\
+		src/getter.c						\
+		src/blend.c							\
+		src/depth.c
 
 # Header files
 HDRS := $(wildcard src/*.h)

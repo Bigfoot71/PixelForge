@@ -23,7 +23,16 @@ option(PF_BUILD_EXAMPLES_SDL2 "Build PixelForge examples for SDL2" OFF)
 option(PF_BUILD_EXAMPLES_X11 "Build PixelForge examples for X11" OFF)
 
 # Defining source files
-file(GLOB SRCS ${PF_ROOT_PATH}/src/*.c)
+set(SRCS src/internal/primitives/triangles.c
+         src/internal/primitives/points.c
+         src/internal/primitives/lines.c
+         src/framebuffer.c
+         src/texture.c
+         src/context.c
+         src/getter.c
+         src/blend.c
+         src/depth.c)
+
 file(GLOB HDRS ${PF_ROOT_PATH}/src/*.h)
 
 # Common compilation options
