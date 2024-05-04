@@ -19,6 +19,7 @@
 
 #include "../context.h"
 #include "../../pfm.h"
+#include <stdlib.h>
 
 /* Including internal function prototypes */
 
@@ -201,6 +202,8 @@ void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict v
 
 void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 {
+    /* Get Some Values*/
+
     PFctx *ctx = pfGetCurrentContext();
     PFframebuffer *fbDst = ctx->currentFramebuffer;
 
@@ -212,94 +215,77 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
     PFsizei wDst = fbDst->texture.width;
     PFfloat *zbDst = fbDst->zbuffer;
 
-    PFfloat dx = v2->screen[0] - v1->screen[0];
-    PFfloat dy = v2->screen[1] - v1->screen[1];
+    PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    PFfloat z1 = v1->homogeneous[2];
+    PFfloat z2 = v2->homogeneous[2];
+    PFcolor c1 = v1->color;
+    PFcolor c2 = v2->color;
 
-    if (dx == 0 && dy == 0)
+    /* Draw Line */
+
+    PFint shortLen = y2 - y1;
+    PFint longLen = x2 - x1;
+    PFboolean yLonger = 0;
+
+    if (abs(shortLen) > abs(longLen))
     {
-        PFsizei pOffset = v1->screen[0]*wDst + v1->screen[1];
-        pixelSetter(bufDst, pOffset, blendFunc(v1->color, pixelGetter(bufDst, pOffset)));
-        zbDst[pOffset] = v1->homogeneous[2];
-        return;
+        PFint tmp = shortLen;
+        shortLen = longLen;
+        longLen = tmp;
+        yLonger = 1;
     }
 
-    PFfloat adx = fabsf(dx);
-    PFfloat ady = fabsf(dy);
+    PFfloat invEndVal = 1.0f/longLen;
+    PFint endVal = longLen;
+    PFint sgnInc = 1;
 
-    if (adx > ady)
+    if (longLen < 0)
     {
-        PFfloat invAdx = 0;
-        PFfloat slope = 0;
+        longLen = -longLen;
+        sgnInc = -1;
+    }
 
-        if (adx > PF_CLIP_EPSILON)
+    PFint decInc = (longLen == 0) ? 0
+        : (shortLen << 16) / longLen;
+
+    PFint j = 0;
+    if (yLonger)
+    {	
+        for (PFint i = 0; i != endVal; i += sgnInc, j += decInc)
         {
-            invAdx = 1.0f/adx;
-            slope = dy/dx;
-        }
+            PFfloat t = (PFfloat)i*invEndVal;
 
-        PFfloat xMin, xMax;
-        PFfloat zMin, zMax;
-        if (v1->screen[0] < v2->screen[0])
-        {
-            xMin = v1->screen[0], xMax = v2->screen[0];
-            zMin = v1->homogeneous[2], zMax = v2->homogeneous[2];
-        }
-        else
-        {
-            xMin = v2->screen[0], xMax = v1->screen[0];
-            zMin = v2->homogeneous[2], zMax = v1->homogeneous[2];
-        }
+            PFint x = x1 + (j >> 16), y = y1 + i;
+            PFfloat z = z1 + t*(z2 - z1);
 
-        for (PFfloat x = xMin; x <= xMax; x++)
-        {
-            PFfloat t = (x - xMin)*invAdx;
-            PFfloat z = zMin + t*(zMax - zMin);
-            PFfloat y = v1->screen[1] + (x - v1->screen[0])*slope;
+            PFsizei pOffset = (PFint)y*wDst + (PFint)x;
 
-            PFsizei pOffset = y*wDst + x;
+            PFcolor src = Helper_LerpColor(c1, c2, t);
+            PFcolor dst = pixelGetter(bufDst, pOffset);
 
-            pixelSetter(bufDst, pOffset, blendFunc(
-                Helper_LerpColor(v1->color, v2->color, t),
-                pixelGetter(bufDst, pOffset)));
+            PFcolor finalColor = blendFunc(src, dst);
+            pixelSetter(bufDst, pOffset, finalColor);
 
             zbDst[pOffset] = z;
         }
     }
     else
     {
-        PFfloat invAdy = 0;
-        PFfloat slope = 0;
-
-        if (ady > PF_CLIP_EPSILON)
+        for (PFint i = 0; i != endVal; i += sgnInc, j += decInc)
         {
-            invAdy = 1.0f/ady;
-            slope = dx/dy;
-        }
+            PFfloat t = (PFfloat)i*invEndVal;
 
-        PFfloat yMin, yMax;
-        PFfloat zMin, zMax;
-        if (v1->screen[1] < v2->screen[1])
-        {
-            yMin = v1->screen[1], yMax = v2->screen[1];
-            zMin = v1->homogeneous[2], zMax = v2->homogeneous[2];
-        }
-        else
-        {
-            yMin = v2->screen[1], yMax = v1->screen[1];
-            zMin = v2->homogeneous[2], zMax = v1->homogeneous[2];
-        }
+            PFint x = x1 + i, y = y1 + (j >> 16);
+            PFfloat z = z1 + t*(z2 - z1);
 
-        for (PFfloat y = yMin; y <= yMax; y++)
-        {
-            PFfloat t = (y - yMin)*invAdy;
-            PFfloat z = zMin + t*(zMax - zMin);
-            PFfloat x = v1->screen[0] + (y - v1->screen[1])*slope;
+            PFsizei pOffset = (PFint)y*wDst + (PFint)x;
 
-            PFsizei pOffset = y*wDst + x;
+            PFcolor src = Helper_LerpColor(c1, c2, t);
+            PFcolor dst = pixelGetter(bufDst, pOffset);
 
-            pixelSetter(bufDst, pOffset, blendFunc(
-                Helper_LerpColor(v1->color, v2->color, t),
-                pixelGetter(bufDst, pOffset)));
+            PFcolor finalColor = blendFunc(src, dst);
+            pixelSetter(bufDst, pOffset, finalColor);
 
             zbDst[pOffset] = z;
         }
@@ -308,6 +294,8 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
 void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
 {
+    /* Get Some Values*/
+
     PFctx *ctx = pfGetCurrentContext();
     PFframebuffer *fbDst = ctx->currentFramebuffer;
 
@@ -319,64 +307,60 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
     PFsizei wDst = fbDst->texture.width;
     PFfloat *zbDst = fbDst->zbuffer;
 
-    PFfloat dx = v2->screen[0] - v1->screen[0];
-    PFfloat dy = v2->screen[1] - v1->screen[1];
+    PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    PFfloat z1 = v1->homogeneous[2];
+    PFfloat z2 = v2->homogeneous[2];
+    PFcolor c1 = v1->color;
+    PFcolor c2 = v2->color;
 
-    if (dx == 0 && dy == 0)
+    /* Draw Line */
+
+    PFint shortLen = y2 - y1;
+    PFint longLen = x2 - x1;
+    PFboolean yLonger = 0;
+
+    if (abs(shortLen) > abs(longLen))
     {
-        PFsizei pOffset = v1->screen[0]*wDst + v1->screen[1];
-        PFfloat *zp = zbDst + pOffset;
-
-        if (v1->homogeneous[2] < *zp)
-        {
-            pixelSetter(bufDst, pOffset, blendFunc(v1->color, pixelGetter(bufDst, pOffset)));
-            *zp = v1->homogeneous[2];
-        }
-
-        return;
+        PFint tmp = shortLen;
+        shortLen = longLen;
+        longLen = tmp;
+        yLonger = 1;
     }
 
-    PFfloat adx = fabsf(dx);
-    PFfloat ady = fabsf(dy);
+    PFfloat invEndVal = 1.0f/longLen;
+    PFint endVal = longLen;
+    PFint sgnInc = 1;
 
-    if (adx > ady)
+    if (longLen < 0)
     {
-        PFfloat invAdx = 0;
-        PFfloat slope = 0;
+        longLen = -longLen;
+        sgnInc = -1;
+    }
 
-        if (adx > PF_CLIP_EPSILON)
-        {
-            invAdx = 1.0f/adx;
-            slope = dy/dx;
-        }
+    PFint decInc = (longLen == 0) ? 0
+        : (shortLen << 16) / longLen;
 
-        PFfloat xMin, xMax;
-        PFfloat zMin, zMax;
-        if (v1->screen[0] < v2->screen[0])
+    PFint j = 0;
+    if (yLonger)
+    {	
+        for (PFint i = 0; i != endVal; i += sgnInc, j += decInc)
         {
-            xMin = v1->screen[0], xMax = v2->screen[0];
-            zMin = v1->homogeneous[2], zMax = v2->homogeneous[2];
-        }
-        else
-        {
-            xMin = v2->screen[0], xMax = v1->screen[0];
-            zMin = v2->homogeneous[2], zMax = v1->homogeneous[2];
-        }
+            PFfloat t = (PFfloat)i*invEndVal;
 
-        for (PFfloat x = xMin; x <= xMax; x++)
-        {
-            PFfloat t = (x - xMin)*invAdx;
-            PFfloat z = zMin + t*(zMax - zMin);
-            PFfloat y = v1->screen[1] + (x - v1->screen[0])*slope;
+            PFint x = x1 + (j >> 16), y = y1 + i;
+            PFfloat z = z1 + t*(z2 - z1);
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
             PFfloat *zp = zbDst + pOffset;
 
             if (ctx->depthFunction(z, *zp))
             {
-                pixelSetter(bufDst, pOffset, blendFunc(
-                    Helper_LerpColor(v1->color, v2->color, t),
-                    pixelGetter(bufDst, pOffset)));
+                PFcolor src = Helper_LerpColor(c1, c2, t);
+                PFcolor dst = pixelGetter(bufDst, pOffset);
+
+                PFcolor finalColor = blendFunc(src, dst);
+                pixelSetter(bufDst, pOffset, finalColor);
 
                 *zp = z;
             }
@@ -384,42 +368,23 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
     }
     else
     {
-        PFfloat invAdy = 0;
-        PFfloat slope = 0;
+        for (PFint i = 0; i != endVal; i += sgnInc, j += decInc)
+        {
+            PFfloat t = (PFfloat)i*invEndVal;
 
-        if (ady > PF_CLIP_EPSILON)
-        {
-            invAdy = 1.0f/ady;
-            slope = dx/dy;
-        }
-
-        PFfloat yMin, yMax;
-        PFfloat zMin, zMax;
-        if (v1->screen[1] < v2->screen[1])
-        {
-            yMin = v1->screen[1], yMax = v2->screen[1];
-            zMin = v1->homogeneous[2], zMax = v2->homogeneous[2];
-        }
-        else
-        {
-            yMin = v2->screen[1], yMax = v1->screen[1];
-            zMin = v2->homogeneous[2], zMax = v1->homogeneous[2];
-        }
-
-        for (PFfloat y = yMin; y <= yMax; y++)
-        {
-            PFfloat t = (y - yMin)*invAdy;
-            PFfloat z = zMin + t*(zMax - zMin);
-            PFfloat x = v1->screen[0] + (y - v1->screen[1])*slope;
+            PFint x = x1 + i, y = y1 + (j >> 16);
+            PFfloat z = z1 + t*(z2 - z1);
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
             PFfloat *zp = zbDst + pOffset;
 
             if (ctx->depthFunction(z, *zp))
             {
-                pixelSetter(bufDst, pOffset, blendFunc(
-                    Helper_LerpColor(v1->color, v2->color, t),
-                    pixelGetter(bufDst, pOffset)));
+                PFcolor src = Helper_LerpColor(c1, c2, t);
+                PFcolor dst = pixelGetter(bufDst, pOffset);
+
+                PFcolor finalColor = blendFunc(src, dst);
+                pixelSetter(bufDst, pOffset, finalColor);
 
                 *zp = z;
             }
