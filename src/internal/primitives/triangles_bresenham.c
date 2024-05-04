@@ -225,55 +225,6 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
     return is2D;
 }
 
-
-/*
-    Macros for preparing rendering areas as well as
-    barycentric coordinates and their incrementation steps
-*/
-
-#define PF_PREPARE_TRIANGLE() \
-    \
-    switch (faceToRender) \
-    { \
-        case PF_FRONT: \
-            if ((v2->screen[0] - v1->screen[0])*(v3->screen[1] - v1->screen[1]) - \
-                (v3->screen[0] - v1->screen[0])*(v2->screen[1] - v1->screen[1]) >= 0) return; \
-            break; \
-        case PF_BACK: \
-            if ((v2->screen[0] - v1->screen[0])*(v3->screen[1] - v1->screen[1]) - \
-                (v3->screen[0] - v1->screen[0])*(v2->screen[1] - v1->screen[1]) <= 0) return; \
-            break; \
-        default: \
-            break; \
-    } \
-    /*
-        Sort vertices by y-coordinate ascending order v1.y <= v2.y <= v3.y
-    */ \
-    if (v2->screen[1] < v1->screen[1]) { const PFvertex* vTmp = v1; v1 = v2, v2 = vTmp; } \
-    if (v3->screen[1] < v1->screen[1]) { const PFvertex* vTmp = v1; v1 = v3, v3 = vTmp; } \
-    if (v3->screen[1] < v2->screen[1]) { const PFvertex* vTmp = v2; v2 = v3, v3 = vTmp; } \
-
-
-#define PF_SET_TRIANGLE_COLOR_LOCAL() \
-    \
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2]; \
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2]; \
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2]; \
-    \
-    const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color; \
-    \
-    const PFfloat invTotalHeight = 1.0f/(y3 - y1 + 1); \
-    const PFfloat invSegmentHeight21 = 1.0f/(y2 - y1 + 1); \
-    const PFfloat invSegmentHeight32 = 1.0f/(y3 - y2 + 1); \
-
-
-#define PF_SET_TRIANGLE_TEXTURE_LOCAL() \
-    \
-    PF_SET_TRIANGLE_COLOR_LOCAL(); \
-    \
-    const PFfloat s1 = v1->texcoord[0], s2 = v2->texcoord[0], s3 = v3->texcoord[0]; \
-    const PFfloat t1 = v1->texcoord[1], t2 = v2->texcoord[1], t3 = v3->texcoord[1]; \
-
 /* ----------------------------------------------- */
 
 static PFcolor Helper_LerpColor(PFcolor a, PFcolor b, PFfloat t)
