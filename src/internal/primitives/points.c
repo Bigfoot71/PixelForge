@@ -50,10 +50,10 @@ PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFMmat4 mvp)
 
     pfInternal_HomogeneousToScreen(v);
 
-    return v->screen[0] >= ctx->viewportX
-        && v->screen[1] >= ctx->viewportY
-        && v->screen[0] <= ctx->viewportX + ctx->viewportW
-        && v->screen[1] <= ctx->viewportY + ctx->viewportH;
+    return v->screen[0] >= ctx->vpMin[0]
+        && v->screen[1] >= ctx->vpMin[1]
+        && v->screen[0] <= ctx->vpMax[0]
+        && v->screen[1] <= ctx->vpMax[1];
 }
 
 void Rasterize_Point_NODEPTH(const PFvertex* point)

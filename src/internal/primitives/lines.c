@@ -62,10 +62,10 @@ static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2
 {
     const PFctx *ctx = pfGetCurrentContext();
 
-    PFint xMin = ctx->viewportX;
-    PFint yMin = ctx->viewportY;
-    PFint xMax = ctx->viewportX + ctx->viewportW;
-    PFint yMax = ctx->viewportY + ctx->viewportH;
+    PFint xMin = ctx->vpMin[0];
+    PFint yMin = ctx->vpMin[1];
+    PFint xMax = ctx->vpMax[0];
+    PFint yMax = ctx->vpMax[1];
 
     PFboolean accept = PF_FALSE;
     PFubyte code0, code1;
@@ -99,23 +99,23 @@ static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2
 
         if (code0 & CLIP_LEFT)
         {
-            v1->screen[1] += (ctx->viewportX - v1->screen[0])*m;
-            v1->screen[0] = ctx->viewportX;
+            v1->screen[1] += (ctx->vpMin[0] - v1->screen[0])*m;
+            v1->screen[0] = ctx->vpMin[0];
         }
         else if (code0 & CLIP_RIGHT)
         {
-            v1->screen[1] += (ctx->viewportW - v1->screen[0])*m;
-            v1->screen[0] = ctx->viewportW;
+            v1->screen[1] += (ctx->vpMax[0] - v1->screen[0])*m;
+            v1->screen[0] = ctx->vpMax[0];
         }
         else if (code0 & CLIP_BOTTOM)
         {
-            if (m) v1->screen[0] += (ctx->viewportY - v1->screen[1]) / m;
-            v1->screen[1] = ctx->viewportY;
+            if (m) v1->screen[0] += (ctx->vpMin[1] - v1->screen[1]) / m;
+            v1->screen[1] = ctx->vpMin[1];
         }
         else if (code0 & CLIP_TOP)
         {
-            if (m) v1->screen[0] += (ctx->viewportH - v1->screen[1]) / m;
-            v1->screen[1] = ctx->viewportH;
+            if (m) v1->screen[0] += (ctx->vpMax[1] - v1->screen[1]) / m;
+            v1->screen[1] = ctx->vpMax[1];
         }
     }
 

@@ -82,8 +82,11 @@ struct PFctx {
     PFframebuffer *currentFramebuffer;                              ///< Pointer to the current framebuffer
     void *auxFramebuffer;                                           ///< Auxiliary buffer for double buffering
 
-    PFint viewportX, viewportY;                                     ///< X and Y coordinates of the viewport
-    PFsizei viewportW, viewportH;                                   ///< Width and height of the viewport
+    PFint vpPosition[2];                                            ///< Represents the top-left corner of the viewport
+    PFsizei vpDimensions[2];                                        ///< Represents the dimensions of the viewport (minus one)
+
+    PFint vpMin[2];                                                 ///< Represents the minimum renderable point of the viewport (top-left)
+    PFint vpMax[2];                                                 ///< Represents the maximum renderable point of the viewport (bottom-right)
 
     PFdrawmode currentDrawMode;                                     ///< Current drawing mode (e.g., lines, triangles)
     PFblendfunc blendFunction;                                      ///< Blend function for alpha blending
