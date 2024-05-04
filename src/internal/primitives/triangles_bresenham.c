@@ -455,10 +455,11 @@ static void Rasterize_Line_TEXTURE_PERSPECTIVE_NODEPTH(PFctx* ctx,
 
         PFint x = x1 + iX, y = y1 + (iY >> 16);
         PFfloat z = 1.0f/(z1 + t*(z2 - z1));
-        PFfloat u = u1 + t*(u2 - u1);
-        PFfloat v = v1 + t*(v2 - v1);
 
-        u *= z, v *= z; // NOTE: Divided by z, correct perspective (z is actually the reciprocal)
+        // NOTE 1: Divided by 'z', correct perspective
+        // NOTE 2: 'z' is actually the reciprocal
+        PFfloat u = z*(u1 + t*(u2 - u1));
+        PFfloat v = z*(v1 + t*(v2 - v1));
 
         PFsizei pOffset = (PFint)y*wDst + (PFint)x;
 
@@ -506,10 +507,11 @@ static void Rasterize_Line_TEXTURE_PERSPECTIVE_DEPTH(PFctx* ctx,
 
         PFint x = x1 + iX, y = y1 + (iY >> 16);
         PFfloat z = 1.0f/(z1 + t*(z2 - z1));
-        PFfloat u = u1 + t*(u2 - u1);
-        PFfloat v = v1 + t*(v2 - v1);
 
-        u *= z, v *= z; // NOTE: Divided by z, correct perspective (z is actually the reciprocal)
+        // NOTE 1: Divided by 'z', correct perspective
+        // NOTE 2: 'z' is actually the reciprocal
+        PFfloat u = z*(u1 + t*(u2 - u1));
+        PFfloat v = z*(v1 + t*(v2 - v1));
 
         PFsizei pOffset = (PFint)y*wDst + (PFint)x;
         PFfloat *zp = zbDst + pOffset;
@@ -580,7 +582,7 @@ void Rasterize_Triangle_COLOR_NODEPTH_2D(PFface faceToRender, const PFvertex* v1
     const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
     const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
 
-    // Rasterisation de la première partie du triangle (y1 à y2)
+    // Rasterization of the first part of the triangle (y1 to y2)
     for (PFint y = y1; y < y2; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -607,7 +609,7 @@ void Rasterize_Triangle_COLOR_NODEPTH_2D(PFface faceToRender, const PFvertex* v1
         Rasterize_Line_COLOR_NODEPTH(ctx, xA, y, zA, xB, y, zB, cA, cB);
     }
 
-    // Rasterisation de la deuxième partie du triangle (y2 à y3)
+    // Rasterization of the second part of the triangle (y2 to y3)
     for (PFint y = y2; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -659,7 +661,7 @@ void Rasterize_Triangle_COLOR_DEPTH_2D(PFface faceToRender, const PFvertex* v1, 
     const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
     const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
 
-    // Rasterisation de la première partie du triangle (y1 à y2)
+    // Rasterization of the first part of the triangle (y1 to y2)
     for (PFint y = y1; y < y2; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -686,7 +688,7 @@ void Rasterize_Triangle_COLOR_DEPTH_2D(PFface faceToRender, const PFvertex* v1, 
         Rasterize_Line_COLOR_DEPTH(ctx, xA, y, zA, xB, y, zB, cA, cB);
     }
 
-    // Rasterisation de la deuxième partie du triangle (y2 à y3)
+    // Rasterization of the second part of the triangle (y2 to y3)
     for (PFint y = y2; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -741,7 +743,7 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_2D(PFface faceToRender, const PFvertex* 
     const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
     const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
 
-    // Rasterisation de la première partie du triangle (y1 à y2)
+    // Rasterization of the first part of the triangle (y1 to y2)
     for (PFint y = y1; y < y2; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -775,7 +777,7 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_2D(PFface faceToRender, const PFvertex* 
         Rasterize_Line_TEXTURE_NODEPTH(ctx, xA, y, zA, uA, vA, xB, y, zB, uB, vB, cA, cB);
     }
 
-    // Rasterisation de la deuxième partie du triangle (y2 à y3)
+    // Rasterization of the second part of the triangle (y2 to y3)
     for (PFint y = y2; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -837,7 +839,7 @@ void Rasterize_Triangle_TEXTURE_DEPTH_2D(PFface faceToRender, const PFvertex* v1
     const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
     const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
 
-    // Rasterisation de la première partie du triangle (y1 à y2)
+    // Rasterization of the first part of the triangle (y1 to y2)
     for (PFint y = y1; y < y2; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -871,7 +873,7 @@ void Rasterize_Triangle_TEXTURE_DEPTH_2D(PFface faceToRender, const PFvertex* v1
         Rasterize_Line_TEXTURE_DEPTH(ctx, xA, y, zA, uA, vA, xB, y, zB, uB, vB, cA, cB);
     }
 
-    // Rasterisation de la deuxième partie du triangle (y2 à y3)
+    // Rasterization of the second part of the triangle (y2 to y3)
     for (PFint y = y2; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -946,7 +948,7 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_3D(PFface faceToRender, const PFvertex* 
     const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
     const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
 
-    // Rasterisation de la première partie du triangle (y1 à y2)
+    // Rasterization of the first part of the triangle (y1 to y2)
     for (PFint y = y1; y < y2; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -980,7 +982,7 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_3D(PFface faceToRender, const PFvertex* 
         Rasterize_Line_TEXTURE_PERSPECTIVE_NODEPTH(ctx, xA, y, zA, uA, vA, xB, y, zB, uB, vB, cA, cB);
     }
 
-    // Rasterisation de la deuxième partie du triangle (y2 à y3)
+    // Rasterization of the second part of the triangle (y2 to y3)
     for (PFint y = y2; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -1042,7 +1044,7 @@ void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1
     const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
     const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
 
-    // Rasterisation de la première partie du triangle (y1 à y2)
+    // Rasterization of the first part of the triangle (y1 to y2)
     for (PFint y = y1; y < y2; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -1076,7 +1078,7 @@ void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1
         Rasterize_Line_TEXTURE_PERSPECTIVE_DEPTH(ctx, xA, y, zA, uA, vA, xB, y, zB, uB, vB, cA, cB);
     }
 
-    // Rasterisation de la deuxième partie du triangle (y2 à y3)
+    // Rasterization of the second part of the triangle (y2 to y3)
     for (PFint y = y2; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
