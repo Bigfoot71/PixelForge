@@ -67,113 +67,6 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
 
 /* Polygon processing functions */
 
-static PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter)
-{
-    PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
-    memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
-
-    int_fast8_t inputCounter = *vertexCounter;
-    *vertexCounter = 0;
-
-    const PFvertex *prevVt = &input[inputCounter-1];
-    PFbyte prevDot = (prevVt->homogeneous[3] < PF_CLIP_EPSILON) ? -1 : 1;
-
-    for (int_fast8_t i = 0; i < inputCounter; i++)
-    {
-        PFbyte currDot = (input[i].homogeneous[3] < PF_CLIP_EPSILON) ? -1 : 1;
-
-        if (prevDot*currDot < 0)
-        {
-            polygon[(*vertexCounter)++] = Helper_LerpVertex(prevVt, &input[i], 
-                (PF_CLIP_EPSILON - prevVt->homogeneous[3]) / (input[i].homogeneous[3] - prevVt->homogeneous[3]));
-        }
-
-        if (currDot > 0)
-        {
-            polygon[(*vertexCounter)++] = input[i];
-        }
-
-        prevDot = currDot;
-        prevVt = &input[i];
-    }
-
-    return *vertexCounter > 0;
-}
-
-static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter)
-{
-    for (int_fast8_t iAxis = 0; iAxis < 3; iAxis++)
-    {
-        if (*vertexCounter == 0) return PF_FALSE;
-
-        PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
-        int_fast8_t inputCounter;
-
-        const PFvertex *prevVt;
-        PFbyte prevDot;
-
-        // Clip against first plane
-
-        memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
-        inputCounter = *vertexCounter;
-        *vertexCounter = 0;
-
-        prevVt = &input[inputCounter-1];
-        prevDot = (prevVt->homogeneous[iAxis] <= prevVt->homogeneous[3]) ? 1 : -1;
-
-        for (int_fast8_t i = 0; i < inputCounter; i++)
-        {
-            PFbyte currDot = (input[i].homogeneous[iAxis] <= input[i].homogeneous[3]) ? 1 : -1;
-
-            if (prevDot*currDot <= 0)
-            {
-                polygon[(*vertexCounter)++] = Helper_LerpVertex(prevVt, &input[i], (prevVt->homogeneous[3] - prevVt->homogeneous[iAxis]) /
-                    ((prevVt->homogeneous[3] - prevVt->homogeneous[iAxis]) - (input[i].homogeneous[3] - input[i].homogeneous[iAxis])));
-            }
-
-            if (currDot > 0)
-            {
-                polygon[(*vertexCounter)++] = input[i];
-            }
-
-            prevDot = currDot;
-            prevVt = &input[i];
-        }
-
-        if (*vertexCounter == 0) return PF_FALSE;
-
-        // Clip against opposite plane
-
-        memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
-        inputCounter = *vertexCounter;
-        *vertexCounter = 0;
-
-        prevVt = &input[inputCounter-1];
-        prevDot = (-prevVt->homogeneous[iAxis] <= prevVt->homogeneous[3]) ? 1 : -1;
-
-        for (int_fast8_t i = 0; i < inputCounter; i++)
-        {
-            PFbyte currDot = (-input[i].homogeneous[iAxis] <= input[i].homogeneous[3]) ? 1 : -1;
-
-            if (prevDot*currDot <= 0)
-            {
-                polygon[(*vertexCounter)++] = Helper_LerpVertex(prevVt, &input[i], (prevVt->homogeneous[3] + prevVt->homogeneous[iAxis]) /
-                    ((prevVt->homogeneous[3] + prevVt->homogeneous[iAxis]) - (input[i].homogeneous[3] + input[i].homogeneous[iAxis])));
-            }
-
-            if (currDot > 0)
-            {
-                polygon[(*vertexCounter)++] = input[i];
-            }
-
-            prevDot = currDot;
-            prevVt = &input[i];
-        }
-    }
-
-    return *vertexCounter > 0;
-}
-
 PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter, const PFMmat4 mvp)
 {
     for (int_fast8_t i = 0; i < *vertexCounter; i++)
@@ -198,23 +91,21 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
     }
     else
     {
-        if (Process_ClipPolygonW(polygon, vertexCounter) && Process_ClipPolygonXYZ(polygon, vertexCounter))
+        // NOTE: No need to clip triangles with the scanline method
+        for (int_fast8_t i = 0; i < *vertexCounter; i++)
         {
-            for (int_fast8_t i = 0; i < *vertexCounter; i++)
-            {
-                // Calculation of the reciprocal of Z for the perspective correct
-                polygon[i].homogeneous[2] = 1.0f / polygon[i].homogeneous[2];
+            // Calculation of the reciprocal of Z for the perspective correct
+            polygon[i].homogeneous[2] = 1.0f / polygon[i].homogeneous[2];
 
-                // Division of texture coordinates by the Z axis (perspective correct)
-                pfmVec2Scale(polygon[i].texcoord, polygon[i].texcoord, polygon[i].homogeneous[2]);
+            // Division of texture coordinates by the Z axis (perspective correct)
+            pfmVec2Scale(polygon[i].texcoord, polygon[i].texcoord, polygon[i].homogeneous[2]);
 
-                // Division of XY coordinates by weight (perspective correct)
-                PFfloat invW = 1.0f / polygon[i].homogeneous[3];
-                polygon[i].homogeneous[0] *= invW;
-                polygon[i].homogeneous[1] *= invW;
+            // Division of XY coordinates by weight (perspective correct)
+            PFfloat invW = 1.0f / polygon[i].homogeneous[3];
+            polygon[i].homogeneous[0] *= invW;
+            polygon[i].homogeneous[1] *= invW;
 
-                pfInternal_HomogeneousToScreen(&polygon[i]);
-            }
+            pfInternal_HomogeneousToScreen(&polygon[i]);
         }
     }
 
@@ -674,26 +565,54 @@ void Rasterize_Triangle_COLOR_NODEPTH_2D(PFface faceToRender, const PFvertex* v1
     PF_PREPARE_TRIANGLE();
     PF_SET_TRIANGLE_COLOR_LOCAL();
 
-    for (PFint y = y1; y <= y3; y++)
+    for (PFint y = y1; y < y2; y++)
     {
-        PFboolean secondHalf = y > y2 || (y == y2 && y2 == y3);
-        PFfloat invSegmentHeight = secondHalf ? invSegmentHeight32 : invSegmentHeight21;
-
-        PFfloat alpha = (PFfloat)(y - y1) * invTotalHeight;
-        PFfloat beta = secondHalf ? (PFfloat)(y - y2) * invSegmentHeight : (PFfloat)(y - y1) * invSegmentHeight;
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (y - y1 + 1) * invSegmentHeight21;
 
         PFfloat xA = x1 + (x3 - x1) * alpha;
-        PFfloat xB = secondHalf ? x2 + (x3 - x2) * beta : x1 + (x2 - x1) * beta;
-
+        PFfloat xB = x1 + (x2 - x1) * beta;
         PFfloat zA = z1 + (z3 - z1) * alpha;
-        PFfloat zB = secondHalf ? z2 + (z3 - z2) * beta : z1 + (z2 - z1) * beta;
+        PFfloat zB = z1 + (z2 - z1) * beta;
 
-        if (xA > xB) { PFfloat tmp = xA; xA = xB, xB = tmp; }
-        if (zA > zB) { PFfloat tmp = zA; zA = zB, zB = tmp; }
+        PFcolor cA = Helper_LerpColor(c1, c3, alpha);
+        PFcolor cB = Helper_LerpColor(c1, c2, beta);
 
-        PFfloat t = (PFfloat)(y - y1) * invTotalHeight;
-        PFcolor c1 = Helper_LerpColor(v1->color, v2->color, t);
-        PFcolor c2 = Helper_LerpColor(v1->color, v3->color, t);
+        if (xA > xB)
+        {
+            PFfloat tmp;
+            tmp = xA; xA = xB, xB = tmp;
+            tmp = zA; zA = zB, zB = tmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB, cB = cTmp;
+        }
+
+        Rasterize_Line_COLOR_NODEPTH(ctx, xA, y, zA, xB, y, zB, cA, cB);
+    }
+
+    for (PFint y = y2; y <= y3; y++)
+    {
+        PFfloat alpha = (PFfloat)(y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (PFfloat)(y - y2 + 1) * invSegmentHeight32;
+
+        PFfloat xA = x1 + (x3 - x1) * alpha;
+        PFfloat xB = x2 + (x3 - x2) * beta;
+        PFfloat zA = z1 + (z3 - z1) * alpha;
+        PFfloat zB = z2 + (z3 - z2) * beta;
+
+        PFcolor cA = Helper_LerpColor(c1, c3, alpha);
+        PFcolor cB = Helper_LerpColor(c2, c3, beta);
+
+        if (xA > xB)
+        {
+            PFfloat tmp;
+            tmp = xA; xA = xB, xB = tmp;
+            tmp = zA; zA = zB, zB = tmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB, cB = cTmp;
+        }
 
         Rasterize_Line_COLOR_NODEPTH(ctx, xA, y, zA, xB, y, zB, c1, c2);
     }
@@ -710,26 +629,54 @@ void Rasterize_Triangle_COLOR_DEPTH_2D(PFface faceToRender, const PFvertex* v1, 
     PF_PREPARE_TRIANGLE();
     PF_SET_TRIANGLE_COLOR_LOCAL();
 
-    for (PFint y = y1; y <= y3; y++)
+    for (PFint y = y1; y < y2; y++)
     {
-        PFboolean secondHalf = y > y2 || (y == y2 && y2 == y3);
-        PFfloat invSegmentHeight = secondHalf ? invSegmentHeight32 : invSegmentHeight21;
-
-        PFfloat alpha = (PFfloat)(y - y1) * invTotalHeight;
-        PFfloat beta = secondHalf ? (PFfloat)(y - y2) * invSegmentHeight : (PFfloat)(y - y1) * invSegmentHeight;
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (y - y1 + 1) * invSegmentHeight21;
 
         PFfloat xA = x1 + (x3 - x1) * alpha;
-        PFfloat xB = secondHalf ? x2 + (x3 - x2) * beta : x1 + (x2 - x1) * beta;
-
+        PFfloat xB = x1 + (x2 - x1) * beta;
         PFfloat zA = z1 + (z3 - z1) * alpha;
-        PFfloat zB = secondHalf ? z2 + (z3 - z2) * beta : z1 + (z2 - z1) * beta;
+        PFfloat zB = z1 + (z2 - z1) * beta;
 
-        if (xA > xB) { PFfloat tmp = xA; xA = xB, xB = tmp; }
-        if (zA > zB) { PFfloat tmp = zA; zA = zB, zB = tmp; }
+        PFcolor cA = Helper_LerpColor(c1, c3, alpha);
+        PFcolor cB = Helper_LerpColor(c1, c2, beta);
 
-        PFfloat t = (PFfloat)(y - y1) * invTotalHeight;
-        PFcolor c1 = Helper_LerpColor(v1->color, v2->color, t);
-        PFcolor c2 = Helper_LerpColor(v1->color, v3->color, t);
+        if (xA > xB)
+        {
+            PFfloat tmp;
+            tmp = xA; xA = xB, xB = tmp;
+            tmp = zA; zA = zB, zB = tmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB, cB = cTmp;
+        }
+
+        Rasterize_Line_COLOR_DEPTH(ctx, xA, y, zA, xB, y, zB, cA, cB);
+    }
+
+    for (PFint y = y2; y <= y3; y++)
+    {
+        PFfloat alpha = (PFfloat)(y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (PFfloat)(y - y2 + 1) * invSegmentHeight32;
+
+        PFfloat xA = x1 + (x3 - x1) * alpha;
+        PFfloat xB = x2 + (x3 - x2) * beta;
+        PFfloat zA = z1 + (z3 - z1) * alpha;
+        PFfloat zB = z2 + (z3 - z2) * beta;
+
+        PFcolor cA = Helper_LerpColor(c1, c3, alpha);
+        PFcolor cB = Helper_LerpColor(c2, c3, beta);
+
+        if (xA > xB)
+        {
+            PFfloat tmp;
+            tmp = xA; xA = xB, xB = tmp;
+            tmp = zA; zA = zB, zB = tmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB, cB = cTmp;
+        }
 
         Rasterize_Line_COLOR_DEPTH(ctx, xA, y, zA, xB, y, zB, c1, c2);
     }
@@ -746,36 +693,70 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_2D(PFface faceToRender, const PFvertex* 
     PF_PREPARE_TRIANGLE();
     PF_SET_TRIANGLE_TEXTURE_LOCAL();
 
-    for (PFint y = y1; y <= y3; y++)
+    for (PFint y = y1; y < y2; y++)
     {
-        PFboolean secondHalf = y > y2 || (y == y2 && y2 == y3);
-        PFfloat invSegmentHeight = secondHalf ? invSegmentHeight32 : invSegmentHeight21;
-
-        PFfloat alpha = (PFfloat)(y - y1) * invTotalHeight;
-        PFfloat beta = secondHalf ? (PFfloat)(y - y2) * invSegmentHeight : (PFfloat)(y - y1) * invSegmentHeight;
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (y - y1 + 1) * invSegmentHeight21;
 
         PFfloat xA = x1 + (x3 - x1) * alpha;
-        PFfloat xB = secondHalf ? x2 + (x3 - x2) * beta : x1 + (x2 - x1) * beta;
-
+        PFfloat xB = x1 + (x2 - x1) * beta;
         PFfloat zA = z1 + (z3 - z1) * alpha;
-        PFfloat zB = secondHalf ? z2 + (z3 - z2) * beta : z1 + (z2 - z1) * beta;
+        PFfloat zB = z1 + (z2 - z1) * beta;
 
         PFfloat uA = s1 + (s3 - s1) * alpha;
-        PFfloat uB = secondHalf ? s2 + (s3 - s2) * beta : s1 + (s2 - s1) * beta;
-
+        PFfloat uB = s1 + (s2 - s1) * beta;
         PFfloat vA = t1 + (t3 - t1) * alpha;
-        PFfloat vB = secondHalf ? t2 + (t3 - t2) * beta : t1 + (t2 - t1) * beta;
+        PFfloat vB = s1 + (t2 - t1) * beta;
 
-        if (xA > xB) { PFfloat tmp = xA; xA = xB, xB = tmp; }
-        if (zA > zB) { PFfloat tmp = zA; zA = zB, zB = tmp; }
-        if (uA > uB) { PFfloat tmp = uA; uA = uB, uB = tmp; }
-        if (vA > vB) { PFfloat tmp = vA; vA = vB, vB = tmp; }
+        PFcolor cA = Helper_LerpColor(c1, c3, alpha);
+        PFcolor cB = Helper_LerpColor(c1, c2, beta);
 
-        PFfloat t = (PFfloat)(y - y1) * invTotalHeight;
-        PFcolor c1 = Helper_LerpColor(v1->color, v2->color, t);
-        PFcolor c2 = Helper_LerpColor(v1->color, v3->color, t);
+        if (xA > xB)
+        {
+            PFfloat tmp;
+            tmp = xA; xA = xB, xB = tmp;
+            tmp = zA; zA = zB, zB = tmp;
+            tmp = uA; uA = uB, uB = tmp;
+            tmp = vA; vA = vB, vB = tmp;
 
-        Rasterize_Line_TEXTURE_NODEPTH(ctx, xA, y, zA, uA, vA, xB, y, zB, uB, vB, c1, c2);
+            PFcolor cTmp;
+            cTmp = cA; cA = cB, cB = cTmp;
+        }
+
+        Rasterize_Line_COLOR_NODEPTH(ctx, xA, y, zA, xB, y, zB, cA, cB);
+    }
+
+    for (PFint y = y2; y <= y3; y++)
+    {
+        PFfloat alpha = (PFfloat)(y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (PFfloat)(y - y2 + 1) * invSegmentHeight32;
+
+        PFfloat xA = x1 + (x3 - x1) * alpha;
+        PFfloat xB = x2 + (x3 - x2) * beta;
+        PFfloat zA = z1 + (z3 - z1) * alpha;
+        PFfloat zB = z2 + (z3 - z2) * beta;
+
+        PFfloat uA = s1 + (s3 - s1) * alpha;
+        PFfloat uB = s2 + (s3 - s2) * beta;
+        PFfloat vA = t1 + (t3 - t1) * alpha;
+        PFfloat vB = s2 + (t3 - t2) * beta;
+
+        PFcolor cA = Helper_LerpColor(c1, c3, alpha);
+        PFcolor cB = Helper_LerpColor(c2, c3, beta);
+
+        if (xA > xB)
+        {
+            PFfloat tmp;
+            tmp = xA; xA = xB, xB = tmp;
+            tmp = zA; zA = zB, zB = tmp;
+            tmp = uA; uA = uB, uB = tmp;
+            tmp = vA; vA = vB, vB = tmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB, cB = cTmp;
+        }
+
+        Rasterize_Line_COLOR_NODEPTH(ctx, xA, y, zA, xB, y, zB, c1, c2);
     }
 }
 
@@ -790,36 +771,70 @@ void Rasterize_Triangle_TEXTURE_DEPTH_2D(PFface faceToRender, const PFvertex* v1
     PF_PREPARE_TRIANGLE();
     PF_SET_TRIANGLE_TEXTURE_LOCAL();
 
-    for (PFint y = y1; y <= y3; y++)
+    for (PFint y = y1; y < y2; y++)
     {
-        PFboolean secondHalf = y > y2 || (y == y2 && y2 == y3);
-        PFfloat invSegmentHeight = secondHalf ? invSegmentHeight32 : invSegmentHeight21;
-
-        PFfloat alpha = (PFfloat)(y - y1) * invTotalHeight;
-        PFfloat beta = secondHalf ? (PFfloat)(y - y2) * invSegmentHeight : (PFfloat)(y - y1) * invSegmentHeight;
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (y - y1 + 1) * invSegmentHeight21;
 
         PFfloat xA = x1 + (x3 - x1) * alpha;
-        PFfloat xB = secondHalf ? x2 + (x3 - x2) * beta : x1 + (x2 - x1) * beta;
-
+        PFfloat xB = x1 + (x2 - x1) * beta;
         PFfloat zA = z1 + (z3 - z1) * alpha;
-        PFfloat zB = secondHalf ? z2 + (z3 - z2) * beta : z1 + (z2 - z1) * beta;
+        PFfloat zB = z1 + (z2 - z1) * beta;
 
         PFfloat uA = s1 + (s3 - s1) * alpha;
-        PFfloat uB = secondHalf ? s2 + (s3 - s2) * beta : s1 + (s2 - s1) * beta;
-
+        PFfloat uB = s1 + (s2 - s1) * beta;
         PFfloat vA = t1 + (t3 - t1) * alpha;
-        PFfloat vB = secondHalf ? t2 + (t3 - t2) * beta : t1 + (t2 - t1) * beta;
+        PFfloat vB = s1 + (t2 - t1) * beta;
 
-        if (xA > xB) { PFfloat tmp = xA; xA = xB, xB = tmp; }
-        if (zA > zB) { PFfloat tmp = zA; zA = zB, zB = tmp; }
-        if (uA > uB) { PFfloat tmp = uA; uA = uB, uB = tmp; }
-        if (vA > vB) { PFfloat tmp = vA; vA = vB, vB = tmp; }
+        PFcolor cA = Helper_LerpColor(c1, c3, alpha);
+        PFcolor cB = Helper_LerpColor(c1, c2, beta);
 
-        PFfloat t = (PFfloat)(y - y1) * invTotalHeight;
-        PFcolor c1 = Helper_LerpColor(v1->color, v2->color, t);
-        PFcolor c2 = Helper_LerpColor(v1->color, v3->color, t);
+        if (xA > xB)
+        {
+            PFfloat tmp;
+            tmp = xA; xA = xB, xB = tmp;
+            tmp = zA; zA = zB, zB = tmp;
+            tmp = uA; uA = uB, uB = tmp;
+            tmp = vA; vA = vB, vB = tmp;
 
-        Rasterize_Line_TEXTURE_DEPTH(ctx, xA, y, zA, uA, vA, xB, y, zB, uB, vB, c1, c2);
+            PFcolor cTmp;
+            cTmp = cA; cA = cB, cB = cTmp;
+        }
+
+        Rasterize_Line_COLOR_DEPTH(ctx, xA, y, zA, xB, y, zB, cA, cB);
+    }
+
+    for (PFint y = y2; y <= y3; y++)
+    {
+        PFfloat alpha = (PFfloat)(y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (PFfloat)(y - y2 + 1) * invSegmentHeight32;
+
+        PFfloat xA = x1 + (x3 - x1) * alpha;
+        PFfloat xB = x2 + (x3 - x2) * beta;
+        PFfloat zA = z1 + (z3 - z1) * alpha;
+        PFfloat zB = z2 + (z3 - z2) * beta;
+
+        PFfloat uA = s1 + (s3 - s1) * alpha;
+        PFfloat uB = s2 + (s3 - s2) * beta;
+        PFfloat vA = t1 + (t3 - t1) * alpha;
+        PFfloat vB = s2 + (t3 - t2) * beta;
+
+        PFcolor cA = Helper_LerpColor(c1, c3, alpha);
+        PFcolor cB = Helper_LerpColor(c2, c3, beta);
+
+        if (xA > xB)
+        {
+            PFfloat tmp;
+            tmp = xA; xA = xB, xB = tmp;
+            tmp = zA; zA = zB, zB = tmp;
+            tmp = uA; uA = uB, uB = tmp;
+            tmp = vA; vA = vB, vB = tmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB, cB = cTmp;
+        }
+
+        Rasterize_Line_COLOR_DEPTH(ctx, xA, y, zA, xB, y, zB, c1, c2);
     }
 }
 
