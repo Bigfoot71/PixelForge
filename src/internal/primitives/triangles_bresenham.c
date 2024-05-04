@@ -17,6 +17,10 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
+
+// WARNING: This rendering mode is WIP
+
+
 #include "../context.h"
 #include "../../pfm.h"
 #include <stdlib.h>
