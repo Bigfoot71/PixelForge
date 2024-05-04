@@ -397,54 +397,46 @@ void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 {
     PFvertex tv1, tv2;
 
-    PFint x1 = v1->screen[0];
-    PFint y1 = v1->screen[1];
-    PFint x2 = v2->screen[0];
-    PFint y2 = v2->screen[1];
+    PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    PFint x2 = v2->screen[0], y2 = v2->screen[1];
 
-    PFint dx = x2 - x1;
-    PFint dy = y2 - y1;
+    PFint dx = x2 - x1, dy = y2 - y1;
 
-    PFfloat thickness =
-        pfGetCurrentContext()->lineWidth;
+    PFint thickness = (PFint)(pfGetCurrentContext()->lineWidth + 0.5f);
 
-    Rasterize_Line_NODEPTH(v1, v2);
+    Rasterize_Line_DEPTH(v1, v2);
 
-    if (dx > PF_CLIP_EPSILON && fabsf((float)dy/dx) < 1)
+    if (dx != 0 && abs(dy / dx) < 1)
     {
-        PFint wy = (thickness - 1)*sqrtf(dx*dx + dy*dy)/(2*fabsf((float)dx)) + 0.5f;
+        PFint wy = (thickness - 1)*sqrt(dx*dx + dy*dy) / (2*abs(dx));
 
-        for (PFint i = 0; i < wy; i++)
+        for (PFint i = 1; i <= wy; i++)
         {
             tv1 = *v1, tv2 = *v2;
             tv1.screen[1] -= i;
             tv2.screen[1] -= i;
-
             Rasterize_Line_NODEPTH(&tv1, &tv2);
 
             tv1 = *v1, tv2 = *v2;
             tv1.screen[1] += i;
             tv2.screen[1] += i;
-
             Rasterize_Line_NODEPTH(&tv1, &tv2);
         }
     }
-    else if (dy > PF_CLIP_EPSILON)
+    else if (dy != 0)
     {
-        PFint wx = (thickness - 1)*sqrtf(dx*dx + dy*dy)/(2*fabsf((float)dy)) + 0.5f;
+        PFint wx = (thickness - 1)*sqrt(dx*dx + dy*dy) / (2*abs(dy));
 
-        for(PFint i = 0; i < wx; i++)
+        for (PFint i = 1; i <= wx; i++)
         {
             tv1 = *v1, tv2 = *v2;
             tv1.screen[0] -= i;
             tv2.screen[0] -= i;
-
             Rasterize_Line_NODEPTH(&tv1, &tv2);
 
             tv1 = *v1, tv2 = *v2;
             tv1.screen[0] += i;
             tv2.screen[0] += i;
-
             Rasterize_Line_NODEPTH(&tv1, &tv2);
         }
     }
@@ -455,54 +447,46 @@ void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2)
 {
     PFvertex tv1, tv2;
 
-    PFint x1 = v1->screen[0];
-    PFint y1 = v1->screen[1];
-    PFint x2 = v2->screen[0];
-    PFint y2 = v2->screen[1];
+    PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    PFint x2 = v2->screen[0], y2 = v2->screen[1];
 
-    PFint dx = x2 - x1;
-    PFint dy = y2 - y1;
+    PFint dx = x2 - x1, dy = y2 - y1;
 
-    PFfloat thickness =
-        pfGetCurrentContext()->lineWidth;
+    PFint thickness = (PFint)(pfGetCurrentContext()->lineWidth + 0.5f);
 
     Rasterize_Line_DEPTH(v1, v2);
 
-    if (dx > PF_CLIP_EPSILON && fabsf((float)dy/dx) < 1)
+    if (dx != 0 && abs(dy / dx) < 1)
     {
-        PFint wy = (thickness - 1)*sqrtf(dx*dx + dy*dy)/(2*fabsf((float)dx)) + 0.5f;
+        PFint wy = (thickness - 1)*sqrt(dx*dx + dy*dy) / (2*abs(dx));
 
-        for (PFint i = 0; i < wy; i++)
+        for (PFint i = 1; i <= wy; i++)
         {
             tv1 = *v1, tv2 = *v2;
             tv1.screen[1] -= i;
             tv2.screen[1] -= i;
-
             Rasterize_Line_DEPTH(&tv1, &tv2);
 
             tv1 = *v1, tv2 = *v2;
             tv1.screen[1] += i;
             tv2.screen[1] += i;
-
             Rasterize_Line_DEPTH(&tv1, &tv2);
         }
     }
-    else if (dy > PF_CLIP_EPSILON)
+    else if (dy != 0)
     {
-        PFint wx = (thickness - 1)*sqrtf(dx*dx + dy*dy)/(2*fabsf((float)dy)) + 0.5f;
+        PFint wx = (thickness - 1)*sqrt(dx*dx + dy*dy) / (2*abs(dy));
 
-        for(PFint i = 0; i < wx; i++)
+        for (PFint i = 1; i <= wx; i++)
         {
             tv1 = *v1, tv2 = *v2;
             tv1.screen[0] -= i;
             tv2.screen[0] -= i;
-
             Rasterize_Line_DEPTH(&tv1, &tv2);
 
             tv1 = *v1, tv2 = *v2;
             tv1.screen[0] += i;
             tv2.screen[0] += i;
-
             Rasterize_Line_DEPTH(&tv1, &tv2);
         }
     }
