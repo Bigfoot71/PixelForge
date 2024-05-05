@@ -21,8 +21,8 @@
 #define PF_INTERNAL_CONTEXT_H
 
 #include "../pixelforge.h"
+#include "./config.h"
 #include "../pfm.h"
-#include <stdint.h>
 
 /*
     Internal context struct and other structs used by them
