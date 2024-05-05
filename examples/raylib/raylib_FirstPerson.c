@@ -4,18 +4,27 @@
 #define SCREEN_WIDTH    800
 #define SCREEN_HEIGHT   600
 
-bool WallCollision(Camera3D* camera, const Image* imMap);
+static bool lightEnabled = false;
+
+static bool WallCollision(Camera3D* camera, const Image* imMap);
+
+static void InitFlashLight(void);
+static void ToggleFlashLight(void);
+static void UpdateFlashLight(Camera3D camera);
 
 int main(void)
 {
     // Init raylib window and set target FPS
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "PixelForge - First Person");
-    //SetTargetFPS(60);
+    SetTargetFPS(60);
     DisableCursor();
 
     // Create a rendering buffer in RAM as well as in VRAM (see raylib_common.h)
     PF_TargetBuffer target = PF_LoadTargetBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
     PFctx *ctx = PF_InitFromTargetBuffer(target); // PixelForge context
+
+    // Init "flashlight"
+    InitFlashLight();
 
     Camera3D camera = {
         (Vector3) { 1.2f, 0.5f, 1.2f },
@@ -57,6 +66,16 @@ int main(void)
         if (WallCollision(&camera, &imMap))
         {
             (void)WallCollision(&camera, &imMap);
+        }
+
+        if (IsKeyPressed(KEY_F))
+        {
+            ToggleFlashLight();
+        }
+
+        if (lightEnabled)
+        {
+            UpdateFlashLight(camera);
         }
 
         // Draw
@@ -158,4 +177,34 @@ bool WallCollision(Camera3D* camera, const Image* imMap)
     }
 
     return (adx > 0 && ady > 0);
+}
+
+void InitFlashLight(void)
+{
+    pfLightf(PF_LIGHT0, PF_SPOT_CUTOFF, 17.5f);
+    pfLightf(PF_LIGHT0, PF_SPOT_OUTER_CUTOFF, 22.5f);
+}
+
+void ToggleFlashLight(void)
+{
+    lightEnabled = !lightEnabled;
+
+    if (lightEnabled)
+    {
+        pfEnable(PF_LIGHTING);
+        pfEnableLight(PF_LIGHT0);
+    }
+    else
+    {
+        pfDisable(PF_LIGHTING);
+        pfDisableLight(PF_LIGHT0);
+    }
+}
+
+void UpdateFlashLight(Camera3D camera)
+{
+    Vector3 direction = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+
+    pfLightfv(PF_LIGHT0, PF_POSITION, &camera.position);
+    pfLightfv(PF_LIGHT0, PF_SPOT_DIRECTION, &direction);
 }
