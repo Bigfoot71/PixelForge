@@ -266,7 +266,7 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
         { \
             if ((w1 | w2 | w3) >= 0) \
             { \
-                PFcolor finalColor; \
+                PFcolor finalColor = { 0 }; \
                 const PFuint xyOffset = yOffset + x; \
                 const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
                 const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3);
@@ -302,7 +302,7 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
         { \
             if ((w1 | w2 | w3) >= 0) \
             { \
-                PFcolor finalColor; \
+                PFcolor finalColor = { 0 }; \
                 const PFuint xyOffset = yOffset + x; \
                 const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
                 const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
@@ -311,80 +311,6 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
 
 #define PF_END_TRIANGLE_DEPTH_LOOP() \
                     pixelSetter(bufTarget, xyOffset, finalColor); \
-                    zbTarget[xyOffset] = z; \
-                } \
-            } \
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
-        } \
-        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3; \
-    }
-
-// Begin/End flat triangle light rasterizer macros
-
-#define PF_BEGIN_TRIANGLE_PHONG_NODEPTH_LOOP() \
-    PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
-    PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
-    PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
-    const PFsizei wDst = fbTarget->texture.width; \
-    void *bufTarget = fbTarget->texture.pixels; \
-    PFfloat *zbTarget = fbTarget->zbuffer; \
-    const PFfloat z1 = v1->homogeneous[2]; \
-    const PFfloat z2 = v2->homogeneous[2]; \
-    const PFfloat z3 = v3->homogeneous[2]; \
-    \
-    for (PFuint y = yMin; y <= yMax; y++) \
-    { \
-        const PFuint yOffset = y*wDst; \
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row; \
-        for (PFuint x = xMin; x <= xMax; x++) \
-        { \
-            if ((w1 | w2 | w3) >= 0) \
-            { \
-                PFcolor finalLightColor = { 0 }; \
-                const PFuint xyOffset = yOffset + x; \
-                const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
-                const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3);
-
-#define PF_END_TRIANGLE_PHONG_NODEPTH_LOOP() \
-                pixelSetter(bufTarget, xyOffset, finalLightColor); \
-                zbTarget[xyOffset] = z; \
-            } \
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
-        } \
-        w1Row += stepWY1, w2Row += stepWY2, w3Row += stepWY3; \
-    }
-
-
-// Begin/End depth triangle light rasterizer macros
-
-#define PF_BEGIN_TRIANGLE_PHONG_DEPTH_LOOP() \
-    PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
-    PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
-    PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
-    const PFsizei wDst = fbTarget->texture.width; \
-    void *bufTarget = fbTarget->texture.pixels; \
-    PFfloat *zbTarget = fbTarget->zbuffer; \
-    const PFfloat z1 = v1->homogeneous[2]; \
-    const PFfloat z2 = v2->homogeneous[2]; \
-    const PFfloat z3 = v3->homogeneous[2]; \
-    \
-    for (PFuint y = yMin; y <= yMax; y++) \
-    { \
-        const PFuint yOffset = y*wDst; \
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row; \
-        for (PFuint x = xMin; x <= xMax; x++) \
-        { \
-            if ((w1 | w2 | w3) >= 0) \
-            { \
-                PFcolor finalLightColor = { 0 }; \
-                const PFuint xyOffset = yOffset + x; \
-                const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
-                const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
-                if (ctx->depthFunction(z, zbTarget[xyOffset])) \
-                {
-
-#define PF_END_TRIANGLE_PHONG_DEPTH_LOOP() \
-                    pixelSetter(bufTarget, xyOffset, finalLightColor); \
                     zbTarget[xyOffset] = z; \
                 } \
             } \
@@ -421,7 +347,7 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
         { \
             if ((w1 | w2 | w3) >= 0) \
             { \
-                PFcolor finalColor; \
+                PFcolor finalColor = { 0 }; \
                 const PFuint xyOffset = yOffset + x; \
                 const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
                 const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3);
@@ -460,7 +386,7 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
         { \
             if ((w1 | w2 | w3) >= 0) \
             { \
-                PFcolor finalColor; \
+                PFcolor finalColor = { 0 }; \
                 const PFuint xyOffset = yOffset + x; \
                 const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
                 const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
@@ -476,85 +402,6 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
         } \
     }
 
-// Begin/End flat triangle light rasterizer macros
-
-#define PF_BEGIN_TRIANGLE_PHONG_NODEPTH_LOOP() \
-    PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
-    PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
-    PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
-    const PFsizei wDst = fbTarget->texture.width; \
-    void *bufTarget = fbTarget->texture.pixels; \
-    PFfloat *zbTarget = fbTarget->zbuffer; \
-    const PFfloat z1 = v1->homogeneous[2]; \
-    const PFfloat z2 = v2->homogeneous[2]; \
-    const PFfloat z3 = v3->homogeneous[2]; \
-    \
-    _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_PIXEL_RASTER_THRESHOLD)") \
-    for (PFuint y = yMin; y <= yMax; y++) \
-    { \
-        const PFuint yOffset = y*wDst; \
-        PFint i = y - yMin; \
-        PFint w1 = w1Row + i*stepWY1; \
-        PFint w2 = w2Row + i*stepWY2; \
-        PFint w3 = w3Row + i*stepWY3; \
-        for (PFuint x = xMin; x <= xMax; x++) \
-        { \
-            if ((w1 | w2 | w3) >= 0) \
-            { \
-                PFcolor finalLightColor = { 0 }; \
-                const PFuint xyOffset = yOffset + x; \
-                const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
-                const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3);
-
-#define PF_END_TRIANGLE_PHONG_NODEPTH_LOOP() \
-                pixelSetter(bufTarget, xyOffset, finalLightColor); \
-                zbTarget[xyOffset] = z; \
-            } \
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
-        } \
-    }
-
-
-// Begin/End depth triangle light rasterizer macros
-
-#define PF_BEGIN_TRIANGLE_PHONG_DEPTH_LOOP() \
-    PFframebuffer *fbTarget = pfGetActiveFramebuffer(); \
-    PFpixelgetter pixelGetter = fbTarget->texture.pixelGetter; \
-    PFpixelsetter pixelSetter = fbTarget->texture.pixelSetter; \
-    const PFsizei wDst = fbTarget->texture.width; \
-    void *bufTarget = fbTarget->texture.pixels; \
-    PFfloat *zbTarget = fbTarget->zbuffer; \
-    const PFfloat z1 = v1->homogeneous[2]; \
-    const PFfloat z2 = v2->homogeneous[2]; \
-    const PFfloat z3 = v3->homogeneous[2]; \
-    \
-    _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_PIXEL_RASTER_THRESHOLD)") \
-    for (PFuint y = yMin; y <= yMax; y++) \
-    { \
-        const PFuint yOffset = y*wDst; \
-        PFint i = y - yMin; \
-        PFint w1 = w1Row + i*stepWY1; \
-        PFint w2 = w2Row + i*stepWY2; \
-        PFint w3 = w3Row + i*stepWY3; \
-        for (PFuint x = xMin; x <= xMax; x++) \
-        { \
-            if ((w1 | w2 | w3) >= 0) \
-            { \
-                PFcolor finalLightColor = { 0 }; \
-                const PFuint xyOffset = yOffset + x; \
-                const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
-                const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
-                if (ctx->depthFunction(z, zbTarget[xyOffset])) \
-                {
-
-#define PF_END_TRIANGLE_PHONG_DEPTH_LOOP() \
-                    pixelSetter(bufTarget, xyOffset, finalLightColor); \
-                    zbTarget[xyOffset] = z; \
-                } \
-            } \
-            w1 += stepWX1, w2 += stepWX2, w3 += stepWX3; \
-        } \
-    }
 
 #endif //PF_SUPPORT_OPENMP
 
@@ -565,13 +412,13 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
     { \
         const PFlight *light = &ctx->lights[i]; \
         if (!light->active) continue; \
-        PFcolor finalColor; \
+        PFcolor lightColor; \
         \
         const PFcolor ambient = pfBlendMultiplicative( \
             light->ambient, (material).ambient); \
 
 #define PF_END_LIGHTS_LOOP() \
-        finalLightColor = pfBlendAdditive(finalColor, finalLightColor); \
+        finalColor = pfBlendAdditive(finalColor, lightColor); \
     } \
 
 
@@ -960,11 +807,7 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
         const PFcolor emission = ctx->faceMaterial[PF_FRONT].emission;
         const PFfloat shininess = ctx->faceMaterial[PF_FRONT].shininess;
 
-        // The 'PF_BEGIN_XXX_PHONG_LOOP' macro additionally provides access to:
-        //  - `const PFlight *light` which is the active light for the currently rendered pixel
-        //  - `const PFcolor ambient` which is the ambient color of the light multiplied by that of the active material
-
-        PF_BEGIN_TRIANGLE_PHONG_NODEPTH_LOOP();
+        PF_BEGIN_TRIANGLE_NODEPTH_LOOP();
         {
             const PFcolor colSrc = interpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
@@ -973,14 +816,18 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
             Helper_InterpolateVec3f(position, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
+            // The 'PF_BEGIN_XXX_PHONG_LOOP' macro additionally provides access to:
+            //  - `const PFlight *light` which is the active light for the currently rendered pixel
+            //  - `const PFcolor ambient` which is the ambient color of the light multiplied by that of the active material
+
             PF_BEGIN_LIGHTS_LOOP(ctx->faceMaterial[PF_FRONT]);
             {
-                finalColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
-                finalColor = pfBlendAdditive(finalColor, emission);
+                lightColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
+                lightColor = pfBlendAdditive(lightColor, emission);
             }
             PF_END_LIGHTS_LOOP();
         }
-        PF_END_TRIANGLE_PHONG_NODEPTH_LOOP();
+        PF_END_TRIANGLE_NODEPTH_LOOP();
 
         return; // If we have rendered the front face, there is no need to render the back face.
     }
@@ -993,11 +840,7 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
         const PFcolor emission = ctx->faceMaterial[PF_BACK].emission;
         const PFfloat shininess = ctx->faceMaterial[PF_BACK].shininess;
 
-        // The 'PF_BEGIN_XXX_PHONG_LOOP' macro additionally provides access to:
-        //  - `const PFlight *light` which is the active light for the currently rendered pixel
-        //  - `const PFcolor ambient` which is the ambient color of the light multiplied by that of the active material
-
-        PF_BEGIN_TRIANGLE_PHONG_NODEPTH_LOOP();
+        PF_BEGIN_TRIANGLE_NODEPTH_LOOP();
         {
             const PFcolor colSrc = interpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
@@ -1006,14 +849,18 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
             Helper_InterpolateVec3f(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3);
             Helper_InterpolateVec3f(position, v1->position, v2->position, v3->position, aW1, aW2, aW3);
 
+            // The 'PF_BEGIN_XXX_PHONG_LOOP' macro additionally provides access to:
+            //  - `const PFlight *light` which is the active light for the currently rendered pixel
+            //  - `const PFcolor ambient` which is the ambient color of the light multiplied by that of the active material
+
             PF_BEGIN_LIGHTS_LOOP(ctx->faceMaterial[PF_BACK]);
             {
-                finalColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
-                finalColor = pfBlendAdditive(finalColor, emission);
+                lightColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
+                lightColor = pfBlendAdditive(lightColor, emission);
             }
             PF_END_LIGHTS_LOOP();
         }
-        PF_END_TRIANGLE_PHONG_NODEPTH_LOOP();
+        PF_END_TRIANGLE_NODEPTH_LOOP();
     }
 }
 
@@ -1031,7 +878,7 @@ void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex
         const PFcolor emission = ctx->faceMaterial[PF_FRONT].emission;
         const PFfloat shininess = ctx->faceMaterial[PF_FRONT].shininess;
 
-        PF_BEGIN_TRIANGLE_PHONG_DEPTH_LOOP();
+        PF_BEGIN_TRIANGLE_DEPTH_LOOP();
         {
             const PFcolor colSrc = interpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
@@ -1042,12 +889,12 @@ void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex
 
             PF_BEGIN_LIGHTS_LOOP(ctx->faceMaterial[PF_FRONT]);
             {
-                finalColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
-                finalColor = pfBlendAdditive(finalColor, emission);
+                lightColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
+                lightColor = pfBlendAdditive(lightColor, emission);
             }
             PF_END_LIGHTS_LOOP();
         }
-        PF_END_TRIANGLE_PHONG_DEPTH_LOOP();
+        PF_END_TRIANGLE_DEPTH_LOOP();
 
         return; // If we have rendered the front face, there is no need to render the back face.
     }
@@ -1060,7 +907,7 @@ void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex
         const PFcolor emission = ctx->faceMaterial[PF_BACK].emission;
         const PFfloat shininess = ctx->faceMaterial[PF_BACK].shininess;
 
-        PF_BEGIN_TRIANGLE_PHONG_DEPTH_LOOP();
+        PF_BEGIN_TRIANGLE_DEPTH_LOOP();
         {
             const PFcolor colSrc = interpolateColor(v1->color, v2->color, v3->color, aW1, aW2, aW3);
             const PFcolor colDst = pixelGetter(bufTarget, xyOffset);
@@ -1071,12 +918,12 @@ void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex
 
             PF_BEGIN_LIGHTS_LOOP(ctx->faceMaterial[PF_BACK]);
             {
-                finalColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
-                finalColor = pfBlendAdditive(finalColor, emission);
+                lightColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
+                lightColor = pfBlendAdditive(lightColor, emission);
             }
             PF_END_LIGHTS_LOOP();
         }
-        PF_END_TRIANGLE_PHONG_DEPTH_LOOP();
+        PF_END_TRIANGLE_DEPTH_LOOP();
     }
 }
 
@@ -1094,7 +941,7 @@ void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFve
         const PFcolor emission = ctx->faceMaterial[PF_FRONT].emission;
         const PFfloat shininess = ctx->faceMaterial[PF_FRONT].shininess;
 
-        PF_BEGIN_TRIANGLE_PHONG_NODEPTH_LOOP();
+        PF_BEGIN_TRIANGLE_NODEPTH_LOOP();
         {
             PFMvec2 texcoord;
             Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
@@ -1112,12 +959,12 @@ void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFve
 
             PF_BEGIN_LIGHTS_LOOP(ctx->faceMaterial[PF_FRONT]);
             {
-                finalColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
-                finalColor = pfBlendAdditive(finalColor, emission);
+                lightColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
+                lightColor = pfBlendAdditive(lightColor, emission);
             }
             PF_END_LIGHTS_LOOP();
         }
-        PF_END_TRIANGLE_PHONG_NODEPTH_LOOP();
+        PF_END_TRIANGLE_NODEPTH_LOOP();
 
         return; // If we have rendered the front face, there is no need to render the back face.
     }
@@ -1130,7 +977,7 @@ void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFve
         const PFcolor emission = ctx->faceMaterial[PF_BACK].emission;
         const PFfloat shininess = ctx->faceMaterial[PF_BACK].shininess;
 
-        PF_BEGIN_TRIANGLE_PHONG_NODEPTH_LOOP();
+        PF_BEGIN_TRIANGLE_NODEPTH_LOOP();
         {
             PFMvec2 texcoord;
             Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
@@ -1148,12 +995,12 @@ void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFve
 
             PF_BEGIN_LIGHTS_LOOP(ctx->faceMaterial[PF_BACK]);
             {
-                finalColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
-                finalColor = pfBlendAdditive(finalColor, emission);
+                lightColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
+                lightColor = pfBlendAdditive(lightColor, emission);
             }
             PF_END_LIGHTS_LOOP();
         }
-        PF_END_TRIANGLE_PHONG_NODEPTH_LOOP();
+        PF_END_TRIANGLE_NODEPTH_LOOP();
     }
 }
 
@@ -1171,7 +1018,7 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
         const PFcolor emission = ctx->faceMaterial[PF_FRONT].emission;
         const PFfloat shininess = ctx->faceMaterial[PF_FRONT].shininess;
 
-        PF_BEGIN_TRIANGLE_PHONG_DEPTH_LOOP();
+        PF_BEGIN_TRIANGLE_DEPTH_LOOP();
         {
             PFMvec2 texcoord;
             Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
@@ -1189,12 +1036,12 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
             PF_BEGIN_LIGHTS_LOOP(ctx->faceMaterial[PF_FRONT]);
             {
-                finalColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
-                finalColor = pfBlendAdditive(finalColor, emission);
+                lightColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
+                lightColor = pfBlendAdditive(lightColor, emission);
             }
             PF_END_LIGHTS_LOOP();
         }
-        PF_END_TRIANGLE_PHONG_DEPTH_LOOP();
+        PF_END_TRIANGLE_DEPTH_LOOP();
 
         return; // If we have rendered the front face, there is no need to render the back face.
     }
@@ -1207,7 +1054,7 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
         const PFcolor emission = ctx->faceMaterial[PF_BACK].emission;
         const PFfloat shininess = ctx->faceMaterial[PF_BACK].shininess;
 
-        PF_BEGIN_TRIANGLE_PHONG_DEPTH_LOOP();
+        PF_BEGIN_TRIANGLE_DEPTH_LOOP();
         {
             PFMvec2 texcoord;
             Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3);
@@ -1225,12 +1072,12 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
             PF_BEGIN_LIGHTS_LOOP(ctx->faceMaterial[PF_BACK]);
             {
-                finalColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
-                finalColor = pfBlendAdditive(finalColor, emission);
+                lightColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
+                lightColor = pfBlendAdditive(lightColor, emission);
             }
             PF_END_LIGHTS_LOOP();
         }
-        PF_END_TRIANGLE_PHONG_DEPTH_LOOP();
+        PF_END_TRIANGLE_DEPTH_LOOP();
     }
 }
 
