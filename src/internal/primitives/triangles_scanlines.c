@@ -152,6 +152,7 @@ void Rasterize_Triangle_COLOR_NODEPTH_2D(PFface faceToRender, const PFvertex* v1
         PFint xMin = CLAMP(xA, ctx->vpMin[0], ctx->vpMax[0]);
         PFint xMax = CLAMP(xB, ctx->vpMin[0], ctx->vpMax[0]);
         PFsizei xyOffset = y*fbDst->texture.width + xMin;
+
         PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
 
         for (PFint x = xMin; x != xMax; x++, xyOffset++)
@@ -197,6 +198,7 @@ void Rasterize_Triangle_COLOR_NODEPTH_2D(PFface faceToRender, const PFvertex* v1
         PFint xMin = CLAMP(xA, ctx->vpMin[0], ctx->vpMax[0]);
         PFint xMax = CLAMP(xB, ctx->vpMin[0], ctx->vpMax[0]);
         PFsizei xyOffset = y*fbDst->texture.width + xMin;
+
         PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
 
         for (PFint x = xMin; x != xMax; x++, xyOffset++)
@@ -277,6 +279,7 @@ void Rasterize_Triangle_COLOR_DEPTH_2D(PFface faceToRender, const PFvertex* v1, 
         PFint xMin = CLAMP(xA, ctx->vpMin[0], ctx->vpMax[0]);
         PFint xMax = CLAMP(xB, ctx->vpMin[0], ctx->vpMax[0]);
         PFsizei xyOffset = y*fbDst->texture.width + xMin;
+
         PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
 
         for (PFint x = xMin; x != xMax; x++, xyOffset++)
@@ -326,6 +329,7 @@ void Rasterize_Triangle_COLOR_DEPTH_2D(PFface faceToRender, const PFvertex* v1, 
         PFint xMin = CLAMP(xA, ctx->vpMin[0], ctx->vpMax[0]);
         PFint xMax = CLAMP(xB, ctx->vpMin[0], ctx->vpMax[0]);
         PFsizei xyOffset = y*fbDst->texture.width + xMin;
+
         PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
 
         for (PFint x = xMin; x != xMax; x++, xyOffset++)
@@ -426,6 +430,7 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_2D(PFface faceToRender, const PFvertex* 
         PFint xMin = CLAMP(xA, ctx->vpMin[0], ctx->vpMax[0]);
         PFint xMax = CLAMP(xB, ctx->vpMin[0], ctx->vpMax[0]);
         PFsizei xyOffset = y*fbDst->texture.width + xMin;
+
         PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
 
         for (PFint x = xMin; x != xMax; x++, xyOffset++)
@@ -488,6 +493,7 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_2D(PFface faceToRender, const PFvertex* 
         PFint xMin = CLAMP(xA, ctx->vpMin[0], ctx->vpMax[0]);
         PFint xMax = CLAMP(xB, ctx->vpMin[0], ctx->vpMax[0]);
         PFsizei xyOffset = y*fbDst->texture.width + xMin;
+
         PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
 
         for (PFint x = xMin; x != xMax; x++, xyOffset++)
@@ -589,6 +595,7 @@ void Rasterize_Triangle_TEXTURE_DEPTH_2D(PFface faceToRender, const PFvertex* v1
         PFint xMin = CLAMP(xA, ctx->vpMin[0], ctx->vpMax[0]);
         PFint xMax = CLAMP(xB, ctx->vpMin[0], ctx->vpMax[0]);
         PFsizei xyOffset = y*fbDst->texture.width + xMin;
+
         PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
 
         for (PFint x = xMin; x != xMax; x++, xyOffset++)
@@ -600,7 +607,6 @@ void Rasterize_Triangle_TEXTURE_DEPTH_2D(PFface faceToRender, const PFvertex* v1
             PFfloat v = vA + t*(vB - vA);
 
             PFfloat *zp = zbDst + xyOffset;
-
             if (ctx->depthFunction(z, *zp))
             {
                 PFcolor tex = pfGetTextureSample(texture, u, v);
@@ -655,6 +661,7 @@ void Rasterize_Triangle_TEXTURE_DEPTH_2D(PFface faceToRender, const PFvertex* v1
         PFint xMin = CLAMP(xA, ctx->vpMin[0], ctx->vpMax[0]);
         PFint xMax = CLAMP(xB, ctx->vpMin[0], ctx->vpMax[0]);
         PFsizei xyOffset = y*fbDst->texture.width + xMin;
+
         PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
 
         for (PFint x = xMin; x != xMax; x++, xyOffset++)
@@ -666,7 +673,6 @@ void Rasterize_Triangle_TEXTURE_DEPTH_2D(PFface faceToRender, const PFvertex* v1
             PFfloat v = vA + t*(vB - vA);
 
             PFfloat *zp = zbDst + xyOffset;
-
             if (ctx->depthFunction(z, *zp))
             {
                 PFcolor tex = pfGetTextureSample(texture, u, v);
@@ -1181,7 +1187,6 @@ void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1
             PFfloat v = z*(vA + t*(vB - vA));
 
             PFfloat *zp = zbDst + xyOffset;
-
             if (ctx->depthFunction(z, *zp))
             {
                 PFcolor tex = pfGetTextureSample(texture, u, v);
@@ -1247,7 +1252,6 @@ void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1
             PFfloat v = z*(vA + t*(vB - vA));
 
             PFfloat *zp = zbDst + xyOffset;
-
             if (ctx->depthFunction(z, *zp))
             {
                 PFcolor tex = pfGetTextureSample(texture, u, v);
@@ -1293,22 +1297,592 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
 void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
+    PFctx *ctx = pfGetCurrentContext();
 
+    /* Prepare for rasterization */
+
+    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    {
+        return;
+    }
+
+    Helper_SortVertices(&v1, &v2, &v3);
+
+    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
+    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
+    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+
+    const PFcolor c1 = Process_Gouraud(ctx, v1, viewPos, &ctx->faceMaterial[faceToRender]);
+    const PFcolor c2 = Process_Gouraud(ctx, v2, viewPos, &ctx->faceMaterial[faceToRender]);
+    const PFcolor c3 = Process_Gouraud(ctx, v3, viewPos, &ctx->faceMaterial[faceToRender]);
+
+    const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
+    const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
+    const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
+
+    /* Get Some Contextual Values */
+
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
+        ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
+
+    PFframebuffer *fbDst = ctx->currentFramebuffer;
+    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
+    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFblendfunc blendFunc = ctx->blendFunction;
+    void *bufDst = fbDst->texture.pixels;
+    PFfloat *zbDst = fbDst->zbuffer;
+
+    // Rasterization of the first part of the triangle (y1 to y2)
+
+    for (PFint y = y1; y < y2; y++)
+    {
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (y - y1 + 1) * invSegmentHeight21;
+
+        PFint xA = x1 + (x3 - x1) * alpha;
+        PFint xB = x1 + (x2 - x1) * beta;
+        PFfloat zA = z1 + (z3 - z1) * alpha;
+        PFfloat zB = z1 + (z2 - z1) * beta;
+
+        PFcolor cA = interpolateColor(c1, c3, alpha);
+        PFcolor cB = interpolateColor(c1, c2, beta);
+
+        if (xA > xB)
+        {
+            PFint iTmp = xA; xA = xB; xB = iTmp;
+            PFfloat fTmp = zA; zA = zB; zB = fTmp;
+            PFcolor cTmp = cA; cA = cB; cB = cTmp;
+        }
+
+        /* Draw Horizontal Line */
+
+        PFsizei xyOffset = y*fbDst->texture.width + xA;
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+
+        for (PFint x = xA; x != xB; x++, xyOffset++)
+        {
+            PFfloat t = (PFfloat)(x-xA)*xInvLen;
+            PFfloat z = 1.0f/(zA + t*(zB - zA));
+
+            PFcolor src = interpolateColor(cA, cB, t);
+            PFcolor dst = pixelGetter(bufDst, xyOffset);
+
+            PFcolor finalColor = blendFunc(src, dst);
+            pixelSetter(bufDst, xyOffset, finalColor);
+
+            zbDst[xyOffset] = z;
+        }
+    }
+
+    // Rasterization of the second part of the triangle (y2 to y3)
+
+    for (PFint y = y2; y <= y3; y++)
+    {
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (y - y2 + 1) * invSegmentHeight32;
+
+        PFint xA = x1 + (x3 - x1) * alpha;
+        PFint xB = x2 + (x3 - x2) * beta;
+        PFfloat zA = z1 + (z3 - z1) * alpha;
+        PFfloat zB = z2 + (z3 - z2) * beta;
+
+        PFcolor cA = interpolateColor(c1, c3, alpha);
+        PFcolor cB = interpolateColor(c2, c3, beta);
+
+        if (xA > xB)
+        {
+            PFint iTmp = xA; xA = xB; xB = iTmp;
+            PFfloat fTmp = zA; zA = zB; zB = fTmp;
+            PFcolor cTmp = cA; cA = cB; cB = cTmp;
+        }
+
+        /* Draw Horizontal Line */
+
+        PFsizei xyOffset = y*fbDst->texture.width + xA;
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+
+        for (PFint x = xA; x != xB; x++, xyOffset++)
+        {
+            PFfloat t = (PFfloat)(x-xA)*xInvLen;
+            PFfloat z = 1.0f/(zA + t*(zB - zA));
+
+            PFcolor src = interpolateColor(cA, cB, t);
+            PFcolor dst = pixelGetter(bufDst, xyOffset);
+
+            PFcolor finalColor = blendFunc(src, dst);
+            pixelSetter(bufDst, xyOffset, finalColor);
+
+            zbDst[xyOffset] = z;
+        }
+    }
 }
 
 void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
+    PFctx *ctx = pfGetCurrentContext();
 
+    /* Prepare for rasterization */
+
+    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    {
+        return;
+    }
+
+    Helper_SortVertices(&v1, &v2, &v3);
+
+    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
+    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
+    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+
+    const PFcolor c1 = Process_Gouraud(ctx, v1, viewPos, &ctx->faceMaterial[faceToRender]);
+    const PFcolor c2 = Process_Gouraud(ctx, v2, viewPos, &ctx->faceMaterial[faceToRender]);
+    const PFcolor c3 = Process_Gouraud(ctx, v3, viewPos, &ctx->faceMaterial[faceToRender]);
+
+    const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
+    const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
+    const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
+
+    /* Get Some Contextual Values */
+
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
+        ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
+
+    PFframebuffer *fbDst = ctx->currentFramebuffer;
+    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
+    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFblendfunc blendFunc = ctx->blendFunction;
+    void *bufDst = fbDst->texture.pixels;
+    PFfloat *zbDst = fbDst->zbuffer;
+
+    // Rasterization of the first part of the triangle (y1 to y2)
+
+    for (PFint y = y1; y < y2; y++)
+    {
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (y - y1 + 1) * invSegmentHeight21;
+
+        PFint xA = x1 + (x3 - x1) * alpha;
+        PFint xB = x1 + (x2 - x1) * beta;
+        PFfloat zA = z1 + (z3 - z1) * alpha;
+        PFfloat zB = z1 + (z2 - z1) * beta;
+
+        PFcolor cA = interpolateColor(c1, c3, alpha);
+        PFcolor cB = interpolateColor(c1, c2, beta);
+
+        if (xA > xB)
+        {
+            PFint iTmp = xA; xA = xB; xB = iTmp;
+            PFfloat fTmp = zA; zA = zB; zB = fTmp;
+            PFcolor cTmp = cA; cA = cB; cB = cTmp;
+        }
+
+        /* Draw Horizontal Line */
+
+        PFsizei xyOffset = y*fbDst->texture.width + xA;
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+
+        for (PFint x = xA; x != xB; x++, xyOffset++)
+        {
+            PFfloat t = (PFfloat)(x-xA)*xInvLen;
+            PFfloat z = 1.0f/(zA + t*(zB - zA));
+
+            PFfloat *zp = zbDst + xyOffset;
+            if (ctx->depthFunction(z, *zp))
+            {
+                PFcolor src = interpolateColor(cA, cB, t);
+                PFcolor dst = pixelGetter(bufDst, xyOffset);
+
+                PFcolor finalColor = blendFunc(src, dst);
+                pixelSetter(bufDst, xyOffset, finalColor);
+
+                *zp = z;
+            }
+        }
+    }
+
+    // Rasterization of the second part of the triangle (y2 to y3)
+
+    for (PFint y = y2; y <= y3; y++)
+    {
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (y - y2 + 1) * invSegmentHeight32;
+
+        PFint xA = x1 + (x3 - x1) * alpha;
+        PFint xB = x2 + (x3 - x2) * beta;
+        PFfloat zA = z1 + (z3 - z1) * alpha;
+        PFfloat zB = z2 + (z3 - z2) * beta;
+
+        PFcolor cA = interpolateColor(c1, c3, alpha);
+        PFcolor cB = interpolateColor(c2, c3, beta);
+
+        if (xA > xB)
+        {
+            PFint iTmp = xA; xA = xB; xB = iTmp;
+            PFfloat fTmp = zA; zA = zB; zB = fTmp;
+            PFcolor cTmp = cA; cA = cB; cB = cTmp;
+        }
+
+        /* Draw Horizontal Line */
+
+        PFsizei xyOffset = y*fbDst->texture.width + xA;
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+
+        for (PFint x = xA; x != xB; x++, xyOffset++)
+        {
+            PFfloat t = (PFfloat)(x-xA)*xInvLen;
+            PFfloat z = 1.0f/(zA + t*(zB - zA));
+
+            PFfloat *zp = zbDst + xyOffset;
+            if (ctx->depthFunction(z, *zp))
+            {
+                PFcolor src = interpolateColor(cA, cB, t);
+                PFcolor dst = pixelGetter(bufDst, xyOffset);
+
+                PFcolor finalColor = blendFunc(src, dst);
+                pixelSetter(bufDst, xyOffset, finalColor);
+
+                *zp = z;
+            }
+        }
+    }
 }
 
 void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
+    PFctx *ctx = pfGetCurrentContext();
 
+    /* Prepare for rasterization */
+
+    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    {
+        return;
+    }
+
+    Helper_SortVertices(&v1, &v2, &v3);
+
+    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
+    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
+    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+
+    const PFcolor c1 = Process_Gouraud(ctx, v1, viewPos, &ctx->faceMaterial[faceToRender]);
+    const PFcolor c2 = Process_Gouraud(ctx, v2, viewPos, &ctx->faceMaterial[faceToRender]);
+    const PFcolor c3 = Process_Gouraud(ctx, v3, viewPos, &ctx->faceMaterial[faceToRender]);
+
+    const PFfloat s1 = v1->texcoord[0], t1 = v1->texcoord[1];
+    const PFfloat s2 = v2->texcoord[0], t2 = v2->texcoord[1];
+    const PFfloat s3 = v3->texcoord[0], t3 = v3->texcoord[1];
+
+    const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
+    const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
+    const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
+
+    /* Get Some Contextual Values */
+
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
+        ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
+
+    PFtexture *texture = ctx->currentTexture;
+    PFframebuffer *fbDst = ctx->currentFramebuffer;
+    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
+    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFblendfunc blendFunc = ctx->blendFunction;
+    void *bufDst = fbDst->texture.pixels;
+    PFfloat *zbDst = fbDst->zbuffer;
+
+    // Rasterization of the first part of the triangle (y1 to y2)
+
+    for (PFint y = y1; y < y2; y++)
+    {
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (y - y1 + 1) * invSegmentHeight21;
+
+        PFint xA = x1 + (x3 - x1) * alpha;
+        PFint xB = x1 + (x2 - x1) * beta;
+        PFfloat zA = z1 + (z3 - z1) * alpha;
+        PFfloat zB = z1 + (z2 - z1) * beta;
+
+        PFfloat uA = s1 + (s3 - s1) * alpha;
+        PFfloat uB = s1 + (s2 - s1) * beta;
+        PFfloat vA = t1 + (t3 - t1) * alpha;
+        PFfloat vB = t1 + (t2 - t1) * beta;
+
+        PFcolor cA = interpolateColor(c1, c3, alpha);
+        PFcolor cB = interpolateColor(c1, c2, beta);
+
+        if (xA > xB)
+        {
+            PFint iTmp;
+            iTmp = xA; xA = xB; xB = iTmp;
+
+            PFfloat fTmp;
+            fTmp = zA; zA = zB; zB = fTmp;
+            fTmp = uA; uA = uB; uB = fTmp;
+            fTmp = vA; vA = vB; vB = fTmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB; cB = cTmp;
+        }
+
+        /* Draw Horizontal Line */
+
+        PFsizei xyOffset = y*fbDst->texture.width + xA;
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+
+        for (PFint x = xA; x != xB; x++, xyOffset++)
+        {
+            PFfloat t = (PFfloat)(x-xA)*xInvLen;
+            PFfloat z = 1.0f/(zA + t*(zB - zA));
+
+            // NOTE 1: Divided by 'z', correct perspective
+            // NOTE 2: 'z' is actually the reciprocal
+            PFfloat u = z*(uA + t*(uB - uA));
+            PFfloat v = z*(vA + t*(vB - vA));
+
+            PFcolor tex = pfGetTextureSample(texture, u, v);
+            PFcolor src = interpolateColor(cA, cB, t);
+            src = pfBlendMultiplicative(tex, src);
+            PFcolor dst = pixelGetter(bufDst, xyOffset);
+
+            PFcolor finalColor = blendFunc(src, dst);
+            pixelSetter(bufDst, xyOffset, finalColor);
+
+            zbDst[xyOffset] = z;
+        }
+    }
+
+    // Rasterization of the second part of the triangle (y2 to y3)
+
+    for (PFint y = y2; y <= y3; y++)
+    {
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (y - y2 + 1) * invSegmentHeight32;
+
+        PFint xA = x1 + (x3 - x1) * alpha;
+        PFint xB = x2 + (x3 - x2) * beta;
+        PFfloat zA = z1 + (z3 - z1) * alpha;
+        PFfloat zB = z2 + (z3 - z2) * beta;
+
+        PFfloat uA = s1 + (s3 - s1) * alpha;
+        PFfloat uB = s2 + (s3 - s2) * beta;
+        PFfloat vA = t1 + (t3 - t1) * alpha;
+        PFfloat vB = t2 + (t3 - t2) * beta;
+
+        PFcolor cA = interpolateColor(c1, c3, alpha);
+        PFcolor cB = interpolateColor(c2, c3, beta);
+
+        if (xA > xB)
+        {
+            PFint iTmp;
+            iTmp = xA; xA = xB; xB = iTmp;
+
+            PFfloat fTmp;
+            fTmp = zA; zA = zB; zB = fTmp;
+            fTmp = uA; uA = uB; uB = fTmp;
+            fTmp = vA; vA = vB; vB = fTmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB; cB = cTmp;
+        }
+
+        /* Draw Horizontal Line */
+
+        PFsizei xyOffset = y*fbDst->texture.width + xA;
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+
+        for (PFint x = xA; x != xB; x++, xyOffset++)
+        {
+            PFfloat t = (PFfloat)(x-xA)*xInvLen;
+            PFfloat z = 1.0f/(zA + t*(zB - zA));
+
+            // NOTE 1: Divided by 'z', correct perspective
+            // NOTE 2: 'z' is actually the reciprocal
+            PFfloat u = z*(uA + t*(uB - uA));
+            PFfloat v = z*(vA + t*(vB - vA));
+
+            PFcolor tex = pfGetTextureSample(texture, u, v);
+            PFcolor src = interpolateColor(cA, cB, t);
+            src = pfBlendMultiplicative(tex, src);
+            PFcolor dst = pixelGetter(bufDst, xyOffset);
+
+            PFcolor finalColor = blendFunc(src, dst);
+            pixelSetter(bufDst, xyOffset, finalColor);
+
+            zbDst[xyOffset] = z;
+        }
+    }
 }
 
 void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
+    PFctx *ctx = pfGetCurrentContext();
 
+    /* Prepare for rasterization */
+
+    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    {
+        return;
+    }
+
+    Helper_SortVertices(&v1, &v2, &v3);
+
+    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
+    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
+    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+
+    const PFcolor c1 = Process_Gouraud(ctx, v1, viewPos, &ctx->faceMaterial[faceToRender]);
+    const PFcolor c2 = Process_Gouraud(ctx, v2, viewPos, &ctx->faceMaterial[faceToRender]);
+    const PFcolor c3 = Process_Gouraud(ctx, v3, viewPos, &ctx->faceMaterial[faceToRender]);
+
+    const PFfloat s1 = v1->texcoord[0], t1 = v1->texcoord[1];
+    const PFfloat s2 = v2->texcoord[0], t2 = v2->texcoord[1];
+    const PFfloat s3 = v3->texcoord[0], t3 = v3->texcoord[1];
+
+    const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
+    const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
+    const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
+
+    /* Get Some Contextual Values */
+
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
+        ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
+
+    PFtexture *texture = ctx->currentTexture;
+    PFframebuffer *fbDst = ctx->currentFramebuffer;
+    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
+    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFblendfunc blendFunc = ctx->blendFunction;
+    void *bufDst = fbDst->texture.pixels;
+    PFfloat *zbDst = fbDst->zbuffer;
+
+    // Rasterization of the first part of the triangle (y1 to y2)
+
+    for (PFint y = y1; y < y2; y++)
+    {
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (y - y1 + 1) * invSegmentHeight21;
+
+        PFint xA = x1 + (x3 - x1) * alpha;
+        PFint xB = x1 + (x2 - x1) * beta;
+        PFfloat zA = z1 + (z3 - z1) * alpha;
+        PFfloat zB = z1 + (z2 - z1) * beta;
+
+        PFfloat uA = s1 + (s3 - s1) * alpha;
+        PFfloat uB = s1 + (s2 - s1) * beta;
+        PFfloat vA = t1 + (t3 - t1) * alpha;
+        PFfloat vB = t1 + (t2 - t1) * beta;
+
+        PFcolor cA = interpolateColor(c1, c3, alpha);
+        PFcolor cB = interpolateColor(c1, c2, beta);
+
+        if (xA > xB)
+        {
+            PFint iTmp;
+            iTmp = xA; xA = xB; xB = iTmp;
+
+            PFfloat fTmp;
+            fTmp = zA; zA = zB; zB = fTmp;
+            fTmp = uA; uA = uB; uB = fTmp;
+            fTmp = vA; vA = vB; vB = fTmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB; cB = cTmp;
+        }
+
+        /* Draw Horizontal Line */
+
+        PFsizei xyOffset = y*fbDst->texture.width + xA;
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+
+        for (PFint x = xA; x <= xB; x++, xyOffset++)
+        {
+            PFfloat t = (PFfloat)(x-xA)*xInvLen;
+            PFfloat z = 1.0f/(zA + t*(zB - zA));
+
+            // NOTE 1: Divided by 'z', correct perspective
+            // NOTE 2: 'z' is actually the reciprocal
+            PFfloat u = z*(uA + t*(uB - uA));
+            PFfloat v = z*(vA + t*(vB - vA));
+
+            PFfloat *zp = zbDst + xyOffset;
+            if (ctx->depthFunction(z, *zp))
+            {
+                PFcolor tex = pfGetTextureSample(texture, u, v);
+                PFcolor src = interpolateColor(cA, cB, t);
+                src = pfBlendMultiplicative(tex, src);
+                PFcolor dst = pixelGetter(bufDst, xyOffset);
+
+                PFcolor finalColor = blendFunc(src, dst);
+                pixelSetter(bufDst, xyOffset, finalColor);
+
+                *zp = z;
+            }
+        }
+    }
+
+    // Rasterization of the second part of the triangle (y2 to y3)
+
+    for (PFint y = y2; y <= y3; y++)
+    {
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta = (y - y2 + 1) * invSegmentHeight32;
+
+        PFint xA = x1 + (x3 - x1) * alpha;
+        PFint xB = x2 + (x3 - x2) * beta;
+        PFfloat zA = z1 + (z3 - z1) * alpha;
+        PFfloat zB = z2 + (z3 - z2) * beta;
+
+        PFfloat uA = s1 + (s3 - s1) * alpha;
+        PFfloat uB = s2 + (s3 - s2) * beta;
+        PFfloat vA = t1 + (t3 - t1) * alpha;
+        PFfloat vB = t2 + (t3 - t2) * beta;
+
+        PFcolor cA = interpolateColor(c1, c3, alpha);
+        PFcolor cB = interpolateColor(c2, c3, beta);
+
+        if (xA > xB)
+        {
+            PFint iTmp;
+            iTmp = xA; xA = xB; xB = iTmp;
+
+            PFfloat fTmp;
+            fTmp = zA; zA = zB; zB = fTmp;
+            fTmp = uA; uA = uB; uB = fTmp;
+            fTmp = vA; vA = vB; vB = fTmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB; cB = cTmp;
+        }
+
+        /* Draw Horizontal Line */
+
+        PFsizei xyOffset = y*fbDst->texture.width + xA;
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+
+        for (PFint x = xA; x <= xB; x++, xyOffset++)
+        {
+            PFfloat t = (PFfloat)(x-xA)*xInvLen;
+            PFfloat z = 1.0f/(zA + t*(zB - zA));
+
+            // NOTE 1: Divided by 'z', correct perspective
+            // NOTE 2: 'z' is actually the reciprocal
+            PFfloat u = z*(uA + t*(uB - uA));
+            PFfloat v = z*(vA + t*(vB - vA));
+
+            PFfloat *zp = zbDst + xyOffset;
+            if (ctx->depthFunction(z, *zp))
+            {
+                PFcolor tex = pfGetTextureSample(texture, u, v);
+                PFcolor src = interpolateColor(cA, cB, t);
+                src = pfBlendMultiplicative(tex, src);
+                PFcolor dst = pixelGetter(bufDst, xyOffset);
+
+                PFcolor finalColor = blendFunc(src, dst);
+                pixelSetter(bufDst, xyOffset, finalColor);
+
+                *zp = z;
+            }
+        }
+    }
 }
 
 #endif //PF_GOURAUD_SHADING
