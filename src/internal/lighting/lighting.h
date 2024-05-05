@@ -11,7 +11,9 @@ PFcolor Process_Light(const PFlight* light,
     PFfloat shininess);
 
 #ifdef PF_GOURAUD_SHADING
-PFcolor Process_Gouraud(const PFctx* ctx, const PFvertex* v, const PFMvec3 viewPos, const PFmaterial* material);
+PFcolor Process_Gouraud(const PFctx* ctx,
+    const PFvertex* v, const PFMvec3 viewPos,
+    const PFmaterial* material);
 #endif //PF_GOURAUD_SHADING
 
 
