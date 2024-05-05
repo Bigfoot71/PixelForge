@@ -68,24 +68,24 @@ static void pfInternal_ResetVertexBufferForNextElement()
     {
         case PF_TRIANGLE_FAN:
         case PF_TRIANGLE_STRIP:
-            currentCtx->vertexCount = 1;
+            currentCtx->vertexCounter = 1;
             currentCtx->vertexBuffer[0] = currentCtx->vertexBuffer[3];
             break;
 
         case PF_QUAD_FAN:
         case PF_QUAD_STRIP:
-            currentCtx->vertexCount = 2;
+            currentCtx->vertexCounter = 2;
             currentCtx->vertexBuffer[0] = currentCtx->vertexBuffer[4];
             currentCtx->vertexBuffer[1] = currentCtx->vertexBuffer[5];
             break;
 
         default:
-            currentCtx->vertexCount = 0;
+            currentCtx->vertexCounter = 0;
             break;
     }
 }
 
-static int_fast8_t pfInternal_GetDrawModeVertexCount(PFdrawmode mode)
+static PFsizei pfInternal_GetDrawModeVertexCount(PFdrawmode mode)
 {
     switch (mode)
     {
@@ -123,16 +123,18 @@ static PFsizei pfInternal_GetDataTypeSize(PFdatatype type)
 
 PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat)
 {
+    /* Memory allocation for the context */
+
     PFctx *ctx = (PFctx*)PF_MALLOC(sizeof(PFctx));
     if (!ctx) return NULL;
 
-    ctx->mainFramebuffer = (PFframebuffer) { 0 };
+    /* Initialization of the main framebuffer */
 
-    ctx->mainFramebuffer.texture = pfGenTexture(
-        targetBuffer, width, height, pixelFormat);
+    ctx->mainFramebuffer = (PFframebuffer) { 0 };
+    ctx->mainFramebuffer.texture = pfGenTexture(targetBuffer, width, height, pixelFormat);
 
     const PFsizei bufferSize = width*height;
-    ctx->mainFramebuffer.zbuffer = (PFfloat*)PF_MALLOC(bufferSize*sizeof(PFfloat));
+    ctx->mainFramebuffer.zbuffer = (PFfloat*)PF_MALLOC(bufferSize * sizeof(PFfloat));
 
     if (!ctx->mainFramebuffer.zbuffer)
     {
@@ -140,74 +142,88 @@ PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixe
         return NULL;
     }
 
+    /* Initialization of the z-buffer with maximum values */
+
     for (PFsizei i = 0; i < bufferSize; i++)
     {
         ctx->mainFramebuffer.zbuffer[i] = FLT_MAX;
     }
 
+    /* Definition of the current framebuffer */
+
     ctx->currentFramebuffer = &ctx->mainFramebuffer;
+
+    /* Initialization of viewport members */
 
     ctx->vpPos[0] = ctx->vpMin[0] = 0;
     ctx->vpPos[1] = ctx->vpMin[1] = 0;
     ctx->vpDim[0] = ctx->vpMax[0] = width - 1;
     ctx->vpDim[1] = ctx->vpMax[1] = height - 1;
 
+    /* Initialization of default rendering members */
+
     ctx->currentDrawMode = 0;
     ctx->blendFunction = pfBlendDisabled;
     ctx->depthFunction = pfDepthLess;
     ctx->clearColor = (PFcolor) { 0 };
     ctx->clearDepth = FLT_MAX;
-
     ctx->pointSize = 1.0f;
     ctx->lineWidth = 1.0f;
-
     ctx->polygonMode[0] = PF_FILL;
     ctx->polygonMode[1] = PF_FILL;
+
+    /* Initialization of vertex attributes */
 
     memset(ctx->currentNormal, 0, sizeof(PFMvec3));
     memset(ctx->currentTexcoord, 0, sizeof(PFMvec2));
     ctx->currentColor = (PFcolor) { 255, 255, 255, 255 };
+    ctx->vertexCounter = 0;
 
-    ctx->vertexCount = 0;
+    /* Initialization of raster position */
 
     memset(ctx->rasterPos, 0, sizeof(PFMvec4));
     ctx->pixelZoom[0] = ctx->pixelZoom[1] = 1.0f;
 
+    /* Initialization of lights */
+
     for (PFsizei i = 0; i < PF_MAX_LIGHT_STACK; i++)
     {
         ctx->lights[i] = (PFlight) {
-            .position       = { 0 },
-            .direction      = { 0 },
-            .cutoff         = M_PI,
-            .outerCutoff    = M_PI,
-            .attConstant    = 1,
-            .attLinear      = 0,
-            .attQuadratic   = 0,
-            .ambient        = (PFcolor) { 51, 51, 51, 255 },
-            .diffuse        = (PFcolor) { 255, 255, 255, 255 },
-            .specular       = (PFcolor) { 255, 255, 255, 255 },
-            .active         = PF_FALSE
+            .position = { 0 },
+            .direction = { 0 },
+            .cutoff = M_PI,
+            .outerCutoff = M_PI,
+            .attConstant = 1,
+            .attLinear = 0,
+            .attQuadratic = 0,
+            .ambient = (PFcolor) { 51, 51, 51, 255 },
+            .diffuse = (PFcolor) { 255, 255, 255, 255 },
+            .specular = (PFcolor) { 255, 255, 255, 255 },
+            .active = PF_FALSE
         };
     }
-
     ctx->lastActiveLight = -1;
 
+    /* Initialization of materials */
+
     ctx->faceMaterial[0] = ctx->faceMaterial[1] = (PFmaterial) {
-        .ambient    = (PFcolor) { 255, 255, 255, 255 },
-        .diffuse    = (PFcolor) { 255, 255, 255, 255 },
-        .specular   = (PFcolor) { 255, 255, 255, 255 },
-        .emission   = (PFcolor) { 0, 0, 0, 255 },
-#   ifdef PF_PHONG_REFLECTION
-        .shininess  = 16.0f,
-#   else
-        .shininess  = 64.0f,
-#   endif
+        .ambient = (PFcolor) { 255, 255, 255, 255 },
+        .diffuse = (PFcolor) { 255, 255, 255, 255 },
+        .specular = (PFcolor) { 255, 255, 255, 255 },
+        .emission = (PFcolor) { 0, 0, 0, 255 },
+#ifdef PF_PHONG_REFLECTION
+        .shininess = 16.0f,
+#else
+        .shininess = 64.0f,
+#endif
     };
 
     ctx->materialColorFollowing = (PFmatcolfollowing) {
         .face = PF_FRONT_AND_BACK,
         .mode = PF_AMBIENT_AND_DIFFUSE
     };
+
+    /* Initialization of default matrices */
 
     ctx->currentMatrixMode = PF_MODELVIEW;
     ctx->currentMatrix = &ctx->view;
@@ -216,19 +232,23 @@ PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixe
     pfmMat4Identity(ctx->model);
     pfmMat4Identity(ctx->view);
 
+    /* Initialization of matrix stack counters */
+
     ctx->stackModelviewCounter = 0;
     ctx->stackProjectionCounter = 0;
     ctx->modelMatrixUsed = PF_FALSE;
 
+    /* Initialization of vertex and texture attributes */
+
     ctx->vertexAttribs = (PFvertexattribs) { 0 };
     ctx->currentTexture = NULL;
 
-    ctx->state = 0x00;
+    /* Initialization of the context state */
 
+    ctx->state = 0x00;
     ctx->state |= PF_CULL_FACE;
     ctx->shadingMode = PF_SMOOTH;
     ctx->cullFace = PF_BACK;
-
     ctx->errCode = PF_NO_ERROR;
 
     return ctx;
@@ -250,33 +270,44 @@ void pfDeleteContext(PFctx* ctx)
 
 void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat)
 {
+    /* Check if targetBuffer, width, or height is invalid */
+
     if (targetBuffer == NULL || width == 0 || height == 0)
     {
         currentCtx->errCode = PF_INVALID_VALUE;
         return;
     }
 
+    /* Store the old width and height of the main framebuffer */
+
     PFsizei oldWidth = currentCtx->mainFramebuffer.texture.width;
     PFsizei oldHeight = currentCtx->mainFramebuffer.texture.height;
 
+    /* Check if the dimensions of the new buffer differ from the old one */
+
     if (oldWidth != width || oldHeight != height)
     {
+        // Calculate the new buffer size
         const PFsizei bufferSize = width*height;
+
+        // Reallocate memory for the z-buffer
         PFfloat *zbuffer = PF_REALLOC(currentCtx->mainFramebuffer.zbuffer, bufferSize);
 
+        // Check if reallocation failed
         if (zbuffer == NULL)
         {
             currentCtx->errCode = PF_ERROR_OUT_OF_MEMORY;
             return;
         }
 
+        // Initialize the new areas of the z-buffer
         if (width > oldWidth)
         {
             for (PFsizei y = 0; y < height; y++)
             {
                 for (PFsizei x = oldWidth; x < width; x++)
                 {
-                    zbuffer[y*width + x] = currentCtx->clearDepth;
+                    zbuffer[y * width + x] = currentCtx->clearDepth;
                 }
             }
         }
@@ -289,19 +320,24 @@ void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelf
             {
                 for (PFsizei x = 0; x < xMax; x++)
                 {
-                    zbuffer[y*width + x] = currentCtx->clearDepth;
+                    zbuffer[y * width + x] = currentCtx->clearDepth;
                 }
             }
         }
 
+        // Update the z-buffer pointer
         currentCtx->mainFramebuffer.zbuffer = zbuffer;
     }
 
-    currentCtx->auxFramebuffer = NULL;
+    /* Generate the new texture for the main framebuffer */
 
-    currentCtx->mainFramebuffer.texture = pfGenTexture(
-        targetBuffer, width, height, pixelFormat);
+    currentCtx->mainFramebuffer.texture = pfGenTexture(targetBuffer, width, height, pixelFormat);
+
+    /* Reset the auxiliary framebuffer, it needs to be redefined after changing the main buffer */
+
+    currentCtx->auxFramebuffer = NULL;
 }
+
 
 PF_API void pfSetAuxBuffer(void *auxFramebuffer)
 {
@@ -1201,9 +1237,9 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
     PFMmat4 mvp, matNormal;
     GetMVP(mvp, matNormal, NULL);
 
-    int_fast8_t drawModeVertexCount = pfInternal_GetDrawModeVertexCount(mode);
+    PFsizei drawModeVertexCount = pfInternal_GetDrawModeVertexCount(mode);
 
-    for (int_fast8_t i = 0; i < drawModeVertexCount; i++)
+    for (PFsizei i = 0; i < drawModeVertexCount; i++)
     {
         currentCtx->vertexBuffer[i] = (PFvertex) { 0 };
         currentCtx->vertexBuffer[i].color = currentCtx->currentColor;
@@ -1213,7 +1249,7 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
 
     for (PFsizei i = 0; i < count; i++)
     {
-        PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCount++);
+        PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCounter++);
 
         // Get vertex index
 
@@ -1391,7 +1427,7 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
 
         // If the number of vertices has reached that necessary for, we process the shape
 
-        if (currentCtx->vertexCount == drawModeVertexCount)
+        if (currentCtx->vertexCounter == drawModeVertexCount)
         {
             ProcessRasterize(mvp, matNormal);
             pfInternal_ResetVertexBufferForNextElement();
@@ -1421,9 +1457,9 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
     PFMmat4 mvp, matNormal;
     GetMVP(mvp, matNormal, NULL);
 
-    int_fast8_t drawModeVertexCount = pfInternal_GetDrawModeVertexCount(mode);
+    PFsizei drawModeVertexCount = pfInternal_GetDrawModeVertexCount(mode);
 
-    for (int_fast8_t i = 0; i < drawModeVertexCount; i++)
+    for (PFsizei i = 0; i < drawModeVertexCount; i++)
     {
         currentCtx->vertexBuffer[i] = (PFvertex) { 0 };
         currentCtx->vertexBuffer[i].color = currentCtx->currentColor;
@@ -1433,7 +1469,7 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
 
     for (PFsizei i = 0; i < count; i++)
     {
-        PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCount++);
+        PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCounter++);
 
         // Fill the vertex with given vertices data
 
@@ -1611,7 +1647,7 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
 
         // If the number of vertices has reached that necessary for, we process the shape
 
-        if (currentCtx->vertexCount == drawModeVertexCount)
+        if (currentCtx->vertexCounter == drawModeVertexCount)
         {
             ProcessRasterize(mvp, matNormal);
             pfInternal_ResetVertexBufferForNextElement();
@@ -1629,7 +1665,7 @@ void pfBegin(PFdrawmode mode)
     if (mode >= PF_POINTS && mode <= PF_QUAD_STRIP)
     {
         currentCtx->currentDrawMode = mode;
-        currentCtx->vertexCount = 0;
+        currentCtx->vertexCounter = 0;
     }
     else
     {
@@ -1639,7 +1675,7 @@ void pfBegin(PFdrawmode mode)
 
 void pfEnd(void)
 {
-    currentCtx->vertexCount = 0;
+    currentCtx->vertexCounter = 0;
 }
 
 void pfVertex2i(PFint x, PFint y)
@@ -1694,7 +1730,7 @@ void pfVertex4fv(const PFfloat* v)
 {
     // Get the pointer of the current vertex of the batch and pad it with zero
 
-    PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCount++);
+    PFvertex *vertex = currentCtx->vertexBuffer + (currentCtx->vertexCounter++);
 
     // Fill the vertex with given vertices data
 
@@ -1705,7 +1741,7 @@ void pfVertex4fv(const PFfloat* v)
 
     // If the number of vertices has reached that necessary for, we process the shape
 
-    if (currentCtx->vertexCount == pfInternal_GetDrawModeVertexCount(currentCtx->currentDrawMode))
+    if (currentCtx->vertexCounter == pfInternal_GetDrawModeVertexCount(currentCtx->currentDrawMode))
     {
         PFMmat4 mvp, matNormal;
         GetMVP(mvp, matNormal, NULL);

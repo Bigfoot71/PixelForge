@@ -22,6 +22,7 @@
 
 #include "../pixelforge.h"
 #include "../pfm.h"
+#include <stdint.h>
 
 /*
     Internal context struct and other structs used by them
@@ -81,6 +82,70 @@ typedef struct {
 
 struct PFctx {
 
+    PFframebuffer *currentFramebuffer;                              ///< Pointer to the current framebuffer
+    PFtexture *currentTexture;                                      ///< Pointer to the current texture
+    PFMmat4 *currentMatrix;                                         ///< Pointer to the current matrix
+    void *auxFramebuffer;                                           ///< Auxiliary buffer for double buffering
+
+    PFblendfunc blendFunction;                                      ///< Blend function for alpha blending
+    PFdepthfunc depthFunction;                                      ///< Function for depth testing
+
+    PFint vpPos[2];                                                 ///< Represents the top-left corner of the viewport
+    PFsizei vpDim[2];                                               ///< Represents the dimensions of the viewport (minus one)
+    PFint vpMin[2];                                                 ///< Represents the minimum renderable point of the viewport (top-left)
+    PFint vpMax[2];                                                 ///< Represents the maximum renderable point of the viewport (bottom-right)
+
+    PFvertexattribs vertexAttribs;                                  ///< Vertex attributes used by 'pfDrawArrays' or 'pfDrawElements' (e.g., normal, texture coordinates)
+    PFvertex vertexBuffer[6];                                       ///< Buffer used for storing primitive vertices, used for processing and rendering
+    PFsizei vertexCounter;                                          ///< Number of vertices in 'ctx.vertexBuffer'
+
+    PFMvec3 currentNormal;                                          ///< Current normal assigned by 'pfNormal'                  - (Stored in 'ctx.vertexBuffer' after the call to 'pfVertex')
+    PFMvec2 currentTexcoord;                                        ///< Current texture coordinates assigned by 'pfTexCoord'   - (Stored in 'ctx.vertexBuffer' after the call to 'pfVertex')
+    PFcolor currentColor;                                           ///< Current color assigned by by 'pfColor'                 - (Stored in 'ctx.vertexBuffer' after the call to 'pfVertex')
+
+    PFframebuffer mainFramebuffer;                                  ///< Screen buffer for rendering
+
+    PFcolor clearColor;                                             ///< Color used to clear the screen
+    PFfloat clearDepth;                                             ///< Depth value used to clear the screen
+
+    PFfloat pointSize;                                              ///< Rasterized point size
+    PFfloat lineWidth;                                              ///< Rasterized line width
+
+    PFMvec4 rasterPos;                                              ///< Current raster position (for pfDrawPixels)
+    PFMvec2 pixelZoom;                                              ///< Pixel zoom factor (for pfDrawPixels)
+
+    PFdrawmode currentDrawMode;                                     ///< Current drawing mode (e.g., lines, triangles)
+    PFpolygonmode polygonMode[2];                                   ///< Polygon mode for faces [0: front] [1: back]
+
+    PFmaterial faceMaterial[2];                                     ///< Material properties for faces [0: front] [1: back]
+    PFmatcolfollowing materialColorFollowing;                       ///< Material color which must follow the current color (see 'pfColorMaterial')
+
+    PFlight lights[PF_MAX_LIGHT_STACK];                             ///< Array of lights
+    PFint lastActiveLight;                                          ///< Index of the last active light
+
+    PFMmat4 projection;                                             ///< Default projection matrix
+    PFMmat4 model;                                                  ///< Default model matrix (the one used if we push in PF_MODELVIEW mode)
+    PFMmat4 view;                                                   ///< Default view matrix (the default one used in PF_MODELVIEW mode)
+
+    PFMmat4 stackProjection[PF_MAX_PROJECTION_STACK_SIZE];          ///< Projection matrix stack for push/pop operations
+    PFMmat4 stackModelview[PF_MAX_MODELVIEW_STACK_SIZE];            ///< Modelview matrix stack for push/pop operations
+    PFsizei stackProjectionCounter;                                 ///< Counter for matrix stack operations
+    PFsizei stackModelviewCounter;                                  ///< Counter for matrix stack operations
+
+    PFmatrixmode currentMatrixMode;                                 ///< Current matrix mode (e.g., PF_MODELVIEW, PF_PROJECTION)
+    PFboolean modelMatrixUsed;                                      ///< Flag indicating if the model matrix is used
+
+    PFshademode shadingMode;                                        ///< Type of shading (e.g., flat, smooth)
+    PFface cullFace;                                                ///< Faces to cull
+
+    PFerrcode errCode;                                              ///< Last error code
+    PFuint state;                                                   ///< Current context state
+};
+
+/*
+
+struct PFctx {
+
     PFframebuffer mainFramebuffer;                                  ///< Screen buffer for rendering
     PFframebuffer *currentFramebuffer;                              ///< Pointer to the current framebuffer
     void *auxFramebuffer;                                           ///< Auxiliary buffer for double buffering
@@ -92,9 +157,10 @@ struct PFctx {
 
     PFdrawmode currentDrawMode;                                     ///< Current drawing mode (e.g., lines, triangles)
     PFblendfunc blendFunction;                                      ///< Blend function for alpha blending
-    PFdepthfunc depthFunction;
+    PFdepthfunc depthFunction;                                      ///< Function for depth testing
+
     PFcolor clearColor;                                             ///< Color used to clear the screen
-    PFfloat clearDepth;
+    PFfloat clearDepth;                                             ///< Depth value used to clear the screen
 
     PFfloat pointSize;                                              ///< Rasterized point size
     PFfloat lineWidth;                                              ///< Rasterized line width
@@ -105,15 +171,15 @@ struct PFctx {
     PFcolor currentColor;                                           ///< Current color for vertex rendering
 
     PFvertex vertexBuffer[6];                                       ///< Vertex buffer for geometry
-    int_fast8_t vertexCount;                                        ///< Number of vertices in the buffer
+    int_fast8_t vertexCounter;                                      ///< Number of vertices in the buffer
 
     PFMvec4 rasterPos;                                              ///< Current raster position (for pfDrawPixels)
     PFMvec2 pixelZoom;                                              ///< Pixel zoom factor (for pfDrawPixels)
 
-    PFlight lights[PF_MAX_LIGHT_STACK];
-    PFint lastActiveLight;
+    PFlight lights[PF_MAX_LIGHT_STACK];                             ///< Array of lights
+    PFint lastActiveLight;                                          ///< Index of the last active light
 
-    PFmaterial faceMaterial[2];
+    PFmaterial faceMaterial[2];                                     ///< Material properties for faces [0: front] [1: back]
     PFmatcolfollowing materialColorFollowing;                       ///< Material color which must follow the current color (see 'pfColorMaterial')
 
     PFmatrixmode currentMatrixMode;                                 ///< Current matrix mode (e.g., PF_MODELVIEW, PF_PROJECTION)
@@ -125,18 +191,19 @@ struct PFctx {
     PFMmat4 stackModelview[PF_MAX_MODELVIEW_STACK_SIZE];            ///< Modelview matrix stack for push/pop operations
     PFsizei stackProjectionCounter;                                 ///< Counter for matrix stack operations
     PFsizei stackModelviewCounter;                                  ///< Counter for matrix stack operations
-    PFboolean modelMatrixUsed;
+    PFboolean modelMatrixUsed;                                      ///< Flag indicating if the model matrix is used
 
     PFvertexattribs vertexAttribs;                                  ///< Vertex attributes (e.g., normal, texture coordinates)
     PFtexture *currentTexture;                                      ///< Pointer to the current texture
 
     PFushort state;                                                 ///< Current context state
 
-    PFshademode shadingMode;                                        ///< Defines the type of shading, whether the colors are interpolated or not
+    PFshademode shadingMode;                                        ///< Type of shading (e.g., flat, smooth)
     PFface cullFace;                                                ///< Faces to cull
 
-    PFerrcode errCode;                                              ///< Contains the last error code that occurred
+    PFerrcode errCode;                                              ///< Last error code
 
 };
+*/
 
 #endif //PF_INTERNAL_CONTEXT_H
