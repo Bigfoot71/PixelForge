@@ -805,9 +805,9 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_3D(PFface faceToRender, const PFvertex* 
 
         PFint xA, xB;
         PFfloat zA, zB;
+        PFcolor cA, cB;
         PFfloat uA, uB;
         PFfloat vA, vB;
-        PFcolor cA, cB;
 
         if (y < y2) // First half
         {
@@ -818,13 +818,13 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_3D(PFface faceToRender, const PFvertex* 
             zA = z1 + (z3 - z1) * alpha;
             zB = z1 + (z2 - z1) * beta;
 
+            cA = interpolateColor(c1, c3, alpha);
+            cB = interpolateColor(c1, c2, beta);
+
             uA = s1 + (s3 - s1) * alpha;
             uB = s1 + (s2 - s1) * beta;
             vA = t1 + (t3 - t1) * alpha;
             vB = t1 + (t2 - t1) * beta;
-
-            cA = interpolateColor(c1, c3, alpha);
-            cB = interpolateColor(c1, c2, beta);
         }
         else // Second half
         {
@@ -835,13 +835,13 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_3D(PFface faceToRender, const PFvertex* 
             zA = z1 + (z3 - z1) * alpha;
             zB = z2 + (z3 - z2) * beta;
 
+            cA = interpolateColor(c1, c3, alpha);
+            cB = interpolateColor(c2, c3, beta);
+
             uA = s1 + (s3 - s1) * alpha;
             uB = s2 + (s3 - s2) * beta;
             vA = t1 + (t3 - t1) * alpha;
             vB = t2 + (t3 - t2) * beta;
-
-            cA = interpolateColor(c1, c3, alpha);
-            cB = interpolateColor(c2, c3, beta);
         }
 
         if (xA > xB)
@@ -933,9 +933,9 @@ void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1
 
         PFint xA, xB;
         PFfloat zA, zB;
+        PFcolor cA, cB;
         PFfloat uA, uB;
         PFfloat vA, vB;
-        PFcolor cA, cB;
 
         if (y < y2) // First half
         {
@@ -946,13 +946,13 @@ void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1
             zA = z1 + (z3 - z1) * alpha;
             zB = z1 + (z2 - z1) * beta;
 
+            cA = interpolateColor(c1, c3, alpha);
+            cB = interpolateColor(c1, c2, beta);
+
             uA = s1 + (s3 - s1) * alpha;
             uB = s1 + (s2 - s1) * beta;
             vA = t1 + (t3 - t1) * alpha;
             vB = t1 + (t2 - t1) * beta;
-
-            cA = interpolateColor(c1, c3, alpha);
-            cB = interpolateColor(c1, c2, beta);
         }
         else // Second half
         {
@@ -963,13 +963,13 @@ void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1
             zA = z1 + (z3 - z1) * alpha;
             zB = z2 + (z3 - z2) * beta;
 
+            cA = interpolateColor(c1, c3, alpha);
+            cB = interpolateColor(c2, c3, beta);
+
             uA = s1 + (s3 - s1) * alpha;
             uB = s2 + (s3 - s2) * beta;
             vA = t1 + (t3 - t1) * alpha;
             vB = t2 + (t3 - t2) * beta;
-
-            cA = interpolateColor(c1, c3, alpha);
-            cB = interpolateColor(c2, c3, beta);
         }
 
         if (xA > xB)
@@ -1025,22 +1025,768 @@ void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1
 
 void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
+    PFctx *ctx = pfGetCurrentContext();
 
+    /* Prepare for rasterization */
+
+    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    {
+        return;
+    }
+
+    Helper_SortVertices(&v1, &v2, &v3);
+
+    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
+    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
+    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
+
+    const PFfloat px1 = v1->position[0], py1 = v1->position[1], pz1 = v1->position[2];
+    const PFfloat px2 = v2->position[0], py2 = v2->position[1], pz2 = v2->position[2];
+    const PFfloat px3 = v3->position[0], py3 = v3->position[1], pz3 = v3->position[2];
+
+    const PFfloat nx1 = v1->normal[0], ny1 = v1->normal[1], nz1 = v1->normal[2];
+    const PFfloat nx2 = v2->normal[0], ny2 = v2->normal[1], nz2 = v2->normal[2];
+    const PFfloat nx3 = v3->normal[0], ny3 = v3->normal[1], nz3 = v3->normal[2];
+
+    const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
+    const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
+    const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
+
+    /* Get Some Contextual Values */
+
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
+        ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
+
+    const PFlight *lights = ctx->lights;
+    PFfloat shininess = ctx->faceMaterial[faceToRender].shininess;
+
+    PFframebuffer *fbDst = ctx->currentFramebuffer;
+    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
+    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFblendfunc blendFunc = ctx->blendFunction;
+    void *bufDst = fbDst->texture.pixels;
+    PFfloat *zbDst = fbDst->zbuffer;
+
+    /* Travel the triangle from top to bottom */
+
+    for (PFint y = y1; y <= y3; y++)
+    {
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta;
+
+        PFint xA, xB;
+        PFfloat zA, zB;
+        PFcolor cA, cB;
+        PFfloat pxA, pyA, pzA;
+        PFfloat pxB, pyB, pzB;
+        PFfloat nxA, nyA, nzA;
+        PFfloat nxB, nyB, nzB;
+
+        if (y < y2) // First half
+        {
+            beta = (y - y1 + 1) * invSegmentHeight21;
+
+            xA = x1 + (x3 - x1) * alpha;
+            xB = x1 + (x2 - x1) * beta;
+            zA = z1 + (z3 - z1) * alpha;
+            zB = z1 + (z2 - z1) * beta;
+
+            cA = interpolateColor(c1, c3, alpha);
+            cB = interpolateColor(c1, c2, beta);
+
+            pxA = px1 + (px3 - px1) * alpha;
+            pxB = px1 + (px2 - px1) * beta;
+            pyA = py1 + (py3 - py1) * alpha;
+            pyB = py1 + (py2 - py1) * beta;
+            pzA = pz1 + (pz3 - pz1) * alpha;
+            pzB = pz1 + (pz2 - pz1) * beta;
+
+            nxA = nx1 + (nx3 - nx1) * alpha;
+            nxB = nx1 + (nx2 - nx1) * beta;
+            nyA = ny1 + (ny3 - ny1) * alpha;
+            nyB = ny1 + (ny2 - ny1) * beta;
+            nzA = nz1 + (nz3 - nz1) * alpha;
+            nzB = nz1 + (nz2 - nz1) * beta;
+        }
+        else // Second half
+        {
+            beta = (y - y2 + 1) * invSegmentHeight32;
+
+            xA = x1 + (x3 - x1) * alpha;
+            xB = x2 + (x3 - x2) * beta;
+            zA = z1 + (z3 - z1) * alpha;
+            zB = z2 + (z3 - z2) * beta;
+
+            cA = interpolateColor(c1, c3, alpha);
+            cB = interpolateColor(c2, c3, beta);
+
+            pxA = px1 + (px3 - px1) * alpha;
+            pxB = px2 + (px3 - px2) * beta;
+            pyA = py1 + (py3 - py1) * alpha;
+            pyB = py2 + (py3 - py2) * beta;
+            pzA = pz1 + (pz3 - pz1) * alpha;
+            pzB = pz2 + (pz3 - pz2) * beta;
+
+            nxA = nx1 + (nx3 - nx1) * alpha;
+            nxB = nx2 + (nx3 - nx2) * beta;
+            nyA = ny1 + (ny3 - ny1) * alpha;
+            nyB = ny2 + (ny3 - ny2) * beta;
+            nzA = nz1 + (nz3 - nz1) * alpha;
+            nzB = nz2 + (nz3 - nz2) * beta;
+        }
+
+        if (xA > xB)
+        {
+            PFint iTmp;
+            iTmp = xA; xA = xB; xB = iTmp;
+
+            PFfloat fTmp;
+            fTmp = zA; zA = zB; zB = fTmp;
+            fTmp = pxA; pxA = pxB; pxB = fTmp;
+            fTmp = pyA; pyA = pyB; pyB = fTmp;
+            fTmp = pzA; pzA = pzB; pzB = fTmp;
+            fTmp = nxA; nxA = nxB; nxB = fTmp;
+            fTmp = nyA; nyA = nyB; nyB = fTmp;
+            fTmp = nzA; nzA = nzB; nzB = fTmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB; cB = cTmp;
+        }
+
+        /* Draw Horizontal Line */
+
+        PFsizei xyOffset = y*fbDst->texture.width + xA;
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+
+        for (PFint x = xA; x != xB; x++, xyOffset++)
+        {
+            PFfloat t = (PFfloat)(x-xA)*xInvLen;
+            PFfloat z = 1.0f/(zA + t*(zB - zA));
+
+            PFMvec3 position = {
+                pxA + t*(pxB - pxA),
+                pyA + t*(pyB - pyA),
+                pzA + t*(pzB - pzA)
+            };
+
+            PFMvec3 normal = {
+                nxA + t*(nxB - nxA),
+                nyA + t*(nyB - nyA),
+                nzA + t*(nzB - nzA)
+            };
+
+            PFcolor src = interpolateColor(cA, cB, t);
+            PFcolor dst = pixelGetter(bufDst, xyOffset);
+
+            PFcolor finalLightColor = { 0 };
+            PFcolor finalColor = blendFunc(src, dst);
+
+            for (int_fast8_t i = 0; i <= ctx->lastActiveLight; i++)
+            {
+                const PFlight *light = lights + i;
+                if (!light->active) continue;
+
+                PFcolor lightColor = Process_Light(light, light->ambient,
+                    finalColor, viewPos, position, normal, shininess);
+
+                finalLightColor = pfBlendAdditive(
+                    finalLightColor, lightColor);
+            }
+
+            pixelSetter(bufDst, xyOffset, finalLightColor);
+            zbDst[xyOffset] = z;
+        }
+    }
 }
 
 void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
+    PFctx *ctx = pfGetCurrentContext();
 
+    /* Prepare for rasterization */
+
+    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    {
+        return;
+    }
+
+    Helper_SortVertices(&v1, &v2, &v3);
+
+    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
+    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
+    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
+
+    const PFfloat px1 = v1->position[0], py1 = v1->position[1], pz1 = v1->position[2];
+    const PFfloat px2 = v2->position[0], py2 = v2->position[1], pz2 = v2->position[2];
+    const PFfloat px3 = v3->position[0], py3 = v3->position[1], pz3 = v3->position[2];
+
+    const PFfloat nx1 = v1->normal[0], ny1 = v1->normal[1], nz1 = v1->normal[2];
+    const PFfloat nx2 = v2->normal[0], ny2 = v2->normal[1], nz2 = v2->normal[2];
+    const PFfloat nx3 = v3->normal[0], ny3 = v3->normal[1], nz3 = v3->normal[2];
+
+    const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
+    const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
+    const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
+
+    /* Get Some Contextual Values */
+
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
+        ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
+
+    const PFlight *lights = ctx->lights;
+    PFfloat shininess = ctx->faceMaterial[faceToRender].shininess;
+
+    PFframebuffer *fbDst = ctx->currentFramebuffer;
+    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
+    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFblendfunc blendFunc = ctx->blendFunction;
+    void *bufDst = fbDst->texture.pixels;
+    PFfloat *zbDst = fbDst->zbuffer;
+
+    /* Travel the triangle from top to bottom */
+
+    for (PFint y = y1; y <= y3; y++)
+    {
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta;
+
+        PFint xA, xB;
+        PFfloat zA, zB;
+        PFcolor cA, cB;
+        PFfloat pxA, pyA, pzA;
+        PFfloat pxB, pyB, pzB;
+        PFfloat nxA, nyA, nzA;
+        PFfloat nxB, nyB, nzB;
+
+        if (y < y2) // First half
+        {
+            beta = (y - y1 + 1) * invSegmentHeight21;
+
+            xA = x1 + (x3 - x1) * alpha;
+            xB = x1 + (x2 - x1) * beta;
+            zA = z1 + (z3 - z1) * alpha;
+            zB = z1 + (z2 - z1) * beta;
+
+            cA = interpolateColor(c1, c3, alpha);
+            cB = interpolateColor(c1, c2, beta);
+
+            pxA = px1 + (px3 - px1) * alpha;
+            pxB = px1 + (px2 - px1) * beta;
+            pyA = py1 + (py3 - py1) * alpha;
+            pyB = py1 + (py2 - py1) * beta;
+            pzA = pz1 + (pz3 - pz1) * alpha;
+            pzB = pz1 + (pz2 - pz1) * beta;
+
+            nxA = nx1 + (nx3 - nx1) * alpha;
+            nxB = nx1 + (nx2 - nx1) * beta;
+            nyA = ny1 + (ny3 - ny1) * alpha;
+            nyB = ny1 + (ny2 - ny1) * beta;
+            nzA = nz1 + (nz3 - nz1) * alpha;
+            nzB = nz1 + (nz2 - nz1) * beta;
+        }
+        else // Second half
+        {
+            beta = (y - y2 + 1) * invSegmentHeight32;
+
+            xA = x1 + (x3 - x1) * alpha;
+            xB = x2 + (x3 - x2) * beta;
+            zA = z1 + (z3 - z1) * alpha;
+            zB = z2 + (z3 - z2) * beta;
+
+            cA = interpolateColor(c1, c3, alpha);
+            cB = interpolateColor(c2, c3, beta);
+
+            pxA = px1 + (px3 - px1) * alpha;
+            pxB = px2 + (px3 - px2) * beta;
+            pyA = py1 + (py3 - py1) * alpha;
+            pyB = py2 + (py3 - py2) * beta;
+            pzA = pz1 + (pz3 - pz1) * alpha;
+            pzB = pz2 + (pz3 - pz2) * beta;
+
+            nxA = nx1 + (nx3 - nx1) * alpha;
+            nxB = nx2 + (nx3 - nx2) * beta;
+            nyA = ny1 + (ny3 - ny1) * alpha;
+            nyB = ny2 + (ny3 - ny2) * beta;
+            nzA = nz1 + (nz3 - nz1) * alpha;
+            nzB = nz2 + (nz3 - nz2) * beta;
+        }
+
+        if (xA > xB)
+        {
+            PFint iTmp;
+            iTmp = xA; xA = xB; xB = iTmp;
+
+            PFfloat fTmp;
+            fTmp = zA; zA = zB; zB = fTmp;
+            fTmp = pxA; pxA = pxB; pxB = fTmp;
+            fTmp = pyA; pyA = pyB; pyB = fTmp;
+            fTmp = pzA; pzA = pzB; pzB = fTmp;
+            fTmp = nxA; nxA = nxB; nxB = fTmp;
+            fTmp = nyA; nyA = nyB; nyB = fTmp;
+            fTmp = nzA; nzA = nzB; nzB = fTmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB; cB = cTmp;
+        }
+
+        /* Draw Horizontal Line */
+
+        PFsizei xyOffset = y*fbDst->texture.width + xA;
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+
+        for (PFint x = xA; x != xB; x++, xyOffset++)
+        {
+            PFfloat t = (PFfloat)(x-xA)*xInvLen;
+            PFfloat z = 1.0f/(zA + t*(zB - zA));
+
+            PFfloat *zp = zbDst + xyOffset;
+            if (ctx->depthFunction(z, *zp))
+            {
+                PFMvec3 position = {
+                    pxA + t*(pxB - pxA),
+                    pyA + t*(pyB - pyA),
+                    pzA + t*(pzB - pzA)
+                };
+
+                PFMvec3 normal = {
+                    nxA + t*(nxB - nxA),
+                    nyA + t*(nyB - nyA),
+                    nzA + t*(nzB - nzA)
+                };
+
+                PFcolor src = interpolateColor(cA, cB, t);
+                PFcolor dst = pixelGetter(bufDst, xyOffset);
+
+                PFcolor finalLightColor = { 0 };
+                PFcolor finalColor = blendFunc(src, dst);
+
+                for (int_fast8_t i = 0; i <= ctx->lastActiveLight; i++)
+                {
+                    const PFlight *light = lights + i;
+                    if (!light->active) continue;
+
+                    PFcolor lightColor = Process_Light(light, light->ambient,
+                        finalColor, viewPos, position, normal, shininess);
+
+                    finalLightColor = pfBlendAdditive(
+                        finalLightColor, lightColor);
+                }
+
+                pixelSetter(bufDst, xyOffset, finalLightColor);
+                *zp = z;
+            }
+        }
+    }
 }
 
 void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
+    PFctx *ctx = pfGetCurrentContext();
 
+    /* Prepare for rasterization */
+
+    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    {
+        return;
+    }
+
+    Helper_SortVertices(&v1, &v2, &v3);
+
+    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
+    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
+    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
+
+    const PFfloat px1 = v1->position[0], py1 = v1->position[1], pz1 = v1->position[2];
+    const PFfloat px2 = v2->position[0], py2 = v2->position[1], pz2 = v2->position[2];
+    const PFfloat px3 = v3->position[0], py3 = v3->position[1], pz3 = v3->position[2];
+
+    const PFfloat nx1 = v1->normal[0], ny1 = v1->normal[1], nz1 = v1->normal[2];
+    const PFfloat nx2 = v2->normal[0], ny2 = v2->normal[1], nz2 = v2->normal[2];
+    const PFfloat nx3 = v3->normal[0], ny3 = v3->normal[1], nz3 = v3->normal[2];
+
+    const PFfloat s1 = v1->texcoord[0], t1 = v1->texcoord[1];
+    const PFfloat s2 = v2->texcoord[0], t2 = v2->texcoord[1];
+    const PFfloat s3 = v3->texcoord[0], t3 = v3->texcoord[1];
+
+    const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
+    const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
+    const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
+
+    /* Get Some Contextual Values */
+
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
+        ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
+
+    const PFlight *lights = ctx->lights;
+    PFfloat shininess = ctx->faceMaterial[faceToRender].shininess;
+
+    PFtexture *texture = ctx->currentTexture;
+    PFframebuffer *fbDst = ctx->currentFramebuffer;
+    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
+    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFblendfunc blendFunc = ctx->blendFunction;
+    void *bufDst = fbDst->texture.pixels;
+    PFfloat *zbDst = fbDst->zbuffer;
+
+    /* Travel the triangle from top to bottom */
+
+    for (PFint y = y1; y <= y3; y++)
+    {
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta;
+
+        PFint xA, xB;
+        PFfloat zA, zB;
+        PFcolor cA, cB;
+        PFfloat uA, uB;
+        PFfloat vA, vB;
+        PFfloat pxA, pyA, pzA;
+        PFfloat pxB, pyB, pzB;
+        PFfloat nxA, nyA, nzA;
+        PFfloat nxB, nyB, nzB;
+
+        if (y < y2) // First half
+        {
+            beta = (y - y1 + 1) * invSegmentHeight21;
+
+            xA = x1 + (x3 - x1) * alpha;
+            xB = x1 + (x2 - x1) * beta;
+            zA = z1 + (z3 - z1) * alpha;
+            zB = z1 + (z2 - z1) * beta;
+
+            cA = interpolateColor(c1, c3, alpha);
+            cB = interpolateColor(c1, c2, beta);
+
+            uA = s1 + (s3 - s1) * alpha;
+            uB = s1 + (s2 - s1) * beta;
+            vA = t1 + (t3 - t1) * alpha;
+            vB = t1 + (t2 - t1) * beta;
+
+            pxA = px1 + (px3 - px1) * alpha;
+            pxB = px1 + (px2 - px1) * beta;
+            pyA = py1 + (py3 - py1) * alpha;
+            pyB = py1 + (py2 - py1) * beta;
+            pzA = pz1 + (pz3 - pz1) * alpha;
+            pzB = pz1 + (pz2 - pz1) * beta;
+
+            nxA = nx1 + (nx3 - nx1) * alpha;
+            nxB = nx1 + (nx2 - nx1) * beta;
+            nyA = ny1 + (ny3 - ny1) * alpha;
+            nyB = ny1 + (ny2 - ny1) * beta;
+            nzA = nz1 + (nz3 - nz1) * alpha;
+            nzB = nz1 + (nz2 - nz1) * beta;
+        }
+        else // Second half
+        {
+            beta = (y - y2 + 1) * invSegmentHeight32;
+
+            xA = x1 + (x3 - x1) * alpha;
+            xB = x2 + (x3 - x2) * beta;
+            zA = z1 + (z3 - z1) * alpha;
+            zB = z2 + (z3 - z2) * beta;
+
+            cA = interpolateColor(c1, c3, alpha);
+            cB = interpolateColor(c2, c3, beta);
+
+            uA = s1 + (s3 - s1) * alpha;
+            uB = s2 + (s3 - s2) * beta;
+            vA = t1 + (t3 - t1) * alpha;
+            vB = t2 + (t3 - t2) * beta;
+
+            pxA = px1 + (px3 - px1) * alpha;
+            pxB = px2 + (px3 - px2) * beta;
+            pyA = py1 + (py3 - py1) * alpha;
+            pyB = py2 + (py3 - py2) * beta;
+            pzA = pz1 + (pz3 - pz1) * alpha;
+            pzB = pz2 + (pz3 - pz2) * beta;
+
+            nxA = nx1 + (nx3 - nx1) * alpha;
+            nxB = nx2 + (nx3 - nx2) * beta;
+            nyA = ny1 + (ny3 - ny1) * alpha;
+            nyB = ny2 + (ny3 - ny2) * beta;
+            nzA = nz1 + (nz3 - nz1) * alpha;
+            nzB = nz2 + (nz3 - nz2) * beta;
+        }
+
+        if (xA > xB)
+        {
+            PFint iTmp;
+            iTmp = xA; xA = xB; xB = iTmp;
+
+            PFfloat fTmp;
+            fTmp = zA; zA = zB; zB = fTmp;
+            fTmp = uA; uA = uB; uB = fTmp;
+            fTmp = vA; vA = vB; vB = fTmp;
+            fTmp = pxA; pxA = pxB; pxB = fTmp;
+            fTmp = pyA; pyA = pyB; pyB = fTmp;
+            fTmp = pzA; pzA = pzB; pzB = fTmp;
+            fTmp = nxA; nxA = nxB; nxB = fTmp;
+            fTmp = nyA; nyA = nyB; nyB = fTmp;
+            fTmp = nzA; nzA = nzB; nzB = fTmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB; cB = cTmp;
+        }
+        /* Draw Horizontal Line */
+
+        PFsizei xyOffset = y*fbDst->texture.width + xA;
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+
+        for (PFint x = xA; x != xB; x++, xyOffset++)
+        {
+            PFfloat t = (PFfloat)(x-xA)*xInvLen;
+            PFfloat z = 1.0f/(zA + t*(zB - zA));
+
+            // NOTE 1: Divided by 'z', correct perspective
+            // NOTE 2: 'z' is actually the reciprocal
+            PFfloat u = z*(uA + t*(uB - uA));
+            PFfloat v = z*(vA + t*(vB - vA));
+
+            PFMvec3 position = {
+                pxA + t*(pxB - pxA),
+                pyA + t*(pyB - pyA),
+                pzA + t*(pzB - pzA)
+            };
+
+            PFMvec3 normal = {
+                nxA + t*(nxB - nxA),
+                nyA + t*(nyB - nyA),
+                nzA + t*(nzB - nzA)
+            };
+
+            PFcolor tex = pfGetTextureSample(texture, u, v);
+            PFcolor src = interpolateColor(cA, cB, t);
+            src = pfBlendMultiplicative(tex, src);
+            PFcolor dst = pixelGetter(bufDst, xyOffset);
+
+            PFcolor finalLightColor = { 0 };
+            PFcolor finalColor = blendFunc(src, dst);
+
+            for (int_fast8_t i = 0; i <= ctx->lastActiveLight; i++)
+            {
+                const PFlight *light = lights + i;
+                if (!light->active) continue;
+
+                PFcolor lightColor = Process_Light(light, light->ambient,
+                    finalColor, viewPos, position, normal, shininess);
+
+                finalLightColor = pfBlendAdditive(
+                    finalLightColor, lightColor);
+            }
+
+            pixelSetter(bufDst, xyOffset, finalLightColor);
+            zbDst[xyOffset] = z;
+        }
+    }
 }
 
 void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
+    PFctx *ctx = pfGetCurrentContext();
 
+    /* Prepare for rasterization */
+
+    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    {
+        return;
+    }
+
+    Helper_SortVertices(&v1, &v2, &v3);
+
+    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
+    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
+    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
+
+    const PFfloat px1 = v1->position[0], py1 = v1->position[1], pz1 = v1->position[2];
+    const PFfloat px2 = v2->position[0], py2 = v2->position[1], pz2 = v2->position[2];
+    const PFfloat px3 = v3->position[0], py3 = v3->position[1], pz3 = v3->position[2];
+
+    const PFfloat nx1 = v1->normal[0], ny1 = v1->normal[1], nz1 = v1->normal[2];
+    const PFfloat nx2 = v2->normal[0], ny2 = v2->normal[1], nz2 = v2->normal[2];
+    const PFfloat nx3 = v3->normal[0], ny3 = v3->normal[1], nz3 = v3->normal[2];
+
+    const PFfloat s1 = v1->texcoord[0], t1 = v1->texcoord[1];
+    const PFfloat s2 = v2->texcoord[0], t2 = v2->texcoord[1];
+    const PFfloat s3 = v3->texcoord[0], t3 = v3->texcoord[1];
+
+    const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
+    const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
+    const PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
+
+    /* Get Some Contextual Values */
+
+    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
+        ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
+
+    const PFlight *lights = ctx->lights;
+    PFfloat shininess = ctx->faceMaterial[faceToRender].shininess;
+
+    PFtexture *texture = ctx->currentTexture;
+    PFframebuffer *fbDst = ctx->currentFramebuffer;
+    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
+    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFblendfunc blendFunc = ctx->blendFunction;
+    void *bufDst = fbDst->texture.pixels;
+    PFfloat *zbDst = fbDst->zbuffer;
+
+    /* Travel the triangle from top to bottom */
+
+    for (PFint y = y1; y <= y3; y++)
+    {
+        PFfloat alpha = (y - y1 + 1) * invTotalHeight;
+        PFfloat beta;
+
+        PFint xA, xB;
+        PFfloat zA, zB;
+        PFcolor cA, cB;
+        PFfloat uA, uB;
+        PFfloat vA, vB;
+        PFfloat pxA, pyA, pzA;
+        PFfloat pxB, pyB, pzB;
+        PFfloat nxA, nyA, nzA;
+        PFfloat nxB, nyB, nzB;
+
+        if (y < y2) // First half
+        {
+            beta = (y - y1 + 1) * invSegmentHeight21;
+
+            xA = x1 + (x3 - x1) * alpha;
+            xB = x1 + (x2 - x1) * beta;
+            zA = z1 + (z3 - z1) * alpha;
+            zB = z1 + (z2 - z1) * beta;
+
+            cA = interpolateColor(c1, c3, alpha);
+            cB = interpolateColor(c1, c2, beta);
+
+            uA = s1 + (s3 - s1) * alpha;
+            uB = s1 + (s2 - s1) * beta;
+            vA = t1 + (t3 - t1) * alpha;
+            vB = t1 + (t2 - t1) * beta;
+
+            pxA = px1 + (px3 - px1) * alpha;
+            pxB = px1 + (px2 - px1) * beta;
+            pyA = py1 + (py3 - py1) * alpha;
+            pyB = py1 + (py2 - py1) * beta;
+            pzA = pz1 + (pz3 - pz1) * alpha;
+            pzB = pz1 + (pz2 - pz1) * beta;
+
+            nxA = nx1 + (nx3 - nx1) * alpha;
+            nxB = nx1 + (nx2 - nx1) * beta;
+            nyA = ny1 + (ny3 - ny1) * alpha;
+            nyB = ny1 + (ny2 - ny1) * beta;
+            nzA = nz1 + (nz3 - nz1) * alpha;
+            nzB = nz1 + (nz2 - nz1) * beta;
+        }
+        else // Second half
+        {
+            beta = (y - y2 + 1) * invSegmentHeight32;
+
+            xA = x1 + (x3 - x1) * alpha;
+            xB = x2 + (x3 - x2) * beta;
+            zA = z1 + (z3 - z1) * alpha;
+            zB = z2 + (z3 - z2) * beta;
+
+            cA = interpolateColor(c1, c3, alpha);
+            cB = interpolateColor(c2, c3, beta);
+
+            uA = s1 + (s3 - s1) * alpha;
+            uB = s2 + (s3 - s2) * beta;
+            vA = t1 + (t3 - t1) * alpha;
+            vB = t2 + (t3 - t2) * beta;
+
+            pxA = px1 + (px3 - px1) * alpha;
+            pxB = px2 + (px3 - px2) * beta;
+            pyA = py1 + (py3 - py1) * alpha;
+            pyB = py2 + (py3 - py2) * beta;
+            pzA = pz1 + (pz3 - pz1) * alpha;
+            pzB = pz2 + (pz3 - pz2) * beta;
+
+            nxA = nx1 + (nx3 - nx1) * alpha;
+            nxB = nx2 + (nx3 - nx2) * beta;
+            nyA = ny1 + (ny3 - ny1) * alpha;
+            nyB = ny2 + (ny3 - ny2) * beta;
+            nzA = nz1 + (nz3 - nz1) * alpha;
+            nzB = nz2 + (nz3 - nz2) * beta;
+        }
+
+        if (xA > xB)
+        {
+            PFint iTmp;
+            iTmp = xA; xA = xB; xB = iTmp;
+
+            PFfloat fTmp;
+            fTmp = zA; zA = zB; zB = fTmp;
+            fTmp = uA; uA = uB; uB = fTmp;
+            fTmp = vA; vA = vB; vB = fTmp;
+            fTmp = pxA; pxA = pxB; pxB = fTmp;
+            fTmp = pyA; pyA = pyB; pyB = fTmp;
+            fTmp = pzA; pzA = pzB; pzB = fTmp;
+            fTmp = nxA; nxA = nxB; nxB = fTmp;
+            fTmp = nyA; nyA = nyB; nyB = fTmp;
+            fTmp = nzA; nzA = nzB; nzB = fTmp;
+
+            PFcolor cTmp;
+            cTmp = cA; cA = cB; cB = cTmp;
+        }
+        /* Draw Horizontal Line */
+
+        PFsizei xyOffset = y*fbDst->texture.width + xA;
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+
+        for (PFint x = xA; x != xB; x++, xyOffset++)
+        {
+            PFfloat t = (PFfloat)(x-xA)*xInvLen;
+            PFfloat z = 1.0f/(zA + t*(zB - zA));
+
+            PFfloat *zp = zbDst + xyOffset;
+            if (ctx->depthFunction(z, *zp))
+            {
+                // NOTE 1: Divided by 'z', correct perspective
+                // NOTE 2: 'z' is actually the reciprocal
+                PFfloat u = z*(uA + t*(uB - uA));
+                PFfloat v = z*(vA + t*(vB - vA));
+
+                PFMvec3 position = {
+                    pxA + t*(pxB - pxA),
+                    pyA + t*(pyB - pyA),
+                    pzA + t*(pzB - pzA)
+                };
+
+                PFMvec3 normal = {
+                    nxA + t*(nxB - nxA),
+                    nyA + t*(nyB - nyA),
+                    nzA + t*(nzB - nzA)
+                };
+
+                PFcolor tex = pfGetTextureSample(texture, u, v);
+                PFcolor src = interpolateColor(cA, cB, t);
+                src = pfBlendMultiplicative(tex, src);
+                PFcolor dst = pixelGetter(bufDst, xyOffset);
+
+                PFcolor finalLightColor = { 0 };
+                PFcolor finalColor = blendFunc(src, dst);
+
+                for (int_fast8_t i = 0; i <= ctx->lastActiveLight; i++)
+                {
+                    const PFlight *light = lights + i;
+                    if (!light->active) continue;
+
+                    PFcolor lightColor = Process_Light(light, light->ambient,
+                        finalColor, viewPos, position, normal, shininess);
+
+                    finalLightColor = pfBlendAdditive(
+                        finalLightColor, lightColor);
+                }
+
+                pixelSetter(bufDst, xyOffset, finalLightColor);
+                *zp = z;
+            }
+        }
+    }
 }
 
 #else
