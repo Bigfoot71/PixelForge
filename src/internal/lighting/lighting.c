@@ -55,7 +55,7 @@ PFcolor Process_Light(const PFlight* light, PFcolor ambient, PFcolor texel, cons
 
         PFfloat theta = pfmVec3Dot(lightDir, negLightDir);
         PFfloat epsilon = light->cutoff - light->outerCutoff;
-        intensity = 1.0f - CLAMP((theta - light->outerCutoff) / epsilon, 0.0f, 1.0f);
+        intensity = CLAMP((theta - light->outerCutoff) / epsilon, 0.0f, 1.0f);
     }
 
     // attenuation

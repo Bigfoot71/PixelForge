@@ -794,7 +794,7 @@ void pfLightf(PFsizei light, PFenum param, PFfloat value)
         case PF_SPOT_CUTOFF:
             if ((value >= 0 && value <= 90) || value == 180)
             {
-                l->cutoff = DEG2RAD(value);
+                l->cutoff = cosf(DEG2RAD(value));
             }
             else
             {
@@ -805,7 +805,7 @@ void pfLightf(PFsizei light, PFenum param, PFfloat value)
         case PF_SPOT_OUTER_CUTOFF:
             if ((value >= 0 && value <= 90) || value == 180)
             {
-                l->outerCutoff = DEG2RAD(value);
+                l->outerCutoff = cosf(DEG2RAD(value));
             }
             else
             {
