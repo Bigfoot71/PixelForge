@@ -820,6 +820,8 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
             //  - `const PFlight *light` which is the active light for the currently rendered pixel
             //  - `const PFcolor ambient` which is the ambient color of the light multiplied by that of the active material
 
+            // NOTE: The color return is no longer done to `finalColor` but to `lightColor` here
+
             PF_BEGIN_LIGHTS_LOOP(ctx->faceMaterial[PF_FRONT]);
             {
                 lightColor = Process_Light(light, ambient, ctx->blendFunction(colSrc, colDst), viewPos, position, normal, shininess);
@@ -852,6 +854,8 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
             // The 'PF_BEGIN_XXX_PHONG_LOOP' macro additionally provides access to:
             //  - `const PFlight *light` which is the active light for the currently rendered pixel
             //  - `const PFcolor ambient` which is the ambient color of the light multiplied by that of the active material
+
+            // NOTE: The color return is no longer done to `finalColor` but to `lightColor` here
 
             PF_BEGIN_LIGHTS_LOOP(ctx->faceMaterial[PF_BACK]);
             {
