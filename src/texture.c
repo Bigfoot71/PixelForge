@@ -17,6 +17,7 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
+#include "internal/config.h"
 #include "pixelforge.h"
 #include "pfm.h"
 
