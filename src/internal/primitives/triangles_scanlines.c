@@ -52,14 +52,6 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
 /* Internal helper function declarations */
 
-// NOTE: Used to interpolate texture coordinates
-static void Helper_InterpolateVec2(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, PFfloat w1, PFfloat w2, PFfloat w3);
-
-#ifndef PF_GOURAUD_SHADING
-// NOTE: Used for interpolating vertices and normals when rendering light by fragment
-static void Helper_InterpolateVec3f(PFMvec2 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, PFfloat w1, PFfloat w2, PFfloat w3);
-#endif //PF_GOURAUD_SHADING
-
 static PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFfloat t);
 static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFfloat t);
 
@@ -2269,25 +2261,6 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
 
 /* Internal helper function definitions */
-
-void Helper_InterpolateVec2(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, PFfloat w1, PFfloat w2, PFfloat w3)
-{
-    for (int_fast8_t i = 0; i < 2; i++)
-    {
-        dst[i] = w1*v1[i] + w2*v2[i] + w3*v3[i];
-    }
-}
-
-#ifndef PF_GOURAUD_SHADING
-// NOTE: Used for interpolating vertices and normals when rendering light by fragment
-void Helper_InterpolateVec3f(PFMvec2 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, PFfloat w1, PFfloat w2, PFfloat w3)
-{
-    for (int_fast8_t i = 0; i < 3; i++)
-    {
-        dst[i] = w1*v1[i] + w2*v2[i] + w3*v3[i];
-    }
-}
-#endif //PF_GOURAUD_SHADING
 
 PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFfloat t)
 {
