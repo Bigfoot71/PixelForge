@@ -677,11 +677,6 @@ void pfDisableFramebuffer(void)
     currentCtx->currentFramebuffer = &currentCtx->mainFramebuffer;
 }
 
-PFtexture* pfGetActiveTexture(void)
-{
-    return currentCtx->currentTexture;
-}
-
 void pfBindTexture(PFtexture* texture)
 {
     currentCtx->currentTexture = texture;

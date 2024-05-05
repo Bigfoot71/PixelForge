@@ -559,6 +559,10 @@ void pfGetPointerv(PFenum pname, const void** params)
 
     switch (pname)
     {
+        case PF_TEXTURE_2D:
+            *params = ctx->currentTexture;
+            break;
+
         case PF_BLEND_FUNC:
             // NOTE: Returns the address of the function pointer
             // internally and not the address of the function itself
