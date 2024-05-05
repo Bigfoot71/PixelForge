@@ -21,17 +21,15 @@
 // WARNING: This rendering mode is WIP
 
 
+#include "../lighting/lighting.h"
 #include "../context.h"
 #include "../../pfm.h"
+#include <stdint.h>
 #include <stdlib.h>
 
 /* Internal typedefs */
 
 typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFcolor, PFfloat, PFfloat, PFfloat);
-
-/* Including internal function prototypes */
-
-extern void pfInternal_HomogeneousToScreen(PFvertex* restrict v);
 
 /* Main functions declaration used by 'context.c' */
 
@@ -54,9 +52,6 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
 /* Internal helper function declarations */
 
-// NOTE: Used to get vertices when clipping
-static PFvertex Helper_LerpVertex(const PFvertex* start, const PFvertex* end, PFfloat t);
-
 // NOTE: Used to interpolate texture coordinates
 static void Helper_InterpolateVec2(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, PFfloat w1, PFfloat w2, PFfloat w3);
 
@@ -67,62 +62,6 @@ static void Helper_InterpolateVec3f(PFMvec2 dst, const PFMvec3 v1, const PFMvec3
 
 static PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3);
 static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3);
-
-
-/* Polygon processing functions */
-
-PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter, const PFMmat4 mvp)
-{
-    for (int_fast8_t i = 0; i < *vertexCounter; i++)
-    {
-        PFvertex *v = polygon + i;
-
-        memcpy(v->homogeneous, v->position, sizeof(PFMvec4));
-        pfmVec4Transform(v->homogeneous, v->homogeneous, mvp);
-
-        // Si le sommet est dans le viewport, le triangle n'est pas entièrement en dehors du viewport
-        if ((v->homogeneous[0] < -v->homogeneous[3] || v->homogeneous[0] > v->homogeneous[3]) &&
-            (v->homogeneous[1] < -v->homogeneous[3] || v->homogeneous[1] > v->homogeneous[3]) &&
-            (v->homogeneous[2] < 0.0f || v->homogeneous[2] > v->homogeneous[3]))
-        {
-            *vertexCounter = 0;
-            return 0;
-        }
-    }
-
-    PFboolean is2D = (
-        polygon[0].homogeneous[3] == 1.0f &&
-        polygon[1].homogeneous[3] == 1.0f &&
-        polygon[2].homogeneous[3] == 1.0f);
-
-    if (is2D)
-    {
-        for (int_fast8_t i = 0; i < *vertexCounter; i++)
-        {
-            pfInternal_HomogeneousToScreen(&polygon[i]);
-        }
-    }
-    else
-    {
-        for (int_fast8_t i = 0; i < *vertexCounter; i++)
-        {
-            // Calculation of the reciprocal of Z for the perspective correct
-            polygon[i].homogeneous[2] = 1.0f / polygon[i].homogeneous[2];
-
-            // Division of texture coordinates by the Z axis (perspective correct)
-            pfmVec2Scale(polygon[i].texcoord, polygon[i].texcoord, polygon[i].homogeneous[2]);
-
-            // Division of XY coordinates by weight (perspective correct)
-            PFfloat invW = 1.0f / polygon[i].homogeneous[3];
-            polygon[i].homogeneous[0] *= invW;
-            polygon[i].homogeneous[1] *= invW;
-
-            pfInternal_HomogeneousToScreen(&polygon[i]);
-        }
-    }
-
-    return is2D;
-}
 
 /* ----------------------------------------------- */
 
@@ -1021,112 +960,6 @@ void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1
 }
 
 
-/* Internal lighting process functions defintions */
-
-static PFcolor Process_Light(const PFlight* light, PFcolor ambient, PFcolor texel, const PFMvec3 viewPos, const PFMvec3 position, const PFMvec3 normal, PFfloat shininess)
-{
-    // get view direction for this fragment position **(can be optimized)**
-    PFMvec3 viewDir;
-    pfmVec3Sub(viewDir, viewPos, position);
-    pfmVec3Normalize(viewDir, viewDir);
-
-    // Compute ambient lighting contribution
-    ambient = pfBlendMultiplicative(texel, ambient);
-
-    // diffuse
-    PFMvec3 lightFragPosDt;
-    pfmVec3Sub(lightFragPosDt, light->position, position);
-
-    PFMvec3 lightDir;
-    pfmVec3Normalize(lightDir, lightFragPosDt);
-
-    PFfloat diff = fmaxf(pfmVec3Dot(normal, lightDir), 0.0f);
-
-    PFcolor diffuse = pfBlendMultiplicative(light->diffuse, texel);
-    diffuse.r = (PFubyte)((PFfloat)diffuse.r*diff);
-    diffuse.g = (PFubyte)((PFfloat)diffuse.g*diff);
-    diffuse.b = (PFubyte)((PFfloat)diffuse.b*diff);
-
-    // specular
-#ifndef PF_PHONG_REFLECTION
-    // Blinn-Phong
-    PFMvec3 halfWayDir;
-    pfmVec3Add(halfWayDir, lightDir, viewDir);
-    pfmVec3Normalize(halfWayDir, halfWayDir);
-    PFfloat spec = powf(fmaxf(pfmVec3Dot(normal, halfWayDir), 0.0f), shininess);
-#else
-    // Phong
-    PFMvec3 reflectionDir, negLightDir;
-    pfmVec3Neg(negLightDir, lightDir);
-    pfmVec3Reflect(reflectionDir, negLightDir, normal);
-    PFfloat spec = powf(fmaxf(pfmVec3Dot(reflectionDir, viewDir), 0.0f), shininess);
-#endif
-
-    const PFcolor specular = {
-        (PFubyte)((PFfloat)light->specular.r*spec),
-        (PFubyte)((PFfloat)light->specular.g*spec),
-        (PFubyte)((PFfloat)light->specular.b*spec),
-        255
-    };
-
-    // spotlight (soft edges)
-    PFfloat intensity = 1.0f;
-    if (light->cutoff < 180)
-    {
-        PFMvec3 negLightDir;
-        pfmVec3Neg(negLightDir, light->direction);
-
-        PFfloat theta = pfmVec3Dot(lightDir, negLightDir);
-        PFfloat epsilon = light->cutoff - light->outerCutoff;
-        intensity = 1.0f - CLAMP((theta - light->outerCutoff) / epsilon, 0.0f, 1.0f);
-    }
-
-    // attenuation
-    PFfloat attenuation = 1.0f;
-    if (light->attLinear || light->attQuadratic)
-    {
-        PFfloat distanceSq = lightFragPosDt[0]*lightFragPosDt[0] +
-                             lightFragPosDt[1]*lightFragPosDt[1] +
-                             lightFragPosDt[2]*lightFragPosDt[2];
-
-        PFfloat distance = sqrtf(distanceSq);
-
-        attenuation = 1.0f/(light->attConstant + light->attLinear*distance + light->attQuadratic*distanceSq);
-    }
-
-    // add final light color
-    PFcolor finalColor = pfBlendAdditive(diffuse, specular);
-    PFfloat factor = intensity*attenuation;
-
-    finalColor.r = (PFubyte)((PFfloat)finalColor.r*factor);
-    finalColor.g = (PFubyte)((PFfloat)finalColor.g*factor);
-    finalColor.b = (PFubyte)((PFfloat)finalColor.b*factor);
-
-    return pfBlendAdditive(ambient, finalColor);
-}
-
-#ifdef PF_GOURAUD_SHADING
-static PFcolor Process_Gouraud(const PFctx* ctx, const PFvertex* v, const PFMvec3 viewPos, const PFmaterial* material)
-{
-    PFcolor finalColor = { 0 };
-
-    for (PFint i = 0; i <= ctx->lastActiveLight; i++)
-    {
-        const PFlight *light = &ctx->lights[i];
-        if (!light->active) continue;
-
-        const PFcolor ambient = pfBlendMultiplicative(light->ambient, material->ambient);
-        PFcolor color = Process_Light(light, ambient, v->color, viewPos, v->position, v->normal, material->shininess);
-        color = pfBlendAdditive(color, material->emission);
-
-        finalColor = pfBlendAdditive(finalColor, color);
-    }
-
-    return finalColor;
-}
-#endif //PF_GOURAUD_SHADING
-
-
 /* Internal enlightened triangle 3D rasterizer function definitions */
 
 #ifndef PF_GOURAUD_SHADING
@@ -1177,38 +1010,6 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
 
 /* Internal helper function definitions */
-
-PFvertex Helper_LerpVertex(const PFvertex* start, const PFvertex* end, PFfloat t)
-{
-    PFvertex result = { 0 };
-
-    // Interpolate homogeneous position
-    for (int_fast8_t i = 0; i < 4; i++)
-    {
-        result.homogeneous[i] = start->homogeneous[i] + t*(end->homogeneous[i] - start->homogeneous[i]);
-    }
-
-    // Interpolate positions and normals
-    for (int_fast8_t i = 0; i < 3; i++)
-    {
-        result.position[i] = start->position[i] + t*(end->position[i] - start->position[i]);
-        result.normal[i] = start->normal[i] + t*(end->normal[i] - start->normal[i]);
-    }
-
-    // Interpolate texcoord
-    for (int_fast8_t i = 0; i < 2; i++)
-    {
-        result.texcoord[i] = start->texcoord[i] + t*(end->texcoord[i] - start->texcoord[i]);
-    }
-
-    // Interpolate color
-    result.color.r = start->color.r + t*(end->color.r - start->color.r);
-    result.color.g = start->color.g + t*(end->color.g - start->color.g);
-    result.color.b = start->color.b + t*(end->color.b - start->color.b);
-    result.color.a = start->color.a + t*(end->color.a - start->color.a);
-
-    return result;
-}
 
 void Helper_InterpolateVec2(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, PFfloat w1, PFfloat w2, PFfloat w3)
 {

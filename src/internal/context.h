@@ -17,6 +17,9 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
+#ifndef PF_INTERNAL_CONTEXT_H
+#define PF_INTERNAL_CONTEXT_H
+
 #include "../pixelforge.h"
 #include "../pfm.h"
 
@@ -82,9 +85,8 @@ struct PFctx {
     PFframebuffer *currentFramebuffer;                              ///< Pointer to the current framebuffer
     void *auxFramebuffer;                                           ///< Auxiliary buffer for double buffering
 
-    PFint vpPosition[2];                                            ///< Represents the top-left corner of the viewport
-    PFsizei vpDimensions[2];                                        ///< Represents the dimensions of the viewport (minus one)
-
+    PFint vpPos[2];                                                 ///< Represents the top-left corner of the viewport
+    PFsizei vpDim[2];                                               ///< Represents the dimensions of the viewport (minus one)
     PFint vpMin[2];                                                 ///< Represents the minimum renderable point of the viewport (top-left)
     PFint vpMax[2];                                                 ///< Represents the maximum renderable point of the viewport (bottom-right)
 
@@ -136,3 +138,5 @@ struct PFctx {
     PFerrcode errCode;                                              ///< Contains the last error code that occurred
 
 };
+
+#endif //PF_INTERNAL_CONTEXT_H

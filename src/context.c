@@ -147,10 +147,10 @@ PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixe
 
     ctx->currentFramebuffer = &ctx->mainFramebuffer;
 
-    ctx->vpPosition[0] = ctx->vpMin[0] = 0;
-    ctx->vpPosition[1] = ctx->vpMin[1] = 0;
-    ctx->vpDimensions[0] = ctx->vpMax[0] = width - 1;
-    ctx->vpDimensions[1] = ctx->vpMax[1] = height - 1;
+    ctx->vpPos[0] = ctx->vpMin[0] = 0;
+    ctx->vpPos[1] = ctx->vpMin[1] = 0;
+    ctx->vpDim[0] = ctx->vpMax[0] = width - 1;
+    ctx->vpDim[1] = ctx->vpMax[1] = height - 1;
 
     ctx->currentDrawMode = 0;
     ctx->blendFunction = pfBlendDisabled;
@@ -530,11 +530,11 @@ void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height)
         return;
     }
 
-    currentCtx->vpPosition[0] = x;
-    currentCtx->vpPosition[1] = y;
+    currentCtx->vpPos[0] = x;
+    currentCtx->vpPos[1] = y;
 
-    currentCtx->vpDimensions[0] = width - 1;
-    currentCtx->vpDimensions[1] = height - 1;
+    currentCtx->vpDim[0] = width - 1;
+    currentCtx->vpDim[1] = height - 1;
 
     currentCtx->vpMin[0] = MAX(x, 0);
     currentCtx->vpMin[1] = MAX(y, 0);
@@ -1993,10 +1993,10 @@ void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2)
     pfmVec4Transform(v2, v2, mvp);
 
     // Calculate screen coordinates from projected coordinates
-    PFint iX1 = currentCtx->vpPosition[0] + (v1[0] + 1.0f) * 0.5f * currentCtx->vpDimensions[0];
-    PFint iY1 = currentCtx->vpPosition[1] + (1.0f - v1[1]) * 0.5f * currentCtx->vpDimensions[1];
-    PFint iX2 = currentCtx->vpPosition[0] + (v2[0] + 1.0f) * 0.5f * currentCtx->vpDimensions[0];
-    PFint iY2 = currentCtx->vpPosition[1] + (1.0f - v2[1]) * 0.5f * currentCtx->vpDimensions[1];
+    PFint iX1 = currentCtx->vpPos[0] + (v1[0] + 1.0f) * 0.5f * currentCtx->vpDim[0];
+    PFint iY1 = currentCtx->vpPos[1] + (1.0f - v1[1]) * 0.5f * currentCtx->vpDim[1];
+    PFint iX2 = currentCtx->vpPos[0] + (v2[0] + 1.0f) * 0.5f * currentCtx->vpDim[0];
+    PFint iY2 = currentCtx->vpPos[1] + (1.0f - v2[1]) * 0.5f * currentCtx->vpDim[1];
 
     // Ensure iX1 <= iX2 and iY1 <= iY2
     if (iX2 < iX1) iX1 ^= iX2, iX2 ^= iX1, iX1 ^= iX2;
@@ -2058,8 +2058,8 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, const voi
     pfmVec4Transform(rasterPos, rasterPos, mvp);
 
     // Calculate screen coordinates from projected coordinates
-    PFint xScreen = currentCtx->vpPosition[0] + (rasterPos[0] + 1.0f) * 0.5f * currentCtx->vpDimensions[0];
-    PFint yScreen = currentCtx->vpPosition[1] + (1.0f - rasterPos[1]) * 0.5f * currentCtx->vpDimensions[1];
+    PFint xScreen = currentCtx->vpPos[0] + (rasterPos[0] + 1.0f) * 0.5f * currentCtx->vpDim[0];
+    PFint yScreen = currentCtx->vpPos[1] + (1.0f - rasterPos[1]) * 0.5f * currentCtx->vpDim[1];
     PFfloat zPos = rasterPos[2];
 
     // Draw pixels on current framebuffer
@@ -2308,8 +2308,8 @@ void pfInternal_HomogeneousToScreen(PFvertex* restrict v)
     // an error in the polygon clipping functions. Nonetheless, this solution has been
     // functioning without issue up to this point.
 
-    v->screen[0] = (currentCtx->vpPosition[0] + (v->homogeneous[0] + 1.0f) * 0.5f * currentCtx->vpDimensions[0]) + 0.5f;
-    v->screen[1] = (currentCtx->vpPosition[1] + (1.0f - v->homogeneous[1]) * 0.5f * currentCtx->vpDimensions[1]) + 0.5f;
+    v->screen[0] = (currentCtx->vpPos[0] + (v->homogeneous[0] + 1.0f) * 0.5f * currentCtx->vpDim[0]) + 0.5f;
+    v->screen[1] = (currentCtx->vpPos[1] + (1.0f - v->homogeneous[1]) * 0.5f * currentCtx->vpDim[1]) + 0.5f;
 }
 
 /* Internal processing and rasterization function definitions */

@@ -125,10 +125,10 @@ void pfGetIntegerv(PFenum pname, PFint* params)
     switch (pname)
     {
         case PF_VIEWPORT:
-            params[0] = ctx->vpPosition[0];
-            params[1] = ctx->vpPosition[1];
-            params[2] = ctx->vpDimensions[0] + 1;
-            params[3] = ctx->vpDimensions[1] + 1;
+            params[0] = ctx->vpPos[0];
+            params[1] = ctx->vpPos[1];
+            params[2] = ctx->vpDim[0] + 1;
+            params[3] = ctx->vpDim[1] + 1;
             break;
 
         case PF_COLOR_CLEAR_VALUE:

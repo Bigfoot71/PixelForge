@@ -26,6 +26,7 @@ option(PF_BUILD_EXAMPLES_X11 "Build PixelForge examples for X11" OFF)
 set(SRCS src/internal/primitives/triangles.c
          src/internal/primitives/points.c
          src/internal/primitives/lines.c
+         src/internal/lighting/lighting.c
          src/framebuffer.c
          src/texture.c
          src/context.c
