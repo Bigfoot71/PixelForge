@@ -23,6 +23,7 @@ PixelForge is a lightweight software rendering library written in standard C99, 
 - **Face Culling**: Supports selection of face culling _(back face culling, front face culling, "no culling")_.
 - **Double buffering**: In some cases, double buffering is necessary to avoid flickering during rendering, for example. You can define an auxiliary buffer and swap the buffers as needed.
 - **OpenMP Support**: Added support for OpenMP to parallelize triangle rasterization loops, with verification of the number of pixels to be rasterized _(adjustable)_ to activate this parallelization, significantly increasing rasterization performance for large triangles.
+- **Rasterization Methods**: By default, triangle rasterization is performed using the barycentric method. However, an experimental option allows switching to the scanline method _(via `PF_SCANLINES_RASTER_METHOD`)_ for acceptable performance on older hardware.
 
 ## Usage
 
