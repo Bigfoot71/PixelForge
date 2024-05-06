@@ -4,7 +4,7 @@
 
 PixelForge is a lightweight software rendering library written in standard C99, designed for versatile rendering without any external dependencies beyond the C standard library.
 
-**Note**: For simplicity and broad platform compatibility, the library does not utilize SIMD operations or internal multithreading management _(except for the optional OpenMP support)_. However, depending on your compiler, the library supports the ability to use one rendering context per thread.
+**Note:** Currently, PixelForge has two triangle rasterization modes, one (default) uses the [barycentric](https://en.wikipedia.org/wiki/Barycentric_coordinate_system) method, and another by [scanlines](https://en.wikipedia.org/wiki/Scanline_rendering), activatable via the `PF_SCANLINES_RASTER_METHOD` definition. The reason is that I plan to implement SIMD support for the barycentric method in the future and keep a non-SIMD-based scanline method. Currently, the performance difference between the two methods is not _significant_, although the scanline method is slightly more efficient right now. However, since the scanline method is still a work in progress, I prefer to keep the barycentric method as the default, which is the most stable. However, in the future, the scanline method may become the default, with the barycentric method as the secondary option to achieve better performance at the expense of portability.
 
 ## Features
 
@@ -23,7 +23,6 @@ PixelForge is a lightweight software rendering library written in standard C99, 
 - **Face Culling**: Supports selection of face culling _(back face culling, front face culling, "no culling")_.
 - **Double buffering**: In some cases, double buffering is necessary to avoid flickering during rendering, for example. You can define an auxiliary buffer and swap the buffers as needed.
 - **OpenMP Support**: Added support for OpenMP to parallelize triangle rasterization loops, with verification of the number of pixels to be rasterized _(adjustable)_ to activate this parallelization, significantly increasing rasterization performance for large triangles.
-- **Rasterization Methods**: By default, triangle rasterization is performed using the barycentric method. However, an experimental option allows switching to the scanline method _(via `PF_SCANLINES_RASTER_METHOD`)_ for acceptable performance on older hardware.
 
 ## Usage
 
