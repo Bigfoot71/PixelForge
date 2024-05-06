@@ -3,32 +3,40 @@
 
 PFcolor Process_Lights(const PFlight* activeLights, const PFmaterial* material, PFcolor diffuse, const PFMvec3 viewPos, const PFMvec3 fragPos, const PFMvec3 fragNormal)
 {
-    // TODO COMMENT (final color)
+    // Final color
+    // Calculate the emission component of the final color
     PFubyte R = material->emission.r;
     PFubyte G = material->emission.g;
     PFubyte B = material->emission.b;
 
-    // TODO COMMENT
+    // Ambient component
+    // Calculate the ambient lighting contribution
     PFubyte aR = (material->ambient.r*diffuse.r)/255;
     PFubyte aG = (material->ambient.g*diffuse.g)/255;
     PFubyte aB = (material->ambient.b*diffuse.b)/255;
 
-    // TODO COMMENT
+    // Compute the view direction from fragment position
     PFMvec3 viewDir;
     pfmVec3Sub(viewDir, viewPos, fragPos);
     pfmVec3Normalize(viewDir, viewDir);
 
-    // TODO COMMENT
+    // Specular properties
+    // Retrieve material's shininess and specular color
     PFfloat shininess = material->shininess;
     PFcolor specular = material->specular;
 
-    // TODO COMMENT
+    // Loop through active lights
     for (const PFlight *light = activeLights; light != NULL; light = light->next)
     {
-        // TODO COMMENT
+        // Declare the light contribution and initialize it to zero for now.
+        PFubyte lR = 0, lG = 0, lB = 0;
+
+        // Compute light direction
         PFMvec3 lightDir;
         pfmVec3Sub(lightDir, light->position, fragPos);
 
+        // Compute distance from light to fragment position
+        // And also normalize the light direction if necessary.
         PFfloat lightToFragPosDistSq =
             lightDir[0]*lightDir[0] +
             lightDir[1]*lightDir[1] +
@@ -45,7 +53,7 @@ PFcolor Process_Lights(const PFlight* activeLights, const PFmaterial* material, 
             }
         }
 
-        // spotlight (soft edges)
+        // Spotlight (soft edges)
         PFubyte intensity = 255;
         if (light->innerCutOff < M_PI)
         {
@@ -56,10 +64,11 @@ PFcolor Process_Lights(const PFlight* activeLights, const PFmaterial* material, 
             PFfloat epsilon = light->innerCutOff - light->outerCutOff;
             intensity = CLAMP((PFint)(255*(theta - light->outerCutOff)/epsilon), 0, 255);
 
-            if (intensity == 0) continue;
+            if (intensity == 0)
+                goto apply_light_contribution;
         }
 
-        // attenuation
+        // Attenuation
         PFubyte attenuation = 255;
         if (light->attLinear || light->attQuadratic)
         {
@@ -67,24 +76,21 @@ PFcolor Process_Lights(const PFlight* activeLights, const PFmaterial* material, 
                 light->attLinear*lightToFragPosDist +
                 light->attQuadratic*lightToFragPosDistSq);
 
-            if (attenuation == 0) continue;
+            if (attenuation == 0)
+                goto apply_light_contribution;
         }
 
-        // TODO COMMENT (utilisé pour multiplié la couleur finale)
+        // Factor used to scale the final color
         PFubyte factor = (intensity*attenuation)/255;
 
-        // TODO COMMENT
-        PFubyte lR = (aR*light->ambient.r)/255;
-        PFubyte lG = (aG*light->ambient.g)/255;
-        PFubyte lB = (aB*light->ambient.b)/255;
-
-        // diffuse
+        // Diffuse component
+        // Calculate the diffuse reflection of the light
         PFubyte diff = MAX((PFint)(255*pfmVec3Dot(fragNormal, lightDir)), 0);
         lR = MIN_255(lR + (diffuse.r*light->diffuse.r*diff)/(255*255));
         lG = MIN_255(lG + (diffuse.g*light->diffuse.g*diff)/(255*255));
         lB = MIN_255(lB + (diffuse.b*light->diffuse.b*diff)/(255*255));
 
-        // specular
+        // Specular component
 #       ifndef PF_PHONG_REFLECTION
             // Blinn-Phong
             PFMvec3 halfWayDir;
@@ -103,13 +109,19 @@ PFcolor Process_Lights(const PFlight* activeLights, const PFmaterial* material, 
         lG = MIN_255(lG + (specular.g*light->specular.g*spec)/(255*255));
         lB = MIN_255(lB + (specular.b*light->specular.b*spec)/(255*255));
 
-        // TODO COMMENT
-        R = MIN_255(R + (lR*factor)/255);
-        G = MIN_255(G + (lG*factor)/255);
-        B = MIN_255(B + (lB*factor)/255);
+        // Apply spotlight soft edges and distance attenuation
+        lR = (lR*factor)/255;
+        lG = (lG*factor)/255;
+        lB = (lB*factor)/255;
+
+        // Add ambient contribution of the light
+        // Then add the light's contribution to the final color
+        apply_light_contribution:
+        R = MIN_255(R + lR + (aR*light->ambient.r)/255);
+        G = MIN_255(G + lG + (aG*light->ambient.g)/255);
+        B = MIN_255(B + lB + (aB*light->ambient.b)/255);
     }
 
-    // Final color
+    // Return the final computed color
     return (PFcolor) { R, G, B, diffuse.a };
 }
-
