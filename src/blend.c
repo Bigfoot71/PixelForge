@@ -73,25 +73,12 @@ PFcolor pfBlendSubtractive(PFcolor source, PFcolor destination)
 
 PFcolor pfBlendMultiplicative(PFcolor source, PFcolor destination)
 {
-    // NOTE: This function appears to be less precise
-    // in certain cases but more efficient.
-
-    return (PFcolor) {
-        (PFubyte)((source.r*destination.r + 128) >> 8),
-        (PFubyte)((source.g*destination.g + 128) >> 8),
-        (PFubyte)((source.b*destination.b + 128) >> 8),
-        (PFubyte)((source.a*destination.a + 128) >> 8)
-    };
-
-/*
     return (PFcolor) {
         (PFubyte)((source.r*destination.r)/255),
         (PFubyte)((source.g*destination.g)/255),
         (PFubyte)((source.b*destination.b)/255),
         (PFubyte)((source.a*destination.a)/255)
     };
-*/
-
 }
 
 PFcolor pfBlendScreen(PFcolor source, PFcolor destination)
