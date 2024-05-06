@@ -19,15 +19,14 @@
 
 #include "internal/context.h"
 #include "internal/config.h"
-#include "pfm.h"
 #include "pixelforge.h"
+#include "pfm.h"
 
 #include <stdint.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
 #include <float.h>
-#include <math.h>
 
 // TODO: Review all enums to give them unique values
 
