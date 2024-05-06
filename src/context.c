@@ -904,7 +904,7 @@ void pfLightfv(PFsizei light, PFenum param, const void* value)
             PFfloat v = *(PFfloat*)value;
             if ((v >= 0 && v <= 90) || v == 180)
             {
-                l->innerCutOff = DEG2RAD(v);
+                l->innerCutOff = cosf(DEG2RAD(v));
             }
             else
             {
@@ -918,7 +918,7 @@ void pfLightfv(PFsizei light, PFenum param, const void* value)
             PFfloat v = *(PFfloat*)value;
             if ((v >= 0 && v <= 90) || v == 180)
             {
-                l->outerCutOff = DEG2RAD(v);
+                l->outerCutOff = cosf(DEG2RAD(v));
             }
             else
             {
