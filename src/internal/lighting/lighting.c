@@ -48,7 +48,7 @@ PFcolor Process_Light(const PFlight* light, PFcolor ambient, PFcolor texel, cons
 
     // spotlight (soft edges)
     PFfloat intensity = 1.0f;
-    if (light->cutoff < 180)
+    if (light->cutoff < M_PI)
     {
         PFMvec3 negLightDir;
         pfmVec3Neg(negLightDir, light->direction);
