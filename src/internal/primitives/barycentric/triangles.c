@@ -1247,13 +1247,15 @@ void Helper_InterpolateVec3f(PFMvec2 dst, const PFMvec3 v1, const PFMvec3 v2, co
 
 PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
 {
-    // REVIEW: Normalization necessary here ?
+    PFubyte uW1 = 255*w1;
+    PFubyte uW2 = 255*w2;
+    PFubyte uW3 = 255*w3;
 
     return (PFcolor) {
-        (PFubyte)(w1*v1.r + w2*v2.r + w3*v3.r),
-        (PFubyte)(w1*v1.g + w2*v2.g + w3*v3.g),
-        (PFubyte)(w1*v1.b + w2*v2.b + w3*v3.b),
-        (PFubyte)(w1*v1.a + w2*v2.a + w3*v3.a)
+        ((uW1*v1.r) + (uW2*v2.r) + (uW3*v3.r))/255,
+        ((uW1*v1.g) + (uW2*v2.g) + (uW3*v3.g))/255,
+        ((uW1*v1.b) + (uW2*v2.b) + (uW3*v3.b))/255,
+        ((uW1*v1.a) + (uW2*v2.a) + (uW3*v3.a))/255
     };
 }
 
