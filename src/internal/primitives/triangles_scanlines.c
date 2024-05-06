@@ -52,32 +52,11 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
 /* Internal helper function declarations */
 
+static PFboolean Helper_FaceCanBeRendered(PFface faceToRender, PFfloat* area, const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 p3);
+static void Helper_SortVertices(const PFvertex** v1, const PFvertex** v2, const PFvertex** v3);
+
 static PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFfloat t);
 static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFfloat t);
-
-/*------------------------------------------------------*/
-
-
-static PFboolean Helper_FaceCanBeRendered(PFface faceToRender, const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 p3)
-{
-    switch (faceToRender)
-    {
-        case PF_FRONT:  return (p2[0] - p1[0])*(p3[1] - p1[1]) - (p3[0] - p1[0])*(p2[1] - p1[1]) < 0;
-        case PF_BACK:   return (p2[0] - p1[0])*(p3[1] - p1[1]) - (p3[0] - p1[0])*(p2[1] - p1[1]) > 0;
-        default:        break;
-    }
-
-    return PF_TRUE;
-}
-
-static void Helper_SortVertices(const PFvertex** v1, const PFvertex** v2, const PFvertex** v3)
-{
-    // Sort vertices in ascending order of y coordinates
-    const PFvertex* vTmp;
-    if ((*v2)->screen[1] < (*v1)->screen[1]) { vTmp = *v1; *v1 = *v2; *v2 = vTmp; }
-    if ((*v3)->screen[1] < (*v1)->screen[1]) { vTmp = *v1; *v1 = *v3; *v3 = vTmp; }
-    if ((*v3)->screen[1] < (*v2)->screen[1]) { vTmp = *v2; *v2 = *v3; *v3 = vTmp; }
-}
 
 
 /* Internal triangle 2D rasterizer function definitions */
@@ -88,16 +67,20 @@ void Rasterize_Triangle_COLOR_NODEPTH_2D(PFface faceToRender, const PFvertex* v1
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
     const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
 
     const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
@@ -119,6 +102,10 @@ void Rasterize_Triangle_COLOR_NODEPTH_2D(PFface faceToRender, const PFvertex* v1
     /* Travel the triangle from top to bottom */
 
     PFint yMax = CLAMP(y3, ctx->vpMin[1], ctx->vpMax[1]);
+
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = CLAMP(y1, ctx->vpMin[1], ctx->vpMax[1]); y <= yMax; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -190,16 +177,20 @@ void Rasterize_Triangle_COLOR_DEPTH_2D(PFface faceToRender, const PFvertex* v1, 
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
     const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
 
     const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
@@ -221,6 +212,10 @@ void Rasterize_Triangle_COLOR_DEPTH_2D(PFface faceToRender, const PFvertex* v1, 
     /* Travel the triangle from top to bottom */
 
     PFint yMax = CLAMP(y3, ctx->vpMin[1], ctx->vpMax[1]);
+
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = CLAMP(y1, ctx->vpMin[1], ctx->vpMax[1]); y <= yMax; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -289,16 +284,20 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_2D(PFface faceToRender, const PFvertex* 
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
     const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
     const PFfloat s1 = v1->texcoord[0], t1 = v1->texcoord[1];
     const PFfloat s2 = v2->texcoord[0], t2 = v2->texcoord[1];
@@ -324,6 +323,10 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_2D(PFface faceToRender, const PFvertex* 
     /* Travel the triangle from top to bottom */
 
     PFint yMax = CLAMP(y3, ctx->vpMin[1], ctx->vpMax[1]);
+
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = CLAMP(y1, ctx->vpMin[1], ctx->vpMax[1]); y <= yMax; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -419,16 +422,20 @@ void Rasterize_Triangle_TEXTURE_DEPTH_2D(PFface faceToRender, const PFvertex* v1
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
     const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
     const PFfloat s1 = v1->texcoord[0], t1 = v1->texcoord[1];
     const PFfloat s2 = v2->texcoord[0], t2 = v2->texcoord[1];
@@ -454,6 +461,10 @@ void Rasterize_Triangle_TEXTURE_DEPTH_2D(PFface faceToRender, const PFvertex* v1
     /* Travel the triangle from top to bottom */
 
     PFint yMax = CLAMP(y3, ctx->vpMin[1], ctx->vpMax[1]);
+
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = CLAMP(y1, ctx->vpMin[1], ctx->vpMax[1]); y <= yMax; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -556,16 +567,20 @@ void Rasterize_Triangle_COLOR_NODEPTH_3D(PFface faceToRender, const PFvertex* v1
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
     const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
 
     const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
@@ -586,6 +601,9 @@ void Rasterize_Triangle_COLOR_NODEPTH_3D(PFface faceToRender, const PFvertex* v1
 
     /* Travel the triangle from top to bottom */
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -654,16 +672,20 @@ void Rasterize_Triangle_COLOR_DEPTH_3D(PFface faceToRender, const PFvertex* v1, 
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
     const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
 
     const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
@@ -684,6 +706,9 @@ void Rasterize_Triangle_COLOR_DEPTH_3D(PFface faceToRender, const PFvertex* v1, 
 
     /* Travel the triangle from top to bottom */
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -756,16 +781,20 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_3D(PFface faceToRender, const PFvertex* 
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
     const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
     const PFfloat s1 = v1->texcoord[0], t1 = v1->texcoord[1];
     const PFfloat s2 = v2->texcoord[0], t2 = v2->texcoord[1];
@@ -790,6 +819,9 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_3D(PFface faceToRender, const PFvertex* 
 
     /* Travel the triangle from top to bottom */
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -884,16 +916,20 @@ void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
     const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
     const PFfloat s1 = v1->texcoord[0], t1 = v1->texcoord[1];
     const PFfloat s2 = v2->texcoord[0], t2 = v2->texcoord[1];
@@ -918,6 +954,9 @@ void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1
 
     /* Travel the triangle from top to bottom */
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -1021,16 +1060,20 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
     const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
 
     const PFfloat px1 = v1->position[0], py1 = v1->position[1], pz1 = v1->position[2];
@@ -1062,6 +1105,9 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
 
     /* Travel the triangle from top to bottom */
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -1198,16 +1244,20 @@ void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
     const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
 
     const PFfloat px1 = v1->position[0], py1 = v1->position[1], pz1 = v1->position[2];
@@ -1239,6 +1289,9 @@ void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex
 
     /* Travel the triangle from top to bottom */
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -1379,16 +1432,20 @@ void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFve
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
     const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
 
     const PFfloat px1 = v1->position[0], py1 = v1->position[1], pz1 = v1->position[2];
@@ -1425,6 +1482,9 @@ void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFve
 
     /* Travel the triangle from top to bottom */
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -1581,16 +1641,20 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
     const PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
 
     const PFfloat px1 = v1->position[0], py1 = v1->position[1], pz1 = v1->position[2];
@@ -1627,6 +1691,9 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
     /* Travel the triangle from top to bottom */
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -1789,16 +1856,20 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
 
     const PFcolor c1 = Process_Gouraud(ctx, v1, viewPos, &ctx->faceMaterial[faceToRender]);
     const PFcolor c2 = Process_Gouraud(ctx, v2, viewPos, &ctx->faceMaterial[faceToRender]);
@@ -1822,6 +1893,9 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
 
     /* Travel the triangle from top to bottom */
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -1890,16 +1964,20 @@ void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
 
     const PFcolor c1 = Process_Gouraud(ctx, v1, viewPos, &ctx->faceMaterial[faceToRender]);
     const PFcolor c2 = Process_Gouraud(ctx, v2, viewPos, &ctx->faceMaterial[faceToRender]);
@@ -1923,6 +2001,9 @@ void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex
 
     /* Travel the triangle from top to bottom */
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -1995,16 +2076,20 @@ void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFve
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
 
     const PFcolor c1 = Process_Gouraud(ctx, v1, viewPos, &ctx->faceMaterial[faceToRender]);
     const PFcolor c2 = Process_Gouraud(ctx, v2, viewPos, &ctx->faceMaterial[faceToRender]);
@@ -2033,6 +2118,9 @@ void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFve
 
     /* Travel the triangle from top to bottom */
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -2127,16 +2215,20 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
     /* Prepare for rasterization */
 
-    if (!Helper_FaceCanBeRendered(faceToRender, v1->screen, v2->screen, v3->screen))
+    PFfloat triangleArea = 0;
+
+    if (!Helper_FaceCanBeRendered(faceToRender, &triangleArea, v1->screen, v2->screen, v3->screen))
     {
         return;
     }
 
     Helper_SortVertices(&v1, &v2, &v3);
 
-    const PFfloat x1 = v1->screen[0], y1 = v1->screen[1], z1 = v1->homogeneous[2];
-    const PFfloat x2 = v2->screen[0], y2 = v2->screen[1], z2 = v2->homogeneous[2];
-    const PFfloat x3 = v3->screen[0], y3 = v3->screen[1], z3 = v3->homogeneous[2];
+    const PFint x1 = v1->screen[0], y1 = v1->screen[1];
+    const PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    const PFint x3 = v3->screen[0], y3 = v3->screen[1];
+
+    const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
 
     const PFcolor c1 = Process_Gouraud(ctx, v1, viewPos, &ctx->faceMaterial[faceToRender]);
     const PFcolor c2 = Process_Gouraud(ctx, v2, viewPos, &ctx->faceMaterial[faceToRender]);
@@ -2165,6 +2257,9 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
     /* Travel the triangle from top to bottom */
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
         PFfloat alpha = (y - y1 + 1) * invTotalHeight;
@@ -2261,6 +2356,28 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
 
 /* Internal helper function definitions */
+
+PFboolean Helper_FaceCanBeRendered(PFface faceToRender, PFfloat* area, const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 p3)
+{
+    PFfloat signedArea = (p2[0] - p1[0])*(p3[1] - p1[1]) - (p3[0] - p1[0])*(p2[1] - p1[1]);
+
+    if ((faceToRender == PF_FRONT && signedArea < 0) || (faceToRender == PF_BACK && signedArea > 0))
+    {
+        *area = fabsf(signedArea)*0.5f;
+        return PF_TRUE;
+    }
+
+    return PF_FALSE;
+}
+
+void Helper_SortVertices(const PFvertex** v1, const PFvertex** v2, const PFvertex** v3)
+{
+    // Sort vertices in ascending order of y coordinates
+    const PFvertex* vTmp;
+    if ((*v2)->screen[1] < (*v1)->screen[1]) { vTmp = *v1; *v1 = *v2; *v2 = vTmp; }
+    if ((*v3)->screen[1] < (*v1)->screen[1]) { vTmp = *v1; *v1 = *v3; *v3 = vTmp; }
+    if ((*v3)->screen[1] < (*v2)->screen[1]) { vTmp = *v2; *v2 = *v3; *v3 = vTmp; }
+}
 
 PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFfloat t)
 {

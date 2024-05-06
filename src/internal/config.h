@@ -26,17 +26,24 @@
 #endif //PF_CLIP_EPSILON
 
 #ifdef PF_SUPPORT_OPENMP
+
 //  Pixel threshold for parallelizing the rasterization loop
-#   ifndef PF_OPENMP_PIXEL_RASTER_THRESHOLD
-#       define PF_OPENMP_PIXEL_RASTER_THRESHOLD 1024
-#   endif //PF_OPENMP_PIXEL_RASTER_THRESHOLD
+//  NOTE: In barycentric rendering method, this corresponds
+//        to the area of the triangle's bounding box,
+//        whereas in scanline rendering method, it
+//        corresponds to the area of the triangle.
+#   ifndef PF_OPENMP_RASTER_THRESHOLD_AREA
+#       define PF_OPENMP_RASTER_THRESHOLD_AREA 32*32
+#   endif //PF_OPENMP_RASTER_THRESHOLD_AREA
+
 //  Buffer size threshold for parallelizing `pfClear` loops
 #   ifndef PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD
 #       define PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD 640*480
 #   endif //PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD
+
 #endif //PF_SUPPORT_OPENMP
 
-//#define PF_SCANLINES_RASTER_METHOD    // Performs triangle rasterization using scanline rather than barycentric method
+#define PF_SCANLINES_RASTER_METHOD    // Performs triangle rasterization using scanline rather than barycentric method
 //#define PF_SUPPORT_NO_POT_TEXTURE     // Allows fetching samples from texcoords on non-power-of-two textures
 //#define PF_PHONG_REFLECTION           // Disable the Blinn-Phong reflection model for Phong
 //#define PF_GOURAUD_SHADING            // Enable vertex shading for lighting instead of per-fragment shading

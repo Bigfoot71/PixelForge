@@ -335,7 +335,7 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
     const PFfloat z2 = v2->homogeneous[2]; \
     const PFfloat z3 = v3->homogeneous[2]; \
     \
-    _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_PIXEL_RASTER_THRESHOLD)") \
+    _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)") \
     for (PFuint y = yMin; y <= yMax; y++) \
     { \
         const PFuint yOffset = y*wDst; \
@@ -374,7 +374,7 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
     const PFfloat z2 = v2->homogeneous[2]; \
     const PFfloat z3 = v3->homogeneous[2]; \
     \
-    _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_PIXEL_RASTER_THRESHOLD)") \
+    _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)") \
     for (PFuint y = yMin; y <= yMax; y++) \
     { \
         const PFuint yOffset = y*wDst; \
