@@ -19,6 +19,7 @@
 
 #include "internal/context.h"
 #include "pfm.h"
+#include "pixelforge.h"
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -2073,7 +2074,7 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, const voi
     PFpixelgetter getPixelSrc = NULL;
     pfInternal_GetPixelGetterSetter(&getPixelSrc, NULL, format);
 
-    // Checked if we were able to get the pixel getter
+    // Check if we were able to get the pixel getter function
     if (!getPixelSrc)
     {
         currentCtx->errCode = PF_INVALID_ENUM;
@@ -2084,63 +2085,70 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, const voi
     PFMmat4 mvp;
     GetMVP(mvp, NULL, NULL);
 
-    // Project raster point
-    PFMvec4 rasterPos = { currentCtx->rasterPos[0], currentCtx->rasterPos[1], currentCtx->rasterPos[2], 1.0f };
-    pfmVec4Transform(rasterPos, rasterPos, mvp);
+    // Project raster point from model space to screen space
+    PFMvec4 rasterPos;
+    pfmVec4Copy(rasterPos, currentCtx->rasterPos);  // Copy raster position
+    pfmVec4Transform(rasterPos, rasterPos, mvp);    // Apply transformation matrix
 
     // Calculate screen coordinates from projected coordinates
-    PFint xScreen = currentCtx->vpPos[0] + (rasterPos[0] + 1.0f) * 0.5f * currentCtx->vpDim[0];
-    PFint yScreen = currentCtx->vpPos[1] + (1.0f - rasterPos[1]) * 0.5f * currentCtx->vpDim[1];
-    PFfloat zPos = rasterPos[2];
+    // Transform X and Y from range [-1, 1] to screen space coordinates
+    PFint xScreen = currentCtx->vpPos[0] + (rasterPos[0] + 1.0f)*0.5f*currentCtx->vpDim[0];
+    PFint yScreen = currentCtx->vpPos[1] + (1.0f - rasterPos[1])*0.5f*currentCtx->vpDim[1];
+    PFfloat zPos = rasterPos[2]; // Z position remains unchanged
 
-    // Draw pixels on current framebuffer
+    // Calculate the destination rectangle (clipped to viewport boundaries)
+    PFint xMin = CLAMP(xScreen, currentCtx->vpMin[0], currentCtx->vpMax[0]);
+    PFint yMin = CLAMP(yScreen, currentCtx->vpMin[1], currentCtx->vpMax[1]);
+    PFint xMax = CLAMP(xScreen + width*currentCtx->pixelZoom[0], currentCtx->vpMin[0], currentCtx->vpMax[0]);
+    PFint yMax = CLAMP(yScreen + height*currentCtx->pixelZoom[1], currentCtx->vpMin[1], currentCtx->vpMax[1]);
+
+    // Calculate inverse lengths for texture sampling
+    PFfloat invXLen = 1.0f/(PFfloat)(width*currentCtx->pixelZoom[0]);
+    PFfloat invYLen = 1.0f/(PFfloat)(height*currentCtx->pixelZoom[1]);
+
+    // Get current framebuffer and depth buffer
     PFtexture *texDst = &currentCtx->currentFramebuffer->texture;
     PFfloat *zBuffer = currentCtx->currentFramebuffer->zbuffer;
 
-    PFsizei wDst = texDst->width;
-    PFsizei hDst = texDst->height;
-
-    PFfloat xPixelZoom = currentCtx->pixelZoom[0];
-    PFfloat yPixelZoom = currentCtx->pixelZoom[1];
-
-    PFfloat xSrcInc = (xPixelZoom < 1.0f) ? 1.0f / xPixelZoom : 1.0f;
-    PFfloat ySrcInc = (yPixelZoom < 1.0f) ? 1.0f / yPixelZoom : 1.0f;
-
+    // Check if depth test is enabled
     PFboolean noDepthTest = !(currentCtx->state & PF_DEPTH_TEST);
 
-    for (PFfloat ySrc = 0; ySrc < height; ySrc += ySrcInc)
+    // Loop through each pixel in the destination rectangle
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for if ((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#   endif // PF_SUPPORT_OPENMP
+    for (PFint y = yMin; y <= yMax; y++)
     {
-        PFsizei ySrcOffset = (PFsizei)ySrc * width;
-        PFfloat yDstMin = yScreen + ySrc * yPixelZoom;
-        PFfloat yDstMax = yDstMin + yPixelZoom;
+        // Calculate texture V coordinate based on screen Y coordinate
+        PFfloat v = (PFfloat)(y - yScreen)*invYLen;
+        PFsizei ySrcOffset = (PFsizei)(v*height)*width; // Offset into source texture
 
-        for (PFfloat xSrc = 0; xSrc < width; xSrc += xSrcInc)
+        // Calculate destination offset for this scanline
+        PFsizei yDstOffset = y*texDst->width;
+
+        for (PFint x = xMin; x <= xMax; x++)
         {
-            PFsizei yDstOffset = (PFsizei)(yDstMin + 0.5f) * wDst;
-            PFfloat xDstMin = xScreen + xSrc * xPixelZoom;
-            PFfloat xDstMax = xDstMin + xPixelZoom;
+            // Calculate destination offset for this pixel
+            PFsizei xyDstOffset = yDstOffset + x;
 
-            for (PFfloat yDst = yDstMin; yDst < yDstMax; yDst++)
+            // Perform depth test or skip if disabled
+            if (noDepthTest || currentCtx->depthFunction(zPos, zBuffer[xyDstOffset]))
             {
-                for (PFfloat xDst = xDstMin; xDst < xDstMax; xDst++)
-                {
-                    if (xDst >= 0 && xDst < wDst && yDst >= 0 && yDst < hDst)
-                    {
-                        PFsizei xyDstOffset = yDstOffset + (PFsizei)(xDst + 0.5f);
+                // Calculate texture U coordinate based on screen X coordinate
+                PFfloat u = (PFfloat)(x - xScreen)*invXLen;
 
-                        if (noDepthTest || currentCtx->depthFunction(zPos, zBuffer[xyDstOffset]))
-                        {
-                            PFsizei xySrcOffset = ySrcOffset + (PFsizei)xSrc;
+                // Calculate offset into source texture for this pixel
+                PFsizei xySrcOffset = ySrcOffset + (PFsizei)(u*width);
 
-                            zBuffer[xyDstOffset] = zPos;
-                            PFcolor colSrc = getPixelSrc(pixels, xySrcOffset);
-                            PFcolor colDst = texDst->pixelGetter(texDst->pixels, xyDstOffset);
-                            texDst->pixelSetter(texDst->pixels, xyDstOffset, currentCtx->blendFunction(colSrc, colDst));
-                        }
-                    }
-                }
+                // Update depth buffer with new depth value
+                zBuffer[xyDstOffset] = zPos;
 
-                yDstOffset++;
+                // Retrieve source and destination colors
+                PFcolor colSrc = getPixelSrc(pixels, xySrcOffset);
+                PFcolor colDst = texDst->pixelGetter(texDst->pixels, xyDstOffset);
+
+                // Blend source and destination colors and update framebuffer
+                texDst->pixelSetter(texDst->pixels, xyDstOffset, currentCtx->blendFunction(colSrc, colDst));
             }
         }
     }
@@ -2255,13 +2263,13 @@ void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat
 
     // Move to the beginning of the specified region in the framebuffer
     PFint wSrc = curFB->texture.width;
-    const char* src = (char*)curFB->texture.pixels + (y * wSrc + x) * srcPixelBytes;
+    const char* src = (char*)curFB->texture.pixels + (y*wSrc + x)*srcPixelBytes;
 
     // Copy pixels from the specified region of the framebuffer to the location specified by 'pixels'
     for (PFsizei i = 0; i < height; i++)
     {
-        memcpy((char*)pixels + i * width * dstPixelBytes, src, width * srcPixelBytes);
-        src += wSrc * srcPixelBytes;
+        memcpy((char*)pixels + i*width*dstPixelBytes, src, width*srcPixelBytes);
+        src += wSrc*srcPixelBytes;
     }
 }
 
