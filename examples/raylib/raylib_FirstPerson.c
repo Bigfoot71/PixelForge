@@ -1,3 +1,4 @@
+#include "pixelforge.h"
 #define PF_RAYLIB_COMMON_IMPL
 #include "raylib_common.h"
 
@@ -181,8 +182,14 @@ bool WallCollision(Camera3D* camera, const Image* imMap)
 
 void InitFlashLight(void)
 {
-    pfLightf(PF_LIGHT0, PF_SPOT_CUTOFF, 17.5f);
-    pfLightf(PF_LIGHT0, PF_SPOT_OUTER_CUTOFF, 22.5f);
+    pfLightf(PF_LIGHT0, PF_SPOT_INNER_CUTOFF, 17.5f);
+    pfLightf(PF_LIGHT0, PF_SPOT_OUTER_CUTOFF, 32.5f);
+
+    const float ambient[] = { 0.5f, 0.5f, 0.5f, 0.5f };
+    pfLightfv(PF_LIGHT0, PF_AMBIENT, ambient);
+
+    pfLightf(0, PF_LINEAR_ATTENUATION, 0.09f);
+    pfLightf(0, PF_QUADRATIC_ATTENUATION, 0.032f);
 }
 
 void ToggleFlashLight(void)

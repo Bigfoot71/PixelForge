@@ -130,14 +130,9 @@ static float angle = 0.0f;
 
 void Gears_Init(void)
 {
-   PFMvec3 pos = { 5.0f, 5.0f, 10.0f };
-   PFMvec3 dir = { 0 };
-
-    pfmVec3Sub(dir, dir, pos);
-    pfmVec3Normalize(dir, dir);
+    PFMvec3 pos = { 5.0f, 5.0f, 10.0f };
 
     pfLightfv(PF_LIGHT0, PF_POSITION, pos);
-    pfLightfv(PF_LIGHT0, PF_SPOT_DIRECTION, dir);
     pfEnable(PF_CULL_FACE);
     pfEnable(PF_LIGHTING);
     pfEnableLight(PF_LIGHT0);

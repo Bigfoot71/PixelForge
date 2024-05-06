@@ -62,11 +62,13 @@
 #endif //INV_255
 
 #ifndef MIN_255
-#   define MIN_255(n) (n | ((255 - n) >> 31))
+#   define MIN_255(n) ( \
+    (PFubyte)((PFint)(n) | ((255 - (PFint)(n)) >> 31)))
 #endif //MIN_255
 
 #ifndef MAX_0
-#   define MAX_0(n) (n & -(n >= 0))
+#   define MAX_0(n) (\
+    (PFubyte)((PFint)(n) & -((PFint)(n) >= 0)))
 #endif //MAX_0
 
 #ifndef MIN
@@ -78,7 +80,8 @@
 #endif //MAX
 
 #ifndef CLAMP
-#   define CLAMP(x, lower, upper) (MAX((lower), MIN((x), (upper))))
+#   define CLAMP(x, min, max) ( \
+    (x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 #endif // CLAMP
 
 /* Types definitions */
@@ -304,7 +307,7 @@ typedef enum {
     PF_POSITION                 = 7,
     PF_SPOT_DIRECTION           = 8,
     //PF_SPOT_EXPONENT          = 9,
-    PF_SPOT_CUTOFF              = 10,
+    PF_SPOT_INNER_CUTOFF        = 10,
     PF_SPOT_OUTER_CUTOFF        = 11,
     PF_CONSTANT_ATTENUATION     = 12,
     PF_LINEAR_ATTENUATION       = 13,

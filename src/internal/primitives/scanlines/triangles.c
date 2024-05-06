@@ -1092,9 +1092,6 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
     InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
-    const PFlight *lights = ctx->lights;
-    PFfloat shininess = ctx->faceMaterial[faceToRender].shininess;
-
     PFframebuffer *fbDst = ctx->currentFramebuffer;
     PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
     PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
@@ -1216,22 +1213,11 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
             PFcolor src = interpolateColor(cA, cB, t);
             PFcolor dst = pixelGetter(bufDst, xyOffset);
 
-            PFcolor finalLightColor = { 0 };
             PFcolor finalColor = blendFunc(src, dst);
+            finalColor = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender],
+                finalColor, viewPos, position, normal);
 
-            for (int_fast8_t i = 0; i <= ctx->lastActiveLight; i++)
-            {
-                const PFlight *light = lights + i;
-                if (!light->active) continue;
-
-                PFcolor lightColor = Process_Light(light, light->ambient,
-                    finalColor, viewPos, position, normal, shininess);
-
-                finalLightColor = pfBlendAdditive(
-                    finalLightColor, lightColor);
-            }
-
-            pixelSetter(bufDst, xyOffset, finalLightColor);
+            pixelSetter(bufDst, xyOffset, finalColor);
             zbDst[xyOffset] = z;
         }
     }
@@ -1275,9 +1261,6 @@ void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex
 
     InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
-
-    const PFlight *lights = ctx->lights;
-    PFfloat shininess = ctx->faceMaterial[faceToRender].shininess;
 
     PFframebuffer *fbDst = ctx->currentFramebuffer;
     PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
@@ -1403,22 +1386,11 @@ void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex
                 PFcolor src = interpolateColor(cA, cB, t);
                 PFcolor dst = pixelGetter(bufDst, xyOffset);
 
-                PFcolor finalLightColor = { 0 };
                 PFcolor finalColor = blendFunc(src, dst);
+                finalColor = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender],
+                    finalColor, viewPos, position, normal);
 
-                for (int_fast8_t i = 0; i <= ctx->lastActiveLight; i++)
-                {
-                    const PFlight *light = lights + i;
-                    if (!light->active) continue;
-
-                    PFcolor lightColor = Process_Light(light, light->ambient,
-                        finalColor, viewPos, position, normal, shininess);
-
-                    finalLightColor = pfBlendAdditive(
-                        finalLightColor, lightColor);
-                }
-
-                pixelSetter(bufDst, xyOffset, finalLightColor);
+                pixelSetter(bufDst, xyOffset, finalColor);
                 *zp = z;
             }
         }
@@ -1467,9 +1439,6 @@ void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFve
 
     InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
-
-    const PFlight *lights = ctx->lights;
-    PFfloat shininess = ctx->faceMaterial[faceToRender].shininess;
 
     PFtexture *texture = ctx->currentTexture;
     PFframebuffer *fbDst = ctx->currentFramebuffer;
@@ -1613,22 +1582,11 @@ void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFve
             src = pfBlendMultiplicative(tex, src);
             PFcolor dst = pixelGetter(bufDst, xyOffset);
 
-            PFcolor finalLightColor = { 0 };
             PFcolor finalColor = blendFunc(src, dst);
+            finalColor = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender],
+                finalColor, viewPos, position, normal);
 
-            for (int_fast8_t i = 0; i <= ctx->lastActiveLight; i++)
-            {
-                const PFlight *light = lights + i;
-                if (!light->active) continue;
-
-                PFcolor lightColor = Process_Light(light, light->ambient,
-                    finalColor, viewPos, position, normal, shininess);
-
-                finalLightColor = pfBlendAdditive(
-                    finalLightColor, lightColor);
-            }
-
-            pixelSetter(bufDst, xyOffset, finalLightColor);
+            pixelSetter(bufDst, xyOffset, finalColor);
             zbDst[xyOffset] = z;
         }
     }
@@ -1676,9 +1634,6 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
     InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
-
-    const PFlight *lights = ctx->lights;
-    PFfloat shininess = ctx->faceMaterial[faceToRender].shininess;
 
     PFtexture *texture = ctx->currentTexture;
     PFframebuffer *fbDst = ctx->currentFramebuffer;
@@ -1825,22 +1780,11 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
                 src = pfBlendMultiplicative(tex, src);
                 PFcolor dst = pixelGetter(bufDst, xyOffset);
 
-                PFcolor finalLightColor = { 0 };
                 PFcolor finalColor = blendFunc(src, dst);
+                finalColor = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender],
+                    finalColor, viewPos, position, normal);
 
-                for (int_fast8_t i = 0; i <= ctx->lastActiveLight; i++)
-                {
-                    const PFlight *light = lights + i;
-                    if (!light->active) continue;
-
-                    PFcolor lightColor = Process_Light(light, light->ambient,
-                        finalColor, viewPos, position, normal, shininess);
-
-                    finalLightColor = pfBlendAdditive(
-                        finalLightColor, lightColor);
-                }
-
-                pixelSetter(bufDst, xyOffset, finalLightColor);
+                pixelSetter(bufDst, xyOffset, finalColor);
                 *zp = z;
             }
         }
@@ -1870,9 +1814,9 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
 
     const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
 
-    const PFcolor c1 = Process_Gouraud(ctx, v1, viewPos, &ctx->faceMaterial[faceToRender]);
-    const PFcolor c2 = Process_Gouraud(ctx, v2, viewPos, &ctx->faceMaterial[faceToRender]);
-    const PFcolor c3 = Process_Gouraud(ctx, v3, viewPos, &ctx->faceMaterial[faceToRender]);
+    const PFcolor c1 = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender], v1->color, viewPos, v1->position, v1->normal);
+    const PFcolor c2 = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender], v2->color, viewPos, v2->position, v2->normal);
+    const PFcolor c3 = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender], v3->color, viewPos, v3->position, v3->normal);
 
     const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
     const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
@@ -1978,9 +1922,9 @@ void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex
 
     const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
 
-    const PFcolor c1 = Process_Gouraud(ctx, v1, viewPos, &ctx->faceMaterial[faceToRender]);
-    const PFcolor c2 = Process_Gouraud(ctx, v2, viewPos, &ctx->faceMaterial[faceToRender]);
-    const PFcolor c3 = Process_Gouraud(ctx, v3, viewPos, &ctx->faceMaterial[faceToRender]);
+    const PFcolor c1 = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender], v1->color, viewPos, v1->position, v1->normal);
+    const PFcolor c2 = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender], v2->color, viewPos, v2->position, v2->normal);
+    const PFcolor c3 = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender], v3->color, viewPos, v3->position, v3->normal);
 
     const PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
     const PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
@@ -2090,9 +2034,9 @@ void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFve
 
     const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
 
-    const PFcolor c1 = Process_Gouraud(ctx, v1, viewPos, &ctx->faceMaterial[faceToRender]);
-    const PFcolor c2 = Process_Gouraud(ctx, v2, viewPos, &ctx->faceMaterial[faceToRender]);
-    const PFcolor c3 = Process_Gouraud(ctx, v3, viewPos, &ctx->faceMaterial[faceToRender]);
+    const PFcolor c1 = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender], v1->color, viewPos, v1->position, v1->normal);
+    const PFcolor c2 = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender], v2->color, viewPos, v2->position, v2->normal);
+    const PFcolor c3 = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender], v3->color, viewPos, v3->position, v3->normal);
 
     const PFfloat s1 = v1->texcoord[0], t1 = v1->texcoord[1];
     const PFfloat s2 = v2->texcoord[0], t2 = v2->texcoord[1];
@@ -2229,9 +2173,9 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
 
     const PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
 
-    const PFcolor c1 = Process_Gouraud(ctx, v1, viewPos, &ctx->faceMaterial[faceToRender]);
-    const PFcolor c2 = Process_Gouraud(ctx, v2, viewPos, &ctx->faceMaterial[faceToRender]);
-    const PFcolor c3 = Process_Gouraud(ctx, v3, viewPos, &ctx->faceMaterial[faceToRender]);
+    const PFcolor c1 = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender], v1->color, viewPos, v1->position, v1->normal);
+    const PFcolor c2 = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender], v2->color, viewPos, v2->position, v2->normal);
+    const PFcolor c3 = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender], v3->color, viewPos, v3->position, v3->normal);
 
     const PFfloat s1 = v1->texcoord[0], t1 = v1->texcoord[1];
     const PFfloat s2 = v2->texcoord[0], t2 = v2->texcoord[1];

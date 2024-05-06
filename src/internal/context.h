@@ -63,19 +63,20 @@ typedef struct {
 /**
  * @brief Structure representing a light source.
  */
-typedef struct {
+typedef struct PFlight PFlight;
+struct PFlight {
     PFMvec3 position;                   ///< Position of the light source
     PFMvec3 direction;                  ///< Direction of the light source
-    PFfloat cutoff;                     ///< Inner cutoff angle of the light cone
-    PFfloat outerCutoff;                ///< Outer cutoff angle of the light cone
+    PFfloat innerCutOff;                ///< Inner cut off angle of the light cone
+    PFfloat outerCutOff;                ///< Outer cut off angle of the light cone
     PFfloat attConstant;                ///< Constant attenuation factor
     PFfloat attLinear;                  ///< Linear attenuation factor
     PFfloat attQuadratic;               ///< Quadratic attenuation factor
     PFcolor ambient;                    ///< Ambient color of the light
     PFcolor diffuse;                    ///< Diffuse color of the light
     PFcolor specular;                   ///< Specular color of the light
-    PFboolean active;                   ///< Flag indicating if the light is active
-} PFlight;
+    PFlight *next;                      ///< Pointer to the next light in a linked list
+};
 
 /**
  * @brief Structure representing material properties.
@@ -141,7 +142,7 @@ struct PFctx {
     PFmatcolfollowing materialColorFollowing;               ///< Material color which must follow the current color (see 'pfColorMaterial')
 
     PFlight lights[PF_MAX_LIGHT_STACK];                     ///< Array of lights
-    PFint lastActiveLight;                                  ///< Index of the last active light
+    PFlight *activeLights;                                  ///< Pointer to the currently active light in the list of lights (see PFlight->next)
 
     PFMmat4 projection;                                     ///< Default projection matrix
     PFMmat4 model;                                          ///< Default model matrix (the one used if we push in PF_MODELVIEW mode)

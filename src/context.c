@@ -18,6 +18,7 @@
  */
 
 #include "internal/context.h"
+#include "internal/config.h"
 #include "pfm.h"
 #include "pixelforge.h"
 
@@ -192,18 +193,18 @@ PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixe
         ctx->lights[i] = (PFlight) {
             .position = { 0 },
             .direction = { 0 },
-            .cutoff = M_PI,
-            .outerCutoff = M_PI,
+            .innerCutOff = M_PI,
+            .outerCutOff = M_PI,
             .attConstant = 1,
             .attLinear = 0,
             .attQuadratic = 0,
             .ambient = (PFcolor) { 51, 51, 51, 255 },
             .diffuse = (PFcolor) { 255, 255, 255, 255 },
             .specular = (PFcolor) { 255, 255, 255, 255 },
-            .active = PF_FALSE
+            .next = NULL
         };
     }
-    ctx->lastActiveLight = -1;
+    ctx->activeLights = NULL;
 
     /* Initialization of materials */
 
@@ -749,35 +750,80 @@ void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
 
 void pfEnableLight(PFsizei light)
 {
-    if (light < PF_MAX_LIGHT_STACK)
+    if (light >= PF_MAX_LIGHT_STACK)                        // Check if the specified light index is within the valid range.
     {
-        currentCtx->lights[light].active = PF_TRUE;
-        currentCtx->lastActiveLight = -1;
-
-        for (PFint i = PF_MAX_LIGHT_STACK - 1; i > currentCtx->lastActiveLight; i--)
-        {
-            if (currentCtx->lights[i].active) currentCtx->lastActiveLight = i;
-        }
+        currentCtx->errCode = PF_INVALID_VALUE;
+        return;
     }
+
+    PFlight *desiredLight = currentCtx->lights + light;     // Get the pointer to the desired light from the lights array.
+    PFlight **nodeLight = &currentCtx->activeLights;        // Get a pointer to the pointer pointing to the head of the active lights list.
+
+    PFboolean enabled = PF_FALSE;                           // Flag to track if the light is not already enabled.
+
+    while (*nodeLight != NULL)                              // Iterate through the active lights list to check if the desired light is already enabled.
+    {
+        if (*nodeLight == desiredLight)                     // If the current light in the list matches the desired light, it's already enabled.
+        {
+            enabled = PF_TRUE;                              // Set the flag to indicate that the light is not valid for enabling.
+            break;
+        }
+
+        nodeLight = &(*nodeLight)->next;                    // Move to the next light in the list.
+    }
+
+    if (!enabled)                                           // If the desired light is not already enabled, add it to the active lights list.
+    {
+        desiredLight->next = NULL;                          // Set the 'next' pointer of the desired light to NULL since it will be added at the end.
+        *nodeLight = desiredLight;                          // Update the pointer pointing to the head of the active lights list to include the desired light.
+        return;
+    }
+
+    currentCtx->errCode = PF_INVALID_OPERATION;             // If the desired light is already enabled, set an error code indicating invalid operation.
 }
 
 void pfDisableLight(PFsizei light)
 {
-    if (light < PF_MAX_LIGHT_STACK)
+    if (light >= PF_MAX_LIGHT_STACK)                        // Check if the specified light index is within the valid range.
     {
-        currentCtx->lights[light].active = PF_FALSE;
-        currentCtx->lastActiveLight = -1;
-
-        for (PFint i = PF_MAX_LIGHT_STACK - 1; i > currentCtx->lastActiveLight; i--)
-        {
-            if (currentCtx->lights[i].active) currentCtx->lastActiveLight = i;
-        }
+        currentCtx->errCode = PF_INVALID_VALUE;
+        return;
     }
+
+    PFlight *desiredLight = currentCtx->lights + light;     // Get the pointer to the desired light from the lights array.
+    PFlight **nodeLight = &currentCtx->activeLights;        // Get a pointer to the pointer pointing to the head of the active lights list.
+
+    while (*nodeLight != NULL)                              // Iterate through the active lights list to find and remove the desired light.
+    {
+        if (*nodeLight == desiredLight)                     // If the current light in the list matches the desired light, remove it from the list.
+        {
+            *nodeLight = desiredLight->next;                // Update the pointer to skip the desired light in the list.
+            desiredLight->next = NULL;                      // Set the 'next' pointer of the desired light to NULL to detach it from the list.
+            return;
+        }
+
+        nodeLight = &(*nodeLight)->next;                    // Move to the next light in the list.
+    }
+
+    currentCtx->errCode = PF_INVALID_OPERATION;             // If the desired light is not found in the active lights list, set an error code indicating invalid operation.
 }
 
 PFboolean pfIsEnabledLight(PFsizei light)
 {
-    return currentCtx->lights[light].active;
+    if (light >= PF_MAX_LIGHT_STACK)
+    {
+        currentCtx->errCode = PF_INVALID_VALUE;
+        return PF_FALSE;
+    }
+
+    PFlight *desiredLight = currentCtx->lights + light;
+
+    for (PFlight *light = currentCtx->activeLights; light != NULL; light = light->next)
+    {
+        if (light == desiredLight) return PF_TRUE;
+    }
+
+    return PF_FALSE;
 }
 
 void pfLightf(PFsizei light, PFenum param, PFfloat value)
@@ -792,10 +838,10 @@ void pfLightf(PFsizei light, PFenum param, PFfloat value)
 
     switch (param)
     {
-        case PF_SPOT_CUTOFF:
+        case PF_SPOT_INNER_CUTOFF:
             if ((value >= 0 && value <= 90) || value == 180)
             {
-                l->cutoff = cosf(DEG2RAD(value));
+                l->innerCutOff = cosf(DEG2RAD(value));
             }
             else
             {
@@ -806,7 +852,7 @@ void pfLightf(PFsizei light, PFenum param, PFfloat value)
         case PF_SPOT_OUTER_CUTOFF:
             if ((value >= 0 && value <= 90) || value == 180)
             {
-                l->outerCutoff = cosf(DEG2RAD(value));
+                l->outerCutOff = cosf(DEG2RAD(value));
             }
             else
             {
@@ -853,12 +899,12 @@ void pfLightfv(PFsizei light, PFenum param, const void* value)
             memcpy(l->direction, value, sizeof(PFMvec3));
             break;
 
-        case PF_SPOT_CUTOFF:
+        case PF_SPOT_INNER_CUTOFF:
         {
             PFfloat v = *(PFfloat*)value;
             if ((v >= 0 && v <= 90) || v == 180)
             {
-                l->cutoff = DEG2RAD(v);
+                l->innerCutOff = DEG2RAD(v);
             }
             else
             {
@@ -872,7 +918,7 @@ void pfLightfv(PFsizei light, PFenum param, const void* value)
             PFfloat v = *(PFfloat*)value;
             if ((v >= 0 && v <= 90) || v == 180)
             {
-                l->outerCutoff = DEG2RAD(v);
+                l->outerCutOff = DEG2RAD(v);
             }
             else
             {
@@ -2447,7 +2493,7 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
 #endif
 
     PFboolean lighting = (currentCtx->state & PF_LIGHTING) &&
-                         (currentCtx->lastActiveLight > -1);
+                         (currentCtx->activeLights != NULL);
 
     int_fast8_t processedCounter = 3;
 
@@ -2503,20 +2549,6 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
     {
         if (lighting)
         {
-            // Pre-calculation of specularity tints
-            // by multiplying those of light and material
-
-            PFcolor oldLightSpecTints[PF_MAX_LIGHT_STACK];
-
-            for (PFint i = 0; i <= currentCtx->lastActiveLight; i++)
-            {
-                PFlight *l = &currentCtx->lights[i];
-                oldLightSpecTints[i] = l->specular;
-
-                if (l->active) l->specular = pfBlendMultiplicative(
-                    l->specular, currentCtx->faceMaterial[PF_FRONT].specular);
-            }
-
             // Get camera/view position
 
             PFMmat4 invMatView;
@@ -2543,16 +2575,6 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
             for (int_fast8_t i = 0; i < processedCounter - 2; i++)
             {
                 rasterizer(faceToRender, &processed[0], &processed[i + 1], &processed[i + 2], viewPos);
-            }
-
-            // Reset old light specular tints
-
-            for (PFint i = 0; i <= currentCtx->lastActiveLight; i++)
-            {
-                if (currentCtx->lights[i].active)
-                {
-                    currentCtx->lights[i].specular = oldLightSpecTints[i];
-                }
             }
         }
         else
