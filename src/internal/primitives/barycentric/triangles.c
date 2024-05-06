@@ -17,9 +17,9 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "../lighting/lighting.h"
-#include "../context.h"
-#include "../../pfm.h"
+#include "../../lighting/lighting.h"
+#include "../../context.h"
+#include "../../../pfm.h"
 
 /* Internal typedefs */
 

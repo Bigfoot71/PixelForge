@@ -1,9 +1,9 @@
 #include "../config.h"
 
 #ifdef PF_SCANLINES_RASTER_METHOD
-#   include "./triangles_scanlines.c"
+#   include "./scanlines/triangles.c"
 #else //PF_BARYCENTRIC_RASTER_METHOD
-#   include "./triangles_barycentric.c"
+#   include "./barycentric/triangles.c"
 #endif //PF_RASTER_METHOD
 
 /* Including internal function prototypes */

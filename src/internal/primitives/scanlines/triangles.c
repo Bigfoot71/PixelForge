@@ -17,13 +17,12 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-
 // WARNING: This rendering mode is WIP
 
+#include "../../lighting/lighting.h"
+#include "../../context.h"
+#include "../../../pfm.h"
 
-#include "../lighting/lighting.h"
-#include "../context.h"
-#include "../../pfm.h"
 #include <stdint.h>
 #include <stdlib.h>
 
