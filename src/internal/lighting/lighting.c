@@ -17,12 +17,13 @@ PFcolor Process_Light(const PFlight* light, PFcolor ambient, PFcolor texel, cons
     PFMvec3 lightDir;
     pfmVec3Normalize(lightDir, lightFragPosDt);
 
-    PFfloat diff = fmaxf(pfmVec3Dot(normal, lightDir), 0.0f);
+    PFubyte diff = 255*fmaxf(pfmVec3Dot(normal, lightDir), 0.0f);
+    PFcolor diffuse = light->diffuse;
 
-    PFcolor diffuse = pfBlendMultiplicative(light->diffuse, texel);
-    diffuse.r = (PFubyte)((PFfloat)diffuse.r*diff);
-    diffuse.g = (PFubyte)((PFfloat)diffuse.g*diff);
-    diffuse.b = (PFubyte)((PFfloat)diffuse.b*diff);
+    diffuse.r = (diffuse.r*texel.r*diff)/(255*255);
+    diffuse.g = (diffuse.g*texel.g*diff)/(255*255);
+    diffuse.b = (diffuse.b*texel.b*diff)/(255*255);
+    diffuse.a = texel.a;
 
     // specular
 #ifndef PF_PHONG_REFLECTION
@@ -30,24 +31,22 @@ PFcolor Process_Light(const PFlight* light, PFcolor ambient, PFcolor texel, cons
     PFMvec3 halfWayDir;
     pfmVec3Add(halfWayDir, lightDir, viewDir);
     pfmVec3Normalize(halfWayDir, halfWayDir);
-    PFfloat spec = powf(fmaxf(pfmVec3Dot(normal, halfWayDir), 0.0f), shininess);
+    PFubyte spec = 255*powf(fmaxf(pfmVec3Dot(normal, halfWayDir), 0.0f), shininess);
 #else
     // Phong
     PFMvec3 reflectionDir, negLightDir;
     pfmVec3Neg(negLightDir, lightDir);
     pfmVec3Reflect(reflectionDir, negLightDir, normal);
-    PFfloat spec = powf(fmaxf(pfmVec3Dot(reflectionDir, viewDir), 0.0f), shininess);
+    PFubyte spec = 255*powf(fmaxf(pfmVec3Dot(reflectionDir, viewDir), 0.0f), shininess);
 #endif
 
-    const PFcolor specular = {
-        (PFubyte)((PFfloat)light->specular.r*spec),
-        (PFubyte)((PFfloat)light->specular.g*spec),
-        (PFubyte)((PFfloat)light->specular.b*spec),
-        255
-    };
+    PFcolor specular = light->specular;
+    specular.r = (specular.r*spec)/255;
+    specular.g = (specular.g*spec)/255;
+    specular.b = (specular.b*spec)/255;
 
     // spotlight (soft edges)
-    PFfloat intensity = 1.0f;
+    PFubyte intensity = 255;
     if (light->cutoff < M_PI)
     {
         PFMvec3 negLightDir;
@@ -55,29 +54,31 @@ PFcolor Process_Light(const PFlight* light, PFcolor ambient, PFcolor texel, cons
 
         PFfloat theta = pfmVec3Dot(lightDir, negLightDir);
         PFfloat epsilon = light->cutoff - light->outerCutoff;
-        intensity = CLAMP((theta - light->outerCutoff) / epsilon, 0.0f, 1.0f);
+        intensity = 255*CLAMP((theta - light->outerCutoff) / epsilon, 0.0f, 1.0f);
     }
 
     // attenuation
-    PFfloat attenuation = 1.0f;
+    PFubyte attenuation = 255;
     if (light->attLinear || light->attQuadratic)
     {
-        PFfloat distanceSq = lightFragPosDt[0]*lightFragPosDt[0] +
-                             lightFragPosDt[1]*lightFragPosDt[1] +
-                             lightFragPosDt[2]*lightFragPosDt[2];
+        PFfloat distanceSq =
+            lightFragPosDt[0]*lightFragPosDt[0] +
+            lightFragPosDt[1]*lightFragPosDt[1] +
+            lightFragPosDt[2]*lightFragPosDt[2];
 
-        PFfloat distance = sqrtf(distanceSq);
-
-        attenuation = 1.0f/(light->attConstant + light->attLinear*distance + light->attQuadratic*distanceSq);
+        attenuation = 255/(
+            light->attConstant +
+            light->attLinear*sqrtf(distanceSq) +
+            light->attQuadratic*distanceSq);
     }
 
     // add final light color
     PFcolor finalColor = pfBlendAdditive(diffuse, specular);
-    PFfloat factor = intensity*attenuation;
+    PFubyte factor = (intensity*attenuation)/255;
 
-    finalColor.r = (PFubyte)((PFfloat)finalColor.r*factor);
-    finalColor.g = (PFubyte)((PFfloat)finalColor.g*factor);
-    finalColor.b = (PFubyte)((PFfloat)finalColor.b*factor);
+    finalColor.r = (finalColor.r*factor)/255;
+    finalColor.g = (finalColor.g*factor)/255;
+    finalColor.b = (finalColor.b*factor)/255;
 
     return pfBlendAdditive(ambient, finalColor);
 }
