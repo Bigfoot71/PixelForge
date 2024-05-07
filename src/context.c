@@ -1815,14 +1815,6 @@ static void pfInternal_SetMaterialColor(PFcolor color)
             break;
     }
 
-#ifndef NDEBUG
-    if (m1 == NULL)
-    {
-        currentCtx->errCode = PF_DEBUG_INVALID_OPERATION;
-        return;
-    }
-#endif //NDEBUG
-
     switch (currentCtx->materialColorFollowing.mode)
     {
         case PF_AMBIENT_AND_DIFFUSE:
