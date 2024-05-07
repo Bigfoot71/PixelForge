@@ -48,6 +48,22 @@
 #   define RAD2DEG(deg) ((deg) * 180.0 / M_PI)
 #endif //RAD2DEG
 
+#ifndef PFM_FISR
+#   define rsqrtf(x) (1.0f/sqrtf(x))
+#else
+// NOTE: More useful on older platforms.
+// SEE: http://www.lomont.org/papers/2003/InvSqrt.pdf
+PFM_API float rsqrtf(float x)
+{
+    float xhalf = 0.5f*x;
+    int i = *(int*)&x;              // get bits for floating value
+    i = 0x5f375a86 - (i >> 1);      // gives initial guess y0
+    x = *(float*)&i;                // convert bits back to float
+    x = x*(1.5f - xhalf*x*x);       // Newton step, repeating increases accuracy
+    return x;
+}
+#endif //PFM_FISR
+
 /* Types and Structs definitions */
 
 typedef PFM_FLOAT PFMvec2[2];
@@ -115,7 +131,7 @@ PFM_API void pfmVec2Normalize(PFMvec2 dst, const PFMvec2 v)
     PFM_FLOAT squaredLength = v[0]*v[0] + v[1]*v[1];
     if (squaredLength == 0.0f) return;
 
-    PFM_FLOAT invLength = 1.0f / sqrtf(squaredLength);
+    PFM_FLOAT invLength = rsqrtf(squaredLength);
     for (int_fast8_t i = 0; i < 2; i++)
     {
         dst[i] = v[i] * invLength;
@@ -146,6 +162,9 @@ PFM_API void pfmVec3Copy(PFMvec3 dst, const PFMvec3 src)
 
 PFM_API void pfmVec3Neg(PFMvec3 dst, const PFMvec3 v)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 3; i++)
     {
         dst[i] = -v[i];
@@ -154,6 +173,9 @@ PFM_API void pfmVec3Neg(PFMvec3 dst, const PFMvec3 v)
 
 PFM_API void pfmVec3Add(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 3; i++)
     {
         dst[i] = v1[i] + v2[i];
@@ -162,6 +184,9 @@ PFM_API void pfmVec3Add(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 
 PFM_API void pfmVec3Sub(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 3; i++)
     {
         dst[i] = v1[i] - v2[i];
@@ -170,6 +195,9 @@ PFM_API void pfmVec3Sub(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 
 PFM_API void pfmVec3Mul(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 3; i++)
     {
         dst[i] = v1[i]*v2[i];
@@ -178,6 +206,9 @@ PFM_API void pfmVec3Mul(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 
 PFM_API void pfmVec3Div(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 3; i++)
     {
         dst[i] = v1[i]/v2[i];
@@ -186,6 +217,9 @@ PFM_API void pfmVec3Div(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 
 PFM_API void pfmVec3Scale(PFMvec3 dst, const PFMvec3 v, PFM_FLOAT scalar)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 3; i++)
     {
         dst[i] = v[i]*scalar;
@@ -197,7 +231,11 @@ PFM_API void pfmVec3Normalize(PFMvec3 dst, const PFMvec3 v)
     PFM_FLOAT squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
     if (squaredLength == 0.0f) return;
 
-    PFM_FLOAT invLength = 1.0f / sqrtf(squaredLength);
+    PFM_FLOAT invLength = rsqrtf(squaredLength);
+
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 3; i++)
     {
         dst[i] = v[i] * invLength;
@@ -206,7 +244,17 @@ PFM_API void pfmVec3Normalize(PFMvec3 dst, const PFMvec3 v)
 
 PFM_API PFM_FLOAT pfmVec3Dot(const PFMvec3 v1, const PFMvec3 v2)
 {
+#ifdef _OPENMP
+    PFM_FLOAT dotProduct = 0.0f;
+#   pragma omp simd
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dotProduct += v1[i]*v2[i];
+    }
+    return dotProduct;
+#else
     return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2];
+#endif
 }
 
 PFM_API void pfmVec3Cross(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
@@ -233,11 +281,21 @@ PFM_API void pfmVec3Transform(PFMvec3 dst, const PFMvec3 v, const PFMmat4 mat)
 
 PFM_API void pfmVec3Reflect(PFMvec3 dst, const PFMvec3 incident, const PFMvec3 normal)
 {
-    PFM_FLOAT dotProduct = 2.0f*(
-        incident[0]*normal[0] +
-        incident[1]*normal[1] +
-        incident[2]*normal[2]);
+    PFM_FLOAT dotProduct = 0.0f;
 
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dotProduct += incident[i]*normal[i];
+    }
+
+    dotProduct *= 2.0f;
+
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 3; i++)
     {
         dst[i] = incident[i] - dotProduct*normal[i];
@@ -253,6 +311,9 @@ PFM_API void pfmVec4Copy(PFMvec4 dst, const PFMvec4 src)
 
 PFM_API void pfmVec4Neg(PFMvec4 dst, const PFMvec4 v)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 4; i++)
     {
         dst[i] = -v[i];
@@ -261,6 +322,9 @@ PFM_API void pfmVec4Neg(PFMvec4 dst, const PFMvec4 v)
 
 PFM_API void pfmVec4Add(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 4; i++)
     {
         dst[i] = v1[i] + v2[i];
@@ -269,6 +333,9 @@ PFM_API void pfmVec4Add(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 
 PFM_API void pfmVec4Sub(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 4; i++)
     {
         dst[i] = v1[i] - v2[i];
@@ -277,6 +344,9 @@ PFM_API void pfmVec4Sub(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 
 PFM_API void pfmVec4Mul(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 4; i++)
     {
         dst[i] = v1[i]*v2[i];
@@ -285,6 +355,9 @@ PFM_API void pfmVec4Mul(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 
 PFM_API void pfmVec4Div(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 4; i++)
     {
         dst[i] = v1[i]/v2[i];
@@ -293,6 +366,9 @@ PFM_API void pfmVec4Div(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 
 PFM_API void pfmVec4Scale(PFMvec4 dst, const PFMvec4 v, PFM_FLOAT scalar)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 4; i++)
     {
         dst[i] = v[i]*scalar;
@@ -304,7 +380,11 @@ PFM_API void pfmVec4Normalize(PFMvec4 dst, const PFMvec4 v)
     PFM_FLOAT squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3];
     if (squaredLength == 0.0f) return;
 
-    PFM_FLOAT invLength = 1.0f / sqrtf(squaredLength);
+    PFM_FLOAT invLength = rsqrtf(squaredLength);
+
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 4; i++)
     {
         dst[i] = v[i] * invLength;
@@ -362,6 +442,9 @@ PFM_API PFM_FLOAT pfmMat4Trace(const PFMmat4 mat)
 
 PFM_API void pfmMat4Transpose(PFMmat4 dst, const PFMmat4 src)
 {
+    // NOTE 1: Seems more optimized in O3 by GCC 13 without "omp simd collapse(2)"
+    // NOTE 2: Also using "omp simd" produces exactly the same code in O3 with GCC 13.
+
     PFMmat4 result;
     for (int_fast8_t i = 0; i < 4; i++)
     {
@@ -424,6 +507,9 @@ PFM_API void pfmMat4Identity(PFMmat4 dst)
 
 PFM_API void pfmMat4Add(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 16; i++)
     {
         dst[i] = left[i] + right[i];
@@ -432,6 +518,9 @@ PFM_API void pfmMat4Add(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
 
 PFM_API void pfmMat4Sub(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
 {
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 16; i++)
     {
         dst[i] = left[i] + right[i];
@@ -442,6 +531,9 @@ PFM_API void pfmMat4Mul(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
 {
     PFMmat4 result;
 
+#   ifdef _OPENMP
+#       pragma omp simd collapse(2)
+#   endif
     for (int_fast8_t i = 0; i < 4; i++)
     {
         for (int_fast8_t j = 0; j < 4; j++)
@@ -477,7 +569,7 @@ PFM_API void pfmMat4Rotate(PFMmat4 dst, const PFMvec3 axis, PFM_FLOAT angle)
     PFM_FLOAT x = axis[0], y = axis[1], z = axis[2];
     PFM_FLOAT lengthSquared = x*x + y*y + z*z;
 
-    if ((lengthSquared != 1.0f) && (lengthSquared != 0.0f))
+    if (lengthSquared != 1.0f && lengthSquared != 0.0f)
     {
         PFM_FLOAT ilength = 1.0f/sqrtf(lengthSquared);
         x *= ilength;
