@@ -204,10 +204,11 @@ PFvertex Helper_LerpVertex(const PFvertex* start, const PFvertex* end, PFfloat t
     }
 
     // Interpolate color
-    result.color.r = start->color.r + t*(end->color.r - start->color.r);
-    result.color.g = start->color.g + t*(end->color.g - start->color.g);
-    result.color.b = start->color.b + t*(end->color.b - start->color.b);
-    result.color.a = start->color.a + t*(end->color.a - start->color.a);
+    const PFint uT = 255*t;
+    result.color.r = start->color.r + (uT*((PFint)end->color.r - start->color.r))/255;
+    result.color.g = start->color.g + (uT*((PFint)end->color.g - start->color.g))/255;
+    result.color.b = start->color.b + (uT*((PFint)end->color.b - start->color.b))/255;
+    result.color.a = start->color.a + (uT*((PFint)end->color.a - start->color.a))/255;
 
     return result;
 }
