@@ -379,8 +379,9 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
         //case PF_LINE_STIPPLE_REPEAT:
         //  break;
 
-        //case PF_LINE_WIDTH:
-        //  break;
+        case PF_LINE_WIDTH:
+            *params = ctx->lineWidth;
+            break;
 
         //case PF_LINE_WIDTH_GRANULARITY:
         //  break;
@@ -509,8 +510,9 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
         //case PF_LINE_STIPPLE_REPEAT:
         //  break;
 
-        //case PF_LINE_WIDTH:
-        //  break;
+        case PF_LINE_WIDTH:
+            *params = ctx->lineWidth;
+            break;
 
         //case PF_LINE_WIDTH_GRANULARITY:
         //  break;
