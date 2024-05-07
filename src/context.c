@@ -692,8 +692,10 @@ void pfClear(PFclearflag flag)
 
     if (flag & (PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT))
     {
-        PFtexture *texture = &currentCtx->currentFramebuffer->texture;
-        PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
+        PFtexture *texture = &framebuffer->texture;
+        PFfloat *zbuffer = framebuffer->zbuffer;
+
+        PFpixelsetter pixelSetter = texture->pixelSetter;
         PFcolor color = currentCtx->clearColor;
         PFfloat depth = currentCtx->clearDepth;
 
@@ -702,13 +704,15 @@ void pfClear(PFclearflag flag)
 #       endif //PF_SUPPORT_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
-            texture->pixelSetter(texture->pixels, i, color);
+            pixelSetter(texture->pixels, i, color);
             zbuffer[i] = depth;
         }
     }
     else if (flag & PF_COLOR_BUFFER_BIT)
     {
-        PFtexture *texture = &currentCtx->currentFramebuffer->texture;
+        PFtexture *texture = &framebuffer->texture;
+
+        PFpixelsetter pixelSetter = texture->pixelSetter;
         PFcolor color = currentCtx->clearColor;
 
 #       ifdef PF_SUPPORT_OPENMP
@@ -716,12 +720,12 @@ void pfClear(PFclearflag flag)
 #       endif //PF_SUPPORT_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
-            texture->pixelSetter(texture->pixels, i, color);
+            pixelSetter(texture->pixels, i, color);
         }
     }
     else if (flag & PF_DEPTH_BUFFER_BIT)
     {
-        PFfloat *zbuffer = currentCtx->currentFramebuffer->zbuffer;
+        PFfloat *zbuffer = framebuffer->zbuffer;
         PFfloat depth = currentCtx->clearDepth;
 
 #       ifdef PF_SUPPORT_OPENMP
@@ -2275,47 +2279,55 @@ void pfRasterPos4fv(const PFfloat* v)
 
 void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat format, void* pixels)
 {
-    // Get the pixel setter function for the given buffer format
-    PFpixelsetter pixelSetter = NULL;
-    pfInternal_GetPixelGetterSetter(NULL, &pixelSetter, format);
+    /* Get the appropriate pixel setter function for the given format */
 
-    // Check if pixel setter function was successfully obtained
-    if (!pixelSetter)
+    PFpixelsetter dstPixelSetter = NULL;
+    pfInternal_GetPixelGetterSetter(NULL, &dstPixelSetter, format);
+
+    /* Check if the pixel setter function is available */
+
+    if (!dstPixelSetter)
     {
         currentCtx->errCode = PF_INVALID_ENUM;
         return;
     }
 
-    // Get the number of bytes per pixel for the destination and source formats
-    PFsizei dstPixelBytes = pfInternal_GetPixelBytes(format);
-    PFsizei srcPixelBytes = pfInternal_GetPixelBytes(currentCtx->currentFramebuffer->texture.format);
+    /* Retrieve information about the source framebuffer */
 
-    // Check if the source pixel format is unknown
-    if (srcPixelBytes == 0) // TODO REVIEW: Possible issue if the current framebuffer has a PF_PIXELFORMAT_UNKNOWN format
+    const PFframebuffer *srcFB = currentCtx->currentFramebuffer;
+    PFpixelgetter srcPixelGetter = srcFB->texture.pixelGetter;
+    const void *srcPixels = srcFB->texture.pixels;
+    PFsizei srcWidth = srcFB->texture.width;
+
+    /* Calculate the minimum and maximum coordinates of the region to be read */
+
+    PFsizei xMin = CLAMP(x, 0, (PFint)srcFB->texture.width - 1);
+    PFsizei yMin = CLAMP(y, 0, (PFint)srcFB->texture.height - 1);
+    PFsizei xMax = CLAMP(x + (PFint)width, 0, (PFint)srcFB->texture.width);
+    PFsizei yMax = CLAMP(y + (PFint)height, 0, (PFint)srcFB->texture.height);
+
+    /* Reads pixels from the framebuffer and copies them to the destination */
+
+#ifdef PF_SUPPORT_OPENMP
+#   pragma omp parallel for collapse(2)
+    for (PFsizei ySrc = yMin; ySrc < yMax; ySrc++)
     {
-        currentCtx->errCode = PF_INVALID_OPERATION;
-        return;
+        for (PFsizei xSrc = xMin; xSrc < xMax; xSrc++)
+        {
+            PFcolor color = srcPixelGetter(srcPixels, ySrc * srcWidth + xSrc);
+            dstPixelSetter(pixels, (ySrc - yMin) * width + (xSrc - xMin), color);
+        }
     }
-
-    // Clamp the coordinates and dimensions to fit within the framebuffer boundaries
-    const PFframebuffer *curFB = currentCtx->currentFramebuffer;
-
-    x = CLAMP(x, 0, (PFint)curFB->texture.width - 1);
-    y = CLAMP(y, 0, (PFint)curFB->texture.height - 1);
-
-    width = MIN(width, curFB->texture.width - 1);
-    height = MIN(height, curFB->texture.height - 1);
-
-    // Move to the beginning of the specified region in the framebuffer
-    PFint wSrc = curFB->texture.width;
-    const char* src = (char*)curFB->texture.pixels + (y*wSrc + x)*srcPixelBytes;
-
-    // Copy pixels from the specified region of the framebuffer to the location specified by 'pixels'
-    for (PFsizei i = 0; i < height; i++)
+#else
+    for (PFsizei ySrc = yMin, yDst = 0; ySrc < yMax; ySrc++, yDst++)
     {
-        memcpy((char*)pixels + i*width*dstPixelBytes, src, width*srcPixelBytes);
-        src += wSrc*srcPixelBytes;
+        for (PFsizei xSrc = xMin, xDst = 0; xSrc < xMax; xSrc++, xDst++)
+        {
+            PFcolor color = srcPixelGetter(srcPixels, ySrc * srcWidth + xSrc);
+            dstPixelSetter(pixels, yDst * width + xDst, color);
+        }
     }
+#endif
 }
 
 

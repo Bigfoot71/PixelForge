@@ -169,10 +169,10 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
     /*
         Calculate the 2D bounding box of the triangle
     */ \
-    const PFuint xMin = MIN(x1, MIN(x2, x3)); \
-    const PFuint yMin = MIN(y1, MIN(y2, y3)); \
-    const PFuint xMax = MAX(x1, MAX(x2, x3)); \
-    const PFuint yMax = MAX(y1, MAX(y2, y3)); \
+    const PFsizei xMin = MIN(x1, MIN(x2, x3)); \
+    const PFsizei yMin = MIN(y1, MIN(y2, y3)); \
+    const PFsizei xMax = MAX(x1, MAX(x2, x3)); \
+    const PFsizei yMax = MAX(y1, MAX(y2, y3)); \
     /*
         Calculate weight increment steps for each edge
     */ \
@@ -211,10 +211,10 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
     /*
         Calculate the 2D bounding box of the triangle
     */ \
-    const PFuint xMin = MIN(x1, MIN(x2, x3)); \
-    const PFuint yMin = MIN(y1, MIN(y2, y3)); \
-    const PFuint xMax = MAX(x1, MAX(x2, x3)); \
-    const PFuint yMax = MAX(y1, MAX(y2, y3)); \
+    const PFsizei xMin = MIN(x1, MIN(x2, x3)); \
+    const PFsizei yMin = MIN(y1, MIN(y2, y3)); \
+    const PFsizei xMax = MAX(x1, MAX(x2, x3)); \
+    const PFsizei yMax = MAX(y1, MAX(y2, y3)); \
     /*
         Calculate weight increment steps for each edge
         NOTE: The steps are reversed when we render the back faces
@@ -258,16 +258,16 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
     const PFfloat z2 = v2->homogeneous[2]; \
     const PFfloat z3 = v3->homogeneous[2]; \
     \
-    for (PFuint y = yMin; y <= yMax; y++) \
+    for (PFsizei y = yMin; y <= yMax; y++) \
     { \
-        const PFuint yOffset = y*wDst; \
+        const PFsizei yOffset = y*wDst; \
         PFint w1 = w1Row, w2 = w2Row, w3 = w3Row; \
-        for (PFuint x = xMin; x <= xMax; x++) \
+        for (PFsizei x = xMin; x <= xMax; x++) \
         { \
             if ((w1 | w2 | w3) >= 0) \
             { \
                 PFcolor finalColor; \
-                const PFuint xyOffset = yOffset + x; \
+                const PFsizei xyOffset = yOffset + x; \
                 const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
                 const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3);
 
@@ -294,16 +294,16 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
     const PFfloat z2 = v2->homogeneous[2]; \
     const PFfloat z3 = v3->homogeneous[2]; \
     \
-    for (PFuint y = yMin; y <= yMax; y++) \
+    for (PFsizei y = yMin; y <= yMax; y++) \
     { \
-        const PFuint yOffset = y*wDst; \
+        const PFsizei yOffset = y*wDst; \
         PFint w1 = w1Row, w2 = w2Row, w3 = w3Row; \
-        for (PFuint x = xMin; x <= xMax; x++) \
+        for (PFsizei x = xMin; x <= xMax; x++) \
         { \
             if ((w1 | w2 | w3) >= 0) \
             { \
                 PFcolor finalColor; \
-                const PFuint xyOffset = yOffset + x; \
+                const PFsizei xyOffset = yOffset + x; \
                 const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
                 const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
                 if (ctx->depthFunction(z, zbTarget[xyOffset])) \
@@ -335,20 +335,20 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
     const PFfloat z2 = v2->homogeneous[2]; \
     const PFfloat z3 = v3->homogeneous[2]; \
     \
-    _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)") \
-    for (PFuint y = yMin; y <= yMax; y++) \
+    _Pragma("omp parallel for schedule(dynamic) if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)") \
+    for (PFsizei y = yMin; y <= yMax; y++) \
     { \
-        const PFuint yOffset = y*wDst; \
+        const PFsizei yOffset = y*wDst; \
         PFint i = y - yMin; \
         PFint w1 = w1Row + i*stepWY1; \
         PFint w2 = w2Row + i*stepWY2; \
         PFint w3 = w3Row + i*stepWY3; \
-        for (PFuint x = xMin; x <= xMax; x++) \
+        for (PFsizei x = xMin; x <= xMax; x++) \
         { \
             if ((w1 | w2 | w3) >= 0) \
             { \
                 PFcolor finalColor; \
-                const PFuint xyOffset = yOffset + x; \
+                const PFsizei xyOffset = yOffset + x; \
                 const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
                 const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3);
 
@@ -374,20 +374,20 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
     const PFfloat z2 = v2->homogeneous[2]; \
     const PFfloat z3 = v3->homogeneous[2]; \
     \
-    _Pragma("omp parallel for if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)") \
-    for (PFuint y = yMin; y <= yMax; y++) \
+    _Pragma("omp parallel for schedule(dynamic) if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)") \
+    for (PFsizei y = yMin; y <= yMax; y++) \
     { \
-        const PFuint yOffset = y*wDst; \
+        const PFsizei yOffset = y*wDst; \
         PFint i = y - yMin; \
         PFint w1 = w1Row + i*stepWY1; \
         PFint w2 = w2Row + i*stepWY2; \
         PFint w3 = w3Row + i*stepWY3; \
-        for (PFuint x = xMin; x <= xMax; x++) \
+        for (PFsizei x = xMin; x <= xMax; x++) \
         { \
             if ((w1 | w2 | w3) >= 0) \
             { \
                 PFcolor finalColor; \
-                const PFuint xyOffset = yOffset + x; \
+                const PFsizei xyOffset = yOffset + x; \
                 const PFfloat aW1 = w1*invWSum, aW2 = w2*invWSum, aW3 = w3*invWSum; \
                 const PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
                 if (ctx->depthFunction(z, zbTarget[xyOffset])) \

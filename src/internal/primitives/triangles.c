@@ -184,31 +184,23 @@ PFvertex Helper_LerpVertex(const PFvertex* start, const PFvertex* end, PFfloat t
 {
     PFvertex result = { 0 };
 
-    // Interpolate homogeneous position
+    const PFubyte *startCol = (const PFubyte*)(&start->color);
+    const PFubyte *endCol = (const PFubyte*)(&end->color);
+    PFubyte *resultCol = (PFubyte*)(&result.color);
+    PFubyte uT = 255*t;
+
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp simd
+#   endif
     for (int_fast8_t i = 0; i < 4; i++)
     {
         result.homogeneous[i] = start->homogeneous[i] + t*(end->homogeneous[i] - start->homogeneous[i]);
-    }
-
-    // Interpolate positions and normals
-    for (int_fast8_t i = 0; i < 3; i++)
-    {
         result.position[i] = start->position[i] + t*(end->position[i] - start->position[i]);
-        result.normal[i] = start->normal[i] + t*(end->normal[i] - start->normal[i]);
-    }
+        resultCol[i] = startCol[i] + (uT*((PFint)endCol[i] - startCol[i]))/255;
 
-    // Interpolate texcoord
-    for (int_fast8_t i = 0; i < 2; i++)
-    {
-        result.texcoord[i] = start->texcoord[i] + t*(end->texcoord[i] - start->texcoord[i]);
+        if (i < 2) result.texcoord[i] = start->texcoord[i] + t*(end->texcoord[i] - start->texcoord[i]);
+        if (i < 3) result.normal[i] = start->normal[i] + t*(end->normal[i] - start->normal[i]);
     }
-
-    // Interpolate color
-    const PFint uT = 255*t;
-    result.color.r = start->color.r + (uT*((PFint)end->color.r - start->color.r))/255;
-    result.color.g = start->color.g + (uT*((PFint)end->color.g - start->color.g))/255;
-    result.color.b = start->color.b + (uT*((PFint)end->color.b - start->color.b))/255;
-    result.color.a = start->color.a + (uT*((PFint)end->color.a - start->color.a))/255;
 
     return result;
 }

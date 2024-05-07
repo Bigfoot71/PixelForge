@@ -103,7 +103,7 @@ void Rasterize_Triangle_COLOR_NODEPTH_2D(PFface faceToRender, const PFvertex* v1
     PFint yMax = CLAMP(y3, ctx->vpMin[1], ctx->vpMax[1]);
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = CLAMP(y1, ctx->vpMin[1], ctx->vpMax[1]); y <= yMax; y++)
     {
@@ -213,7 +213,7 @@ void Rasterize_Triangle_COLOR_DEPTH_2D(PFface faceToRender, const PFvertex* v1, 
     PFint yMax = CLAMP(y3, ctx->vpMin[1], ctx->vpMax[1]);
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = CLAMP(y1, ctx->vpMin[1], ctx->vpMax[1]); y <= yMax; y++)
     {
@@ -324,7 +324,7 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_2D(PFface faceToRender, const PFvertex* 
     PFint yMax = CLAMP(y3, ctx->vpMin[1], ctx->vpMax[1]);
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = CLAMP(y1, ctx->vpMin[1], ctx->vpMax[1]); y <= yMax; y++)
     {
@@ -462,7 +462,7 @@ void Rasterize_Triangle_TEXTURE_DEPTH_2D(PFface faceToRender, const PFvertex* v1
     PFint yMax = CLAMP(y3, ctx->vpMin[1], ctx->vpMax[1]);
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = CLAMP(y1, ctx->vpMin[1], ctx->vpMax[1]); y <= yMax; y++)
     {
@@ -601,7 +601,7 @@ void Rasterize_Triangle_COLOR_NODEPTH_3D(PFface faceToRender, const PFvertex* v1
     /* Travel the triangle from top to bottom */
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
@@ -706,7 +706,7 @@ void Rasterize_Triangle_COLOR_DEPTH_3D(PFface faceToRender, const PFvertex* v1, 
     /* Travel the triangle from top to bottom */
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
@@ -819,7 +819,7 @@ void Rasterize_Triangle_TEXTURE_NODEPTH_3D(PFface faceToRender, const PFvertex* 
     /* Travel the triangle from top to bottom */
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
@@ -954,7 +954,7 @@ void Rasterize_Triangle_TEXTURE_DEPTH_3D(PFface faceToRender, const PFvertex* v1
     /* Travel the triangle from top to bottom */
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
@@ -1102,7 +1102,7 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
     /* Travel the triangle from top to bottom */
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
@@ -1272,7 +1272,7 @@ void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex
     /* Travel the triangle from top to bottom */
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
@@ -1451,7 +1451,7 @@ void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFve
     /* Travel the triangle from top to bottom */
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
@@ -1646,7 +1646,7 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
     /* Travel the triangle from top to bottom */
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
@@ -1837,7 +1837,7 @@ void Rasterize_Triangle_COLOR_LIGHT_NODEPTH_3D(PFface faceToRender, const PFvert
     /* Travel the triangle from top to bottom */
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
@@ -1945,7 +1945,7 @@ void Rasterize_Triangle_COLOR_LIGHT_DEPTH_3D(PFface faceToRender, const PFvertex
     /* Travel the triangle from top to bottom */
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
@@ -2062,7 +2062,7 @@ void Rasterize_Triangle_TEXTURE_LIGHT_NODEPTH_3D(PFface faceToRender, const PFve
     /* Travel the triangle from top to bottom */
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
@@ -2201,7 +2201,7 @@ void Rasterize_Triangle_TEXTURE_LIGHT_DEPTH_3D(PFface faceToRender, const PFvert
     /* Travel the triangle from top to bottom */
 
 #   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
+#       pragma omp parallel for schedule(dynamic) if(triangleArea >= PF_OPENMP_RASTER_THRESHOLD_AREA)
 #   endif //PF_SUPPORT_OPENMP
     for (PFint y = y1; y <= y3; y++)
     {
