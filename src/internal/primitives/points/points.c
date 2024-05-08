@@ -17,8 +17,7 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "../context.h"
-#include "../../pfm.h"
+#include "./points.h"
 
 /* Including internal function prototypes */
 

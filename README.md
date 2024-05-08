@@ -4,8 +4,6 @@
 
 PixelForge is a lightweight software rendering library written in standard C99, designed for versatile rendering without any external dependencies beyond the C standard library.
 
-**Note:** Currently, PixelForge has two triangle rasterization modes, one (default) uses the [barycentric](https://en.wikipedia.org/wiki/Barycentric_coordinate_system) method, and another by [scanlines](https://en.wikipedia.org/wiki/Scanline_rendering), activatable via the `PF_SCANLINES_RASTER_METHOD` definition. The reason is that I plan to implement SIMD support for the barycentric method in the future and keep a non-SIMD-based scanline method. Currently, the performance difference between the two methods is not _significant_, although the scanline method is slightly more efficient right now. However, since the scanline method is still a work in progress, I prefer to keep the barycentric method as the default, which is the most stable. However, in the future, the scanline method may become the default, with the barycentric method as the secondary option to achieve better performance at the expense of portability.
-
 ## Features
 
 - **OpenGL-Like API**: PixelForge offers an API reminiscent of OpenGL 1.X, facilitating easy adoption for those familiar with OpenGL.

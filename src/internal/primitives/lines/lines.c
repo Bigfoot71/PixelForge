@@ -17,23 +17,12 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "../context.h"
-#include "../../pfm.h"
+#include "./lines.h"
 #include <stdlib.h>
 
 /* Including internal function prototypes */
 
 extern void pfInternal_HomogeneousToScreen(PFvertex* restrict v);
-
-/* Main functions declaration used by 'context.c' */
-
-void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict vertexCounter, const PFMmat4 mvp);
-
-void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2);
-void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2);
-
-void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2);
-void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2);
 
 /* Internal helper function declarations */
 
