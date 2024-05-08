@@ -72,27 +72,24 @@ PFboolean pfIsValidFramebuffer(PFframebuffer* framebuffer)
         pfIsValidTexture(&framebuffer->texture);
 }
 
-void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color)
+void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color, PFfloat depth)
 {
     PFsizei size = framebuffer->texture.width*framebuffer->texture.height;
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for \
+            if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
+#   endif
     for (PFsizei i = 0; i < size; i++)
     {
         framebuffer->texture.pixelSetter(framebuffer->texture.pixels, i, color);
-        framebuffer->zbuffer[i] = FLT_MAX;
+        framebuffer->zbuffer[i] = depth;
     }
 }
 
-void pfSetFramebufferPixelDepth(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color)
+PFcolor pfGetFramebufferPixel(const PFframebuffer* framebuffer, PFsizei x, PFsizei y)
 {
-    PFsizei offset = y*framebuffer->texture.width + x;
-    PFfloat *zp = framebuffer->zbuffer + offset;
-
-    if (z < *zp) // TODO: Review this, with depthFunc
-    {
-        framebuffer->texture.pixelSetter(framebuffer->texture.pixels, offset, color);
-        *zp = z;
-    }
+    return framebuffer->texture.pixelGetter(framebuffer->texture.pixels, y*framebuffer->texture.width + x);;
 }
 
 PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x, PFsizei y)
@@ -100,12 +97,27 @@ PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x, PFsiz
     return framebuffer->zbuffer[y*framebuffer->texture.width + x];
 }
 
+void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color, PFdepthfunc depthFunc)
+{
+    PFsizei offset = y*framebuffer->texture.width + x;
+    PFfloat *zp = framebuffer->zbuffer + offset;
+
+    if (depthFunc(z, *zp))
+    {
+        framebuffer->texture.pixelSetter(framebuffer->texture.pixels, offset, color);
+        *zp = z;
+    }
+}
+
+void pfSetFramebufferPixelDepth(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color)
+{
+    PFsizei offset = y*framebuffer->texture.width + x;
+
+    framebuffer->texture.pixelSetter(framebuffer->texture.pixels, offset, color);
+    framebuffer->zbuffer[offset] = z;
+}
+
 void pfSetFramebufferPixel(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFcolor color)
 {
     framebuffer->texture.pixelSetter(framebuffer->texture.pixels, y*framebuffer->texture.width + x, color);
-}
-
-PFcolor pfGetFramebufferPixel(const PFframebuffer* framebuffer, PFsizei x, PFsizei y)
-{
-    return framebuffer->texture.pixelGetter(framebuffer->texture.pixels, y*framebuffer->texture.width + x);;
 }

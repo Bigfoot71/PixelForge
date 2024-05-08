@@ -1494,6 +1494,8 @@ PF_API void pfPostProcess(PFpostprocessfunc postProcessFunction);
  *
  * This function creates a new framebuffer object with the given width, height, and pixel format.
  * The framebuffer can be used for off-screen rendering or as a render target.
+ * By default, the color texture of the generated framebuffer is initialized with zeros,
+ * and the depth buffer is initialized with 'FLT_MAX' values.
  *
  * @param width The width of the framebuffer.
  * @param height The height of the framebuffer.
@@ -1524,15 +1526,58 @@ PF_API void pfDeleteFramebuffer(PFframebuffer* framebuffer);
 PF_API PFboolean pfIsValidFramebuffer(PFframebuffer* framebuffer);
 
 /**
- * @brief Clears the color and depth buffers of a framebuffer with the specified color.
+ * @brief Clears the color and depth buffers of a framebuffer with the specified color and depth value.
  *
- * This function clears both the color and depth buffers of the framebuffer to the specified color.
+ * This function clears both the color and depth buffers of the framebuffer to the specified color and depth value.
  * It is useful for preparing the framebuffer for rendering.
  *
  * @param framebuffer Pointer to the framebuffer object to clear.
  * @param color The color to clear the framebuffer with.
+ * @param depth The depth value to clear the depth buffer with.
  */
-PF_API void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color);
+PF_API void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color, PFfloat depth);
+
+/**
+ * @brief Retrieves the color value of a pixel from the framebuffer.
+ *
+ * This function retrieves the color value of a specific pixel from the framebuffer.
+ * The pixel coordinates (x, y) are provided.
+ *
+ * @param framebuffer Pointer to the framebuffer object.
+ * @param x The X coordinate of the pixel.
+ * @param y The Y coordinate of the pixel.
+ * @return PFcolor The color value of the pixel.
+ */
+PF_API PFcolor pfGetFramebufferPixel(const PFframebuffer* framebuffer, PFsizei x, PFsizei y);
+
+/**
+ * @brief Retrieves the depth value of a pixel from the framebuffer.
+ *
+ * This function retrieves the depth value of a specific pixel from the framebuffer.
+ * The pixel coordinates (x, y) are provided.
+ *
+ * @param framebuffer Pointer to the framebuffer object.
+ * @param x The X coordinate of the pixel.
+ * @param y The Y coordinate of the pixel.
+ * @return PFfloat The depth value of the pixel.
+ */
+PF_API PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x, PFsizei y);
+
+/**
+ * @brief Sets the color and depth values of a pixel in the framebuffer, subject to depth testing.
+ *
+ * This function sets the color and depth values of a specific pixel in the framebuffer,
+ * with an additional depth testing step based on the specified depth function.
+ * The pixel coordinates (x, y), depth value (z), color value, and depth function are provided.
+ *
+ * @param framebuffer Pointer to the framebuffer object.
+ * @param x The X coordinate of the pixel.
+ * @param y The Y coordinate of the pixel.
+ * @param z The depth value of the pixel.
+ * @param color The color value of the pixel.
+ * @param depthFunc The depth comparison function used for depth testing.
+ */
+PF_API void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color, PFdepthfunc depthFunc);
 
 /**
  * @brief Sets the color and depth values of a pixel in the framebuffer.
@@ -1549,22 +1594,10 @@ PF_API void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color);
 PF_API void pfSetFramebufferPixelDepth(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color);
 
 /**
- * @brief Retrieves the depth value of a pixel from the framebuffer.
+ * @brief Sets the color value of a pixel in the framebuffer without modifying its depth value.
  *
- * This function retrieves the depth value of a specific pixel from the framebuffer.
- * The pixel coordinates (x, y) are provided.
- *
- * @param framebuffer Pointer to the framebuffer object.
- * @param x The X coordinate of the pixel.
- * @param y The Y coordinate of the pixel.
- * @return PFfloat The depth value of the pixel.
- */
-PF_API PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x, PFsizei y);
-
-/**
- * @brief Sets the color value of a pixel in the framebuffer.
- *
- * This function sets the color value of a specific pixel in the framebuffer.
+ * This function sets the color value of a specific pixel in the framebuffer,
+ * without modifying its depth value.
  * The pixel coordinates (x, y) and the color value are provided.
  *
  * @param framebuffer Pointer to the framebuffer object.
@@ -1573,19 +1606,6 @@ PF_API PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x
  * @param color The color value of the pixel.
  */
 PF_API void pfSetFramebufferPixel(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFcolor color);
-
-/**
- * @brief Retrieves the color value of a pixel from the framebuffer.
- *
- * This function retrieves the color value of a specific pixel from the framebuffer.
- * The pixel coordinates (x, y) are provided.
- *
- * @param framebuffer Pointer to the framebuffer object.
- * @param x The X coordinate of the pixel.
- * @param y The Y coordinate of the pixel.
- * @return PFcolor The color value of the pixel.
- */
-PF_API PFcolor pfGetFramebufferPixel(const PFframebuffer* framebuffer, PFsizei x, PFsizei y);
 
 
 
@@ -1610,6 +1630,7 @@ PF_API PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpix
  *
  * This function creates a new texture buffer without any initial pixel data.
  * The texture buffer is created with the provided width, height, and pixel format.
+ * The buffer allocated for the texture is initialized with zeros by default.
  *
  * @param width The width of the texture buffer.
  * @param height The height of the texture buffer.

@@ -431,17 +431,12 @@ PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat format
     pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format);
 
     PFsizei size = width*height;
-    texture.pixels = PF_MALLOC(size*pfInternal_GetPixelBytes(format));
+    texture.pixels = PF_CALLOC(size, pfInternal_GetPixelBytes(format));
 
     if (!texture.pixels)
     {
         *pfInternal_GetErrorPtr() = PF_ERROR_OUT_OF_MEMORY;
         return texture;
-    }
-
-    for (PFsizei i = 0; i < size; i++)
-    {
-        texture.pixelSetter(texture.pixels, i, (PFcolor) { 0 });
     }
 
     return texture;
@@ -463,6 +458,10 @@ PFtexture pfGenTextureBufferColor(PFsizei width, PFsizei height, PFcolor color, 
         return texture;
     }
 
+#   ifdef PF_SUPPORT_OPENMP
+#       pragma omp parallel for \
+            if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
+#   endif
     for (PFsizei i = 0; i < size; i++)
     {
         texture.pixelSetter(texture.pixels, i, color);
