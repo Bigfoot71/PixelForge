@@ -18,6 +18,11 @@ add_executable(raylib_Gears ${PF_ROOT_PATH}/examples/raylib/raylib_Gears.c)
 target_link_libraries(raylib_Gears PRIVATE pixelforge raylib m)
 target_include_directories(raylib_Gears PRIVATE ${PF_ROOT_PATH}/src)
 
+# Gears example
+add_executable(raylib_PostProcess ${PF_ROOT_PATH}/examples/raylib/raylib_PostProcess.c)
+target_link_libraries(raylib_PostProcess PRIVATE pixelforge raylib m)
+target_include_directories(raylib_PostProcess PRIVATE ${PF_ROOT_PATH}/src)
+
 # Points example
 add_executable(raylib_Points ${PF_ROOT_PATH}/examples/raylib/raylib_Points.c)
 target_link_libraries(raylib_Points PRIVATE pixelforge raylib m)

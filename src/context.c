@@ -2322,6 +2322,50 @@ void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat
 #endif
 }
 
+PF_API void pfPostProcess(PFpostprocessfunc postProcessFunction)
+{
+    PFint width = currentCtx->currentFramebuffer->texture.width;
+    PFint height = currentCtx->currentFramebuffer->texture.height;
+
+    void *pixels = currentCtx->currentFramebuffer->texture.pixels;
+    const PFfloat *zBuffer = currentCtx->currentFramebuffer->zbuffer;
+
+    PFpixelgetter pixelGetter = currentCtx->currentFramebuffer->texture.pixelGetter;
+    PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
+
+#ifdef PF_SUPPORT_OPENMP
+#   pragma omp parallel for collapse(2)
+    for (PFint y = 0; y < height; y++)
+    {
+        for (PFint x = 0; x < width; x++)
+        {
+            PFsizei xyOffset = y*width + x;
+
+            PFcolor color = pixelGetter(pixels, xyOffset);
+            PFfloat depth = zBuffer[xyOffset];
+
+            color = postProcessFunction(x, y, depth, color);
+            pixelSetter(pixels, xyOffset, color);
+        }
+    }
+#else
+    PFsizei yOffset = 0;
+    for (PFint y = 0; y < height; y++, yOffset += width)
+    {
+        for (PFint x = 0; x < width; x++)
+        {
+            PFsizei xyOffset = yOffset + x;
+
+            PFcolor color = pixelGetter(pixels, xyOffset);
+            PFfloat depth = zBuffer[xyOffset];
+
+            color = postProcessFunction(x, y, depth, color);
+            pixelSetter(pixels, xyOffset, color);
+        }
+    }
+#endif
+}
+
 
 /* Point processing and rasterization functions (points.c) */
 

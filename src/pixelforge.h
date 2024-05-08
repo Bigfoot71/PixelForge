@@ -320,6 +320,7 @@ typedef struct {
 
 typedef PFcolor (*PFblendfunc)(PFcolor, PFcolor);
 typedef PFboolean (*PFdepthfunc)(PFfloat, PFfloat);
+typedef PFcolor (*PFpostprocessfunc)(PFint, PFint, PFfloat, PFcolor);
 
 /* Texture definitions */
 
@@ -1473,6 +1474,20 @@ PF_API void pfRasterPos4fv(const PFfloat* v);
  */
 PF_API void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat format, void* pixels);
 
+/**
+ * @brief Applies a post-processing function to modify pixels in the current framebuffer.
+ *
+ * This function applies a user-defined post-processing function to each pixel in the current framebuffer.
+ * The post-processing function can modify the color and depth of each pixel.
+ *
+ * @warning This function requires a graphics context to be defined.
+ *
+ * @param postProcessFunction A pointer to the user-defined post-processing function.
+ *                            The function signature should be PFcolor postProcessFunction(PFint x, PFint y, PFfloat depth, PFcolor color),
+ *                            where x and y are the coordinates of the pixel, depth is the depth value of the pixel, and color is the original color of the pixel.
+ *                            The function should return the modified color of the pixel.
+ */
+PF_API void pfPostProcess(PFpostprocessfunc postProcessFunction);
 
 
 /*
