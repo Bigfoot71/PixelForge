@@ -53,10 +53,6 @@ void pfGetBooleanv(PFenum pname, PFboolean* params)
             *params = ctx->state & PF_COLOR_MATERIAL;
             break;
 
-        //case PF_FOG:
-        //    *params = ctx->state & PF_FOG;
-        //    break;
-
         case PF_VERTEX_ARRAY:
             *params = ctx->state & PF_VERTEX_ARRAY;
             break;
@@ -165,18 +161,6 @@ void pfGetIntegerv(PFenum pname, PFint* params)
             params[0] = ctx->rasterPos[0];
             params[1] = ctx->rasterPos[1];
             break;
-
-        //case PF_FOG_COLOR:
-        //  break;
-
-        //case PF_FOG_HINT:
-        //  break;
-
-        //case PF_FOG_INDEX:
-        //  break;
-
-        //case PF_FOG_MODE:
-        //  break;
 
         case PF_POLYGON_MODE:
             params[0] = ctx->polygonMode[0];
@@ -336,18 +320,6 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
         //case PF_CURRENT_RASTER_TEXTURE_COORDS:
         //  break;
 
-        //case PF_FOG_COLOR:
-        //  break;
-
-        //case PF_FOG_DENSITY:
-        //  break;
-
-        //case PF_FOG_START:
-        //  break;
-
-        //case PF_FOG_END:
-        //  break;
-
         //case PF_POLYGON_OFFSET_FACTOR:
         //  break;
 
@@ -465,18 +437,6 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
             break;
 
         //case PF_CURRENT_RASTER_TEXTURE_COORDS:
-        //  break;
-
-        //case PF_FOG_COLOR:
-        //  break;
-
-        //case PF_FOG_DENSITY:
-        //  break;
-
-        //case PF_FOG_START:
-        //  break;
-
-        //case PF_FOG_END:
         //  break;
 
         //case PF_POLYGON_OFFSET_FACTOR:
