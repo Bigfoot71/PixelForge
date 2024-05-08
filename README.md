@@ -21,6 +21,7 @@ PixelForge is a lightweight software rendering library written in standard C99, 
 - **Phong Lighting**: Rendering multiple lights using `pfLightfv`, with a default support for up to 8 lights, adjustable via a definition. The default supported lighting model is the **Blinn-Phong** model, but you can also activate the Phong model with perfect reflection using `PF_PHONG_REFLECTION`.
 - **Gouraud Lighting**: If you find the Phong model too slow, you have the option to enable Gouraud shading via a `PF_GOURAUD_SHADING` definition, making everyone happy!
 - **Face Culling**: Supports selection of face culling _(back face culling, front face culling, "no culling")_.
+- **Post-Processing**: PixelForge supports post-processing effects through a customizable function pointer. Users can provide a function that takes the position (x, y, z) and color of each pixel on the screen and returns the color to be applied to that pixel. This feature enables various effects such as fog, bloom, and color grading to be implemented easily.
 - **Double buffering**: In some cases, double buffering is necessary to avoid flickering during rendering, for example. You can define an auxiliary buffer and swap the buffers as needed.
 - **OpenMP Support**: Added support for OpenMP to parallelize triangle rasterization loops, with verification of the number of pixels to be rasterized _(adjustable)_ to activate this parallelization, significantly increasing rasterization performance for large triangles.
 
