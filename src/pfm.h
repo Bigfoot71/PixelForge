@@ -73,9 +73,32 @@ typedef PFM_FLOAT PFMmat4[16];
 
 /* 2D Vector functions definition */
 
+PFM_API void pfmVec2Zero(PFMvec2 dst)
+{
+    memset(dst, 0, sizeof(PFMvec2));
+}
+
+PFM_API void pfmVec2One(PFMvec2 dst, PFM_FLOAT v)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v;
+    }
+}
+
 PFM_API void pfmVec2Copy(PFMvec2 dst, const PFMvec2 src)
 {
     memcpy(dst, src, sizeof(PFMvec2));
+}
+
+PFM_API void pfmVec2Swap(PFMvec2 a, PFMvec2 b)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        PFM_FLOAT tmp = a[i];
+        a[i] = b[i];
+        b[i] = tmp;
+    }
 }
 
 PFM_API void pfmVec2Neg(PFMvec2 dst, const PFMvec2 v)
@@ -155,9 +178,35 @@ PFM_API void pfmVec2Transform(PFMvec2 dst, const PFMvec2 v, const PFMmat4 mat)
 
 /* 3D Vector functions definition */
 
+PFM_API void pfmVec3Zero(PFMvec3 dst)
+{
+    memset(dst, 0, sizeof(PFMvec3));
+}
+
+PFM_API void pfmVec3One(PFMvec3 dst, PFM_FLOAT v)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v;
+    }
+}
+
 PFM_API void pfmVec3Copy(PFMvec3 dst, const PFMvec3 src)
 {
     memcpy(dst, src, sizeof(PFMvec3));
+}
+
+PFM_API void pfmVec3Swap(PFMvec3 a, PFMvec3 b)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        PFM_FLOAT tmp = a[i];
+        a[i] = b[i];
+        b[i] = tmp;
+    }
 }
 
 PFM_API void pfmVec3Neg(PFMvec3 dst, const PFMvec3 v)
@@ -304,9 +353,35 @@ PFM_API void pfmVec3Reflect(PFMvec3 dst, const PFMvec3 incident, const PFMvec3 n
 
 /* 4D Vector functions definition */
 
+PFM_API void pfmVec4Zero(PFMvec4 dst)
+{
+    memset(dst, 0, sizeof(PFMvec4));
+}
+
+PFM_API void pfmVec4One(PFMvec4 dst, PFM_FLOAT v)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v;
+    }
+}
+
 PFM_API void pfmVec4Copy(PFMvec4 dst, const PFMvec4 src)
 {
     memcpy(dst, src, sizeof(PFMvec4));
+}
+
+PFM_API void pfmVec4Swap(PFMvec4 a, PFMvec4 b)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        PFM_FLOAT tmp = a[i];
+        a[i] = b[i];
+        b[i] = tmp;
+    }
 }
 
 PFM_API void pfmVec4Neg(PFMvec4 dst, const PFMvec4 v)
