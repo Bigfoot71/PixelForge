@@ -318,6 +318,20 @@ typedef enum {
     PF_QUADRATIC_ATTENUATION    = 14
 } PFlightparam;
 
+typedef enum {
+    PF_FOG_MODE,
+    PF_FOG_DENSITY,
+    PF_FOG_START,
+    PF_FOG_END,
+    PF_FOG_COLOR
+} PFfogparam;
+
+typedef enum {
+    PF_LINEAR,
+    PF_EXP,
+    PF_EXP2
+} PFfogmode;
+
 typedef struct {
     PFubyte r, g, b, a;
 } PFcolor;
@@ -1447,6 +1461,55 @@ PF_API void pfRasterPos4f(PFfloat x, PFfloat y, PFfloat z, PFfloat w);
  */
 PF_API void pfRasterPos4fv(const PFfloat* v);
 
+
+/* Fog API functions */
+
+/**
+ * @brief Set fog parameters for integer values.
+ *
+ * @warning This function needs a context to be defined.
+ *
+ * @param pname The fog parameter name to set.
+ * @param param The integer value to set for the specified parameter.
+ */
+PF_API void pfFogi(PFfogparam pname, PFint param);
+
+/**
+ * @brief Set fog parameters for floating-point values.
+ *
+ * @warning This function needs a context to be defined.
+ *
+ * @param pname The fog parameter name to set.
+ * @param param The floating-point value to set for the specified parameter.
+ */
+PF_API void pfFogf(PFfogparam pname, PFfloat param);
+
+/**
+ * @brief Get fog parameters for integer values.
+ *
+ * @warning This function needs a context to be defined.
+ *
+ * @param pname The fog parameter name to retrieve.
+ * @param param Pointer to an array to store the retrieved integer values.
+ */
+PF_API void pfFogiv(PFfogparam pname, PFint* param);
+
+/**
+ * @brief Get fog parameters for floating-point values.
+ *
+ * @warning This function needs a context to be defined.
+ *
+ * @param pname The fog parameter name to retrieve.
+ * @param param Pointer to an array to store the retrieved floating-point values.
+ */
+PF_API void pfFogfv(PFfogparam pname, PFfloat* param);
+
+/**
+ * @brief Process fog calculations.
+ *
+ * @warning This function needs a context to be defined.
+ */
+PF_API void pfFogProcess(void);
 
 
 /* Misc API functions */

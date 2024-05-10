@@ -197,6 +197,16 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
     }
     ctx->activeLights = NULL;
 
+    /* Initialization of fog properties */
+
+    ctx->fog = (PFfog) {
+        .mode = PF_LINEAR,
+        .density = 1.0f,
+        .start = 0.0f,
+        .end = 1.0f,
+        .color = (PFcolor) { 0 }
+    };
+
     /* Initialization of materials */
 
     ctx->faceMaterial[0] = ctx->faceMaterial[1] = (PFmaterial) {
@@ -2269,6 +2279,244 @@ void pfRasterPos4fv(const PFfloat* v)
     memcpy(currentCtx->rasterPos, v, sizeof(PFMvec4));
 }
 
+
+/* Fog API functions */
+
+void pfFogi(PFfogparam pname, PFint param)
+{
+    switch (pname)
+    {
+        case PF_FOG_MODE:
+            if (param >= PF_LINEAR || param <= PF_EXP2)
+            {
+                currentCtx->fog.mode = param;
+            }
+            else
+            {
+                currentCtx->errCode = PF_INVALID_VALUE;
+            }
+            break;
+
+        case PF_FOG_DENSITY:
+            if (param >= 0 || param <= 1)
+            {
+                currentCtx->fog.mode = param;
+            }
+            else
+            {
+                currentCtx->errCode = PF_INVALID_VALUE;
+            }
+            break;
+
+        case PF_FOG_START:
+            currentCtx->fog.start = param;
+            break;
+
+        case PF_FOG_END:
+            currentCtx->fog.end = param;
+            break;
+
+        default:
+            currentCtx->errCode = PF_INVALID_ENUM;
+            break;
+    }
+}
+
+void pfFogf(PFfogparam pname, PFfloat param)
+{
+    switch (pname)
+    {
+        case PF_FOG_DENSITY:
+            if (param >= 0 || param <= 1)
+            {
+                currentCtx->fog.mode = param;
+            }
+            else
+            {
+                currentCtx->errCode = PF_INVALID_VALUE;
+            }
+            break;
+
+        case PF_FOG_START:
+            currentCtx->fog.start = param;
+            break;
+
+        case PF_FOG_END:
+            currentCtx->fog.end = param;
+            break;
+
+        default:
+            currentCtx->errCode = PF_INVALID_ENUM;
+            break;
+    }
+}
+
+void pfFogiv(PFfogparam pname, PFint* param)
+{
+    switch (pname)
+    {
+        case PF_FOG_MODE:
+            if (*param >= PF_LINEAR || *param <= PF_EXP2)
+            {
+                currentCtx->fog.mode = *param;
+            }
+            else
+            {
+                currentCtx->errCode = PF_INVALID_VALUE;
+            }
+            break;
+
+        case PF_FOG_DENSITY:
+            if (*param >= 0 || *param <= 1)
+            {
+                currentCtx->fog.mode = *param;
+            }
+            else
+            {
+                currentCtx->errCode = PF_INVALID_VALUE;
+            }
+            break;
+
+        case PF_FOG_START:
+            currentCtx->fog.start = *param;
+            break;
+
+        case PF_FOG_END:
+            currentCtx->fog.end = *param;
+            break;
+
+        case PF_FOG_COLOR:
+            currentCtx->fog.color.r = param[0];
+            currentCtx->fog.color.g = param[1];
+            currentCtx->fog.color.b = param[2];
+            currentCtx->fog.color.a = param[3];
+            break;
+
+        default:
+            currentCtx->errCode = PF_INVALID_ENUM;
+            break;
+    }
+}
+
+void pfFogfv(PFfogparam pname, PFfloat* param)
+{
+    switch (pname)
+    {
+        case PF_FOG_DENSITY:
+            if (*param >= 0 || *param <= 1)
+            {
+                currentCtx->fog.mode = *param;
+            }
+            else
+            {
+                currentCtx->errCode = PF_INVALID_VALUE;
+            }
+            break;
+
+        case PF_FOG_START:
+            currentCtx->fog.start = *param;
+            break;
+
+        case PF_FOG_END:
+            currentCtx->fog.end = *param;
+            break;
+
+        case PF_FOG_COLOR:
+            currentCtx->fog.color.r = 255*param[0];
+            currentCtx->fog.color.g = 255*param[1];
+            currentCtx->fog.color.b = 255*param[2];
+            currentCtx->fog.color.a = 255*param[3];
+            break;
+
+        default:
+            currentCtx->errCode = PF_INVALID_ENUM;
+            break;
+    }
+}
+
+void pfFogProcess(void)
+{
+    PFint width = currentCtx->currentFramebuffer->texture.width;
+    PFint height = currentCtx->currentFramebuffer->texture.height;
+
+    void *pixels = currentCtx->currentFramebuffer->texture.pixels;
+    const PFfloat *zBuffer = currentCtx->currentFramebuffer->zbuffer;
+
+    PFpixelgetter pixelGetter = currentCtx->currentFramebuffer->texture.pixelGetter;
+    PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
+
+#ifdef PF_SUPPORT_OPENMP
+#   define BEGIN_FOG_LOOP() \
+    _Pragma("omp parallel for collapse(2) firstprivate(fogColor)") \
+    for (PFint y = 0; y < height; y++) \
+    { \
+        for (PFint x = 0; x < width; x++) \
+        { \
+            PFsizei xyOffset = y*width + x;
+
+#define END_FOG_LOOP() \
+        } \
+    }
+#else
+#   define BEGIN_FOG_LOOP() \
+    PFsizei yOffset = 0; \
+    for (PFint y = 0; y < height; y++, yOffset += width) \
+    { \
+        for (PFint x = 0; x < width; x++) \
+        { \
+            PFsizei xyOffset = yOffset + x;
+
+#define END_FOG_LOOP() \
+        } \
+    }
+#endif
+
+    PFfloat density = currentCtx->fog.density;
+    PFcolor fogColor = currentCtx->fog.color;
+    PFfogmode mode = currentCtx->fog.mode;
+    PFfloat start = currentCtx->fog.start;
+    PFfloat end = currentCtx->fog.end;
+    PFfloat invLen = 1/(end - start);
+    PFubyte alpha = fogColor.a;
+
+    BEGIN_FOG_LOOP()
+    {
+        PFfloat depth = zBuffer[xyOffset];
+
+        if (depth >= end)
+        {
+            fogColor.a = alpha;
+            pixelSetter(pixels, xyOffset, alpha == 255 ? fogColor
+                : pfBlendAlpha(fogColor, pixelGetter(pixels, xyOffset)));
+        }
+        else if (depth > start)
+        {
+            PFfloat t = 0;
+
+            switch (mode)
+            {
+                case PF_LINEAR:
+                    t = (depth - start)*invLen;
+                    break;
+
+                case PF_EXP:
+                    t = 1.0f - exp(-density*(depth - start));
+                    break;
+
+                case PF_EXP2:
+                    t = 1.0f - exp2(-density*(depth - start));
+                    break;
+            }
+
+            fogColor.a = (PFubyte)(t * alpha);
+            PFcolor color = pixelGetter(pixels, xyOffset);
+            pixelSetter(pixels, xyOffset, pfBlendAlpha(fogColor, color));
+        }
+    }
+    END_FOG_LOOP()
+}
+
+
 /* Misc API functions */
 
 void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat format, void* pixels)
@@ -2324,7 +2572,7 @@ void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat
 #endif
 }
 
-PF_API void pfPostProcess(PFpostprocessfunc postProcessFunction)
+void pfPostProcess(PFpostprocessfunc postProcessFunction)
 {
     PFint width = currentCtx->currentFramebuffer->texture.width;
     PFint height = currentCtx->currentFramebuffer->texture.height;
@@ -2336,36 +2584,40 @@ PF_API void pfPostProcess(PFpostprocessfunc postProcessFunction)
     PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
 
 #ifdef PF_SUPPORT_OPENMP
-#   pragma omp parallel for collapse(2)
-    for (PFint y = 0; y < height; y++)
-    {
-        for (PFint x = 0; x < width; x++)
-        {
+#   define BEGIN_POSTPROCESS_LOOP() \
+    _Pragma("omp parallel for collapse(2)") \
+    for (PFint y = 0; y < height; y++) \
+    { \
+        for (PFint x = 0; x < width; x++) \
+        { \
             PFsizei xyOffset = y*width + x;
 
-            PFcolor color = pixelGetter(pixels, xyOffset);
-            PFfloat depth = zBuffer[xyOffset];
-
-            color = postProcessFunction(x, y, depth, color);
-            pixelSetter(pixels, xyOffset, color);
-        }
+#define END_POSTPROCESS_LOOP() \
+        } \
     }
 #else
-    PFsizei yOffset = 0;
-    for (PFint y = 0; y < height; y++, yOffset += width)
-    {
-        for (PFint x = 0; x < width; x++)
-        {
+#   define BEGIN_POSTPROCESS_LOOP() \
+    PFsizei yOffset = 0; \
+    for (PFint y = 0; y < height; y++, yOffset += width) \
+    { \
+        for (PFint x = 0; x < width; x++) \
+        { \
             PFsizei xyOffset = yOffset + x;
 
-            PFcolor color = pixelGetter(pixels, xyOffset);
-            PFfloat depth = zBuffer[xyOffset];
-
-            color = postProcessFunction(x, y, depth, color);
-            pixelSetter(pixels, xyOffset, color);
-        }
+#define END_POSTPROCESS_LOOP() \
+        } \
     }
 #endif
+
+    BEGIN_POSTPROCESS_LOOP()
+    {
+        PFcolor color = pixelGetter(pixels, xyOffset);
+        PFfloat depth = zBuffer[xyOffset];
+
+        color = postProcessFunction(x, y, depth, color);
+        pixelSetter(pixels, xyOffset, color);
+    }
+    END_POSTPROCESS_LOOP()
 }
 
 

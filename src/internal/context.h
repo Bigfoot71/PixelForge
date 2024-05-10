@@ -98,6 +98,17 @@ typedef struct {
 } PFmatcolfollowing;
 
 /**
+ * @brief Structure representing fog properties.
+ */
+typedef struct {
+    PFfogmode mode;                    ///< Fog mode (see 'PFfogmode')
+    PFfloat density;                   ///< Density of fog (used only with exponential fog modes)
+    PFfloat start;                     ///< Distance at which fog starts
+    PFfloat end;                       ///< Distance at which fog ends
+    PFcolor color;                     ///< Color of the fog
+} PFfog;
+
+/**
  * @brief Structure representing the main rendering context of the library.
  * TODO: Reorganize the context structure
  */
@@ -145,6 +156,8 @@ typedef struct {
     PFlight lights[PF_MAX_LIGHT_STACK];                     ///< Array of lights
     PFlight *activeLights;                                  ///< Pointer to the currently active light in the list of lights (see PFlight->next)
 
+    PFfog fog;                                              ///< Fog properties (see PFfog)
+
     PFMmat4 projection;                                     ///< Default projection matrix
     PFMmat4 model;                                          ///< Default model matrix (the one used if we push in PF_MODELVIEW mode)
     PFMmat4 view;                                           ///< Default view matrix (the default one used in PF_MODELVIEW mode)
@@ -162,6 +175,7 @@ typedef struct {
 
     PFerrcode errCode;                                      ///< Last error code
     PFuint state;                                           ///< Current context state
+
 } PFctx;
 
 /* Current thread local-thread declaration */
