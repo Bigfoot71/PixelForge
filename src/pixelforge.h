@@ -122,8 +122,9 @@ typedef enum {
 typedef struct PFctx PFctx;     // NOTE: This type is opaque, API functions are used to modify its state
 
 typedef enum {
-    PF_TEXTURE_2D           = 0x0001,
-    PF_DEPTH_TEST           = 0x0002,
+    PF_TEXTURE              = 0x0001,
+    PF_FRAMEBUFFER          = 0x0002,
+    PF_DEPTH_TEST           = 0x0004,
     PF_CULL_FACE            = 0x0008,
     PF_NORMALIZE            = 0x0010,
     PF_LIGHTING             = 0x0020,
@@ -740,32 +741,22 @@ PF_API void pfBlendFunc(PFblendfunc func);
 PF_API void pfDepthFunc(PFdepthfunc func);
 
 /**
- * @brief Retrieves a pointer to the currently active framebuffer.
+ * @brief Binds the specified framebuffer for subsequent rendering operations.
  *
- * @warning This function needs a context to be defined.
+ * Once the framebuffer is bound to the current context, the PF_FRAMEBUFFER state
+ * must be active for the bound framebuffer to be considered during rendering.
  *
- * @return Pointer to the currently active framebuffer.
+ * @warning This function requires a context to be defined.
+ *
+ * @param framebuffer Pointer to the framebuffer to bind.
  */
-PF_API PFframebuffer* pfGetActiveFramebuffer(void);
-
-/**
- * @brief Enables the specified framebuffer for rendering.
- *
- * @warning This function needs a context to be defined.
- *
- * @param framebuffer Pointer to the framebuffer to enable.
- */
-PF_API void pfEnableFramebuffer(PFframebuffer* framebuffer);
-
-/**
- * @brief Disables the currently active framebuffer, reverting to the default framebuffer.
- *
- * @warning This function needs a context to be defined.
- */
-PF_API void pfDisableFramebuffer(void);
+PF_API void pfBindFramebuffer(PFframebuffer* framebuffer);
 
 /**
  * @brief Binds the specified texture for subsequent rendering operations.
+ *
+ * Once the texture is bound to the current context, the PF_TEXTURE state
+ * must be active for the bound texture to be considered during rendering.
  *
  * @warning This function needs a context to be defined.
  *

@@ -1,3 +1,4 @@
+#include "pixelforge.h"
 #define PF_RAYLIB_COMMON_IMPL
 #include "raylib_common.h"
 
@@ -20,12 +21,15 @@ int main(void)
         SCREEN_WIDTH, SCREEN_HEIGHT,
         PF_PIXELFORMAT_R8G8B8A8);
 
+    // Bind the framebuffer
+    pfBindFramebuffer(&fbTarget);
+
     // Define the camera position and a phase for the rotation
     Vector3 camPos = { -2.0f, 1.5f, -2.0f };
     float timer = 0;
 
     // Enable texture rendering
-    pfEnable(PF_TEXTURE_2D);
+    pfEnable(PF_TEXTURE);
 
     while (!WindowShouldClose())
     {
@@ -35,7 +39,7 @@ int main(void)
         timer += GetFrameTime();
 
         // Renders the cube in the framebuffer
-        pfEnableFramebuffer(&fbTarget);
+        pfEnable(PF_FRAMEBUFFER);
         {
             pfClearColor(255, 255, 255, 255);
             pfClear(PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT);
@@ -45,7 +49,7 @@ int main(void)
                 PF_DrawCube(1.0f);
             PF_End3D();
         }
-        pfDisableFramebuffer();
+        pfDisable(PF_FRAMEBUFFER);
 
         // Clear the main destination buffer (RAM)
         pfClearColor(0, 0, 0, 255);

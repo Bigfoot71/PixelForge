@@ -39,7 +39,7 @@ int main(void)
     Arrow arrow = Arrow_Create();
 
     // Enable texture rendering
-    pfEnable(PF_TEXTURE_2D);
+    pfEnable(PF_TEXTURE);
 
     // Main loop
     while (!WindowShouldClose())

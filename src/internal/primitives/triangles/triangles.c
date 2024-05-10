@@ -239,7 +239,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     const PFboolean noDepth = !(ctx->state & RASTER_DEPTH);
     const PFboolean lighting = (ctx->state & PF_LIGHTING) && ctx->activeLights;
-    const PFboolean texturing = (ctx->state & PF_TEXTURE_2D) && ctx->currentTexture;
+    const PFboolean texturing = (ctx->state & PF_TEXTURE) && ctx->currentTexture;
 
     /* Check if the face can be rendered, if not, skip */
 
@@ -537,7 +537,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     const PFboolean noDepth = !(ctx->state & PF_DEPTH_TEST);
     const PFboolean lighting = (ctx->state & PF_LIGHTING) && ctx->activeLights;
-    const PFboolean texturing = (ctx->state & PF_TEXTURE_2D) && ctx->currentTexture;
+    const PFboolean texturing = (ctx->state & PF_TEXTURE) && ctx->currentTexture;
 
     /* Loop macro definition */
 

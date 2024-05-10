@@ -125,6 +125,7 @@ struct PFctx {
     PFcolor currentColor;                                   ///< Current color assigned by by 'pfColor'                 - (Stored in 'ctx.vertexBuffer' after the call to 'pfVertex')
 
     PFframebuffer mainFramebuffer;                          ///< Screen buffer for rendering
+    PFframebuffer *bindedFramebuffer;                       ///< Framebuffer currently bound if PF_FRAMEBUFFER state is active
 
     PFcolor clearColor;                                     ///< Color used to clear the screen
     PFfloat clearDepth;                                     ///< Depth value used to clear the screen

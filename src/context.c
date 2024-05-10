@@ -380,11 +380,22 @@ PFboolean pfIsEnabled(PFstate state)
 void pfEnable(PFstate state)
 {
     currentCtx->state |= state;
+
+    if (state & PF_FRAMEBUFFER)
+    {
+        currentCtx->currentFramebuffer = currentCtx->bindedFramebuffer
+            ? currentCtx->bindedFramebuffer : &currentCtx->mainFramebuffer;
+    }
 }
 
 void pfDisable(PFstate state)
 {
     currentCtx->state &= ~state;
+
+    if (state & PF_FRAMEBUFFER)
+    {
+        currentCtx->currentFramebuffer = &currentCtx->mainFramebuffer;
+    }
 }
 
 
@@ -666,20 +677,15 @@ void pfDepthFunc(PFdepthfunc func)
     currentCtx->depthFunction = func;
 }
 
-PFframebuffer* pfGetActiveFramebuffer(void)
+void pfBindFramebuffer(PFframebuffer* framebuffer)
 {
-    return currentCtx->currentFramebuffer;
-}
+    currentCtx->bindedFramebuffer = framebuffer;
 
-void pfEnableFramebuffer(PFframebuffer* framebuffer)
-{
-    if (!framebuffer) { pfDisableFramebuffer(); return; }
-    currentCtx->currentFramebuffer = framebuffer;
-}
-
-void pfDisableFramebuffer(void)
-{
-    currentCtx->currentFramebuffer = &currentCtx->mainFramebuffer;
+    if (currentCtx->state & PF_FRAMEBUFFER)
+    {
+        currentCtx->currentFramebuffer = framebuffer
+            ? framebuffer : &currentCtx->mainFramebuffer;
+    }
 }
 
 void pfBindTexture(PFtexture* texture)

@@ -29,8 +29,8 @@ void pfGetBooleanv(PFenum pname, PFboolean* params)
     {
         /* State context */
 
-        case PF_TEXTURE_2D:
-            *params = ctx->state & PF_TEXTURE_2D;
+        case PF_TEXTURE:
+            *params = ctx->state & PF_TEXTURE;
             break;
 
         case PF_DEPTH_TEST:
@@ -521,7 +521,7 @@ void pfGetPointerv(PFenum pname, const void** params)
 
     switch (pname)
     {
-        case PF_TEXTURE_2D:
+        case PF_TEXTURE:
             *params = ctx->currentTexture;
             break;
 

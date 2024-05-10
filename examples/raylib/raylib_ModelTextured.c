@@ -23,7 +23,7 @@ int main(void)
     float timer = 0;
 
     // Activate texture rendering
-    pfEnable(PF_TEXTURE_2D);
+    pfEnable(PF_TEXTURE);
 
     // Start the main loop
     while (!WindowShouldClose())
