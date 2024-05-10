@@ -73,10 +73,6 @@ void pfGetBooleanv(PFenum pname, PFboolean* params)
             *params = ctx->state & PF_TEXTURE_COORD_ARRAY;
             break;
 
-        //case PF_INDEX_ARRAY:
-        //    *params = ctx->state & PF_INDEX_ARRAY;
-        //    break;
-
         /* Other values */
 
         case PF_BLEND:
@@ -138,9 +134,6 @@ void pfGetIntegerv(PFenum pname, PFint* params)
             params[3] = ctx->clearColor.a;
             break;
 
-        //case PF_INDEX_CLEAR_VALUE:
-        //  break;
-
         case PF_CULL_FACE_MODE:
             *params = ctx->cullFace;
             break;
@@ -152,13 +145,7 @@ void pfGetIntegerv(PFenum pname, PFint* params)
             params[3] = ctx->currentColor.a;
             break;
 
-        //case PF_CURRENT_INDEX:
-        //  break;
-
         //case PF_CURRENT_RASTER_COLOR:
-        //  break;
-
-        //case PF_CURRENT_RASTER_INDEX:
         //  break;
 
         case PF_CURRENT_RASTER_POSITION:
@@ -251,21 +238,6 @@ void pfGetIntegerv(PFenum pname, PFint* params)
             *params = ctx->vertexAttribs.colors.type;
             break;
 
-        //case PF_INDEX_ARRAY_STRIDE:
-        //  break;
-
-        //case PF_INDEX_ARRAY_TYPE:
-        //  break;
-
-        //case PF_INDEX_MODE:
-        //  break;
-
-        //case PF_INDEX_OFFSET:
-        //  break;
-
-        //case PF_INDEX_SHIFT:
-        //  break;
-
         default:
             ctx->errCode = PF_INVALID_ENUM;
             break;
@@ -311,9 +283,6 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
         //  break;
 
         //case PF_CURRENT_RASTER_DISTANCE:
-        //  break;
-
-        //case PF_CURRENT_RASTER_INDEX:
         //  break;
 
         case PF_CURRENT_RASTER_POSITION:
@@ -430,9 +399,6 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
         //  break;
 
         //case PF_CURRENT_RASTER_DISTANCE:
-        //  break;
-
-        //case PF_CURRENT_RASTER_INDEX:
         //  break;
 
         case PF_CURRENT_RASTER_POSITION:

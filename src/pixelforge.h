@@ -133,23 +133,19 @@ typedef enum {
     PF_NORMAL_ARRAY         = 0x0100,
     PF_COLOR_ARRAY          = 0x0200,
     PF_TEXTURE_COORD_ARRAY  = 0x0400,
-    //PF_INDEX_ARRAY        = 0x0800,
 } PFstate;
 
 typedef enum {
     PF_BLEND                            = 10000,      // TODO REVIEW: Move to PFstate if you decide to review the color mixing mechanism
     PF_VIEWPORT,
     PF_COLOR_CLEAR_VALUE,
-    //PF_INDEX_CLEAR_VALUE,
     PF_DEPTH_CLEAR_VALUE,
     PF_CULL_FACE_MODE,
     PF_CURRENT_COLOR,
-    //PF_CURRENT_INDEX,
     PF_CURRENT_NORMAL,
     PF_CURRENT_TEXTURE_COORDS,
     //PF_CURRENT_RASTER_COLOR,
     //PF_CURRENT_RASTER_DISTANCE,
-    //PF_CURRENT_RASTER_INDEX,
     PF_CURRENT_RASTER_POSITION,
     //PF_CURRENT_RASTER_POSITION_VALID,
     //PF_CURRENT_RASTER_TEXTURE_COORDS,
@@ -199,11 +195,6 @@ typedef enum {
     PF_COLOR_ARRAY_SIZE,
     PF_COLOR_ARRAY_STRIDE,
     PF_COLOR_ARRAY_TYPE,
-    //PF_INDEX_ARRAY_STRIDE,
-    //PF_INDEX_ARRAY_TYPE,
-    //PF_INDEX_MODE,
-    //PF_INDEX_OFFSET,
-    //PF_INDEX_SHIFT,
     PF_ZOOM_X,
     PF_ZOOM_Y
 } PFgettable;
