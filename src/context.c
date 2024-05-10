@@ -2152,6 +2152,10 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, const voi
     // Check if depth test is enabled
     PFboolean noDepthTest = !(currentCtx->state & PF_DEPTH_TEST);
 
+    // Get the color mixing function (if necessary)
+    PFblendfunc blendFunction = currentCtx->state & PF_BLEND ?
+        currentCtx->blendFunction : NULL;
+
     // Loop through each pixel in the destination rectangle
 #   ifdef PF_SUPPORT_OPENMP
 #       pragma omp parallel for if ((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)
@@ -2182,12 +2186,12 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, const voi
                 // Update depth buffer with new depth value
                 zBuffer[xyDstOffset] = zPos;
 
-                // Retrieve source and destination colors
-                PFcolor colSrc = getPixelSrc(pixels, xySrcOffset);
-                PFcolor colDst = texDst->pixelGetter(texDst->pixels, xyDstOffset);
+                // Retrieve source color
+                PFcolor color = getPixelSrc(pixels, xySrcOffset);
 
                 // Blend source and destination colors and update framebuffer
-                texDst->pixelSetter(texDst->pixels, xyDstOffset, currentCtx->blendFunction(colSrc, colDst));
+                texDst->pixelSetter(texDst->pixels, xyDstOffset, blendFunction
+                    ? blendFunction(color, texDst->pixelGetter(texDst->pixels, xyDstOffset)) : color);
             }
         }
     }
