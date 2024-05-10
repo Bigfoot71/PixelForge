@@ -49,12 +49,10 @@ typedef enum {
 
 static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2)
 {
-    const PFctx *ctx = pfGetCurrentContext();
-
-    PFint xMin = ctx->vpMin[0];
-    PFint yMin = ctx->vpMin[1];
-    PFint xMax = ctx->vpMax[0];
-    PFint yMax = ctx->vpMax[1];
+    PFint xMin = currentCtx->vpMin[0];
+    PFint yMin = currentCtx->vpMin[1];
+    PFint xMax = currentCtx->vpMax[0];
+    PFint yMax = currentCtx->vpMax[1];
 
     PFboolean accept = PF_FALSE;
     PFubyte code0, code1;
@@ -88,23 +86,23 @@ static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2
 
         if (code0 & CLIP_LEFT)
         {
-            v1->screen[1] += (ctx->vpMin[0] - v1->screen[0])*m;
-            v1->screen[0] = ctx->vpMin[0];
+            v1->screen[1] += (currentCtx->vpMin[0] - v1->screen[0])*m;
+            v1->screen[0] = currentCtx->vpMin[0];
         }
         else if (code0 & CLIP_RIGHT)
         {
-            v1->screen[1] += (ctx->vpMax[0] - v1->screen[0])*m;
-            v1->screen[0] = ctx->vpMax[0];
+            v1->screen[1] += (currentCtx->vpMax[0] - v1->screen[0])*m;
+            v1->screen[0] = currentCtx->vpMax[0];
         }
         else if (code0 & CLIP_BOTTOM)
         {
-            if (m) v1->screen[0] += (ctx->vpMin[1] - v1->screen[1]) / m;
-            v1->screen[1] = ctx->vpMin[1];
+            if (m) v1->screen[0] += (currentCtx->vpMin[1] - v1->screen[1]) / m;
+            v1->screen[1] = currentCtx->vpMin[1];
         }
         else if (code0 & CLIP_TOP)
         {
-            if (m) v1->screen[0] += (ctx->vpMax[1] - v1->screen[1]) / m;
-            v1->screen[1] = ctx->vpMax[1];
+            if (m) v1->screen[0] += (currentCtx->vpMax[1] - v1->screen[1]) / m;
+            v1->screen[1] = currentCtx->vpMax[1];
         }
     }
 
@@ -193,12 +191,11 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 {
     /* Get Some Values*/
 
-    PFctx *ctx = pfGetCurrentContext();
-    PFframebuffer *fbDst = ctx->currentFramebuffer;
+    PFframebuffer *fbDst = currentCtx->currentFramebuffer;
 
     PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
     PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
-    PFblendfunc blendFunc = ctx->blendFunction;
+    PFblendfunc blendFunc = currentCtx->blendFunction;
 
     void *bufDst = fbDst->texture.pixels;
     PFsizei wDst = fbDst->texture.width;
@@ -285,12 +282,11 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
 {
     /* Get Some Values*/
 
-    PFctx *ctx = pfGetCurrentContext();
-    PFframebuffer *fbDst = ctx->currentFramebuffer;
+    PFframebuffer *fbDst = currentCtx->currentFramebuffer;
 
     PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
     PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
-    PFblendfunc blendFunc = ctx->blendFunction;
+    PFblendfunc blendFunc = currentCtx->blendFunction;
 
     void *bufDst = fbDst->texture.pixels;
     PFsizei wDst = fbDst->texture.width;
@@ -343,7 +339,7 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
             PFfloat *zp = zbDst + pOffset;
 
-            if (ctx->depthFunction(z, *zp))
+            if (currentCtx->depthFunction(z, *zp))
             {
                 PFcolor src = Helper_LerpColor(c1, c2, t);
                 PFcolor dst = pixelGetter(bufDst, pOffset);
@@ -367,7 +363,7 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
             PFfloat *zp = zbDst + pOffset;
 
-            if (ctx->depthFunction(z, *zp))
+            if (currentCtx->depthFunction(z, *zp))
             {
                 PFcolor src = Helper_LerpColor(c1, c2, t);
                 PFcolor dst = pixelGetter(bufDst, pOffset);
@@ -391,7 +387,7 @@ void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
     PFint dx = x2 - x1, dy = y2 - y1;
 
-    PFint thickness = (PFint)(pfGetCurrentContext()->lineWidth + 0.5f);
+    PFint thickness = (PFint)(currentCtx->lineWidth + 0.5f);
 
     Rasterize_Line_DEPTH(v1, v2);
 
@@ -441,7 +437,7 @@ void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2)
 
     PFint dx = x2 - x1, dy = y2 - y1;
 
-    PFint thickness = (PFint)(pfGetCurrentContext()->lineWidth + 0.5f);
+    PFint thickness = (PFint)(currentCtx->lineWidth + 0.5f);
 
     Rasterize_Line_DEPTH(v1, v2);
 

@@ -12,7 +12,7 @@ int main(void)
     Clock clock = Clock_Create(60);
 
     // Creating the PixelForge context
-    PFctx *ctx = PF_InitFromWindow(&window);
+    PFcontext ctx = PF_InitFromWindow(&window);
 
     // Define the camera position and a phase for the rotation
     PFMvec3 camPos = { -2.0f, 1.5f, -2.0f };

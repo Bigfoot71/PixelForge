@@ -34,21 +34,9 @@
 
 // TODO: Review all enums to give them unique values
 
-/* Current thread local-thread declaration */
+/* Current thread local-thread definition (declared in context.h) */
 
-#if defined(__GNUC__) || defined(__clang__)
-#   if defined(PF_SUPPORT_OPENMP) && defined(__GNUC__)
-        // TODO: Using a static global variable with __thread in GCC 11.4 seems to cause segmentation faults at runtime.
-        //       I haven't been able to obtain more information through debugging and some research. To investigate further.
-        static PFctx *currentCtx = NULL;
-#   else
-        static __thread PFctx *currentCtx = NULL;
-#   endif
-#elif defined(_MSC_VER)
-    __declspec(thread) static PFctx *currentCtx = NULL;
-#else
-    static PFctx *currentCtx = NULL;
-#endif
+PF_CTX_DECL PFctx *currentCtx = NULL;
 
 /* Internal types */
 
@@ -126,7 +114,7 @@ static PFsizei pfInternal_GetDataTypeSize(PFdatatype type)
 
 /* Context API functions */
 
-PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat)
+PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat)
 {
     /* Memory allocation for the context */
 
@@ -259,14 +247,14 @@ PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixe
     return ctx;
 }
 
-void pfDeleteContext(PFctx* ctx)
+void pfDeleteContext(PFcontext ctx)
 {
     if (ctx)
     {
-        if (ctx->mainFramebuffer.zbuffer)
+        if (((PFctx*)ctx)->mainFramebuffer.zbuffer)
         {
-            PF_FREE(ctx->mainFramebuffer.zbuffer);
-            ctx->mainFramebuffer = (PFframebuffer) { 0 };
+            PF_FREE(((PFctx*)ctx)->mainFramebuffer.zbuffer);
+            ((PFctx*)ctx)->mainFramebuffer = (PFframebuffer) { 0 };
         }
 
         PF_FREE(ctx);
@@ -362,12 +350,12 @@ PF_API void pfSwapBuffers(void)
     currentCtx->auxFramebuffer = tmp;
 }
 
-PFctx* pfGetCurrentContext(void)
+PFcontext pfGetCurrentContext(void)
 {
     return currentCtx;
 }
 
-void pfMakeCurrent(PFctx* ctx)
+void pfMakeCurrent(PFcontext ctx)
 {
     currentCtx = ctx;
 }

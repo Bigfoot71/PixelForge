@@ -38,7 +38,7 @@ void Clock_End(Clock* clock);
 
 /* PixelForge context management */
 
-PFctx* PF_InitFromWindow(Window* window);
+PFcontext PF_InitFromWindow(Window* window);
 
 
 /* Implementation */
@@ -153,9 +153,9 @@ void Clock_End(Clock* clock)
 
 /* PixelForge context management */
 
-PFctx* PF_InitFromWindow(Window* window)
+PFcontext PF_InitFromWindow(Window* window)
 {
-    PFctx *ctx = PF_Init(window->surface->pixels, window->surface->w, window->surface->h);
+    PFcontext ctx = PF_Init(window->surface->pixels, window->surface->w, window->surface->h);
     pfSetDefaultPixelGetter(PF_GetPixel);
     pfSetDefaultPixelSetter(PF_SetPixel);
     return ctx;

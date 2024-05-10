@@ -49,7 +49,7 @@ void Clock_End(Clock* clock);
 
 /* PixelForge context management */
 
-PFctx* PF_InitFromX11App(X11_App* app);
+PFcontext PF_InitFromX11App(X11_App* app);
 
 
 /* Implementation */
@@ -169,9 +169,9 @@ void Clock_End(Clock* clock)
 
 /* PixelForge context management */
 
-PFctx* PF_InitFromX11App(X11_App* app)
+PFcontext PF_InitFromX11App(X11_App* app)
 {
-    PFctx *ctx = PF_Init(app->destBuffer, app->destImage->width, app->destImage->height);
+    PFcontext ctx = PF_Init(app->destBuffer, app->destImage->width, app->destImage->height);
     pfSetDefaultPixelGetter(PF_GetPixel);
     pfSetDefaultPixelSetter(PF_SetPixel);
     return ctx;

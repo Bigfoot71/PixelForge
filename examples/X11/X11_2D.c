@@ -10,7 +10,7 @@ int main(void)
     X11_App app = X11_InitApp(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     // Allocate destination buffer and init PixelForge context
-    PFctx *ctx = PF_InitFromX11App(&app);
+    PFcontext ctx = PF_InitFromX11App(&app);
 
     // Init clock system
     Clock clock = Clock_Create(10);

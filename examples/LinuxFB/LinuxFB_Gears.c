@@ -282,7 +282,7 @@ int main(void)
     memcpy(buffer, fbMem, screensize);
 
     // Creating the PixelForge rendering context
-    PFctx *ctx = pfCreateContext(buffer, vinfo.xres_virtual, vinfo.yres_virtual, PF_PIXELFORMAT_R8G8B8);
+    PFcontext ctx = pfCreateContext(buffer, vinfo.xres_virtual, vinfo.yres_virtual, PF_PIXELFORMAT_R8G8B8);
     pfMakeCurrent(ctx);
 
     // Definition of custom pixel get/set function

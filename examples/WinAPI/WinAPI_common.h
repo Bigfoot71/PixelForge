@@ -30,7 +30,7 @@ void Window_Update(Window* window);
 
 /* PixelForge context management */
 
-PFctx* PF_InitFromWindow(Window* window);
+PFcontext PF_InitFromWindow(Window* window);
 
 
 /* Implementation */
@@ -116,9 +116,9 @@ void Window_Update(Window* window)
 
 /* PixelForge context management */
 
-PFctx* PF_InitFromWindow(Window* window)
+PFcontext PF_InitFromWindow(Window* window)
 {
-    PFctx *ctx = PF_Init(window->pixels, window->w, window->h);
+    PFcontext ctx = PF_Init(window->pixels, window->w, window->h);
     pfSetDefaultPixelGetter(PF_GetPixel);
     pfSetDefaultPixelSetter(PF_SetPixel);
     return ctx;

@@ -20,7 +20,7 @@ typedef struct {
 
 /* Easy PixelForge context creation for raylib */
 
-PFctx* PF_InitFromTargetBuffer(PF_TargetBuffer destBuffer);
+PFcontext PF_InitFromTargetBuffer(PF_TargetBuffer destBuffer);
 
 /* Load PixelForge texture */
 
@@ -49,7 +49,7 @@ void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float r
 
 #ifdef PF_RAYLIB_COMMON_IMPL
 
-PFctx* PF_InitFromTargetBuffer(PF_TargetBuffer destBuffer)
+PFcontext PF_InitFromTargetBuffer(PF_TargetBuffer destBuffer)
 {
     return PF_Init(destBuffer.image.data, destBuffer.image.width, destBuffer.image.height);
 }

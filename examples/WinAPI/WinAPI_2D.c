@@ -10,7 +10,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     Window win = Window_Create("PixelForge - Basic 2D", SCREEN_WIDTH, SCREEN_HEIGHT, hInstance, nCmdShow);
 
     // Creating the PixelForge context
-    PFctx *ctx = PF_InitFromWindow(&win);
+    PFcontext ctx = PF_InitFromWindow(&win);
 
     // Draw a triangle once with color vertex interpolation
     pfBegin(PF_TRIANGLES);

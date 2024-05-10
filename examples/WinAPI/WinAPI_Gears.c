@@ -205,7 +205,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     SetTimer(win.hwnd, 1, 16, NULL);
 
     // Creating the PixelForge context
-    PFctx *ctx = PF_InitFromWindow(&win);
+    PFcontext ctx = PF_InitFromWindow(&win);
 
     // Init and reshape
     Gears_Init();

@@ -235,11 +235,9 @@ static PFcolor Process_Lights(const PFlight* activeLights, const PFmaterial* mat
 // TODO: Find a maintainable way to reduce conditionality in loops
 void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
-    PFctx *ctx = pfGetCurrentContext();
-
-    const PFboolean noDepth = !(ctx->state & RASTER_DEPTH);
-    const PFboolean lighting = (ctx->state & PF_LIGHTING) && ctx->activeLights;
-    const PFboolean texturing = (ctx->state & PF_TEXTURE) && ctx->currentTexture;
+    const PFboolean noDepth = !(currentCtx->state & RASTER_DEPTH);
+    const PFboolean lighting = (currentCtx->state & PF_LIGHTING) && currentCtx->activeLights;
+    const PFboolean texturing = (currentCtx->state & PF_TEXTURE) && currentCtx->currentTexture;
 
     /* Check if the face can be rendered, if not, skip */
 
@@ -270,18 +268,18 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Choose color interpolation method based on shading mode */
 
-    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (currentCtx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
     /* Extract framebuffer information */
 
-    PFpixelsetter pixelSetter = ctx->currentFramebuffer->texture.pixelSetter;
-    PFpixelgetter pixelGetter = ctx->currentFramebuffer->texture.pixelGetter;
-    PFsizei widthDst = ctx->currentFramebuffer->texture.width;
-    void *pbDst = ctx->currentFramebuffer->texture.pixels;
-    PFfloat *zbDst = ctx->currentFramebuffer->zbuffer;
-    PFblendfunc blendFunc = ctx->blendFunction;
-    PFtexture *texture = ctx->currentTexture;
+    PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
+    PFpixelgetter pixelGetter = currentCtx->currentFramebuffer->texture.pixelGetter;
+    PFsizei widthDst = currentCtx->currentFramebuffer->texture.width;
+    void *pbDst = currentCtx->currentFramebuffer->texture.pixels;
+    PFfloat *zbDst = currentCtx->currentFramebuffer->zbuffer;
+    PFblendfunc blendFunc = currentCtx->blendFunction;
+    PFtexture *texture = currentCtx->currentTexture;
 
     /*  */
 
@@ -290,8 +288,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     if (!is3D)
     {
-        yMin = CLAMP(yMin, ctx->vpMin[1], ctx->vpMax[1]);
-        yMax = CLAMP(yMax, ctx->vpMin[1], ctx->vpMax[1]);
+        yMin = CLAMP(yMin, currentCtx->vpMin[1], currentCtx->vpMax[1]);
+        yMax = CLAMP(yMax, currentCtx->vpMin[1], currentCtx->vpMax[1]);
     }
 
     /* Travel the triangle from top to bottom */
@@ -388,8 +386,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
         if (!is3D)
         {
-            xMin = CLAMP(xMin, ctx->vpMin[0], ctx->vpMax[0]);
-            xMax = CLAMP(xMax, ctx->vpMin[0], ctx->vpMax[0]);
+            xMin = CLAMP(xMin, currentCtx->vpMin[0], currentCtx->vpMax[0]);
+            xMax = CLAMP(xMax, currentCtx->vpMin[0], currentCtx->vpMax[0]);
         }
 
         PFsizei xyOffset = y*widthDst + xMin;
@@ -404,7 +402,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
             /* Perform depth test */
 
-            if (noDepth || ctx->depthFunction(z, zbDst[xyOffset]))
+            if (noDepth || currentCtx->depthFunction(z, zbDst[xyOffset]))
             {
                 /* Obtain fragment color */
 
@@ -438,8 +436,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
                     PFMvec3 normal;
                     Helper_InterpolateVec3(normal, nA, nB, t);
 
-                    fragment = Process_Lights(ctx->activeLights,
-                        &ctx->faceMaterial[faceToRender], fragment,
+                    fragment = Process_Lights(currentCtx->activeLights,
+                        &currentCtx->faceMaterial[faceToRender], fragment,
                         viewPos, position, normal);
                 }
 
@@ -457,8 +455,6 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
 void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
-    PFctx *ctx = pfGetCurrentContext();
-
     /* Get integer 2D position coordinates */
 
     PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
@@ -484,10 +480,10 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     if (!is3D)
     {
-        xMin = (PFsizei)CLAMP((PFint)xMin, ctx->vpMin[0], ctx->vpMax[0]);
-        yMin = (PFsizei)CLAMP((PFint)yMin, ctx->vpMin[1], ctx->vpMax[1]);
-        xMax = (PFsizei)CLAMP((PFint)xMax, ctx->vpMin[0], ctx->vpMax[0]);
-        yMax = (PFsizei)CLAMP((PFint)yMax, ctx->vpMin[1], ctx->vpMax[1]);
+        xMin = (PFsizei)CLAMP((PFint)xMin, currentCtx->vpMin[0], currentCtx->vpMax[0]);
+        yMin = (PFsizei)CLAMP((PFint)yMin, currentCtx->vpMin[1], currentCtx->vpMax[1]);
+        xMax = (PFsizei)CLAMP((PFint)xMax, currentCtx->vpMin[0], currentCtx->vpMax[0]);
+        yMax = (PFsizei)CLAMP((PFint)yMax, currentCtx->vpMin[1], currentCtx->vpMax[1]);
 
         if (xMin == xMax && yMin == yMax) return;
     }
@@ -520,24 +516,24 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Get some contextual values */
 
-    InterpolateColorFunc interpolateColor = (ctx->shadingMode == PF_SMOOTH)
+    InterpolateColorFunc interpolateColor = (currentCtx->shadingMode == PF_SMOOTH)
         ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
 
-    PFpixelgetter pixelGetter = ctx->currentFramebuffer->texture.pixelGetter;
-    PFpixelsetter pixelSetter = ctx->currentFramebuffer->texture.pixelSetter;
-    PFsizei widthDst = ctx->currentFramebuffer->texture.width;
-    void *pbDst = ctx->currentFramebuffer->texture.pixels;
-    PFfloat *zbDst = ctx->currentFramebuffer->zbuffer;
-    PFblendfunc blendFunction = ctx->blendFunction;
-    PFtexture *texture = ctx->currentTexture;
+    PFpixelgetter pixelGetter = currentCtx->currentFramebuffer->texture.pixelGetter;
+    PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
+    PFsizei widthDst = currentCtx->currentFramebuffer->texture.width;
+    void *pbDst = currentCtx->currentFramebuffer->texture.pixels;
+    PFfloat *zbDst = currentCtx->currentFramebuffer->zbuffer;
+    PFblendfunc blendFunction = currentCtx->blendFunction;
+    PFtexture *texture = currentCtx->currentTexture;
 
     PFfloat z1 = v1->homogeneous[2];
     PFfloat z2 = v2->homogeneous[2];
     PFfloat z3 = v3->homogeneous[2];
 
-    const PFboolean noDepth = !(ctx->state & PF_DEPTH_TEST);
-    const PFboolean lighting = (ctx->state & PF_LIGHTING) && ctx->activeLights;
-    const PFboolean texturing = (ctx->state & PF_TEXTURE) && ctx->currentTexture;
+    const PFboolean noDepth = !(currentCtx->state & PF_DEPTH_TEST);
+    const PFboolean lighting = (currentCtx->state & PF_LIGHTING) && currentCtx->activeLights;
+    const PFboolean texturing = (currentCtx->state & PF_TEXTURE) && currentCtx->currentTexture;
 
     /* Loop macro definition */
 
@@ -561,7 +557,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
                 PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
                 PFsizei xyOffset = yOffset + x; \
                 \
-                if (noDepth || ctx->depthFunction(z, zbDst[xyOffset])) \
+                if (noDepth || currentCtx->depthFunction(z, zbDst[xyOffset])) \
                 {
 
 #   define END_LOOP() \
@@ -584,7 +580,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
                 PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
                 PFsizei xyOffset = yOffset + x; \
                 \
-                if (noDepth || ctx->depthFunction(z, zbDst[xyOffset])) \
+                if (noDepth || currentCtx->depthFunction(z, zbDst[xyOffset])) \
                 {
 
 #   define END_LOOP() \
@@ -614,7 +610,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFMvec3 normal, position; \
         Helper_InterpolateVec3(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3); \
         Helper_InterpolateVec3(position, v1->position, v2->position, v3->position, aW1, aW2, aW3); \
-        fragment = Process_Lights(ctx->activeLights, &ctx->faceMaterial[faceToRender], fragment, viewPos, position, normal);
+        fragment = Process_Lights(currentCtx->activeLights, &currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal);
 
 #   define SET_FRAG() \
         PFcolor finalColor = blendFunction(fragment, pixelGetter(pbDst, xyOffset)); \

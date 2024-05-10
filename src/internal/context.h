@@ -101,7 +101,7 @@ typedef struct {
  * @brief Structure representing the main rendering context of the library.
  * TODO: Reorganize the context structure
  */
-struct PFctx {
+typedef struct {
 
     PFframebuffer *currentFramebuffer;                      ///< Pointer to the current framebuffer
     PFtexture *currentTexture;                              ///< Pointer to the current texture
@@ -162,6 +162,11 @@ struct PFctx {
 
     PFerrcode errCode;                                      ///< Last error code
     PFuint state;                                           ///< Current context state
-};
+} PFctx;
+
+/* Current thread local-thread declaration */
+
+extern PF_CTX_DECL PFctx *currentCtx;
+
 
 #endif //PF_INTERNAL_CONTEXT_H

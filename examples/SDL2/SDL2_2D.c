@@ -12,7 +12,7 @@ int main(void)
     Clock clock = Clock_Create(10);
 
     // Creating the PixelForge context
-    PFctx *ctx = PF_InitFromWindow(&window);
+    PFcontext ctx = PF_InitFromWindow(&window);
 
     // Draw a triangle once with color vertex interpolation
     pfBegin(PF_TRIANGLES);

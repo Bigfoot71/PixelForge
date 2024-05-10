@@ -21,7 +21,7 @@ int main(void)
 
     // Create a rendering buffer in RAM as well as in VRAM (see raylib_common.h)
     PF_TargetBuffer target = PF_LoadTargetBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
-    PFctx *ctx = PF_InitFromTargetBuffer(target); // PixelForge context
+    PFcontext ctx = PF_InitFromTargetBuffer(target); // PixelForge context
 
     // Init "flashlight"
     InitFlashLight();

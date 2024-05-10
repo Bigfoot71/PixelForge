@@ -12,7 +12,7 @@ int main(void)
 
     // Create a rendering buffer in RAM as well as in VRAM (see raylib_common.h)
     PF_TargetBuffer target = PF_LoadTargetBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
-    PFctx *ctx = PF_InitFromTargetBuffer(target); // PixelForge context
+    PFcontext ctx = PF_InitFromTargetBuffer(target); // PixelForge context
 
     // Load a 3D model with raylib
     Model model = LoadModel(RESOURCES_PATH "models/character.obj");

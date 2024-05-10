@@ -204,7 +204,7 @@ int main(void)
     Clock clock = Clock_Create(60);
 
     // Creating the PixelForge context
-    PFctx *ctx = PF_InitFromWindow(&window);
+    PFcontext ctx = PF_InitFromWindow(&window);
 
     // Init and reshape
     Gears_Init();

@@ -12,7 +12,7 @@ int main(void)
 
     // Create a rendering buffer in RAM as well as in VRAM (see raylib_common.h)
     PF_TargetBuffer target = PF_LoadTargetBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
-    PFctx *ctx = PF_InitFromTargetBuffer(target); // PixelForge context
+    PFcontext ctx = PF_InitFromTargetBuffer(target); // PixelForge context
 
     // Define the camera position and a phase for the rotation
     Vector3 camPos = { -7.5f, 5.0f, -7.5f };

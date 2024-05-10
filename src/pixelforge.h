@@ -22,24 +22,44 @@
 
 #include <stdint.h>
 
-#if defined(_WIN32)
-#   if defined(__TINYC__)
-#       define __declspec(x) __attribute__((x))
-#   endif
-#   if defined(PF_BUILD_SHARED)
-#       define PF_API __declspec(dllexport)
-#   elif defined(USE_LIBTYPE_SHARED)
-#       define PF_API __declspec(dllimport)
-#   endif
-#else
-#   if defined(PF_BUILD_SHARED)
-#       define PF_API __attribute__((visibility("default")))
-#   endif
-#endif //OS
+#ifndef PF_API
+#   if defined(_WIN32)
+#       if defined(__TINYC__)
+#           define __declspec(x) __attribute__((x))
+#       endif
+#       if defined(PF_BUILD_SHARED)
+#           define PF_API __declspec(dllexport)
+#       elif defined(USE_LIBTYPE_SHARED)
+#           define PF_API __declspec(dllimport)
+#       endif
+#   else
+#       if defined(PF_BUILD_SHARED)
+#           define PF_API __attribute__((visibility("default")))
+#       endif
+#   endif //OS
+#endif //PF_API
 
 #ifndef PF_API
     #define PF_API
 #endif //PF_API
+
+#ifndef PF_CTX_DECL
+#   if defined(__GNUC__) || defined(__clang__)
+#       if defined(PF_SUPPORT_OPENMP) && defined(__GNUC__)
+            // TODO: Using a global variable with __thread in GCC 11.4 seems to cause segmentation faults at runtime.
+            //       I haven't been able to obtain more information through debugging and some research. To investigate further.
+#           define PF_CTX_DECL
+#       else
+#           define PF_CTX_DECL __thread;
+#       endif
+#   elif defined(_MSC_VER)
+#       define PF_CTX_DECL __declspec(thread);
+#   endif
+#endif //PF_CTX_DECL
+
+#ifndef PF_CTX_DECL
+#   define PF_CTX_DECL
+#endif //PF_CTX_DECL
 
 #ifndef PF_MALLOC
 #   define PF_MALLOC(size) malloc(size)
@@ -119,7 +139,7 @@ typedef enum {
 
 /* Context definitions */
 
-typedef struct PFctx PFctx;     // NOTE: This type is opaque, API functions are used to modify its state
+typedef void* PFcontext; // NOTE: This type is opaque, API functions are used to modify its state
 
 typedef enum {
     PF_TEXTURE              = 0x0001,
@@ -366,7 +386,7 @@ extern "C" {
  *
  * @return Pointer to the created rendering context.
  */
-PF_API PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat);
+PF_API PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat);
 
 /**
  * @brief Deletes a rendering context.
@@ -375,7 +395,7 @@ PF_API PFctx* pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height,
  *
  * @param ctx Pointer to the rendering context to be deleted.
  */
-PF_API void pfDeleteContext(PFctx* ctx);
+PF_API void pfDeleteContext(PFcontext ctx);
 
 /**
  * @brief Sets the main buffer for rendering.
@@ -417,7 +437,7 @@ PF_API void pfSwapBuffers(void);
  *
  * @return Pointer to the current rendering context.
  */
-PF_API PFctx* pfGetCurrentContext(void);
+PF_API PFcontext pfGetCurrentContext(void);
 
 /**
  * @brief Sets the current rendering context.
@@ -426,7 +446,7 @@ PF_API PFctx* pfGetCurrentContext(void);
  *
  * @param ctx Pointer to the rendering context to be made current.
  */
-PF_API void pfMakeCurrent(PFctx* ctx);
+PF_API void pfMakeCurrent(PFcontext ctx);
 
 /**
  * @brief Checks if a rendering state is enabled.

@@ -13,7 +13,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     SetTimer(win.hwnd, 1, 16, NULL);
 
     // Creating the PixelForge context
-    PFctx *ctx = PF_InitFromWindow(&win);
+    PFcontext ctx = PF_InitFromWindow(&win);
 
     // Define the camera position and a phase for the rotation
     PFMvec3 camPos = { -2.0f, 1.5f, -2.0f };
