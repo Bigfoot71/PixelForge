@@ -2808,8 +2808,12 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
         // And multiply vertex color with diffuse color
         for (int_fast8_t i = 0; i < processedCounter; i++)
         {
-            pfmVec3Transform(processed[i].normal, processed[i].normal, matNormal);
-            pfmVec3Normalize(processed[i].normal, processed[i].normal);
+            pfmVec3TransformWT(processed[i].normal, processed[i].normal, 0.0f, matNormal);
+
+            if (currentCtx->state & PF_NORMALIZE)
+            {
+                pfmVec3Normalize(processed[i].normal, processed[i].normal);
+            }
 
             processed[i].color = pfBlendMultiplicative(processed[i].color,
                 currentCtx->faceMaterial[faceToRender].diffuse);
