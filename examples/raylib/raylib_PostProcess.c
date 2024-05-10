@@ -6,6 +6,8 @@
 
 static PFcolor DitherPixel(int x, int y, float z, PFcolor color)
 {
+    (void)z;
+
     static const uint8_t ditherMatrix[3][3] = {
         { 230, 51, 128 },
         { 25, 102, 179 },
