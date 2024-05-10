@@ -2703,15 +2703,15 @@ static void ProcessRasterize_Line(const PFMmat4 mvp)
     if (processedCounter != 2) return;
 
     // Rasterize line (review condition)
-    if (currentCtx->lineWidth > 1.0f + 1e-5f)
+    if (currentCtx->lineWidth > 1.5f)
     {
-        (currentCtx->state & PF_DEPTH_TEST ?
-            Rasterize_Line_THICK_DEPTH : Rasterize_Line_THICK_NODEPTH)(&processed[0], &processed[1]);
+        (currentCtx->state & PF_DEPTH_TEST ? Rasterize_Line_THICK_DEPTH
+            : Rasterize_Line_THICK_NODEPTH)(&processed[0], &processed[1]);
     }
     else
     {
-        (currentCtx->state & PF_DEPTH_TEST ?
-            Rasterize_Line_DEPTH : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
+        (currentCtx->state & PF_DEPTH_TEST ? Rasterize_Line_DEPTH
+            : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
     }
 }
 
@@ -2730,16 +2730,16 @@ static void ProcessRasterize_PolygonLines(const PFMmat4 mvp, int_fast8_t vertexC
         Process_ProjectAndClipLine(processed, &processedCounter, mvp);
         if (processedCounter != 2) return;
 
-        // Rasterize line (review condition)
-        if (currentCtx->lineWidth > 1.0f + 1e-5f)
+        // Rasterize line
+        if (currentCtx->lineWidth > 1.5f)
         {
-            (currentCtx->state & PF_DEPTH_TEST ?
-                Rasterize_Line_THICK_DEPTH : Rasterize_Line_THICK_NODEPTH)(&processed[0], &processed[1]);
+            (currentCtx->state & PF_DEPTH_TEST ? Rasterize_Line_THICK_DEPTH
+                : Rasterize_Line_THICK_NODEPTH)(&processed[0], &processed[1]);
         }
         else
         {
-            (currentCtx->state & PF_DEPTH_TEST ?
-                Rasterize_Line_DEPTH : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
+            (currentCtx->state & PF_DEPTH_TEST ? Rasterize_Line_DEPTH
+                : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
         }
     }
 }
