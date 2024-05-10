@@ -17,6 +17,7 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
+#include "internal/context.h"
 #include "internal/config.h"
 #include "pixelforge.h"
 #include "pfm.h"
@@ -25,11 +26,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <math.h>
-
-/* Including internal function prototypes */
-
-extern PFerrcode* pfInternal_GetErrorPtr(void);
-
 
 /* Internal convert functions */
 
@@ -379,7 +375,10 @@ void pfInternal_GetPixelGetterSetter(PFpixelgetter* getter, PFpixelsetter* sette
             break;
 
         default:
-            *pfInternal_GetErrorPtr() = PF_INVALID_ENUM;
+            if (currentCtx)
+            {
+                currentCtx->errCode = PF_INVALID_ENUM;
+            }
             break;
     }
 }
@@ -403,7 +402,10 @@ PFsizei pfInternal_GetPixelBytes(PFpixelformat format)
         case PF_PIXELFORMAT_R16G16B16A16:   return 2*4;
 
         default:
-            *pfInternal_GetErrorPtr() = PF_INVALID_ENUM;
+            if (currentCtx)
+            {
+                currentCtx->errCode = PF_INVALID_ENUM;
+            }
             break;
     }
 
@@ -435,7 +437,10 @@ PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat format
 
     if (!texture.pixels)
     {
-        *pfInternal_GetErrorPtr() = PF_ERROR_OUT_OF_MEMORY;
+        if (currentCtx->errCode)
+        {
+            currentCtx->errCode = PF_ERROR_OUT_OF_MEMORY;
+        }
         return texture;
     }
 
@@ -454,7 +459,10 @@ PFtexture pfGenTextureBufferColor(PFsizei width, PFsizei height, PFcolor color, 
 
     if (!texture.pixels)
     {
-        *pfInternal_GetErrorPtr() = PF_ERROR_OUT_OF_MEMORY;
+        if (currentCtx->errCode)
+        {
+            currentCtx->errCode = PF_ERROR_OUT_OF_MEMORY;
+        }
         return texture;
     }
 

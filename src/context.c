@@ -408,11 +408,6 @@ PFerrcode pfGetError(void)
     return errCode;
 }
 
-PFerrcode* pfInternal_GetErrorPtr(void)
-{
-    return &currentCtx->errCode;
-}
-
 
 /* Matrix management API functions */
 

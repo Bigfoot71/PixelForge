@@ -17,15 +17,11 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
+#include "internal/context.h"
 #include "internal/config.h"
 #include "pixelforge.h"
 #include <stdlib.h>
 #include <float.h>
-
-/* Including internal function prototypes */
-
-PFerrcode* pfInternal_GetErrorPtr(void);
-
 
 /* Framebuffer functions */
 
@@ -39,9 +35,12 @@ PFframebuffer pfGenFramebuffer(PFsizei width, PFsizei height, PFpixelformat form
 
     if (!zbuffer)
     {
-        *pfInternal_GetErrorPtr() = PF_ERROR_OUT_OF_MEMORY;
-        pfDeleteTexture(&texture);
+        if (currentCtx)
+        {
+            currentCtx->errCode = PF_ERROR_OUT_OF_MEMORY;
+        }
 
+        pfDeleteTexture(&texture);
         return (PFframebuffer) { 0 };
     }
 
