@@ -33,6 +33,10 @@ void pfGetBooleanv(PFenum pname, PFboolean* params)
             *params = ctx->state & PF_TEXTURE;
             break;
 
+        case PF_FRAMEBUFFER:
+            *params = ctx->state & PF_FRAMEBUFFER;
+            break;
+
         case PF_DEPTH_TEST:
             *params = ctx->state & PF_DEPTH_TEST;
             break;
@@ -523,6 +527,10 @@ void pfGetPointerv(PFenum pname, const void** params)
     {
         case PF_TEXTURE:
             *params = ctx->currentTexture;
+            break;
+
+        case PF_FRAMEBUFFER:
+            *params = ctx->bindedFramebuffer;
             break;
 
         case PF_BLEND_FUNC:
