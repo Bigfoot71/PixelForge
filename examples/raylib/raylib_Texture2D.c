@@ -27,7 +27,6 @@ int main(void)
     PF_TargetBuffer target = PF_LoadTargetBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
     PFcontext ctx = PF_InitFromTargetBuffer(target); // PixelForge context
     PF_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
-    pfBlendFunc(pfBlendAlpha);
 
     // We load background as an raylib Image to draw it with pfDrawPixels
     Image imBG = LoadImage(RESOURCES_PATH "images/PixelForge.png");
@@ -38,8 +37,8 @@ int main(void)
     // We create an arrow that will follow the mouse cursor
     Arrow arrow = Arrow_Create();
 
-    // Enable texture rendering
-    pfEnable(PF_TEXTURE);
+    // Enable texture rendering and color blending (alpha-blending by default)
+    pfEnable(PF_TEXTURE | PF_BLEND);
 
     // Main loop
     while (!WindowShouldClose())

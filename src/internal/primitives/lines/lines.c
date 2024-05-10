@@ -195,7 +195,9 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
     PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
     PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
-    PFblendfunc blendFunc = currentCtx->blendFunction;
+
+    PFblendfunc blendFunc = currentCtx->state & PF_BLEND ?
+        currentCtx->blendFunction : NULL;
 
     void *bufDst = fbDst->texture.pixels;
     PFsizei wDst = fbDst->texture.width;
@@ -247,12 +249,12 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
 
-            PFcolor src = Helper_LerpColor(c1, c2, t);
-            PFcolor dst = pixelGetter(bufDst, pOffset);
+            PFcolor finalColor = Helper_LerpColor(c1, c2, t);
 
-            PFcolor finalColor = blendFunc(src, dst);
+            if (blendFunc) finalColor = blendFunc(
+                finalColor, pixelGetter(bufDst, pOffset));
+
             pixelSetter(bufDst, pOffset, finalColor);
-
             zbDst[pOffset] = z;
         }
     }
@@ -267,12 +269,12 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
 
-            PFcolor src = Helper_LerpColor(c1, c2, t);
-            PFcolor dst = pixelGetter(bufDst, pOffset);
+            PFcolor finalColor = Helper_LerpColor(c1, c2, t);
 
-            PFcolor finalColor = blendFunc(src, dst);
+            if (blendFunc) finalColor = blendFunc(
+                finalColor, pixelGetter(bufDst, pOffset));
+
             pixelSetter(bufDst, pOffset, finalColor);
-
             zbDst[pOffset] = z;
         }
     }
@@ -286,7 +288,9 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
 
     PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
     PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
-    PFblendfunc blendFunc = currentCtx->blendFunction;
+
+    PFblendfunc blendFunc = currentCtx->state & PF_BLEND ?
+        currentCtx->blendFunction : NULL;
 
     void *bufDst = fbDst->texture.pixels;
     PFsizei wDst = fbDst->texture.width;
@@ -337,17 +341,15 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
             PFfloat z = z1 + t*(z2 - z1);
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
-            PFfloat *zp = zbDst + pOffset;
-
-            if (currentCtx->depthFunction(z, *zp))
+            if (currentCtx->depthFunction(z, zbDst[pOffset]))
             {
-                PFcolor src = Helper_LerpColor(c1, c2, t);
-                PFcolor dst = pixelGetter(bufDst, pOffset);
+                PFcolor finalColor = Helper_LerpColor(c1, c2, t);
 
-                PFcolor finalColor = blendFunc(src, dst);
+                if (blendFunc) finalColor = blendFunc(
+                    finalColor, pixelGetter(bufDst, pOffset));
+
                 pixelSetter(bufDst, pOffset, finalColor);
-
-                *zp = z;
+                zbDst[pOffset] = z;
             }
         }
     }
@@ -361,17 +363,15 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
             PFfloat z = z1 + t*(z2 - z1);
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
-            PFfloat *zp = zbDst + pOffset;
-
-            if (currentCtx->depthFunction(z, *zp))
+            if (currentCtx->depthFunction(z, zbDst[pOffset]))
             {
-                PFcolor src = Helper_LerpColor(c1, c2, t);
-                PFcolor dst = pixelGetter(bufDst, pOffset);
+                PFcolor finalColor = Helper_LerpColor(c1, c2, t);
 
-                PFcolor finalColor = blendFunc(src, dst);
+                if (blendFunc) finalColor = blendFunc(
+                    finalColor, pixelGetter(bufDst, pOffset));
+
                 pixelSetter(bufDst, pOffset, finalColor);
-
-                *zp = z;
+                zbDst[pOffset] = z;
             }
         }
     }

@@ -144,20 +144,20 @@ typedef void* PFcontext; // NOTE: This type is opaque, API functions are used to
 typedef enum {
     PF_TEXTURE              = 0x0001,
     PF_FRAMEBUFFER          = 0x0002,
-    PF_DEPTH_TEST           = 0x0004,
-    PF_CULL_FACE            = 0x0008,
-    PF_NORMALIZE            = 0x0010,
-    PF_LIGHTING             = 0x0020,
-    PF_COLOR_MATERIAL       = 0x0040,
-    PF_VERTEX_ARRAY         = 0x0080,
-    PF_NORMAL_ARRAY         = 0x0100,
-    PF_COLOR_ARRAY          = 0x0200,
-    PF_TEXTURE_COORD_ARRAY  = 0x0400,
+    PF_BLEND                = 0x0004,
+    PF_DEPTH_TEST           = 0x0008,
+    PF_CULL_FACE            = 0x0010,
+    PF_NORMALIZE            = 0x0020,
+    PF_LIGHTING             = 0x0040,
+    PF_COLOR_MATERIAL       = 0x0080,
+    PF_VERTEX_ARRAY         = 0x0100,
+    PF_NORMAL_ARRAY         = 0x0200,
+    PF_COLOR_ARRAY          = 0x0400,
+    PF_TEXTURE_COORD_ARRAY  = 0x0800,
 } PFstate;
 
 typedef enum {
-    PF_BLEND                            = 10000,      // TODO REVIEW: Move to PFstate if you decide to review the color mixing mechanism
-    PF_VIEWPORT,
+    PF_VIEWPORT                         = 10000,
     PF_COLOR_CLEAR_VALUE,
     PF_DEPTH_CLEAR_VALUE,
     PF_CULL_FACE_MODE,
@@ -1747,8 +1747,6 @@ PF_API PFcolor pfGetTextureSample(const PFtexture* texture, PFfloat u, PFfloat v
  *  These functions are intended to be used with `pfBlendFunc` to define the blend mode.
  *  You can also define your own functions following the signature of `PFblendfunc`.
  */
-
-PF_API PFcolor pfBlendDisabled(PFcolor source, PFcolor destination);
 
 PF_API PFcolor pfBlend(PFcolor source, PFcolor destination);
 PF_API PFcolor pfBlendAlpha(PFcolor source, PFcolor destination);

@@ -35,6 +35,10 @@ void pfGetBooleanv(PFenum pname, PFboolean* params)
             *params = currentCtx->state & PF_FRAMEBUFFER;
             break;
 
+        case PF_BLEND:
+            *params = currentCtx->state & PF_BLEND;
+            break;
+
         case PF_DEPTH_TEST:
             *params = currentCtx->state & PF_DEPTH_TEST;
             break;
@@ -72,10 +76,6 @@ void pfGetBooleanv(PFenum pname, PFboolean* params)
             break;
 
         /* Other values */
-
-        case PF_BLEND:
-            *params = currentCtx->blendFunction != pfBlendDisabled;
-            break;
 
         //case PF_CURRENT_RASTER_POSITION_VALID:
         //  break;

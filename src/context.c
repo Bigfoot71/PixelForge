@@ -156,7 +156,7 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
     /* Initialization of default rendering members */
 
     ctx->currentDrawMode = 0;
-    ctx->blendFunction = pfBlendDisabled;
+    ctx->blendFunction = pfBlendAlpha;
     ctx->depthFunction = pfDepthLess;
     ctx->clearColor = (PFcolor) { 0 };
     ctx->clearDepth = FLT_MAX;
