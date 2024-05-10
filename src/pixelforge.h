@@ -142,7 +142,7 @@ typedef enum {
 typedef void* PFcontext; // NOTE: This type is opaque, API functions are used to modify its state
 
 typedef enum {
-    PF_TEXTURE              = 0x0001,
+    PF_TEXTURE_2D           = 0x0001,
     PF_FRAMEBUFFER          = 0x0002,
     PF_BLEND                = 0x0004,
     PF_DEPTH_TEST           = 0x0008,
@@ -199,9 +199,10 @@ typedef enum {
     PF_MATRIX_MODE,
     PF_PROJECTION_MATRIX,
     PF_MODELVIEW_MATRIX,
+    PF_TEXTURE_MATRIX,
     PF_MAX_PROJECTION_STACK_DEPTH,
     PF_MAX_MODELVIEW_STACK_DEPTH,
-    //PF_MAX_TEXTURE_STACK_DEPTH,
+    PF_MAX_TEXTURE_STACK_DEPTH,
     PF_SHADE_MODEL,
     PF_MAX_LIGHTS,
     PF_VERTEX_ARRAY_SIZE,
@@ -253,6 +254,7 @@ typedef enum {
 typedef enum {
     PF_MODELVIEW,
     PF_PROJECTION,
+    PF_TEXTURE,
 } PFmatrixmode;
 
 typedef enum {
@@ -780,7 +782,7 @@ PF_API void pfBindFramebuffer(PFframebuffer* framebuffer);
 /**
  * @brief Binds the specified texture for subsequent rendering operations.
  *
- * Once the texture is bound to the current context, the PF_TEXTURE state
+ * Once the texture is bound to the current context, the PF_TEXTURE_2D state
  * must be active for the bound texture to be considered during rendering.
  *
  * @warning This function needs a context to be defined.

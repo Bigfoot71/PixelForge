@@ -229,17 +229,19 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
     /* Initialization of default matrices */
 
     ctx->currentMatrixMode = PF_MODELVIEW;
-    ctx->currentMatrix = &ctx->view;
+    ctx->currentMatrix = &ctx->matView;
 
-    pfmMat4Ortho(ctx->projection, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
-    pfmMat4Identity(ctx->model);
-    pfmMat4Identity(ctx->view);
+    pfmMat4Ortho(ctx->matProjection, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
+    pfmMat4Identity(ctx->matTexture);
+    pfmMat4Identity(ctx->matModel);
+    pfmMat4Identity(ctx->matView);
 
     /* Initialization of matrix stack counters */
 
-    ctx->stackModelviewCounter = 0;
-    ctx->stackProjectionCounter = 0;
     ctx->modelMatrixUsed = PF_FALSE;
+    ctx->stackProjectionCounter = 0;
+    ctx->stackModelviewCounter = 0;
+    ctx->stackTextureCounter = 0;
 
     /* Initialization of vertex and texture attributes */
 
@@ -419,12 +421,16 @@ void pfMatrixMode(PFmatrixmode mode)
     switch (mode)
     {
         case PF_PROJECTION:
-            currentCtx->currentMatrix = &currentCtx->projection;
+            currentCtx->currentMatrix = &currentCtx->matProjection;
             break;
 
         case PF_MODELVIEW:
             currentCtx->currentMatrix = currentCtx->modelMatrixUsed
-                ? &currentCtx->model : &currentCtx->view;
+                ? &currentCtx->matModel : &currentCtx->matView;
+            break;
+
+        case PF_TEXTURE:
+            currentCtx->currentMatrix = &currentCtx->matTexture;
             break;
 
         default:
@@ -447,7 +453,7 @@ void pfPushMatrix(void)
                 return;
             }
 
-            pfmMat4Copy(currentCtx->stackProjection[currentCtx->stackProjectionCounter], currentCtx->projection);
+            pfmMat4Copy(currentCtx->stackProjection[currentCtx->stackProjectionCounter], currentCtx->matProjection);
             currentCtx->stackProjectionCounter++;
         }
         break;
@@ -462,14 +468,27 @@ void pfPushMatrix(void)
 
             if (currentCtx->modelMatrixUsed)
             {
-                pfmMat4Copy(currentCtx->stackModelview[currentCtx->stackModelviewCounter], currentCtx->model);
+                pfmMat4Copy(currentCtx->stackModelview[currentCtx->stackModelviewCounter], currentCtx->matModel);
                 currentCtx->stackModelviewCounter++;
             }
             else
             {
-                currentCtx->currentMatrix = &currentCtx->model;
+                currentCtx->currentMatrix = &currentCtx->matModel;
                 currentCtx->modelMatrixUsed = PF_TRUE;
             }
+        }
+        break;
+
+        case PF_TEXTURE:
+        {
+            if (currentCtx->stackTextureCounter >= PF_MAX_TEXTURE_STACK_SIZE)
+            {
+                currentCtx->errCode = PF_STACK_OVERFLOW;
+                return;
+            }
+
+            pfmMat4Copy(currentCtx->stackTexture[currentCtx->stackTextureCounter], currentCtx->matTexture);
+            currentCtx->stackTextureCounter++;
         }
         break;
     }
@@ -488,7 +507,7 @@ void pfPopMatrix(void)
             }
 
             currentCtx->stackProjectionCounter--;
-            pfmMat4Copy(currentCtx->projection, currentCtx->stackProjection[currentCtx->stackProjectionCounter]);
+            pfmMat4Copy(currentCtx->matProjection, currentCtx->stackProjection[currentCtx->stackProjectionCounter]);
         }
         break;
 
@@ -502,15 +521,28 @@ void pfPopMatrix(void)
                     return;
                 }
 
-                pfmMat4Identity(currentCtx->model);
+                pfmMat4Identity(currentCtx->matModel);
                 currentCtx->modelMatrixUsed = PF_FALSE;
-                currentCtx->currentMatrix = &currentCtx->view;
+                currentCtx->currentMatrix = &currentCtx->matView;
             }
             else
             {
                 currentCtx->stackModelviewCounter--;
-                pfmMat4Copy(currentCtx->model, currentCtx->stackModelview[currentCtx->stackModelviewCounter]);
+                pfmMat4Copy(currentCtx->matModel, currentCtx->stackModelview[currentCtx->stackModelviewCounter]);
             }
+        }
+        break;
+
+        case PF_TEXTURE:
+        {
+            if (currentCtx->stackTextureCounter <= 0)
+            {
+                currentCtx->errCode = PF_STACK_UNDERFLOW;
+                return;
+            }
+
+            currentCtx->stackTextureCounter--;
+            pfmMat4Copy(currentCtx->matTexture, currentCtx->stackTexture[currentCtx->stackTextureCounter]);
         }
         break;
     }
@@ -2012,11 +2044,21 @@ void pfTexCoord2f(PFfloat u, PFfloat v)
 {
     currentCtx->currentTexcoord[0] = u;
     currentCtx->currentTexcoord[1] = v;
+
+    pfmVec2Transform(
+        currentCtx->currentTexcoord,
+        currentCtx->currentTexcoord,
+        currentCtx->matTexture);
 }
 
 void pfTexCoordfv(const PFfloat* v)
 {
     memcpy(currentCtx->currentTexcoord, v, sizeof(PFMvec2));
+
+    pfmVec2Transform(
+        currentCtx->currentTexcoord,
+        currentCtx->currentTexcoord,
+        currentCtx->matTexture);
 }
 
 void pfNormal3f(PFfloat x, PFfloat y, PFfloat z)
@@ -2626,16 +2668,16 @@ void pfPostProcess(PFpostprocessfunc postProcessFunction)
 void GetMVP(PFMmat4 outMVP, PFMmat4 outMatNormal, PFMmat4 outModelview)
 {
     PFMmat4 modelview;
-    pfmMat4Mul(modelview, currentCtx->model, currentCtx->view);
+    pfmMat4Mul(modelview, currentCtx->matModel, currentCtx->matView);
 
     if (outMVP)
     {
-        pfmMat4Mul(outMVP, modelview, currentCtx->projection);
+        pfmMat4Mul(outMVP, modelview, currentCtx->matProjection);
     }
 
     if (outMatNormal) // TODO REVIEW: Only calculate it when PF_LIGHTING state is activated??
     {
-        pfmMat4Invert(outMatNormal, currentCtx->model);
+        pfmMat4Invert(outMatNormal, currentCtx->matModel);
         pfmMat4Transpose(outMatNormal, outMatNormal);
     }
 
@@ -2791,7 +2833,7 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
     if (lighting)
     {
         PFMmat4 invMatView;
-        pfmMat4Invert(invMatView, currentCtx->view);
+        pfmMat4Invert(invMatView, currentCtx->matView);
         pfmVec3Copy(viewPos, invMatView + 12);
     }
 

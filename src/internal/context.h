@@ -158,14 +158,17 @@ typedef struct {
 
     PFfog fog;                                              ///< Fog properties (see PFfog)
 
-    PFMmat4 projection;                                     ///< Default projection matrix
-    PFMmat4 model;                                          ///< Default model matrix (the one used if we push in PF_MODELVIEW mode)
-    PFMmat4 view;                                           ///< Default view matrix (the default one used in PF_MODELVIEW mode)
+    PFMmat4 matProjection;                                  ///< Default projection matrix
+    PFMmat4 matTexture;                                     ///< Default texture matrix
+    PFMmat4 matModel;                                       ///< Default model matrix (the one used if we push in PF_MODELVIEW mode)
+    PFMmat4 matView;                                        ///< Default view matrix (the default one used in PF_MODELVIEW mode)
 
     PFMmat4 stackProjection[PF_MAX_PROJECTION_STACK_SIZE];  ///< Projection matrix stack for push/pop operations
     PFMmat4 stackModelview[PF_MAX_MODELVIEW_STACK_SIZE];    ///< Modelview matrix stack for push/pop operations
+    PFMmat4 stackTexture[PF_MAX_TEXTURE_STACK_SIZE];        ///< Texture matrix stack for push/pop operations
     PFsizei stackProjectionCounter;                         ///< Counter for matrix stack operations
     PFsizei stackModelviewCounter;                          ///< Counter for matrix stack operations
+    PFsizei stackTextureCounter;                            ///< Counter for matrix stack operations
 
     PFmatrixmode currentMatrixMode;                         ///< Current matrix mode (e.g., PF_MODELVIEW, PF_PROJECTION)
     PFboolean modelMatrixUsed;                              ///< Flag indicating if the model matrix is used

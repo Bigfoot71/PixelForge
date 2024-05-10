@@ -7,64 +7,67 @@
 int main(void)
 {
     // Init raylib window and set target FPS
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "PixelForge - Textured Model");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "PixelForge - Water");
     SetTargetFPS(60);
 
     // Create a rendering buffer in RAM as well as in VRAM (see raylib_common.h)
     PF_TargetBuffer target = PF_LoadTargetBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
     PFcontext ctx = PF_InitFromTargetBuffer(target); // PixelForge context
 
-    // Load a 3D model with raylib
-    Model model = LoadModel(RESOURCES_PATH "models/character.obj");
-    PFtexture modelDiffuse = PF_LoadTexture(RESOURCES_PATH "images/character.png");
-
     // Define the camera position and a phase for the rotation
-    Vector3 camPos = { 35.0f, 30.0f, 35.0f };
-    float timer = 0;
+    const Vector3 camPos = { -20.0f, 10.0f, -20.0f };
 
-    // Activate texture rendering
+    // Load texture and enable texture render mode
+    PFtexture texture = PF_LoadTexture(RESOURCES_PATH "images/water.png");
     pfEnable(PF_TEXTURE_2D);
 
-    // Start the main loop
+    // Texture translation
+    float translate = 0.0f;
+
     while (!WindowShouldClose())
     {
-        // Update camera position
-        camPos.x = 35.0f * cosf(timer);
-        camPos.z = 35.0f * sinf(timer);
-        timer += GetFrameTime();
-
         // Clear the destination buffer (RAM)
         pfClear(PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT);
 
         // Draw something on each iteration of the main loop
         PF_Begin3D(SCREEN_WIDTH, SCREEN_HEIGHT, 60.0);
         {
-            PF_Update3D(camPos.x, camPos.y, camPos.z, 0, 12.5f, 0);
+            PF_Update3D(camPos.x, camPos.y, camPos.z, 0, 0, 0);
 
-            PF_DrawGrid(10.0f, 10.0f);
+            pfMatrixMode(PF_TEXTURE);
+            pfLoadIdentity();
 
-            pfBindTexture(&modelDiffuse);
-                PF_DrawModel(model, (Vector3) { 0 }, 1.5f, WHITE);
-            pfBindTexture(0);
+            translate += GetFrameTime();
+            pfTranslatef(translate, translate, 0);
+
+            pfMatrixMode(PF_MODELVIEW);
+            pfBindTexture(&texture);
+            pfBegin(PF_QUADS);
+
+                pfTexCoord2f(0, 0);
+                pfVertex3f(-1000, 0, -1000);
+
+                pfTexCoord2f(0, 200);
+                pfVertex3f(-1000, 0, 1000);
+
+                pfTexCoord2f(200, 200);
+                pfVertex3f(1000, 0, 1000);
+
+                pfTexCoord2f(200, 0);
+                pfVertex3f(1000, 0, -1000);
+
+            pfEnd();
+            pfBindTexture(NULL);
         }
         PF_End3D();
 
         // Texture rendering via raylib
         BeginDrawing();
-        {
             ClearBackground(BLACK);
-
-            PF_DrawTargetBuffer(target, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT); // Update and draw final texture
+            PF_DrawTargetBuffer(target, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
             DrawFPS(10, 10);
-
-            DrawText("Model made by Ilya Anchouz Danilov", 4, SCREEN_HEIGHT-28, 24, WHITE);
-        }
         EndDrawing();
     }
-
-    // Unload assets
-    UnloadModel(model);
-    pfDeleteTexture(&modelDiffuse);
 
     // Unload the PixelForge context and the target buffer
     pfDeleteContext(ctx);
@@ -75,4 +78,3 @@ int main(void)
 
     return 0;
 }
-

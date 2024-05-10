@@ -38,7 +38,7 @@ int main(void)
     Arrow arrow = Arrow_Create();
 
     // Enable texture rendering and color blending (alpha-blending by default)
-    pfEnable(PF_TEXTURE | PF_BLEND);
+    pfEnable(PF_TEXTURE_2D | PF_BLEND);
 
     // Main loop
     while (!WindowShouldClose())

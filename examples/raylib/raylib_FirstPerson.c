@@ -84,13 +84,13 @@ int main(void)
 
         PF_BeginMode3D(camera);
         {
-            pfEnable(PF_TEXTURE);
+            pfEnable(PF_TEXTURE_2D);
             pfBindTexture(&texMap);
 
                 PF_DrawModel(model, (Vector3) { 0 }, 1.0f, WHITE);
 
             pfBindTexture(0);
-            pfDisable(PF_TEXTURE);
+            pfDisable(PF_TEXTURE_2D);
         }
         PF_EndMode3D();
 

@@ -38,6 +38,11 @@ add_executable(raylib_Texture2D ${PF_ROOT_PATH}/examples/raylib/raylib_Texture2D
 target_link_libraries(raylib_Texture2D PRIVATE pixelforge raylib m)
 target_include_directories(raylib_Texture2D PRIVATE ${PF_ROOT_PATH}/src)
 
+# Texture Matrix example
+add_executable(raylib_TextureMatrix ${PF_ROOT_PATH}/examples/raylib/raylib_TextureMatrix.c)
+target_link_libraries(raylib_TextureMatrix PRIVATE pixelforge raylib m)
+target_include_directories(raylib_TextureMatrix PRIVATE ${PF_ROOT_PATH}/src)
+
 # Textured 3D Model example
 add_executable(raylib_ModelTextured ${PF_ROOT_PATH}/examples/raylib/raylib_ModelTextured.c)
 target_link_libraries(raylib_ModelTextured PRIVATE pixelforge raylib m)

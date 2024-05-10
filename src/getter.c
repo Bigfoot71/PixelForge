@@ -27,8 +27,8 @@ void pfGetBooleanv(PFenum pname, PFboolean* params)
     {
         /* State context */
 
-        case PF_TEXTURE:
-            *params = currentCtx->state & PF_TEXTURE;
+        case PF_TEXTURE_2D:
+            *params = currentCtx->state & PF_TEXTURE_2D;
             break;
 
         case PF_FRAMEBUFFER:
@@ -178,9 +178,9 @@ void pfGetIntegerv(PFenum pname, PFint* params)
             *params = PF_MAX_MODELVIEW_STACK_SIZE;
             break;
 
-        //case PF_MAX_TEXTURE_STACK_DEPTH:
-        //    *params = PF_MAX_MATRIX_TEXTURE_STACK_SIZE;
-        //    break;
+        case PF_MAX_TEXTURE_STACK_DEPTH:
+            *params = PF_MAX_TEXTURE_STACK_SIZE;
+            break;
 
         case PF_SHADE_MODEL:
             *params = currentCtx->shadingMode;
@@ -245,10 +245,10 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
     switch (pname)
     {
         case PF_COLOR_CLEAR_VALUE:
-            params[0] = currentCtx->clearColor.r * INV_255;
-            params[1] = currentCtx->clearColor.g * INV_255;
-            params[2] = currentCtx->clearColor.b * INV_255;
-            params[3] = currentCtx->clearColor.a * INV_255;
+            params[0] = currentCtx->clearColor.r*INV_255;
+            params[1] = currentCtx->clearColor.g*INV_255;
+            params[2] = currentCtx->clearColor.b*INV_255;
+            params[3] = currentCtx->clearColor.a*INV_255;
             break;
 
         case PF_DEPTH_CLEAR_VALUE:
@@ -256,10 +256,10 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
             break;
 
         case PF_CURRENT_COLOR:
-            params[0] = currentCtx->currentColor.r * INV_255;
-            params[1] = currentCtx->currentColor.g * INV_255;
-            params[2] = currentCtx->currentColor.b * INV_255;
-            params[3] = currentCtx->currentColor.a * INV_255;
+            params[0] = currentCtx->currentColor.r*INV_255;
+            params[1] = currentCtx->currentColor.g*INV_255;
+            params[2] = currentCtx->currentColor.b*INV_255;
+            params[3] = currentCtx->currentColor.a*INV_255;
             break;
 
         case PF_CURRENT_NORMAL:
@@ -329,16 +329,20 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
         //  break;
 
         case PF_PROJECTION_MATRIX:
-            memcpy(params, currentCtx->projection, sizeof(PFMmat4));
+            memcpy(params, currentCtx->matProjection, sizeof(PFMmat4));
             break;
 
         case PF_MODELVIEW_MATRIX:
         {
             PFMmat4 modelview;
-            pfmMat4Mul(modelview, currentCtx->model, currentCtx->view);
+            pfmMat4Mul(modelview, currentCtx->matModel, currentCtx->matView);
             memcpy(params, modelview, sizeof(PFMmat4));
         }
         break;
+
+        case PF_TEXTURE_MATRIX:
+            memcpy(params, currentCtx->matTexture, sizeof(PFMmat4));
+            break;
 
         case PF_ZOOM_X:
             *params = currentCtx->pixelZoom[0];
@@ -359,10 +363,10 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
     switch (pname)
     {
         case PF_COLOR_CLEAR_VALUE:
-            params[0] = currentCtx->clearColor.r * INV_255;
-            params[1] = currentCtx->clearColor.g * INV_255;
-            params[2] = currentCtx->clearColor.b * INV_255;
-            params[3] = currentCtx->clearColor.a * INV_255;
+            params[0] = currentCtx->clearColor.r*INV_255;
+            params[1] = currentCtx->clearColor.g*INV_255;
+            params[2] = currentCtx->clearColor.b*INV_255;
+            params[3] = currentCtx->clearColor.a*INV_255;
             break;
 
         case PF_DEPTH_CLEAR_VALUE:
@@ -370,10 +374,10 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
             break;
 
         case PF_CURRENT_COLOR:
-            params[0] = currentCtx->currentColor.r * INV_255;
-            params[1] = currentCtx->currentColor.g * INV_255;
-            params[2] = currentCtx->currentColor.b * INV_255;
-            params[3] = currentCtx->currentColor.a * INV_255;
+            params[0] = currentCtx->currentColor.r*INV_255;
+            params[1] = currentCtx->currentColor.g*INV_255;
+            params[2] = currentCtx->currentColor.b*INV_255;
+            params[3] = currentCtx->currentColor.a*INV_255;
             break;
 
         case PF_CURRENT_NORMAL:
@@ -446,7 +450,7 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
         {
             for (int_fast8_t i = 0; i < 16; i++)
             {
-                params[i] = currentCtx->projection[i];
+                params[i] = currentCtx->matProjection[i];
             }
         }
         break;
@@ -454,11 +458,20 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
         case PF_MODELVIEW_MATRIX:
         {
             PFMmat4 modelview;
-            pfmMat4Mul(modelview, currentCtx->model, currentCtx->view);
+            pfmMat4Mul(modelview, currentCtx->matModel, currentCtx->matView);
 
             for (int_fast8_t i = 0; i < 16; i++)
             {
                 params[i] = modelview[i];
+            }
+        }
+        break;
+
+        case PF_TEXTURE_MATRIX:
+        {
+            for (int_fast8_t i = 0; i < 16; i++)
+            {
+                params[i] = currentCtx->matTexture[i];
             }
         }
         break;
@@ -481,7 +494,7 @@ void pfGetPointerv(PFenum pname, const void** params)
 {
     switch (pname)
     {
-        case PF_TEXTURE:
+        case PF_TEXTURE_2D:
             *params = currentCtx->currentTexture;
             break;
 

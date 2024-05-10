@@ -29,7 +29,7 @@ int main(void)
     float timer = 0;
 
     // Enable texture rendering
-    pfEnable(PF_TEXTURE);
+    pfEnable(PF_TEXTURE_2D);
 
     while (!WindowShouldClose())
     {
