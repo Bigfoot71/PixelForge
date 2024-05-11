@@ -43,21 +43,10 @@ static PFvertex Helper_LerpVertex(const PFvertex* start, const PFvertex* end, PF
 static PFboolean Helper_FaceCanBeRendered(PFface faceToRender, PFfloat* area, const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 p3);
 static void Helper_SortVertices(const PFvertex** v1, const PFvertex** v2, const PFvertex** v3);
 
-static void Helper_InterpolateVec3(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, PFfloat t);
-static void Helper_InterpolateVec2(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, PFfloat t);
-
 static PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFfloat t);
 static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFfloat t);
 
 #else //PF_BARYCENTRIC_RASTER_METHOD
-
-// NOTE: Used to interpolate texture coordinates
-static void Helper_InterpolateVec2(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, PFfloat w1, PFfloat w2, PFfloat w3);
-
-#ifndef PF_GOURAUD_SHADING
-// NOTE: Used for interpolating vertices and normals when rendering light by fragment
-static void Helper_InterpolateVec3(PFMvec2 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, PFfloat w1, PFfloat w2, PFfloat w3);
-#endif //PF_GOURAUD_SHADING
 
 static PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3);
 static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3);
@@ -326,16 +315,16 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
             if (texturing)
             {
-                Helper_InterpolateVec2(uvA, v1->texcoord, v3->texcoord, alpha);
-                Helper_InterpolateVec2(uvB, v1->texcoord, v2->texcoord, beta);
+                pfmVec2Lerp(uvA, v1->texcoord, v3->texcoord, alpha);
+                pfmVec2Lerp(uvB, v1->texcoord, v2->texcoord, beta);
             }
 
             if (lighting)
             {
-                Helper_InterpolateVec3(pA, v1->position, v3->position, alpha);
-                Helper_InterpolateVec3(pB, v1->position, v2->position, beta);
-                Helper_InterpolateVec3(nA, v1->normal, v3->normal, alpha);
-                Helper_InterpolateVec3(nB, v1->normal, v2->normal, beta);
+                pfmVec3Lerp(pA, v1->position, v3->position, alpha);
+                pfmVec3Lerp(pB, v1->position, v2->position, beta);
+                pfmVec3Lerp(nA, v1->normal, v3->normal, alpha);
+                pfmVec3Lerp(nB, v1->normal, v2->normal, beta);
             }
         }
         else // Second half
@@ -353,16 +342,16 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
             if (texturing)
             {
-                Helper_InterpolateVec2(uvA, v1->texcoord, v3->texcoord, alpha);
-                Helper_InterpolateVec2(uvB, v2->texcoord, v3->texcoord, beta);
+                pfmVec2Lerp(uvA, v1->texcoord, v3->texcoord, alpha);
+                pfmVec2Lerp(uvB, v2->texcoord, v3->texcoord, beta);
             }
 
             if (lighting)
             {
-                Helper_InterpolateVec3(pA, v1->position, v3->position, alpha);
-                Helper_InterpolateVec3(pB, v2->position, v3->position, beta);
-                Helper_InterpolateVec3(nA, v1->normal, v3->normal, alpha);
-                Helper_InterpolateVec3(nB, v2->normal, v3->normal, beta);
+                pfmVec3Lerp(pA, v1->position, v3->position, alpha);
+                pfmVec3Lerp(pB, v2->position, v3->position, beta);
+                pfmVec3Lerp(nA, v1->normal, v3->normal, alpha);
+                pfmVec3Lerp(nB, v2->normal, v3->normal, beta);
             }
         }
 
@@ -413,7 +402,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
                 if (texturing)
                 {
                     PFMvec2 uv;
-                    Helper_InterpolateVec2(uv, uvA, uvB, t);
+                    pfmVec2Lerp(uv, uvA, uvB, t);
 
                     if (is3D)
                     {
@@ -431,10 +420,10 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
                 if (lighting)
                 {
                     PFMvec3 position;
-                    Helper_InterpolateVec3(position, pA, pB, t);
+                    pfmVec3Lerp(position, pA, pB, t);
 
                     PFMvec3 normal;
-                    Helper_InterpolateVec3(normal, nA, nB, t);
+                    pfmVec3Lerp(normal, nA, nB, t);
 
                     fragment = Process_Lights(currentCtx->activeLights,
                         &currentCtx->faceMaterial[faceToRender], fragment,
@@ -601,15 +590,15 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
 #   define TEXTURING() \
         PFMvec2 texcoord; \
-        Helper_InterpolateVec2(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3); \
+        pfmVec2BaryInterp(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3); \
         if (is3D) texcoord[0] *= z, texcoord[1] *= z; /* Perspective correct */ \
         PFcolor texel = pfGetTextureSample(texture, texcoord[0], texcoord[1]); \
         fragment = pfBlendMultiplicative(texel, fragment);
 
 #   define LIGHTING() \
         PFMvec3 normal, position; \
-        Helper_InterpolateVec3(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3); \
-        Helper_InterpolateVec3(position, v1->position, v2->position, v3->position, aW1, aW2, aW3); \
+        pfmVec3BaryInterp(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3); \
+        pfmVec3BaryInterp(position, v1->position, v2->position, v3->position, aW1, aW2, aW3); \
         fragment = Process_Lights(currentCtx->activeLights, &currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal);
 
 #   define SET_FRAG() \
@@ -831,25 +820,6 @@ void Helper_SortVertices(const PFvertex** v1, const PFvertex** v2, const PFverte
     if ((*v3)->screen[1] < (*v2)->screen[1]) { vTmp = *v2; *v2 = *v3; *v3 = vTmp; }
 }
 
-void Helper_InterpolateVec3(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, PFfloat t)
-{
-#   ifdef PF_SUPPORT_OPENMP
-#       pragma omp simd
-#   endif
-    for (int_fast8_t i = 0; i < 3; i++)
-    {
-        dst[i] = v1[i] + t*(v2[i]-v1[i]);
-    }
-}
-
-void Helper_InterpolateVec2(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, PFfloat t)
-{
-    for (int_fast8_t i = 0; i < 2; i++)
-    {
-        dst[i] = v1[i] + t*(v2[i]-v1[i]);
-    }
-}
-
 PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFfloat t)
 {
     return (PFcolor) {
@@ -866,28 +836,6 @@ PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFfloat t)
 }
 
 #else //PF_BARYCENTRIC_RASTER_METHOD
-
-void Helper_InterpolateVec2(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, PFfloat w1, PFfloat w2, PFfloat w3)
-{
-    for (int_fast8_t i = 0; i < 2; i++)
-    {
-        dst[i] = w1*v1[i] + w2*v2[i] + w3*v3[i];
-    }
-}
-
-#ifndef PF_GOURAUD_SHADING
-// NOTE: Used for interpolating vertices and normals when rendering light by fragment
-void Helper_InterpolateVec3(PFMvec2 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, PFfloat w1, PFfloat w2, PFfloat w3)
-{
-#   ifdef PF_SUPPORT_OPENMP
-#       pragma omp simd
-#   endif
-    for (int_fast8_t i = 0; i < 3; i++)
-    {
-        dst[i] = w1*v1[i] + w2*v2[i] + w3*v3[i];
-    }
-}
-#endif //PF_GOURAUD_SHADING
 
 PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
 {
