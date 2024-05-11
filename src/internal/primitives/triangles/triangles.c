@@ -671,8 +671,7 @@ static PFcolor Process_Lights(const PFlight* activeLights, const PFmaterial* mat
 
     // Compute the view direction from fragment position
     PFMvec3 viewDir;
-    pfmVec3Sub(viewDir, viewPos, fragPos);
-    pfmVec3Normalize(viewDir, viewDir);
+    pfmVec3Direction(viewDir, viewPos, fragPos);
 
     // Specular properties
     // Retrieve material's shininess and specular color
