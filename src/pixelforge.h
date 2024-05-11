@@ -50,10 +50,10 @@
             //       I haven't been able to obtain more information through debugging and some research. To investigate further.
 #           define PF_CTX_DECL
 #       else
-#           define PF_CTX_DECL __thread;
+#           define PF_CTX_DECL __thread
 #       endif
 #   elif defined(_MSC_VER)
-#       define PF_CTX_DECL __declspec(thread);
+#       define PF_CTX_DECL __declspec(thread)
 #   endif
 #endif //PF_CTX_DECL
 
