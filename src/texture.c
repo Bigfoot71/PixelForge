@@ -29,6 +29,11 @@
 
 /* Internal convert functions */
 
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC push_options
+#pragma GCC optimize ("no-strict-aliasing")
+#endif
+
 static PFushort FloatToHalf(PFfloat x)
 {
     const PFuint b = (*(PFuint*)&x)+0x00001000; // round-to-nearest-even: add last bit after truncated mantissa
@@ -46,6 +51,10 @@ static PFfloat HalfToFloat(PFushort x)
     const PFuint r = (x&0x8000)<<16 | (e!=0)*((e+112)<<23|m) | ((e==0)&(m!=0))*((v-37)<<23|((m<<(150-v))&0x007FE000)); // sign : normalized : denormalized
     return *(PFfloat*)&r;
 }
+
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC pop_options
+#endif
 
 
 /* Internal pixel setter functions */

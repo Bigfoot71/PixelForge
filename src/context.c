@@ -1765,7 +1765,7 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
 
 void pfBegin(PFdrawmode mode)
 {
-    if (mode < PF_POINTS && mode > PF_QUAD_STRIP)
+    if (mode < PF_POINTS || mode > PF_QUAD_STRIP)
     {
         currentCtx->errCode = PF_INVALID_ENUM;
         return;
@@ -2345,7 +2345,7 @@ void pfFogi(PFfogparam pname, PFint param)
     switch (pname)
     {
         case PF_FOG_MODE:
-            if (param >= PF_LINEAR || param <= PF_EXP2)
+            if (param >= PF_LINEAR && param <= PF_EXP2)
             {
                 currentCtx->fog.mode = param;
             }
@@ -2356,7 +2356,7 @@ void pfFogi(PFfogparam pname, PFint param)
             break;
 
         case PF_FOG_DENSITY:
-            if (param >= 0 || param <= 1)
+            if (param == 0 || param == 1)
             {
                 currentCtx->fog.mode = param;
             }
@@ -2385,7 +2385,7 @@ void pfFogf(PFfogparam pname, PFfloat param)
     switch (pname)
     {
         case PF_FOG_DENSITY:
-            if (param >= 0 || param <= 1)
+            if (param >= 0 && param <= 1)
             {
                 currentCtx->fog.mode = param;
             }
