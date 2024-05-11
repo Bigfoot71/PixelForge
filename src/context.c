@@ -50,8 +50,8 @@ extern PFsizei pfInternal_GetPixelBytes(PFpixelformat format);
 
 /* Internal processing and rasterization function declarations */
 
-static void GetMVP(PFMmat4 outMVP, PFMmat4 outMatNormal, PFMmat4 outModelview);
-static void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal);
+static void GetMVP(PFMmat4 outMVP, PFMmat4 outModelview);
+static void ProcessRasterize(const PFMmat4 mvp);
 
 /* Some helper functions */
 
@@ -233,6 +233,7 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
 
     pfmMat4Ortho(ctx->matProjection, -1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f);
     pfmMat4Identity(ctx->matTexture);
+    pfmMat4Identity(ctx->matNormal);
     pfmMat4Identity(ctx->matModel);
     pfmMat4Identity(ctx->matView);
 
@@ -386,6 +387,19 @@ void pfEnable(PFstate state)
         currentCtx->currentFramebuffer = currentCtx->bindedFramebuffer
             ? currentCtx->bindedFramebuffer : &currentCtx->mainFramebuffer;
     }
+
+    if (currentCtx->state & PF_LIGHTING)
+    {
+        if (currentCtx->modelMatrixUsed)
+        {
+            pfmMat4Invert(currentCtx->matNormal, currentCtx->matModel);
+            pfmMat4Transpose(currentCtx->matNormal, currentCtx->matNormal);
+        }
+        else
+        {
+            pfmMat4Identity(currentCtx->matNormal);
+        }
+    }
 }
 
 void pfDisable(PFstate state)
@@ -517,6 +531,8 @@ void pfPopMatrix(void)
                 }
 
                 pfmMat4Identity(currentCtx->matModel);
+                pfmMat4Identity(currentCtx->matNormal);
+
                 currentCtx->modelMatrixUsed = PF_FALSE;
                 currentCtx->currentMatrix = &currentCtx->matView;
             }
@@ -524,6 +540,12 @@ void pfPopMatrix(void)
             {
                 currentCtx->stackModelviewCounter--;
                 pfmMat4Copy(currentCtx->matModel, currentCtx->stackModelview[currentCtx->stackModelviewCounter]);
+
+                if (currentCtx->currentMatrixMode == PF_MODELVIEW && currentCtx->state & PF_LIGHTING)
+                {
+                    pfmMat4Invert(currentCtx->matNormal, currentCtx->matModel);
+                    pfmMat4Transpose(currentCtx->matNormal, currentCtx->matNormal);
+                }
             }
         }
         break;
@@ -546,8 +568,15 @@ void pfPopMatrix(void)
 void pfLoadIdentity(void)
 {
     pfmMat4Identity(*currentCtx->currentMatrix);
+
+    if (currentCtx->currentMatrixMode == PF_MODELVIEW &&
+        currentCtx->modelMatrixUsed && currentCtx->state & PF_LIGHTING)
+    {
+        pfmMat4Identity(currentCtx->matNormal);
+    }
 }
 
+// TODO: See possible simplifications when calculating matNormal
 void pfTranslatef(PFfloat x, PFfloat y, PFfloat z)
 {
     PFMmat4 translation;
@@ -555,8 +584,16 @@ void pfTranslatef(PFfloat x, PFfloat y, PFfloat z)
 
     // NOTE: We transpose matrix with multiplication order
     pfmMat4Mul(*currentCtx->currentMatrix, translation, *currentCtx->currentMatrix);
+
+    if (currentCtx->currentMatrixMode == PF_MODELVIEW &&
+        currentCtx->modelMatrixUsed && currentCtx->state & PF_LIGHTING)
+    {
+        pfmMat4Invert(currentCtx->matNormal, currentCtx->matModel);
+        pfmMat4Transpose(currentCtx->matNormal, currentCtx->matNormal);
+    }
 }
 
+// TODO: See possible simplifications when calculating matNormal
 void pfRotatef(PFfloat angle, PFfloat x, PFfloat y, PFfloat z)
 {
     PFMvec3 axis = { x, y, z }; // TODO: review
@@ -566,8 +603,17 @@ void pfRotatef(PFfloat angle, PFfloat x, PFfloat y, PFfloat z)
 
     // NOTE: We transpose matrix with multiplication order
     pfmMat4Mul(*currentCtx->currentMatrix, rotation, *currentCtx->currentMatrix);
+
+    if (currentCtx->currentMatrixMode == PF_MODELVIEW &&
+        currentCtx->modelMatrixUsed && currentCtx->state & PF_LIGHTING)
+    {
+        pfmMat4Invert(currentCtx->matNormal, currentCtx->matModel);
+        pfmMat4Transpose(currentCtx->matNormal, currentCtx->matNormal);
+        //pfmMat4Mul(currentCtx->matNormal, rotation, currentCtx->matNormal);
+    }
 }
 
+// TODO: See possible simplifications when calculating matNormal
 void pfScalef(PFfloat x, PFfloat y, PFfloat z)
 {
     PFMmat4 scale;
@@ -575,11 +621,26 @@ void pfScalef(PFfloat x, PFfloat y, PFfloat z)
 
     // NOTE: We transpose matrix with multiplication order
     pfmMat4Mul(*currentCtx->currentMatrix, scale, *currentCtx->currentMatrix);
+
+    if (currentCtx->currentMatrixMode == PF_MODELVIEW &&
+        currentCtx->modelMatrixUsed && currentCtx->state & PF_LIGHTING)
+    {
+        pfmMat4Invert(currentCtx->matNormal, currentCtx->matModel);
+        pfmMat4Transpose(currentCtx->matNormal, currentCtx->matNormal);
+    }
 }
 
+// TODO: See possible simplifications when calculating matNormal
 void pfMultMatrixf(const PFfloat* mat)
 {
     pfmMat4Mul(*currentCtx->currentMatrix, *currentCtx->currentMatrix, mat);
+
+    if (currentCtx->currentMatrixMode == PF_MODELVIEW &&
+        currentCtx->modelMatrixUsed && currentCtx->state & PF_LIGHTING)
+    {
+        pfmMat4Invert(currentCtx->matNormal, currentCtx->matModel);
+        pfmMat4Transpose(currentCtx->matNormal, currentCtx->matNormal);
+    }
 }
 
 void pfFrustum(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar)
@@ -1314,8 +1375,8 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
 
     PFsizei indicesTypeSize = pfInternal_GetDataTypeSize(type);
 
-    PFMmat4 mvp, matNormal;
-    GetMVP(mvp, matNormal, NULL);
+    PFMmat4 mvp;
+    GetMVP(mvp, NULL);
 
     PFsizei drawModeVertexCount = pfInternal_GetDrawModeVertexCount(mode);
 
@@ -1509,7 +1570,7 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
 
         if (currentCtx->vertexCounter == drawModeVertexCount)
         {
-            ProcessRasterize(mvp, matNormal);
+            ProcessRasterize(mvp);
             pfInternal_ResetVertexBufferForNextElement();
         }
     }
@@ -1534,8 +1595,8 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
     PFboolean useNormalArray = currentCtx->state & PF_NORMAL_ARRAY && normals->buffer;
     PFboolean useColorArray = currentCtx->state & PF_COLOR_ARRAY && colors->buffer;
 
-    PFMmat4 mvp, matNormal;
-    GetMVP(mvp, matNormal, NULL);
+    PFMmat4 mvp;
+    GetMVP(mvp, NULL);
 
     PFsizei drawModeVertexCount = pfInternal_GetDrawModeVertexCount(mode);
 
@@ -1729,7 +1790,7 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
 
         if (currentCtx->vertexCounter == drawModeVertexCount)
         {
-            ProcessRasterize(mvp, matNormal);
+            ProcessRasterize(mvp);
             pfInternal_ResetVertexBufferForNextElement();
         }
     }
@@ -1823,9 +1884,9 @@ void pfVertex4fv(const PFfloat* v)
 
     if (currentCtx->vertexCounter == pfInternal_GetDrawModeVertexCount(currentCtx->currentDrawMode))
     {
-        PFMmat4 mvp, matNormal;
-        GetMVP(mvp, matNormal, NULL);
-        ProcessRasterize(mvp, matNormal);
+        PFMmat4 mvp;
+        GetMVP(mvp, NULL);
+        ProcessRasterize(mvp);
         pfInternal_ResetVertexBufferForNextElement();
     }
 }
@@ -2102,7 +2163,7 @@ void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2)
 {
     // Get the transformation matrix from model to view (ModelView) and projection
     PFMmat4 mvp;
-    GetMVP(mvp, NULL, NULL);
+    GetMVP(mvp, NULL);
 
     // Project corner points
     PFMvec4 v1 = { x1, y1, 0.0f, 1.0f };
@@ -2169,7 +2230,7 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, const voi
 
     // Get the transformation matrix from model to view (ModelView) and projection
     PFMmat4 mvp;
-    GetMVP(mvp, NULL, NULL);
+    GetMVP(mvp, NULL);
 
     // Project raster point from model space to screen space
     PFMvec4 rasterPos;
@@ -2660,7 +2721,7 @@ void pfPostProcess(PFpostprocessfunc postProcessFunction)
 
 /* Internal helper function definitions */
 
-void GetMVP(PFMmat4 outMVP, PFMmat4 outMatNormal, PFMmat4 outModelview)
+void GetMVP(PFMmat4 outMVP, PFMmat4 outModelview)
 {
     PFMmat4 modelview;
     pfmMat4Mul(modelview, currentCtx->matModel, currentCtx->matView);
@@ -2668,12 +2729,6 @@ void GetMVP(PFMmat4 outMVP, PFMmat4 outMatNormal, PFMmat4 outModelview)
     if (outMVP)
     {
         pfmMat4Mul(outMVP, modelview, currentCtx->matProjection);
-    }
-
-    if (outMatNormal) // TODO REVIEW: Only calculate it when PF_LIGHTING state is activated??
-    {
-        pfmMat4Invert(outMatNormal, currentCtx->matModel);
-        pfmMat4Transpose(outMatNormal, outMatNormal);
     }
 
     if (outModelview)
@@ -2783,7 +2838,7 @@ static void ProcessRasterize_PolygonLines(const PFMmat4 mvp, int_fast8_t vertexC
 
 // NOTE: An array of vertices with a total size equal to 'PF_MAX_CLIPPED_POLYGON_VERTICES' must be provided as a parameter
 //       with only the first three vertices defined; the extra space is used in case the triangle needs to be clipped.
-static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES], const PFMmat4 mvp, const PFMmat4 matNormal)
+static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES], const PFMmat4 mvp)
 {
 #ifndef NDEBUG
     if (faceToRender == PF_FRONT_AND_BACK)
@@ -2808,12 +2863,8 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
         // And multiply vertex color with diffuse color
         for (int_fast8_t i = 0; i < processedCounter; i++)
         {
-            pfmVec3TransformWT(processed[i].normal, processed[i].normal, 0.0f, matNormal);
-
-            if (currentCtx->state & PF_NORMALIZE)
-            {
-                pfmVec3Normalize(processed[i].normal, processed[i].normal);
-            }
+            pfmVec3Transform(processed[i].normal, processed[i].normal, currentCtx->matNormal);
+            pfmVec3Normalize(processed[i].normal, processed[i].normal); // REVIEW: Only with PF_NORMALIZE state??
 
             processed[i].color = pfBlendMultiplicative(processed[i].color,
                 currentCtx->faceMaterial[faceToRender].diffuse);
@@ -2842,14 +2893,14 @@ static void ProcessRasterize_Triangle_IMPL(PFface faceToRender, PFvertex process
     }
 }
 
-static void ProcessRasterize_Triangle(PFface faceToRender, const PFMmat4 mvp, const PFMmat4 matNormal)
+static void ProcessRasterize_Triangle(PFface faceToRender, const PFMmat4 mvp)
 {
     PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES];
     memcpy(processed, currentCtx->vertexBuffer, 3 * sizeof(PFvertex));
-    ProcessRasterize_Triangle_IMPL(faceToRender, processed, mvp, matNormal);
+    ProcessRasterize_Triangle_IMPL(faceToRender, processed, mvp);
 }
 
-static void ProcessRasterize_TriangleFan(PFface faceToRender, int_fast8_t numTriangles, const PFMmat4 mvp, const PFMmat4 matNormal)
+static void ProcessRasterize_TriangleFan(PFface faceToRender, int_fast8_t numTriangles, const PFMmat4 mvp)
 {
     for (int_fast8_t i = 0; i < numTriangles; i++)
     {
@@ -2859,11 +2910,11 @@ static void ProcessRasterize_TriangleFan(PFface faceToRender, int_fast8_t numTri
             currentCtx->vertexBuffer[i + 2]
         };
 
-        ProcessRasterize_Triangle_IMPL(faceToRender, processed, mvp, matNormal);
+        ProcessRasterize_Triangle_IMPL(faceToRender, processed, mvp);
     }
 }
 
-static void ProcessRasterize_TriangleStrip(PFface faceToRender, int_fast8_t numTriangles, const PFMmat4 mvp, const PFMmat4 matNormal)
+static void ProcessRasterize_TriangleStrip(PFface faceToRender, int_fast8_t numTriangles, const PFMmat4 mvp)
 {
     for (int_fast8_t i = 0; i < numTriangles; i++)
     {
@@ -2882,11 +2933,11 @@ static void ProcessRasterize_TriangleStrip(PFface faceToRender, int_fast8_t numT
             processed[2] = currentCtx->vertexBuffer[i];
         }
 
-        ProcessRasterize_Triangle_IMPL(faceToRender, processed, mvp, matNormal);
+        ProcessRasterize_Triangle_IMPL(faceToRender, processed, mvp);
     }
 }
 
-void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
+void ProcessRasterize(const PFMmat4 mvp)
 {
     switch (currentCtx->currentDrawMode)
     {
@@ -2921,7 +2972,7 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
                             break;
 
                         case PF_FILL:
-                            ProcessRasterize_Triangle(iFace, mvp, matNormal);
+                            ProcessRasterize_Triangle(iFace, mvp);
                             break;
                     }
                 }
@@ -2939,7 +2990,7 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
                         break;
 
                     case PF_FILL:
-                        ProcessRasterize_Triangle(faceToRender, mvp, matNormal);
+                        ProcessRasterize_Triangle(faceToRender, mvp);
                         break;
                 }
             }
@@ -2958,12 +3009,12 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
             {
                 for (PFint iFace = 0; iFace < 2; iFace++)
                 {
-                    ProcessRasterize_TriangleFan(iFace, 2, mvp, matNormal);
+                    ProcessRasterize_TriangleFan(iFace, 2, mvp);
                 }
             }
             else
             {
-                ProcessRasterize_TriangleFan(faceToRender, 2, mvp, matNormal);
+                ProcessRasterize_TriangleFan(faceToRender, 2, mvp);
             }
         }
         break;
@@ -2980,12 +3031,12 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
             {
                 for (PFint iFace = 0; iFace < 2; iFace++)
                 {
-                    ProcessRasterize_TriangleStrip(iFace, 2, mvp, matNormal);
+                    ProcessRasterize_TriangleStrip(iFace, 2, mvp);
                 }
             }
             else
             {
-                ProcessRasterize_TriangleStrip(faceToRender, 2, mvp, matNormal);
+                ProcessRasterize_TriangleStrip(faceToRender, 2, mvp);
             }
         }
         break;
@@ -3013,7 +3064,7 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
                             break;
 
                         case PF_FILL:
-                            ProcessRasterize_TriangleFan(iFace, 2, mvp, matNormal);
+                            ProcessRasterize_TriangleFan(iFace, 2, mvp);
                             break;
                     }
                 }
@@ -3031,7 +3082,7 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
                         break;
 
                     case PF_FILL:
-                        ProcessRasterize_TriangleFan(faceToRender, 2, mvp, matNormal);
+                        ProcessRasterize_TriangleFan(faceToRender, 2, mvp);
                         break;
                 }
             }
@@ -3050,12 +3101,12 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
             {
                 for (PFint iFace = 0; iFace < 2; iFace++)
                 {
-                    ProcessRasterize_TriangleFan(iFace, 4, mvp, matNormal);
+                    ProcessRasterize_TriangleFan(iFace, 4, mvp);
                 }
             }
             else
             {
-                ProcessRasterize_TriangleFan(faceToRender, 4, mvp, matNormal);
+                ProcessRasterize_TriangleFan(faceToRender, 4, mvp);
             }
         }
         break;
@@ -3072,12 +3123,12 @@ void ProcessRasterize(const PFMmat4 mvp, const PFMmat4 matNormal)
             {
                 for (PFint iFace = 0; iFace < 2; iFace++)
                 {
-                    ProcessRasterize_TriangleStrip(iFace, 4, mvp, matNormal);
+                    ProcessRasterize_TriangleStrip(iFace, 4, mvp);
                 }
             }
             else
             {
-                ProcessRasterize_TriangleStrip(faceToRender, 4, mvp, matNormal);
+                ProcessRasterize_TriangleStrip(faceToRender, 4, mvp);
             }
         }
         break;
