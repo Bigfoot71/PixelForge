@@ -1771,7 +1771,9 @@ void pfBegin(PFdrawmode mode)
         return;
     }
 
-    pfInternal_UpdateMatrices(PF_TRUE);
+    pfInternal_UpdateMatrices(
+        !(mode == PF_POINTS || mode == PF_LINES));
+
     currentCtx->currentDrawMode = mode;
     currentCtx->vertexCounter = 0;
 }
