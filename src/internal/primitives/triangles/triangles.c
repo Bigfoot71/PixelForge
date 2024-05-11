@@ -59,7 +59,7 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
 static PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter);
 static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter);
 
-PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter, const PFMmat4 mvp)
+PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter)
 {
     PFfloat weightSum = 0.0f;
 
@@ -68,7 +68,7 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
         PFvertex *v = polygon + i;
 
         memcpy(v->homogeneous, v->position, sizeof(PFMvec4));
-        pfmVec4Transform(v->homogeneous, v->homogeneous, mvp);
+        pfmVec4Transform(v->homogeneous, v->homogeneous, currentCtx->matMVP);
 
         weightSum += v->homogeneous[3];
     }

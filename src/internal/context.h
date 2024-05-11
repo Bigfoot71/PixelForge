@@ -160,9 +160,11 @@ typedef struct {
 
     PFMmat4 matProjection;                                  ///< Projection matrix, user adjustable
     PFMmat4 matTexture;                                     ///< Texture matrix, user adjustable
-    PFMmat4 matNormal;                                      ///< Normal matrix, calculated and used internally
     PFMmat4 matModel;                                       ///< Model matrix, user adjustable (the one used if we push in PF_MODELVIEW mode)
     PFMmat4 matView;                                        ///< View matrix, user adjustable (the default one used in PF_MODELVIEW mode)
+
+    PFMmat4 matMVP;                                         ///< Model view projection matrix, calculated and used internally
+    PFMmat4 matNormal;                                      ///< Normal matrix, calculated and used internally
 
     PFMmat4 stackProjection[PF_MAX_PROJECTION_STACK_SIZE];  ///< Projection matrix stack for push/pop operations
     PFMmat4 stackModelview[PF_MAX_MODELVIEW_STACK_SIZE];    ///< Modelview matrix stack for push/pop operations

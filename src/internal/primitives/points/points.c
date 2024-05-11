@@ -25,10 +25,10 @@ extern void pfInternal_HomogeneousToScreen(PFvertex* restrict v);
 
 /* Main functions declaration used by 'context.c' */
 
-PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFMmat4 mvp)
+PFboolean Process_ProjectPoint(PFvertex* restrict v)
 {
     memcpy(v->homogeneous, v->position, sizeof(PFMvec4));
-    pfmVec4Transform(v->homogeneous, v->homogeneous, mvp);
+    pfmVec4Transform(v->homogeneous, v->homogeneous, currentCtx->matMVP);
 
     if (v->homogeneous[3] != 1.0f)
     {

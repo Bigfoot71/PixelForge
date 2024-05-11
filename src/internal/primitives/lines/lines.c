@@ -142,14 +142,14 @@ static PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2
     return PF_TRUE;
 }
 
-void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict vertexCounter, const PFMmat4 mvp)
+void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict vertexCounter)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
         PFvertex *v = line + i;
 
         memcpy(v->homogeneous, v->position, sizeof(PFMvec4));
-        pfmVec4Transform(v->homogeneous, v->homogeneous, mvp);
+        pfmVec4Transform(v->homogeneous, v->homogeneous, currentCtx->matMVP);
     }
 
     if (line[0].homogeneous[3] == 1.0f && line[1].homogeneous[3] == 1.0f)

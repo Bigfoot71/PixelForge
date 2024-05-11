@@ -23,7 +23,7 @@
 #include "../../context.h"
 #include "../../../pfm.h"
 
-PFboolean Process_ProjectPoint(PFvertex* restrict v, const PFMmat4 mvp);
+PFboolean Process_ProjectPoint(PFvertex* restrict v);
 void Rasterize_Point_NODEPTH(const PFvertex* point);
 void Rasterize_Point_DEPTH(const PFvertex* point);
 
