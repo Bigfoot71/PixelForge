@@ -236,6 +236,30 @@ PFM_API void pfmVec2Direction(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
     memcpy(dst, tmp, sizeof(PFMvec3));
 }
 
+PFM_API void pfmVec2Lerp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, PFM_FLOAT t)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v1[i] + t*(v2[i]-v1[i]);
+    }
+}
+
+PFM_API void pfmVec2BaryInterp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, PFM_FLOAT w1, PFM_FLOAT w2, PFM_FLOAT w3)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = w1*v1[i] + w2*v2[i] + w3*v3[i];
+    }
+}
+
+PFM_API void pfmVec2BaryInterpV(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, const PFMvec3 w)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = w[0]*v1[i] + w[1]*v2[i] + w[2]*v3[i];
+    }
+}
+
 PFM_API void pfmVec2Transform(PFMvec2 dst, const PFMvec2 v, const PFMmat4 mat)
 {
     PFMvec2 tmp = {
@@ -482,6 +506,39 @@ PFM_API void pfmVec3Direction(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
     memcpy(dst, tmp, sizeof(PFMvec3));
 }
 
+PFM_API void pfmVec3Lerp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, PFM_FLOAT t)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v1[i] + t*(v2[i]-v1[i]);
+    }
+}
+
+PFM_API void pfmVec3BaryInterp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, PFM_FLOAT w1, PFM_FLOAT w2, PFM_FLOAT w3)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = w1*v1[i] + w2*v2[i] + w3*v3[i];
+    }
+}
+
+PFM_API void pfmVec3BaryInterpV(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, const PFMvec3 w)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = w[0]*v1[i] + w[1]*v2[i] + w[2]*v3[i];
+    }
+}
+
 PFM_API void pfmVec3Transform(PFMvec3 dst, const PFMvec3 v, const PFMmat4 mat)
 {
     PFMvec3 tmp = {
@@ -668,6 +725,39 @@ PFM_API PFM_FLOAT pfmVec4LengthSq(const PFMvec4 v)
 PFM_API PFM_FLOAT pfmVec4Dot(const PFMvec4 v1, const PFMvec4 v2)
 {
     return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2] + v1[3]*v2[3];
+}
+
+PFM_API void pfmVec4Lerp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, PFM_FLOAT t)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v1[i] + t*(v2[i]-v1[i]);
+    }
+}
+
+PFM_API void pfmVec4BaryInterp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, PFM_FLOAT w1, PFM_FLOAT w2, PFM_FLOAT w3)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = w1*v1[i] + w2*v2[i] + w3*v3[i];
+    }
+}
+
+PFM_API void pfmVec4BaryInterpV(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = w[0]*v1[i] + w[1]*v2[i] + w[2]*v3[i];
+    }
 }
 
 PFM_API void pfmVec4Transform(PFMvec4 dst, const PFMvec4 v, const PFMmat4 mat)
