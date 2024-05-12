@@ -246,14 +246,19 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     PFint x2 = v2->screen[0], y2 = v2->screen[1];
     PFint x3 = v3->screen[0], y3 = v3->screen[1];
 
-    PFfloat z1 = v1->homogeneous[2], z2 = v2->homogeneous[2], z3 = v3->homogeneous[2];
-    PFcolor c1 = v1->color, c2 = v2->color, c3 = v3->color;
+    PFfloat z1 = v1->homogeneous[2];
+    PFfloat z2 = v2->homogeneous[2];
+    PFfloat z3 = v3->homogeneous[2];
+
+    PFcolor c1 = v1->color;
+    PFcolor c2 = v2->color;
+    PFcolor c3 = v3->color;
 
     /* Precompute inverse heights for interpolation */
 
-    PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
-    PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
-    PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
+    PFfloat invTotalHeight = 1.0f/(y3 - y1 + 1);
+    PFfloat invSegmentHeight21 = 1.0f/(y2 - y1 + 1);
+    PFfloat invSegmentHeight32 = 1.0f/(y3 - y2 + 1);
 
     /* Choose color interpolation method based on shading mode */
 
@@ -281,16 +286,21 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         yMax = CLAMP(yMax, currentCtx->vpMin[1], currentCtx->vpMax[1]);
     }
 
+    PFsizei yOffset = yMin*widthDst;
+
+    /*  */
+
+    PFfloat alpha = invTotalHeight*(yMin - y1);
+    PFfloat beta1 = invSegmentHeight21*(yMin - y1);   // First half
+    PFfloat beta2 = invSegmentHeight32*(yMin - y2);   // Second half
+
     /* Travel the triangle from top to bottom */
 
-#   ifdef PF_SUPPORT_OPENMP
-#       pragma omp parallel for schedule(dynamic) \
-            if(area >= PF_OPENMP_RASTER_THRESHOLD_AREA)
-#   endif
-    for (PFint y = yMin; y <= yMax; y++)
+    for (PFint y = yMin; y <= yMax; y++, yOffset += widthDst)
     {
-        PFfloat alpha = (y - y1 + 1)*invTotalHeight;
-        PFfloat beta;
+        alpha += invTotalHeight;
+        beta1 += invSegmentHeight21;
+        beta2 += invSegmentHeight32;
 
         PFint xA, xB;
         PFfloat zA, zB;
@@ -302,56 +312,53 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
         if (y < y2) // First half
         {
-            beta = (y - y1 + 1)*invSegmentHeight21;
-
             xA = x1 + (x3 - x1)*alpha;
-            zA = z1 + (z3 - z1)*alpha;
+            xB = x1 + (x2 - x1)*beta1;
 
-            xB = x1 + (x2 - x1)*beta;
-            zB = z1 + (z2 - z1)*beta;
+            zA = z1 + (z3 - z1)*alpha;
+            zB = z1 + (z2 - z1)*beta1;
 
             cA = interpolateColor(c1, c3, alpha);
-            cB = interpolateColor(c1, c2, beta);
+            cB = interpolateColor(c1, c2, beta1);
 
             if (texturing)
             {
                 pfmVec2Lerp(uvA, v1->texcoord, v3->texcoord, alpha);
-                pfmVec2Lerp(uvB, v1->texcoord, v2->texcoord, beta);
+                pfmVec2Lerp(uvB, v1->texcoord, v2->texcoord, beta1);
             }
 
             if (lighting)
             {
                 pfmVec3Lerp(pA, v1->position, v3->position, alpha);
-                pfmVec3Lerp(pB, v1->position, v2->position, beta);
+                pfmVec3Lerp(pB, v1->position, v2->position, beta1);
                 pfmVec3Lerp(nA, v1->normal, v3->normal, alpha);
-                pfmVec3Lerp(nB, v1->normal, v2->normal, beta);
+                pfmVec3Lerp(nB, v1->normal, v2->normal, beta1);
             }
+
         }
         else // Second half
         {
-            beta = (y - y2 + 1)*invSegmentHeight32;
-
             xA = x1 + (x3 - x1)*alpha;
-            zA = z1 + (z3 - z1)*alpha;
+            xB = x2 + (x3 - x2)*beta2;
 
-            xB = x2 + (x3 - x2)*beta;
-            zB = z2 + (z3 - z2)*beta;
+            zA = z1 + (z3 - z1)*alpha;
+            zB = z2 + (z3 - z2)*beta2;
 
             cA = interpolateColor(c1, c3, alpha);
-            cB = interpolateColor(c2, c3, beta);
+            cB = interpolateColor(c2, c3, beta2);
 
             if (texturing)
             {
                 pfmVec2Lerp(uvA, v1->texcoord, v3->texcoord, alpha);
-                pfmVec2Lerp(uvB, v2->texcoord, v3->texcoord, beta);
+                pfmVec2Lerp(uvB, v2->texcoord, v3->texcoord, beta2);
             }
 
             if (lighting)
             {
                 pfmVec3Lerp(pA, v1->position, v3->position, alpha);
-                pfmVec3Lerp(pB, v2->position, v3->position, beta);
+                pfmVec3Lerp(pB, v2->position, v3->position, beta2);
                 pfmVec3Lerp(nA, v1->normal, v3->normal, alpha);
-                pfmVec3Lerp(nB, v2->normal, v3->normal, beta);
+                pfmVec3Lerp(nB, v2->normal, v3->normal, beta2);
             }
         }
 
@@ -368,7 +375,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             pfmVec3Swap(nA, nB);
         }
 
-        /* Draw Horizontal Line */
+        /*  */
 
         PFint xMin = xA;
         PFint xMax = xB;
@@ -379,15 +386,37 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             xMax = CLAMP(xMax, currentCtx->vpMin[0], currentCtx->vpMax[0]);
         }
 
-        PFsizei xyOffset = y*widthDst + xMin;
-        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+        PFsizei xyOffset = yOffset + xMin;
 
-        for (PFint x = xMin; x <= xMax; x++, xyOffset++)
+        /*  */
+
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
+        PFfloat gamma = xInvLen*(xMin - xA);
+
+        PFfloat zStep = xInvLen*(zB - zA);
+
+        // REIVEW: Very weird issue with UV increment
+        /*
+            PFMvec2 uvStep;
+            pfmVec2Sub(uvStep, uvB, uvA);
+            pfmVec2Scale(uvStep, uvStep, xInvLen);
+        */
+
+        PFMvec3 pStep;
+        pfmVec3Sub(pStep, pB, pA);
+        pfmVec3Scale(pStep, pStep, xInvLen);
+
+        PFMvec3 nStep;
+        pfmVec3Sub(nStep, nB, nA);
+        pfmVec3Scale(nStep, nStep, xInvLen);
+
+        /* Draw Horizontal Line */
+
+        for (PFint x = xMin; x <= xMax; x++, xyOffset++, gamma += xInvLen)
         {
             /* Calculate interpolation factor and Z */
 
-            PFfloat t = (PFfloat)(x-xA)*xInvLen;
-            PFfloat z = 1.0f/(zA + t*(zB - zA));
+            PFfloat z = 1.0f/zA; zA += zStep;
 
             /* Perform depth test */
 
@@ -395,14 +424,16 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             {
                 /* Obtain fragment color */
 
-                PFcolor fragment = interpolateColor(cA, cB, t);
+                PFcolor fragment = interpolateColor(cA, cB, gamma);
 
                 /* Blend with corresponding texture sample */
 
                 if (texturing)
                 {
                     PFMvec2 uv;
-                    pfmVec2Lerp(uv, uvA, uvB, t);
+                    //pfmVec2Copy(uv, uvA);
+                    //pfmVec2Add(uvA, uvA, uvStep);
+                    pfmVec2Lerp(uv, uvA, uvB, gamma);
 
                     if (is3D)
                     {
@@ -420,10 +451,12 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
                 if (lighting)
                 {
                     PFMvec3 position;
-                    pfmVec3Lerp(position, pA, pB, t);
+                    pfmVec3Copy(position, pA);
+                    pfmVec3Add(pA, pA, pStep);
 
                     PFMvec3 normal;
-                    pfmVec3Lerp(normal, nA, nB, t);
+                    pfmVec3Copy(normal, nA);
+                    pfmVec3Add(nA, nA, nStep);
 
                     fragment = Process_Lights(currentCtx->activeLights,
                         &currentCtx->faceMaterial[faceToRender], fragment,
