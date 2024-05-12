@@ -71,6 +71,11 @@ typedef PFM_FLOAT PFMvec3[3];
 typedef PFM_FLOAT PFMvec4[4];
 typedef PFM_FLOAT PFMmat4[16];
 
+typedef PFM_FLOAT* aPFMvec2;
+typedef PFM_FLOAT* aPFMvec3;
+typedef PFM_FLOAT* aPFMvec4;
+typedef PFM_FLOAT* aPFMmat4;
+
 /* 2D Vector functions definition */
 
 PFM_API void pfmVec2Zero(PFMvec2 dst)
@@ -88,12 +93,12 @@ PFM_API void pfmVec2Set(PFMvec2 dst, PFM_FLOAT x, PFM_FLOAT y)
     dst[0] = x, dst[1] = y;
 }
 
-PFM_API void pfmVec2Copy(PFMvec2 dst, const PFMvec2 src)
+PFM_API void pfmVec2Copy(aPFMvec2 restrict dst, const aPFMvec2 restrict src)
 {
     memcpy(dst, src, sizeof(PFMvec2));
 }
 
-PFM_API void pfmVec2Swap(PFMvec2 a, PFMvec2 b)
+PFM_API void pfmVec2Swap(aPFMvec2 restrict a, aPFMvec2 restrict b)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -111,7 +116,23 @@ PFM_API void pfmVec2Neg(PFMvec2 dst, const PFMvec2 v)
     }
 }
 
+PFM_API void pfmVec2NegR(aPFMvec2 restrict dst, const PFMvec2 v)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = -v[i];
+    }
+}
+
 PFM_API void pfmVec2Add(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v1[i] + v2[i];
+    }
+}
+
+PFM_API void pfmVec2AddR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -127,7 +148,23 @@ PFM_API void pfmVec2Sub(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
     }
 }
 
+PFM_API void pfmVec2SubR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v1[i] - v2[i];
+    }
+}
+
 PFM_API void pfmVec2Mul(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v1[i]*v2[i];
+    }
+}
+
+PFM_API void pfmVec2MulR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -143,7 +180,23 @@ PFM_API void pfmVec2Div(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
     }
 }
 
+PFM_API void pfmVec2DivR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v1[i]/v2[i];
+    }
+}
+
 PFM_API void pfmVec2Offset(PFMvec2 dst, const PFMvec2 v, PFM_FLOAT scalar)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v[i] + scalar;
+    }
+}
+
+PFM_API void pfmVec2OffsetR(aPFMvec2 restrict dst, const PFMvec2 v, PFM_FLOAT scalar)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -159,7 +212,27 @@ PFM_API void pfmVec2Scale(PFMvec2 dst, const PFMvec2 v, PFM_FLOAT scalar)
     }
 }
 
+PFM_API void pfmVec2ScaleR(aPFMvec2 restrict dst, const PFMvec2 v, PFM_FLOAT scalar)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v[i]*scalar;
+    }
+}
+
 PFM_API void pfmVec2Normalize(PFMvec2 dst, const PFMvec2 v)
+{
+    PFM_FLOAT squaredLength = v[0]*v[0] + v[1]*v[1];
+    if (squaredLength == 0.0f) return;
+
+    PFM_FLOAT invLength = rsqrtf(squaredLength);
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v[i] * invLength;
+    }
+}
+
+PFM_API void pfmVec2NormalizeR(aPFMvec2 restrict dst, const PFMvec2 v)
 {
     PFM_FLOAT squaredLength = v[0]*v[0] + v[1]*v[1];
     if (squaredLength == 0.0f) return;
@@ -232,11 +305,41 @@ PFM_API void pfmVec2Direction(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
     {
         dst[i] = tmp[i]*invLength;
     }
+}
 
-    memcpy(dst, tmp, sizeof(PFMvec3));
+PFM_API void pfmVec2DirectionR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
+{
+    PFM_FLOAT lengthSq = 0.0f;
+
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v1[i] - v2[i];
+        lengthSq += dst[i]*dst[i];
+    }
+
+    PFM_FLOAT invLength = rsqrtf(lengthSq);
+
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = dst[i]*invLength;
+    }
 }
 
 PFM_API void pfmVec2Lerp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, PFM_FLOAT t)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = v1[i] + t*(v2[i]-v1[i]);
+    }
+}
+
+PFM_API void pfmVec2LerpR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2, PFM_FLOAT t)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -252,7 +355,23 @@ PFM_API void pfmVec2BaryInterp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, 
     }
 }
 
+PFM_API void pfmVec2BaryInterpR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, PFM_FLOAT w1, PFM_FLOAT w2, PFM_FLOAT w3)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = w1*v1[i] + w2*v2[i] + w3*v3[i];
+    }
+}
+
 PFM_API void pfmVec2BaryInterpV(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, const PFMvec3 w)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = w[0]*v1[i] + w[1]*v2[i] + w[2]*v3[i];
+    }
+}
+
+PFM_API void pfmVec2BaryInterpVR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, const PFMvec3 w)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -270,6 +389,12 @@ PFM_API void pfmVec2Transform(PFMvec2 dst, const PFMvec2 v, const PFMmat4 mat)
     memcpy(dst, tmp, sizeof(PFMvec2));
 }
 
+PFM_API void pfmVec2TransformR(aPFMvec2 restrict dst, const PFMvec2 v, const PFMmat4 mat)
+{
+    dst[0] = mat[0]*v[0] + mat[4]*v[1] + mat[12];
+    dst[1] = mat[1]*v[0] + mat[5]*v[1] + mat[13];
+}
+
 PFM_API void pfmVec2TransformWT(PFMvec2 dst, const PFMvec2 v, PFM_FLOAT wTranslation, const PFMmat4 mat)
 {
     PFMvec2 tmp = {
@@ -278,6 +403,12 @@ PFM_API void pfmVec2TransformWT(PFMvec2 dst, const PFMvec2 v, PFM_FLOAT wTransla
     };
 
     memcpy(dst, tmp, sizeof(PFMvec2));
+}
+
+PFM_API void pfmVec2TransformWTR(aPFMvec2 restrict dst, const PFMvec2 v, PFM_FLOAT wTranslation, const PFMmat4 mat)
+{
+    dst[0] = mat[0]*v[0] + mat[4]*v[1] + wTranslation*mat[12];
+    dst[1] = mat[1]*v[0] + mat[5]*v[1] + wTranslation*mat[13];
 }
 
 /* 3D Vector functions definition */
@@ -297,12 +428,12 @@ PFM_API void pfmVec3Set(PFMvec3 dst, PFM_FLOAT x, PFM_FLOAT y, PFM_FLOAT z)
     dst[0] = x, dst[1] = y, dst[2] = z;
 }
 
-PFM_API void pfmVec3Copy(PFMvec3 dst, const PFMvec3 src)
+PFM_API void pfmVec3Copy(aPFMvec3 restrict dst, const aPFMvec3 restrict src)
 {
     memcpy(dst, src, sizeof(PFMvec3));
 }
 
-PFM_API void pfmVec3Swap(PFMvec3 a, PFMvec3 b)
+PFM_API void pfmVec3Swap(aPFMvec3 restrict a, aPFMvec3 restrict b)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -326,7 +457,29 @@ PFM_API void pfmVec3Neg(PFMvec3 dst, const PFMvec3 v)
     }
 }
 
+PFM_API void pfmVec3NegR(aPFMvec3 restrict dst, const PFMvec3 v)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = -v[i];
+    }
+}
+
 PFM_API void pfmVec3Add(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v1[i] + v2[i];
+    }
+}
+
+PFM_API void pfmVec3AddR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -348,7 +501,29 @@ PFM_API void pfmVec3Sub(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
     }
 }
 
+PFM_API void pfmVec3SubR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v1[i] - v2[i];
+    }
+}
+
 PFM_API void pfmVec3Mul(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v1[i]*v2[i];
+    }
+}
+
+PFM_API void pfmVec3MulR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -370,7 +545,29 @@ PFM_API void pfmVec3Div(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
     }
 }
 
+PFM_API void pfmVec3DivR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v1[i]/v2[i];
+    }
+}
+
 PFM_API void pfmVec3Offset(PFMvec3 dst, const PFMvec3 v, PFM_FLOAT scalar)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v[i] + scalar;
+    }
+}
+
+PFM_API void pfmVec3OffsetR(aPFMvec3 restrict dst, const PFMvec3 v, PFM_FLOAT scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -392,7 +589,34 @@ PFM_API void pfmVec3Scale(PFMvec3 dst, const PFMvec3 v, PFM_FLOAT scalar)
     }
 }
 
+PFM_API void pfmVec3ScaleR(aPFMvec3 restrict dst, const PFMvec3 v, PFM_FLOAT scalar)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v[i]*scalar;
+    }
+}
+
 PFM_API void pfmVec3Normalize(PFMvec3 dst, const PFMvec3 v)
+{
+    PFM_FLOAT squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
+    if (squaredLength == 0.0f) return;
+
+    PFM_FLOAT invLength = rsqrtf(squaredLength);
+
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v[i] * invLength;
+    }
+}
+
+PFM_API void pfmVec3NormalizeR(aPFMvec3 restrict dst, const PFMvec3 v)
 {
     PFM_FLOAT squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
     if (squaredLength == 0.0f) return;
@@ -442,6 +666,13 @@ PFM_API void pfmVec3Cross(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
     };
 
     memcpy(dst, tmp, sizeof(PFMvec3));
+}
+
+PFM_API void pfmVec3CrossR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+{
+    dst[0] = v1[1]*v2[2] - v1[2]*v2[1];
+    dst[1] = v1[2]*v2[0] - v1[0]*v2[2];
+    dst[2] = v1[0]*v2[1] - v1[1]*v2[0];
 }
 
 PFM_API PFM_FLOAT pfmVec3Distance(const PFMvec3 v1, const PFMvec3 v2)
@@ -502,11 +733,44 @@ PFM_API void pfmVec3Direction(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
     {
         dst[i] = tmp[i]*invLength;
     }
+}
 
-    memcpy(dst, tmp, sizeof(PFMvec3));
+PFM_API void pfmVec3DirectionR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+{
+    PFM_FLOAT lengthSq = 0.0f;
+
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v1[i] - v2[i];
+        lengthSq += dst[i]*dst[i];
+    }
+
+    PFM_FLOAT invLength = rsqrtf(lengthSq);
+
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = dst[i]*invLength;
+    }
 }
 
 PFM_API void pfmVec3Lerp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, PFM_FLOAT t)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = v1[i] + t*(v2[i]-v1[i]);
+    }
+}
+
+PFM_API void pfmVec3LerpR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2, PFM_FLOAT t)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -528,7 +792,29 @@ PFM_API void pfmVec3BaryInterp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, 
     }
 }
 
+PFM_API void pfmVec3BaryInterpR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, PFM_FLOAT w1, PFM_FLOAT w2, PFM_FLOAT w3)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = w1*v1[i] + w2*v2[i] + w3*v3[i];
+    }
+}
+
 PFM_API void pfmVec3BaryInterpV(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, const PFMvec3 w)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = w[0]*v1[i] + w[1]*v2[i] + w[2]*v3[i];
+    }
+}
+
+PFM_API void pfmVec3BaryInterpVR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, const PFMvec3 w)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -550,6 +836,13 @@ PFM_API void pfmVec3Transform(PFMvec3 dst, const PFMvec3 v, const PFMmat4 mat)
     memcpy(dst, tmp, sizeof(PFMvec3));
 }
 
+PFM_API void pfmVec3TransformR(aPFMvec3 restrict dst, const PFMvec3 v, const PFMmat4 mat)
+{
+    dst[0] = mat[0]*v[0] + mat[4]*v[1] + mat[8]*v[2] + mat[12];
+    dst[1] = mat[1]*v[0] + mat[5]*v[1] + mat[9]*v[2] + mat[13];
+    dst[2] = mat[2]*v[0] + mat[6]*v[1] + mat[10]*v[2] + mat[14];
+}
+
 PFM_API void pfmVec3TransformWT(PFMvec3 dst, const PFMvec3 v, PFM_FLOAT wTranslation, const PFMmat4 mat)
 {
     PFMvec3 tmp = {
@@ -561,7 +854,37 @@ PFM_API void pfmVec3TransformWT(PFMvec3 dst, const PFMvec3 v, PFM_FLOAT wTransla
     memcpy(dst, tmp, sizeof(PFMvec3));
 }
 
+PFM_API void pfmVec3TransformWTR(aPFMvec3 restrict dst, const PFMvec3 v, PFM_FLOAT wTranslation, const PFMmat4 mat)
+{
+    dst[0] = mat[0]*v[0] + mat[4]*v[1] + mat[8]*v[2] + wTranslation*mat[12];
+    dst[1] = mat[1]*v[0] + mat[5]*v[1] + mat[9]*v[2] + wTranslation*mat[13];
+    dst[2] = mat[2]*v[0] + mat[6]*v[1] + mat[10]*v[2] + wTranslation*mat[14];
+}
+
 PFM_API void pfmVec3Reflect(PFMvec3 dst, const PFMvec3 incident, const PFMvec3 normal)
+{
+    PFM_FLOAT dotProduct = 0.0f;
+
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dotProduct += incident[i]*normal[i];
+    }
+
+    dotProduct *= 2.0f;
+
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = incident[i] - dotProduct*normal[i];
+    }
+}
+
+PFM_API void pfmVec3ReflectR(aPFMvec3 restrict dst, const PFMvec3 incident, const PFMvec3 normal)
 {
     PFM_FLOAT dotProduct = 0.0f;
 
@@ -601,12 +924,12 @@ PFM_API void pfmVec4Set(PFMvec4 dst, PFM_FLOAT x, PFM_FLOAT y, PFM_FLOAT z, PFM_
     dst[0] = x, dst[1] = y, dst[2] = z, dst[3] = w;
 }
 
-PFM_API void pfmVec4Copy(PFMvec4 dst, const PFMvec4 src)
+PFM_API void pfmVec4Copy(aPFMvec4 restrict dst, const aPFMvec4 restrict src)
 {
     memcpy(dst, src, sizeof(PFMvec4));
 }
 
-PFM_API void pfmVec4Swap(PFMvec4 a, PFMvec4 b)
+PFM_API void pfmVec4Swap(aPFMvec4 restrict a, aPFMvec4 restrict b)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -630,7 +953,29 @@ PFM_API void pfmVec4Neg(PFMvec4 dst, const PFMvec4 v)
     }
 }
 
+PFM_API void pfmVec4NegR(aPFMvec4 restrict dst, const PFMvec4 v)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = -v[i];
+    }
+}
+
 PFM_API void pfmVec4Add(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v1[i] + v2[i];
+    }
+}
+
+PFM_API void pfmVec4AddR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -652,7 +997,29 @@ PFM_API void pfmVec4Sub(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
     }
 }
 
+PFM_API void pfmVec4SubR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v1[i] - v2[i];
+    }
+}
+
 PFM_API void pfmVec4Mul(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v1[i]*v2[i];
+    }
+}
+
+PFM_API void pfmVec4MulR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -674,7 +1041,29 @@ PFM_API void pfmVec4Div(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
     }
 }
 
+PFM_API void pfmVec4DivR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v1[i]/v2[i];
+    }
+}
+
 PFM_API void pfmVec4Offset(PFMvec4 dst, const PFMvec4 v, PFM_FLOAT scalar)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v[i] + scalar;
+    }
+}
+
+PFM_API void pfmVec4OffsetR(aPFMvec4 restrict dst, const PFMvec4 v, PFM_FLOAT scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -696,7 +1085,34 @@ PFM_API void pfmVec4Scale(PFMvec4 dst, const PFMvec4 v, PFM_FLOAT scalar)
     }
 }
 
+PFM_API void pfmVec4ScaleR(aPFMvec4 restrict dst, const PFMvec4 v, PFM_FLOAT scalar)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v[i]*scalar;
+    }
+}
+
 PFM_API void pfmVec4Normalize(PFMvec4 dst, const PFMvec4 v)
+{
+    PFM_FLOAT squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3];
+    if (squaredLength == 0.0f) return;
+
+    PFM_FLOAT invLength = rsqrtf(squaredLength);
+
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v[i] * invLength;
+    }
+}
+
+PFM_API void pfmVec4NormalizeR(aPFMvec4 restrict dst, const PFMvec4 v)
 {
     PFM_FLOAT squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3];
     if (squaredLength == 0.0f) return;
@@ -738,6 +1154,17 @@ PFM_API void pfmVec4Lerp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, PFM_FL
     }
 }
 
+PFM_API void pfmVec4LerpR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2, PFM_FLOAT t)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = v1[i] + t*(v2[i]-v1[i]);
+    }
+}
+
 PFM_API void pfmVec4BaryInterp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, PFM_FLOAT w1, PFM_FLOAT w2, PFM_FLOAT w3)
 {
 #   ifdef _OPENMP
@@ -749,7 +1176,29 @@ PFM_API void pfmVec4BaryInterp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, 
     }
 }
 
+PFM_API void pfmVec4BaryInterpR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, PFM_FLOAT w1, PFM_FLOAT w2, PFM_FLOAT w3)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = w1*v1[i] + w2*v2[i] + w3*v3[i];
+    }
+}
+
 PFM_API void pfmVec4BaryInterpV(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = w[0]*v1[i] + w[1]*v2[i] + w[2]*v3[i];
+    }
+}
+
+PFM_API void pfmVec4BaryInterpVR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -772,9 +1221,17 @@ PFM_API void pfmVec4Transform(PFMvec4 dst, const PFMvec4 v, const PFMmat4 mat)
     memcpy(dst, tmp, sizeof(PFMvec4));
 }
 
+PFM_API void pfmVec4TransformR(aPFMvec4 restrict dst, const PFMvec4 v, const PFMmat4 mat)
+{
+    dst[0] = mat[0]*v[0] + mat[4]*v[1] + mat[8]*v[2] + mat[12]*v[3];
+    dst[1] = mat[1]*v[0] + mat[5]*v[1] + mat[9]*v[2] + mat[13]*v[3];
+    dst[2] = mat[2]*v[0] + mat[6]*v[1] + mat[10]*v[2] + mat[14]*v[3];
+    dst[3] = mat[3]*v[0] + mat[7]*v[1] + mat[11]*v[2] + mat[15]*v[3];
+}
+
 /* Matrix 4x4 functions definition */
 
-PFM_API void pfmMat4Copy(PFMmat4 dst, const PFMmat4 src)
+PFM_API void pfmMat4Copy(aPFMmat4 restrict dst, const aPFMmat4 restrict src)
 {
     memcpy(dst, src, sizeof(PFMmat4));
 }
@@ -819,6 +1276,20 @@ PFM_API void pfmMat4Transpose(PFMmat4 dst, const PFMmat4 src)
     }
 
     memcpy(dst, result, sizeof(PFMmat4));
+}
+
+PFM_API void pfmMat4TransposeR(aPFMmat4 restrict dst, const PFMmat4 src)
+{
+    // NOTE 1: Seems more optimized in O3 by GCC 13 without "omp simd collapse(2)"
+    // NOTE 2: Also using "omp simd" produces exactly the same code in O3 with GCC 13.
+
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        for (int_fast8_t j = 0; j < 4; j++)
+        {
+            dst[i * 4 + j] = src[j * 4 + i];
+        }
+    }
 }
 
 PFM_API void pfmMat4Invert(PFMmat4 dst, const PFMmat4 src)
@@ -880,7 +1351,29 @@ PFM_API void pfmMat4Add(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
     }
 }
 
+PFM_API void pfmMat4AddR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat4 right)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 16; i++)
+    {
+        dst[i] = left[i] + right[i];
+    }
+}
+
 PFM_API void pfmMat4Sub(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
+{
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 16; i++)
+    {
+        dst[i] = left[i] + right[i];
+    }
+}
+
+PFM_API void pfmMat4SubR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat4 right)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -914,6 +1407,27 @@ PFM_API void pfmMat4Mul(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
     }
 
     memcpy(dst, result, sizeof(PFMmat4));
+}
+
+PFM_API void pfmMat4MulR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat4 right)
+{
+#   ifdef _OPENMP
+#       pragma omp simd collapse(2)
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        for (int_fast8_t j = 0; j < 4; j++)
+        {
+            PFM_FLOAT sum = 0.0;
+
+            for (int_fast8_t k = 0; k < 4; k++)
+            {
+                sum += left[i * 4 + k] * right[k * 4 + j];
+            }
+
+            dst[i * 4 + j] = sum;
+        }
+    }
 }
 
 PFM_API void pfmMat4Translate(PFMmat4 dst, PFM_FLOAT x, PFM_FLOAT y, PFM_FLOAT z)
