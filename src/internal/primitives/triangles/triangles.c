@@ -31,7 +31,7 @@ typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFcolor, PFfloat, PFfl
 
 /* Including internal function prototypes */
 
-extern void pfInternal_HomogeneousToScreen(PFvertex* restrict v);
+extern void pfInternal_HomogeneousToScreen(PFvertex* v);
 
 
 /* Internal helper function declarations */
@@ -56,10 +56,10 @@ static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, 
 
 /* Polygon processing functions */
 
-static PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter);
-static PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter);
+static PFboolean Process_ClipPolygonW(PFvertex* polygon, int_fast8_t* vertexCounter);
+static PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, int_fast8_t* vertexCounter);
 
-PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter)
+PFboolean Process_ProjectAndClipTriangle(PFvertex* polygon, int_fast8_t* vertexCounter)
 {
     PFfloat weightSum = 0.0f;
 
@@ -105,7 +105,7 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* restrict polygon, int_fast8_t
     return PF_TRUE; // Is 3D
 }
 
-PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter)
+PFboolean Process_ClipPolygonW(PFvertex* polygon, int_fast8_t* vertexCounter)
 {
     PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
     memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
@@ -138,7 +138,7 @@ PFboolean Process_ClipPolygonW(PFvertex* restrict polygon, int_fast8_t* restrict
     return *vertexCounter > 0;
 }
 
-PFboolean Process_ClipPolygonXYZ(PFvertex* restrict polygon, int_fast8_t* restrict vertexCounter)
+PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, int_fast8_t* vertexCounter)
 {
     for (int_fast8_t iAxis = 0; iAxis < 3; iAxis++)
     {

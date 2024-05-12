@@ -21,11 +21,11 @@
 
 /* Including internal function prototypes */
 
-extern void pfInternal_HomogeneousToScreen(PFvertex* restrict v);
+extern void pfInternal_HomogeneousToScreen(PFvertex* v);
 
 /* Main functions declaration used by 'context.c' */
 
-PFboolean Process_ProjectPoint(PFvertex* restrict v)
+PFboolean Process_ProjectPoint(PFvertex* v)
 {
     memcpy(v->homogeneous, v->position, sizeof(PFMvec4));
     pfmVec4Transform(v->homogeneous, v->homogeneous, currentCtx->matMVP);

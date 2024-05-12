@@ -106,10 +106,19 @@
 
 /* Types definitions */
 
-typedef enum {
-    PF_FALSE = 0,
-    PF_TRUE = 1
-} PFboolean;
+#if (defined(__STDC__) && __STDC_VERSION__ >= 199901L) || (defined(_MSC_VER) && _MSC_VER >= 1800)
+#   include <stdbool.h>
+#elif !defined(__cplusplus) && !defined(bool)
+#   define PF_BOOL_TYPE
+#endif
+
+#ifdef PF_BOOL_TYPE
+    typedef enum { PF_FALSE = 0, PF_TRUE = 1 } PFboolean;
+#else
+    typedef bool PFboolean;
+#   define PF_FALSE 0
+#   define PF_TRUE  1
+#endif
 
 typedef int8_t      PFbyte;
 typedef uint8_t     PFubyte;

@@ -22,7 +22,7 @@
 
 /* Including internal function prototypes */
 
-extern void pfInternal_HomogeneousToScreen(PFvertex* restrict v);
+extern void pfInternal_HomogeneousToScreen(PFvertex* v);
 
 /* Internal helper function declarations */
 
@@ -142,7 +142,7 @@ static PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2
     return PF_TRUE;
 }
 
-void Process_ProjectAndClipLine(PFvertex* restrict line, int_fast8_t* restrict vertexCounter)
+void Process_ProjectAndClipLine(PFvertex* line, int_fast8_t* vertexCounter)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {

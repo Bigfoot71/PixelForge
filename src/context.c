@@ -321,7 +321,7 @@ void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelf
         const PFsizei bufferSize = width*height;
 
         // Reallocate memory for the z-buffer
-        PFfloat *zbuffer = PF_REALLOC(currentCtx->mainFramebuffer.zbuffer, bufferSize);
+        PFfloat *zbuffer = (PFfloat*)PF_REALLOC(currentCtx->mainFramebuffer.zbuffer, bufferSize);
 
         // Check if reallocation failed
         if (zbuffer == NULL)
@@ -2681,7 +2681,7 @@ void pfPostProcess(PFpostprocessfunc postProcessFunction)
 
 /* Internal vertex processing function definitions */
 
-void pfInternal_HomogeneousToScreen(PFvertex* restrict v)
+void pfInternal_HomogeneousToScreen(PFvertex* v)
 {
     // NOTE: We add 0.5 to the screen coordinates to round them to the nearest integer
     // when they are converted to integer coordinates. This adjustment was added because
@@ -2949,10 +2949,8 @@ void ProcessRasterize(void)
 
             if (faceToRender == PF_FRONT_AND_BACK)
             {
-                for (PFint iFace = 0; iFace < 2; iFace++)
-                {
-                    ProcessRasterize_TriangleFan(iFace, 2);
-                }
+                ProcessRasterize_TriangleFan(PF_FRONT, 2);
+                ProcessRasterize_TriangleFan(PF_BACK, 2);
             }
             else
             {
@@ -2971,10 +2969,8 @@ void ProcessRasterize(void)
 
             if (faceToRender == PF_FRONT_AND_BACK)
             {
-                for (PFint iFace = 0; iFace < 2; iFace++)
-                {
-                    ProcessRasterize_TriangleStrip(iFace, 2);
-                }
+                ProcessRasterize_TriangleStrip(PF_FRONT, 2);
+                ProcessRasterize_TriangleStrip(PF_BACK, 2);
             }
             else
             {
@@ -3041,10 +3037,8 @@ void ProcessRasterize(void)
 
             if (faceToRender == PF_FRONT_AND_BACK)
             {
-                for (PFint iFace = 0; iFace < 2; iFace++)
-                {
-                    ProcessRasterize_TriangleFan(iFace, 4);
-                }
+                ProcessRasterize_TriangleFan(PF_FRONT, 4);
+                ProcessRasterize_TriangleFan(PF_BACK, 4);
             }
             else
             {
@@ -3063,10 +3057,8 @@ void ProcessRasterize(void)
 
             if (faceToRender == PF_FRONT_AND_BACK)
             {
-                for (PFint iFace = 0; iFace < 2; iFace++)
-                {
-                    ProcessRasterize_TriangleStrip(iFace, 4);
-                }
+                ProcessRasterize_TriangleStrip(PF_FRONT, 4);
+                ProcessRasterize_TriangleStrip(PF_BACK, 4);
             }
             else
             {
