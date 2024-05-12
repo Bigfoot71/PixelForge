@@ -83,9 +83,9 @@ static void SetR5G6B5(void* pixels, PFsizei offset, PFcolor color)
     // NOTE: Calculate R5G6B5 equivalent color
     PFMvec3 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
 
-    PFubyte r = (PFubyte)(round(nCol[0]*31.0f));
-    PFubyte g = (PFubyte)(round(nCol[1]*63.0f));
-    PFubyte b = (PFubyte)(round(nCol[2]*31.0f));
+    PFubyte r = (PFubyte)(roundf(nCol[0]*31.0f));
+    PFubyte g = (PFubyte)(roundf(nCol[1]*63.0f));
+    PFubyte b = (PFubyte)(roundf(nCol[2]*31.0f));
 
     ((PFushort*)pixels)[offset] = (PFushort)r << 11 | (PFushort)g << 5 | (PFushort)b;
 }
@@ -101,9 +101,9 @@ static void SetR5G5B5A1(void* pixels, PFsizei offset, PFcolor color)
     // NOTE: Calculate R5G5B5A1 equivalent color
     PFMvec4 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
 
-    PFubyte r = (PFubyte)(round(nCol[0]*31.0f));
-    PFubyte g = (PFubyte)(round(nCol[1]*31.0f));
-    PFubyte b = (PFubyte)(round(nCol[2]*31.0f));
+    PFubyte r = (PFubyte)(roundf(nCol[0]*31.0f));
+    PFubyte g = (PFubyte)(roundf(nCol[1]*31.0f));
+    PFubyte b = (PFubyte)(roundf(nCol[2]*31.0f));
     PFubyte a = (nCol[3] > ((PFfloat)PF_PIXELFORMAT_R5G5B5A1_ALPHA_THRESHOLD*INV_255))? 1 : 0;
 
     ((PFushort*)pixels)[offset] = (PFushort)r << 11 | (PFushort)g << 6 | (PFushort)b << 1 | (PFushort)a;
@@ -114,10 +114,10 @@ static void SetR4G4B4A4(void* pixels, PFsizei offset, PFcolor color)
     // NOTE: Calculate R5G5B5A1 equivalent color
     PFMvec4 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
 
-    PFubyte r = (PFubyte)(round(nCol[0]*15.0f));
-    PFubyte g = (PFubyte)(round(nCol[1]*15.0f));
-    PFubyte b = (PFubyte)(round(nCol[2]*15.0f));
-    PFubyte a = (PFubyte)(round(nCol[3]*15.0f));
+    PFubyte r = (PFubyte)(roundf(nCol[0]*15.0f));
+    PFubyte g = (PFubyte)(roundf(nCol[1]*15.0f));
+    PFubyte b = (PFubyte)(roundf(nCol[2]*15.0f));
+    PFubyte a = (PFubyte)(roundf(nCol[3]*15.0f));
 
     ((PFushort*)pixels)[offset] = (PFushort)r << 12 | (PFushort)g << 8 | (PFushort)b << 4 | (PFushort)a;
 }

@@ -323,16 +323,16 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
             if (texturing)
             {
-                pfmVec2Lerp(uvA, v1->texcoord, v3->texcoord, alpha);
-                pfmVec2Lerp(uvB, v1->texcoord, v2->texcoord, beta1);
+                pfmVec2LerpR(uvA, v1->texcoord, v3->texcoord, alpha);
+                pfmVec2LerpR(uvB, v1->texcoord, v2->texcoord, beta1);
             }
 
             if (lighting)
             {
-                pfmVec3Lerp(pA, v1->position, v3->position, alpha);
-                pfmVec3Lerp(pB, v1->position, v2->position, beta1);
-                pfmVec3Lerp(nA, v1->normal, v3->normal, alpha);
-                pfmVec3Lerp(nB, v1->normal, v2->normal, beta1);
+                pfmVec3LerpR(pA, v1->position, v3->position, alpha);
+                pfmVec3LerpR(pB, v1->position, v2->position, beta1);
+                pfmVec3LerpR(nA, v1->normal, v3->normal, alpha);
+                pfmVec3LerpR(nB, v1->normal, v2->normal, beta1);
             }
 
         }
@@ -349,16 +349,16 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
             if (texturing)
             {
-                pfmVec2Lerp(uvA, v1->texcoord, v3->texcoord, alpha);
-                pfmVec2Lerp(uvB, v2->texcoord, v3->texcoord, beta2);
+                pfmVec2LerpR(uvA, v1->texcoord, v3->texcoord, alpha);
+                pfmVec2LerpR(uvB, v2->texcoord, v3->texcoord, beta2);
             }
 
             if (lighting)
             {
-                pfmVec3Lerp(pA, v1->position, v3->position, alpha);
-                pfmVec3Lerp(pB, v2->position, v3->position, beta2);
-                pfmVec3Lerp(nA, v1->normal, v3->normal, alpha);
-                pfmVec3Lerp(nB, v2->normal, v3->normal, beta2);
+                pfmVec3LerpR(pA, v1->position, v3->position, alpha);
+                pfmVec3LerpR(pB, v2->position, v3->position, beta2);
+                pfmVec3LerpR(nA, v1->normal, v3->normal, alpha);
+                pfmVec3LerpR(nB, v2->normal, v3->normal, beta2);
             }
         }
 
@@ -398,16 +398,16 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         // REIVEW: Very weird issue with UV increment
         /*
             PFMvec2 uvStep;
-            pfmVec2Sub(uvStep, uvB, uvA);
+            pfmVec2SubR(uvStep, uvB, uvA);
             pfmVec2Scale(uvStep, uvStep, xInvLen);
         */
 
         PFMvec3 pStep;
-        pfmVec3Sub(pStep, pB, pA);
+        pfmVec3SubR(pStep, pB, pA);
         pfmVec3Scale(pStep, pStep, xInvLen);
 
         PFMvec3 nStep;
-        pfmVec3Sub(nStep, nB, nA);
+        pfmVec3SubR(nStep, nB, nA);
         pfmVec3Scale(nStep, nStep, xInvLen);
 
         /* Draw Horizontal Line */
@@ -433,7 +433,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
                     PFMvec2 uv;
                     //pfmVec2Copy(uv, uvA);
                     //pfmVec2Add(uvA, uvA, uvStep);
-                    pfmVec2Lerp(uv, uvA, uvB, gamma);
+                    pfmVec2LerpR(uv, uvA, uvB, gamma);
 
                     if (is3D)
                     {
@@ -623,15 +623,15 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
 #   define TEXTURING() \
         PFMvec2 texcoord; \
-        pfmVec2BaryInterp(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3); \
+        pfmVec2BaryInterpR(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3); \
         if (is3D) texcoord[0] *= z, texcoord[1] *= z; /* Perspective correct */ \
         PFcolor texel = pfGetTextureSample(texture, texcoord[0], texcoord[1]); \
         fragment = pfBlendMultiplicative(texel, fragment);
 
 #   define LIGHTING() \
         PFMvec3 normal, position; \
-        pfmVec3BaryInterp(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3); \
-        pfmVec3BaryInterp(position, v1->position, v2->position, v3->position, aW1, aW2, aW3); \
+        pfmVec3BaryInterpR(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3); \
+        pfmVec3BaryInterpR(position, v1->position, v2->position, v3->position, aW1, aW2, aW3); \
         fragment = Process_Lights(currentCtx->activeLights, &currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal);
 
 #   define SET_FRAG() \
@@ -693,7 +693,7 @@ static PFcolor Process_Lights(const PFlight* activeLights, const PFmaterial* mat
 
     // Compute the view direction from fragment position
     PFMvec3 viewDir;
-    pfmVec3Direction(viewDir, viewPos, fragPos);
+    pfmVec3DirectionR(viewDir, viewPos, fragPos);
 
     // Specular properties
     // Retrieve material's shininess and specular color
@@ -708,7 +708,7 @@ static PFcolor Process_Lights(const PFlight* activeLights, const PFmaterial* mat
 
         // Compute light direction
         PFMvec3 lightDir;
-        pfmVec3Sub(lightDir, light->position, fragPos);
+        pfmVec3SubR(lightDir, light->position, fragPos);
 
         // Compute distance from light to fragment position
         // And also normalize the light direction if necessary.
@@ -733,7 +733,7 @@ static PFcolor Process_Lights(const PFlight* activeLights, const PFmaterial* mat
         if (light->innerCutOff < M_PI)
         {
             PFMvec3 negLightDir;
-            pfmVec3Neg(negLightDir, light->direction);
+            pfmVec3NegR(negLightDir, light->direction);
 
             PFfloat theta = pfmVec3Dot(lightDir, negLightDir);
             PFfloat epsilon = light->innerCutOff - light->outerCutOff;
@@ -769,14 +769,14 @@ static PFcolor Process_Lights(const PFlight* activeLights, const PFmaterial* mat
 #       ifndef PF_PHONG_REFLECTION
             // Blinn-Phong
             PFMvec3 halfWayDir;
-            pfmVec3Add(halfWayDir, lightDir, viewDir);
+            pfmVec3AddR(halfWayDir, lightDir, viewDir);
             pfmVec3Normalize(halfWayDir, halfWayDir);
             PFubyte spec = 255*powf(fmaxf(pfmVec3Dot(fragNormal, halfWayDir), 0.0f), shininess);
 #       else
             // Phong
             PFMvec3 reflectDir, negLightDir;
-            pfmVec3Neg(negLightDir, lightDir);
-            pfmVec3Reflect(reflectDir, negLightDir, fragNormal);
+            pfmVec3NegR(negLightDir, lightDir);
+            pfmVec3ReflectR(reflectDir, negLightDir, fragNormal);
             PFubyte spec = 255*powf(fmaxf(pfmVec3Dot(reflectDir, viewDir), 0.0f), shininess);
 #       endif
 

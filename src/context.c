@@ -116,7 +116,7 @@ static void pfInternal_UpdateMatrices(PFboolean matNormal)
 {
     if (currentCtx->modelMatrixUsed)
     {
-        pfmMat4Mul(currentCtx->matMVP, currentCtx->matModel, currentCtx->matView);
+        pfmMat4MulR(currentCtx->matMVP, currentCtx->matModel, currentCtx->matView);
         pfmMat4Mul(currentCtx->matMVP, currentCtx->matMVP, currentCtx->matProjection);
 
         if (matNormal && currentCtx->state & PF_LIGHTING)
@@ -127,7 +127,7 @@ static void pfInternal_UpdateMatrices(PFboolean matNormal)
     }
     else
     {
-        pfmMat4Mul(currentCtx->matMVP, currentCtx->matView, currentCtx->matProjection);
+        pfmMat4MulR(currentCtx->matMVP, currentCtx->matView, currentCtx->matProjection);
 
         if (matNormal && currentCtx->state & PF_LIGHTING)
         {

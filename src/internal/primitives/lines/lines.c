@@ -114,7 +114,7 @@ static PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2
     PFfloat t1 = 0, t2 = 1;
 
     PFMvec4 delta;
-    pfmVec4Sub(delta, v2->homogeneous, v1->homogeneous);
+    pfmVec4SubR(delta, v2->homogeneous, v1->homogeneous);
 
     if (!Helper_ClipCoord3D(v1->homogeneous[3] - v1->homogeneous[0], -delta[3] + delta[0], &t1, &t2)) return PF_FALSE;
     if (!Helper_ClipCoord3D(v1->homogeneous[3] + v1->homogeneous[0], -delta[3] - delta[0], &t1, &t2)) return PF_FALSE;
@@ -128,14 +128,14 @@ static PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2
     if (t2 < 1)
     {
         PFMvec4 d;
-        pfmVec4Scale(d, delta, t2);
-        pfmVec4Add(v2->homogeneous, v1->homogeneous, d);
+        pfmVec4ScaleR(d, delta, t2);
+        pfmVec4AddR(v2->homogeneous, v1->homogeneous, d);
     }
 
     if (t1 > 0)
     {
         PFMvec4 d;
-        pfmVec4Scale(d, delta, t1);
+        pfmVec4ScaleR(d, delta, t1);
         pfmVec4Add(v1->homogeneous, v1->homogeneous, d);
     }
 
@@ -393,7 +393,7 @@ void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
     if (dx != 0 && abs(dy / dx) < 1)
     {
-        PFint wy = (thickness - 1)*sqrt(dx*dx + dy*dy) / (2*abs(dx));
+        PFint wy = (thickness - 1)*sqrtf(dx*dx + dy*dy) / (2*abs(dx));
 
         for (PFint i = 1; i <= wy; i++)
         {
@@ -410,7 +410,7 @@ void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2)
     }
     else if (dy != 0)
     {
-        PFint wx = (thickness - 1)*sqrt(dx*dx + dy*dy) / (2*abs(dy));
+        PFint wx = (thickness - 1)*sqrtf(dx*dx + dy*dy) / (2*abs(dy));
 
         for (PFint i = 1; i <= wx; i++)
         {
@@ -443,7 +443,7 @@ void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2)
 
     if (dx != 0 && abs(dy / dx) < 1)
     {
-        PFint wy = (thickness - 1)*sqrt(dx*dx + dy*dy) / (2*abs(dx));
+        PFint wy = (thickness - 1)*sqrtf(dx*dx + dy*dy) / (2*abs(dx));
 
         for (PFint i = 1; i <= wy; i++)
         {
@@ -460,7 +460,7 @@ void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2)
     }
     else if (dy != 0)
     {
-        PFint wx = (thickness - 1)*sqrt(dx*dx + dy*dy) / (2*abs(dy));
+        PFint wx = (thickness - 1)*sqrtf(dx*dx + dy*dy) / (2*abs(dy));
 
         for (PFint i = 1; i <= wx; i++)
         {
