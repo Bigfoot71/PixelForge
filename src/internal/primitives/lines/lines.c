@@ -505,25 +505,27 @@ static PFubyte Helper_EncodeClip2D(const PFMvec2 screen, PFint xMin, PFint yMin,
 
 static PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* t2)
 {
-    if (fabsf(p) < PF_CLIP_EPSILON && q < 0)
+    if (fabsf(p) < PF_CLIP_EPSILON)
     {
-        return PF_FALSE;
+        // Check if the line is entirely outside the window
+        if (q < -PF_CLIP_EPSILON) return 0; // Completely outside
+        return 1;                           // Completely inside or on the edges
     }
 
-    const PFfloat r = q / p;
+    const float r = q / p;
 
     if (p < 0)
     {
-        if (r > *t2) return PF_FALSE;
+        if (r > *t2) return 0;
         if (r > *t1) *t1 = r;
     }
     else
     {
-        if (r < *t1) return PF_FALSE;
+        if (r < *t1) return 0;
         if (r < *t2) *t2 = r;
     }
 
-    return PF_TRUE;
+    return 1;
 }
 
 PFcolor Helper_LerpColor(PFcolor a, PFcolor b, PFfloat t)
