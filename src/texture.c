@@ -138,7 +138,11 @@ static void SetR32(void* pixels, PFsizei offset, PFcolor color)
 static void SetR32G32B32(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate R32G32B32 equivalent color (normalized to 32bit)
-    PFMvec3 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
+    PFMvec3 nCol = {
+        (PFfloat)color.r*INV_255,
+        (PFfloat)color.g*INV_255,
+        (PFfloat)color.b*INV_255
+    };
 
     memcpy((PFMvec3*)pixels + offset, nCol, sizeof(PFMvec3));
 }
@@ -146,7 +150,12 @@ static void SetR32G32B32(void* pixels, PFsizei offset, PFcolor color)
 static void SetR32G32B32A32(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate R32G32B32A32 equivalent color (normalized to 32bit)
-    PFMvec4 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
+    PFMvec4 nCol = {
+        (PFfloat)color.r*INV_255,
+        (PFfloat)color.g*INV_255,
+        (PFfloat)color.b*INV_255,
+        (PFfloat)color.a*INV_255
+    };
 
     memcpy((PFMvec4*)pixels + offset, nCol, sizeof(PFMvec4));
 }
@@ -162,7 +171,11 @@ static void SetR16(void* pixels, PFsizei offset, PFcolor color)
 static void SetR16G16B16(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate R32G32B32 equivalent color (normalized to 32bit)
-    PFMvec3 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255 };
+    PFMvec3 nCol = {
+        (PFfloat)color.r*INV_255,
+        (PFfloat)color.g*INV_255,
+        (PFfloat)color.b*INV_255
+    };
 
     PFushort *pixel = (PFushort*)pixels + offset*3;
     pixel[0] = FloatToHalf(nCol[0]);
@@ -173,7 +186,12 @@ static void SetR16G16B16(void* pixels, PFsizei offset, PFcolor color)
 static void SetR16G16B16A16(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate R32G32B32A32 equivalent color (normalized to 32bit)
-    PFMvec4 nCol = { (PFfloat)color.r*INV_255, (PFfloat)color.g*INV_255, (PFfloat)color.b*INV_255, (PFfloat)color.a*INV_255 };
+    PFMvec4 nCol = {
+        (PFfloat)color.r*INV_255,
+        (PFfloat)color.g*INV_255,
+        (PFfloat)color.b*INV_255,
+        (PFfloat)color.a*INV_255
+    };
 
     PFushort *pixel = (PFushort*)pixels + offset*4;
     pixel[0] = FloatToHalf(nCol[0]);
