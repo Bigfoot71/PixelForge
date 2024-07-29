@@ -12,7 +12,7 @@ You can find it here: [PixelFactory](https://github.com/Bigfoot71/PixelFactory)
 
 If you need a software rendering library that can be used like OpenGL, consider these options:
 - [PortableGL](https://github.com/rswinkle/PortableGL) aims to be an implementation of OpenGL 3.x written in C99 as a single-header library (similar to stb libraries). It compiles cleanly in C++ and can be easily integrated into almost any codebase.
-- [TinyGL](https://bellard.org/TinyGL/) is a library designed by Fabrice Bellard as an implementation of OpenGL 1.x written in C. It has undergone revisions, such as C-Chad's version, which includes OpenMP support, post-processing functions, and text rendering.
+- [TinyGL](https://bellard.org/TinyGL/) is a library designed by Fabrice Bellard as an implementation of OpenGL 1.x written in C. It has undergone revisions, such as [C-Chad's version](https://github.com/C-Chads/tinygl), which includes OpenMP support, post-processing functions, and text rendering.
 
 I will not archive PixelForge immediately, I will make a few fixes during the development of PixelFactory. Once the major fixes are made, it will be time to archive PixelForge.
 
