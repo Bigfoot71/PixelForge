@@ -17,15 +17,19 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PF_POINTS_H
-#define PF_POINTS_H
+#ifndef PF_PRIMITIVES_H
+#define PF_PRIMITIVES_H
 
-#include "../../context.h"
-#include "../../../pfm.h"
+#include "../../pixelforge.h"
 
-PFboolean Process_ProjectPoint(PFvertex* v);
+void pfInternal_ProcessRasterize_POINT(void);
+void pfInternal_ProcessRasterize_POLY_POINTS(int_fast8_t vertexCount);
 
-void Rasterize_Point_NODEPTH(const PFvertex* point);
-void Rasterize_Point_DEPTH(const PFvertex* point);
+void pfInternal_ProcessRasterize_LINE(void);
+void pfInternal_ProcessRasterize_POLY_LINES(int_fast8_t vertexCount);
 
-#endif //PF_POINTS_H
+void pfInternal_ProcessRasterize_TRIANGLE(PFface faceToRender);
+void pfInternal_ProcessRasterize_TRIANGLE_FAN(PFface faceToRender, int_fast8_t numTriangles);
+void pfInternal_ProcessRasterize_TRIANGLE_STRIP(PFface faceToRender, int_fast8_t numTriangles);
+
+#endif //PF_PRIMITIVES_H

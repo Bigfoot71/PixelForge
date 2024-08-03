@@ -20,12 +20,13 @@
 #ifndef PF_INTERNAL_CONTEXT_H
 #define PF_INTERNAL_CONTEXT_H
 
-#include "../pixelforge.h"
-#include "./config.h"
-#include "../pfm.h"
+#include "../../pixelforge.h"
+#include "./../config.h"
+#include "../../pfm.h"
 
 /*
-    Internal context struct and other structs used by them
+    This file contains all the internal structures and functions
+    not exposed that are used by the public context API.
 */
 
 /**
@@ -184,9 +185,16 @@ typedef struct {
 
 } PFctx;
 
+
 /* Current thread local-thread declaration */
 
 extern PF_CTX_DECL PFctx *currentCtx;
+
+
+/* Internal context functions */
+
+void pfInternal_HomogeneousToScreen(PFvertex* v);
+void pfInternal_ProcessAndRasterize(void);
 
 
 #endif //PF_INTERNAL_CONTEXT_H

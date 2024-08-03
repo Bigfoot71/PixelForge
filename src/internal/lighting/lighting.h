@@ -17,13 +17,13 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PF_TRIANGLES_H
-#define PF_TRIANGLES_H
+#ifndef PF_INTERNAL_LIGHTING_H
+#define PF_INTERNAL_LIGHTING_H
 
-#include "../../context.h"
-#include "../../config.h"
+#include "../context/context.h"
 
-PFboolean Process_ProjectAndClipTriangle(PFvertex* polygon, int_fast8_t* vertexCounter);
-void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos);
+PFcolor pfInternal_ProcessLights(const PFlight* activeLights, const PFmaterial* material,
+                                 PFcolor diffuse, const PFMvec3 viewPos, const PFMvec3 fragPos,
+                                 const PFMvec3 fragNormal);
 
-#endif //PF_TRIANGLES_H
+#endif //PF_INTERNAL_LIGHTING_H

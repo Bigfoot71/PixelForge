@@ -17,13 +17,48 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "./points.h"
+#include "../context/context.h"
+#include <stdlib.h>
 
-/* Including internal function prototypes */
+/* Internal point processing functions declarations */
 
-extern void pfInternal_HomogeneousToScreen(PFvertex* v);
+static PFboolean Process_ProjectPoint(PFvertex* v);
 
-/* Main functions declaration used by 'context.c' */
+/* Internal point rasterizer function declarations */
+
+static void Rasterize_Point_NODEPTH(const PFvertex* point);
+static void Rasterize_Point_DEPTH(const PFvertex* point);
+
+
+/* Point Process And Rasterize Functions */
+
+void pfInternal_ProcessRasterize_POINT(void)
+{
+    PFvertex *processed = currentCtx->vertexBuffer;
+
+    if (Process_ProjectPoint(processed))
+    {
+        (currentCtx->state & PF_DEPTH_TEST ?
+            Rasterize_Point_DEPTH : Rasterize_Point_NODEPTH)(processed);
+    }
+}
+
+void pfInternal_ProcessRasterize_POLY_POINTS(int_fast8_t vertexCount)
+{
+    for (int_fast8_t i = 0; i < vertexCount; i++)
+    {
+        PFvertex *processed = currentCtx->vertexBuffer + i;
+
+        if (Process_ProjectPoint(processed))
+        {
+            (currentCtx->state & PF_DEPTH_TEST ?
+                Rasterize_Point_DEPTH : Rasterize_Point_NODEPTH)(processed);
+        }
+    }
+}
+
+
+/* Internal point processing functions definitions */
 
 PFboolean Process_ProjectPoint(PFvertex* v)
 {
@@ -52,6 +87,8 @@ PFboolean Process_ProjectPoint(PFvertex* v)
         && v->screen[0] <= currentCtx->vpMax[0]
         && v->screen[1] <= currentCtx->vpMax[1];
 }
+
+/* Internal point rasterizer function definitions */
 
 void Rasterize_Point_NODEPTH(const PFvertex* point)
 {

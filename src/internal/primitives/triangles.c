@@ -17,7 +17,9 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "./triangles.h"
+#include "../context/context.h"
+#include "../lighting/lighting.h"
+#include "../helper.h"
 #include <stdint.h>
 
 /* Internal typedefs */
@@ -28,36 +30,268 @@ typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFfloat);
 typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFcolor, PFfloat, PFfloat, PFfloat);
 #endif //PF_RASTER_METHOD
 
-
-/* Including internal function prototypes */
-
-extern void pfInternal_HomogeneousToScreen(PFvertex* v);
-
-
 /* Internal helper function declarations */
-
-static PFvertex Helper_LerpVertex(const PFvertex* start, const PFvertex* end, PFfloat t);
 
 #ifdef PF_SCANLINES_RASTER_METHOD
 
 static PFboolean Helper_FaceCanBeRendered(PFface faceToRender, PFfloat* area, const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 p3);
 static void Helper_SortVertices(const PFvertex** v1, const PFvertex** v2, const PFvertex** v3);
 
-static PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFfloat t);
-static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFfloat t);
+#endif //PF_SCANLINES_RASTER_METHOD
 
-#else //PF_BARYCENTRIC_RASTER_METHOD
-
-static PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3);
-static PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3);
-
-#endif //PF_RASTER_METHOD
-
-
-/* Polygon processing functions */
+/* Internal triangle processing functions declarations */
 
 static PFboolean Process_ClipPolygonW(PFvertex* polygon, int_fast8_t* vertexCounter);
 static PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, int_fast8_t* vertexCounter);
+static PFboolean Process_ProjectAndClipTriangle(PFvertex* polygon, int_fast8_t* vertexCounter);
+
+/* Internal triangle rasterizer function declarations */
+
+static void Rasterize_Triangle(PFface faceToRender, PFboolean is3D,
+                               const PFvertex* v1, const PFvertex* v2, const PFvertex* v3,
+                               const PFMvec3 viewPos);
+
+
+/* Line Process And Rasterize Function */
+
+// NOTE: An array of vertices with a total size equal to 'PF_MAX_CLIPPED_POLYGON_VERTICES' must be provided as a parameter
+//       with only the first three vertices defined; the extra space is used in case the triangle needs to be clipped.
+static void pfInternal_ProcessRasterize_TRIANGLE_IMPL(PFface faceToRender, PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES])
+{
+#ifndef NDEBUG
+    if (faceToRender == PF_FRONT_AND_BACK)
+    {
+        // WARNING: This should not be called with PF_FRONT_AND_BACK
+        currentCtx->errCode = PF_DEBUG_INVALID_OPERATION;
+        return;
+    }
+#endif
+
+    PFboolean lighting = (currentCtx->state & PF_LIGHTING) &&
+                         (currentCtx->activeLights != NULL);
+
+    int_fast8_t processedCounter = 3;
+
+    // Performs certain operations that must be done before
+    // processing the vertices in case of light management
+
+    if (lighting)
+    {
+        // Transform normals
+        // And multiply vertex color with diffuse color
+        for (int_fast8_t i = 0; i < processedCounter; i++)
+        {
+            pfmVec3Transform(processed[i].normal, processed[i].normal, currentCtx->matNormal);
+            pfmVec3Normalize(processed[i].normal, processed[i].normal); // REVIEW: Only with PF_NORMALIZE state??
+
+            processed[i].color = pfBlendMultiplicative(processed[i].color,
+                currentCtx->faceMaterial[faceToRender].diffuse);
+        }
+    }
+
+    // Process vertices
+
+    PFboolean is3D = Process_ProjectAndClipTriangle(processed, &processedCounter);
+    if (processedCounter < 3) return;
+
+    // Rasterize filled triangles
+
+    PFMvec3 viewPos = { 0 };
+
+    if (lighting)
+    {
+        PFMmat4 invMatView;
+        pfmMat4Invert(invMatView, currentCtx->matView);
+        pfmVec3Copy(viewPos, invMatView + 12);
+    }
+
+    for (int_fast8_t i = 0; i < processedCounter - 2; i++)
+    {
+        Rasterize_Triangle(faceToRender, is3D, &processed[0], &processed[i + 1], &processed[i + 2], viewPos);
+    }
+}
+
+void pfInternal_ProcessRasterize_TRIANGLE(PFface faceToRender)
+{
+    PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES];
+    memcpy(processed, currentCtx->vertexBuffer, 3 * sizeof(PFvertex));
+    pfInternal_ProcessRasterize_TRIANGLE_IMPL(faceToRender, processed);
+}
+
+void pfInternal_ProcessRasterize_TRIANGLE_FAN(PFface faceToRender, int_fast8_t numTriangles)
+{
+    for (int_fast8_t i = 0; i < numTriangles; i++)
+    {
+        PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES] = {
+            currentCtx->vertexBuffer[0],
+            currentCtx->vertexBuffer[i + 1],
+            currentCtx->vertexBuffer[i + 2]
+        };
+
+        pfInternal_ProcessRasterize_TRIANGLE_IMPL(faceToRender, processed);
+    }
+}
+
+void pfInternal_ProcessRasterize_TRIANGLE_STRIP(PFface faceToRender, int_fast8_t numTriangles)
+{
+    for (int_fast8_t i = 0; i < numTriangles; i++)
+    {
+        PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES];
+
+        if (i % 2 == 0)
+        {
+            processed[0] = currentCtx->vertexBuffer[i];
+            processed[1] = currentCtx->vertexBuffer[i + 1];
+            processed[2] = currentCtx->vertexBuffer[i + 2];
+        }
+        else
+        {
+            processed[0] = currentCtx->vertexBuffer[i + 2];
+            processed[1] = currentCtx->vertexBuffer[i + 1];
+            processed[2] = currentCtx->vertexBuffer[i];
+        }
+
+        pfInternal_ProcessRasterize_TRIANGLE_IMPL(faceToRender, processed);
+    }
+}
+
+
+/* Internal helper function definitions */
+
+#ifdef PF_SCANLINES_RASTER_METHOD
+
+PFboolean Helper_FaceCanBeRendered(PFface faceToRender, PFfloat* area, const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 p3)
+{
+    PFfloat signedArea = (p2[0] - p1[0])*(p3[1] - p1[1]) - (p3[0] - p1[0])*(p2[1] - p1[1]);
+
+    if ((faceToRender == PF_FRONT && signedArea < 0) || (faceToRender == PF_BACK && signedArea > 0))
+    {
+        *area = fabsf(signedArea)*0.5f;
+        return PF_TRUE;
+    }
+
+    return PF_FALSE;
+}
+
+void Helper_SortVertices(const PFvertex** v1, const PFvertex** v2, const PFvertex** v3)
+{
+    // Sort vertices in ascending order of y coordinates
+    const PFvertex* vTmp;
+    if ((*v2)->screen[1] < (*v1)->screen[1]) { vTmp = *v1; *v1 = *v2; *v2 = vTmp; }
+    if ((*v3)->screen[1] < (*v1)->screen[1]) { vTmp = *v1; *v1 = *v3; *v3 = vTmp; }
+    if ((*v3)->screen[1] < (*v2)->screen[1]) { vTmp = *v2; *v2 = *v3; *v3 = vTmp; }
+}
+
+#endif //PF_SCANLINES_RASTER_METHOD
+
+/* Internal triangle processing functions definitions */
+
+PFboolean Process_ClipPolygonW(PFvertex* polygon, int_fast8_t* vertexCounter)
+{
+    PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
+    memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
+
+    int_fast8_t inputCounter = *vertexCounter;
+    *vertexCounter = 0;
+
+    const PFvertex *prevVt = &input[inputCounter-1];
+    PFbyte prevDot = (prevVt->homogeneous[3] < PF_CLIP_EPSILON) ? -1 : 1;
+
+    for (int_fast8_t i = 0; i < inputCounter; i++)
+    {
+        PFbyte currDot = (input[i].homogeneous[3] < PF_CLIP_EPSILON) ? -1 : 1;
+
+        if (prevDot*currDot < 0)
+        {
+            polygon[(*vertexCounter)++] = pfInternal_LerpVertex(prevVt, &input[i], 
+                (PF_CLIP_EPSILON - prevVt->homogeneous[3]) / (input[i].homogeneous[3] - prevVt->homogeneous[3]));
+        }
+
+        if (currDot > 0)
+        {
+            polygon[(*vertexCounter)++] = input[i];
+        }
+
+        prevDot = currDot;
+        prevVt = &input[i];
+    }
+
+    return *vertexCounter > 0;
+}
+
+PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, int_fast8_t* vertexCounter)
+{
+    for (int_fast8_t iAxis = 0; iAxis < 3; iAxis++)
+    {
+        if (*vertexCounter == 0) return PF_FALSE;
+
+        PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
+        int_fast8_t inputCounter;
+
+        const PFvertex *prevVt;
+        PFbyte prevDot;
+
+        // Clip against first plane
+
+        memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
+        inputCounter = *vertexCounter;
+        *vertexCounter = 0;
+
+        prevVt = &input[inputCounter-1];
+        prevDot = (prevVt->homogeneous[iAxis] <= prevVt->homogeneous[3]) ? 1 : -1;
+
+        for (int_fast8_t i = 0; i < inputCounter; i++)
+        {
+            PFbyte currDot = (input[i].homogeneous[iAxis] <= input[i].homogeneous[3]) ? 1 : -1;
+
+            if (prevDot*currDot <= 0)
+            {
+                polygon[(*vertexCounter)++] = pfInternal_LerpVertex(prevVt, &input[i], (prevVt->homogeneous[3] - prevVt->homogeneous[iAxis]) /
+                    ((prevVt->homogeneous[3] - prevVt->homogeneous[iAxis]) - (input[i].homogeneous[3] - input[i].homogeneous[iAxis])));
+            }
+
+            if (currDot > 0)
+            {
+                polygon[(*vertexCounter)++] = input[i];
+            }
+
+            prevDot = currDot;
+            prevVt = &input[i];
+        }
+
+        if (*vertexCounter == 0) return PF_FALSE;
+
+        // Clip against opposite plane
+
+        memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
+        inputCounter = *vertexCounter;
+        *vertexCounter = 0;
+
+        prevVt = &input[inputCounter-1];
+        prevDot = (-prevVt->homogeneous[iAxis] <= prevVt->homogeneous[3]) ? 1 : -1;
+
+        for (int_fast8_t i = 0; i < inputCounter; i++)
+        {
+            PFbyte currDot = (-input[i].homogeneous[iAxis] <= input[i].homogeneous[3]) ? 1 : -1;
+
+            if (prevDot*currDot <= 0)
+            {
+                polygon[(*vertexCounter)++] = pfInternal_LerpVertex(prevVt, &input[i], (prevVt->homogeneous[3] + prevVt->homogeneous[iAxis]) /
+                    ((prevVt->homogeneous[3] + prevVt->homogeneous[iAxis]) - (input[i].homogeneous[3] + input[i].homogeneous[iAxis])));
+            }
+
+            if (currDot > 0)
+            {
+                polygon[(*vertexCounter)++] = input[i];
+            }
+
+            prevDot = currDot;
+            prevVt = &input[i];
+        }
+    }
+
+    return *vertexCounter > 0;
+}
 
 PFboolean Process_ProjectAndClipTriangle(PFvertex* polygon, int_fast8_t* vertexCounter)
 {
@@ -105,118 +339,8 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* polygon, int_fast8_t* vertexC
     return PF_TRUE; // Is 3D
 }
 
-PFboolean Process_ClipPolygonW(PFvertex* polygon, int_fast8_t* vertexCounter)
-{
-    PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
-    memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
-
-    int_fast8_t inputCounter = *vertexCounter;
-    *vertexCounter = 0;
-
-    const PFvertex *prevVt = &input[inputCounter-1];
-    PFbyte prevDot = (prevVt->homogeneous[3] < PF_CLIP_EPSILON) ? -1 : 1;
-
-    for (int_fast8_t i = 0; i < inputCounter; i++)
-    {
-        PFbyte currDot = (input[i].homogeneous[3] < PF_CLIP_EPSILON) ? -1 : 1;
-
-        if (prevDot*currDot < 0)
-        {
-            polygon[(*vertexCounter)++] = Helper_LerpVertex(prevVt, &input[i], 
-                (PF_CLIP_EPSILON - prevVt->homogeneous[3]) / (input[i].homogeneous[3] - prevVt->homogeneous[3]));
-        }
-
-        if (currDot > 0)
-        {
-            polygon[(*vertexCounter)++] = input[i];
-        }
-
-        prevDot = currDot;
-        prevVt = &input[i];
-    }
-
-    return *vertexCounter > 0;
-}
-
-PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, int_fast8_t* vertexCounter)
-{
-    for (int_fast8_t iAxis = 0; iAxis < 3; iAxis++)
-    {
-        if (*vertexCounter == 0) return PF_FALSE;
-
-        PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
-        int_fast8_t inputCounter;
-
-        const PFvertex *prevVt;
-        PFbyte prevDot;
-
-        // Clip against first plane
-
-        memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
-        inputCounter = *vertexCounter;
-        *vertexCounter = 0;
-
-        prevVt = &input[inputCounter-1];
-        prevDot = (prevVt->homogeneous[iAxis] <= prevVt->homogeneous[3]) ? 1 : -1;
-
-        for (int_fast8_t i = 0; i < inputCounter; i++)
-        {
-            PFbyte currDot = (input[i].homogeneous[iAxis] <= input[i].homogeneous[3]) ? 1 : -1;
-
-            if (prevDot*currDot <= 0)
-            {
-                polygon[(*vertexCounter)++] = Helper_LerpVertex(prevVt, &input[i], (prevVt->homogeneous[3] - prevVt->homogeneous[iAxis]) /
-                    ((prevVt->homogeneous[3] - prevVt->homogeneous[iAxis]) - (input[i].homogeneous[3] - input[i].homogeneous[iAxis])));
-            }
-
-            if (currDot > 0)
-            {
-                polygon[(*vertexCounter)++] = input[i];
-            }
-
-            prevDot = currDot;
-            prevVt = &input[i];
-        }
-
-        if (*vertexCounter == 0) return PF_FALSE;
-
-        // Clip against opposite plane
-
-        memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
-        inputCounter = *vertexCounter;
-        *vertexCounter = 0;
-
-        prevVt = &input[inputCounter-1];
-        prevDot = (-prevVt->homogeneous[iAxis] <= prevVt->homogeneous[3]) ? 1 : -1;
-
-        for (int_fast8_t i = 0; i < inputCounter; i++)
-        {
-            PFbyte currDot = (-input[i].homogeneous[iAxis] <= input[i].homogeneous[3]) ? 1 : -1;
-
-            if (prevDot*currDot <= 0)
-            {
-                polygon[(*vertexCounter)++] = Helper_LerpVertex(prevVt, &input[i], (prevVt->homogeneous[3] + prevVt->homogeneous[iAxis]) /
-                    ((prevVt->homogeneous[3] + prevVt->homogeneous[iAxis]) - (input[i].homogeneous[3] + input[i].homogeneous[iAxis])));
-            }
-
-            if (currDot > 0)
-            {
-                polygon[(*vertexCounter)++] = input[i];
-            }
-
-            prevDot = currDot;
-            prevVt = &input[i];
-        }
-    }
-
-    return *vertexCounter > 0;
-}
-
 
 /* Triangle rasterization functions */
-
-static PFcolor Process_Lights(const PFlight* activeLights, const PFmaterial* material,
-    PFcolor diffuse, const PFMvec3 viewPos, const PFMvec3 fragPos, const PFMvec3 fragNormal);
 
 #ifdef PF_SCANLINES_RASTER_METHOD
 
@@ -263,7 +387,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     /* Choose color interpolation method based on shading mode */
 
     InterpolateColorFunc interpolateColor = (currentCtx->shadingMode == PF_SMOOTH)
-        ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
+        ? pfInternal_LerpColor_SMOOTH : pfInternal_LerpColor_FLAT;
 
     /* Extract framebuffer information */
 
@@ -539,7 +663,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     /* Get some contextual values */
 
     InterpolateColorFunc interpolateColor = (currentCtx->shadingMode == PF_SMOOTH)
-        ? Helper_InterpolateColor_SMOOTH : Helper_InterpolateColor_FLAT;
+        ? pfInternal_BaryColor_SMOOTH : pfInternal_BaryColor_FLAT;
 
     PFblendfunc blendFunction = currentCtx->state & PF_BLEND ? currentCtx->blendFunction : NULL;
     PFpixelgetter pixelGetter = currentCtx->currentFramebuffer->texture.pixelGetter;
@@ -632,7 +756,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFMvec3 normal, position; \
         pfmVec3BaryInterpR(normal, v1->normal, v2->normal, v3->normal, aW1, aW2, aW3); \
         pfmVec3BaryInterpR(position, v1->position, v2->position, v3->position, aW1, aW2, aW3); \
-        fragment = Process_Lights(currentCtx->activeLights, &currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal);
+        fragment = pfInternal_ProcessLights(currentCtx->activeLights, &currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal);
 
 #   define SET_FRAG() \
         PFcolor finalColor = blendFunction ? blendFunction(fragment, pixelGetter(pbDst, xyOffset)) : fragment; \
@@ -676,217 +800,3 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 }
 
 #endif //PF_RASTER_METHOD
-
-static PFcolor Process_Lights(const PFlight* activeLights, const PFmaterial* material, PFcolor diffuse, const PFMvec3 viewPos, const PFMvec3 fragPos, const PFMvec3 fragNormal)
-{
-    // Final color
-    // Calculate the emission component of the final color
-    PFubyte R = material->emission.r;
-    PFubyte G = material->emission.g;
-    PFubyte B = material->emission.b;
-
-    // Ambient component
-    // Calculate the ambient lighting contribution
-    PFubyte aR = (material->ambient.r*diffuse.r)/255;
-    PFubyte aG = (material->ambient.g*diffuse.g)/255;
-    PFubyte aB = (material->ambient.b*diffuse.b)/255;
-
-    // Compute the view direction from fragment position
-    PFMvec3 viewDir;
-    pfmVec3DirectionR(viewDir, viewPos, fragPos);
-
-    // Specular properties
-    // Retrieve material's shininess and specular color
-    PFfloat shininess = material->shininess;
-    PFcolor specular = material->specular;
-
-    // Loop through active lights
-    for (const PFlight *light = activeLights; light != NULL; light = light->next)
-    {
-        // Declare the light contribution and initialize it to zero for now.
-        PFubyte lR = 0, lG = 0, lB = 0;
-
-        // Compute light direction
-        PFMvec3 lightDir;
-        pfmVec3SubR(lightDir, light->position, fragPos);
-
-        // Compute distance from light to fragment position
-        // And also normalize the light direction if necessary.
-        PFfloat lightToFragPosDistSq =
-            lightDir[0]*lightDir[0] +
-            lightDir[1]*lightDir[1] +
-            lightDir[2]*lightDir[2];
-
-        PFfloat lightToFragPosDist = 0;
-        if (lightToFragPosDistSq != 0.0f)
-        {
-            lightToFragPosDist = sqrtf(lightToFragPosDistSq);
-            PFfloat invMag = 1.0f/lightToFragPosDist;
-            for (int_fast8_t i = 0; i < 3; i++)
-            {
-                lightDir[i] *= invMag;
-            }
-        }
-
-        // Spotlight (soft edges)
-        PFubyte intensity = 255;
-        if (light->innerCutOff < M_PI)
-        {
-            PFMvec3 negLightDir;
-            pfmVec3NegR(negLightDir, light->direction);
-
-            PFfloat theta = pfmVec3Dot(lightDir, negLightDir);
-            PFfloat epsilon = light->innerCutOff - light->outerCutOff;
-            intensity = CLAMP((PFint)(255*(theta - light->outerCutOff)/epsilon), 0, 255);
-
-            if (intensity == 0)
-                goto apply_light_contribution;
-        }
-
-        // Attenuation
-        PFubyte attenuation = 255;
-        if (light->attLinear || light->attQuadratic)
-        {
-            attenuation = 255/(light->attConstant +
-                light->attLinear*lightToFragPosDist +
-                light->attQuadratic*lightToFragPosDistSq);
-
-            if (attenuation == 0)
-                goto apply_light_contribution;
-        }
-
-        // Factor used to scale the final color
-        PFubyte factor = (intensity*attenuation)/255;
-
-        // Diffuse component
-        // Calculate the diffuse reflection of the light
-        PFubyte diff = MAX((PFint)(255*pfmVec3Dot(fragNormal, lightDir)), 0);
-        lR = MIN_255(lR + (diffuse.r*light->diffuse.r*diff)/(255*255));
-        lG = MIN_255(lG + (diffuse.g*light->diffuse.g*diff)/(255*255));
-        lB = MIN_255(lB + (diffuse.b*light->diffuse.b*diff)/(255*255));
-
-        // Specular component
-#       ifndef PF_PHONG_REFLECTION
-            // Blinn-Phong
-            PFMvec3 halfWayDir;
-            pfmVec3AddR(halfWayDir, lightDir, viewDir);
-            pfmVec3Normalize(halfWayDir, halfWayDir);
-            PFubyte spec = 255*powf(fmaxf(pfmVec3Dot(fragNormal, halfWayDir), 0.0f), shininess);
-#       else
-            // Phong
-            PFMvec3 reflectDir, negLightDir;
-            pfmVec3NegR(negLightDir, lightDir);
-            pfmVec3ReflectR(reflectDir, negLightDir, fragNormal);
-            PFubyte spec = 255*powf(fmaxf(pfmVec3Dot(reflectDir, viewDir), 0.0f), shininess);
-#       endif
-
-        lR = MIN_255(lR + (specular.r*light->specular.r*spec)/(255*255));
-        lG = MIN_255(lG + (specular.g*light->specular.g*spec)/(255*255));
-        lB = MIN_255(lB + (specular.b*light->specular.b*spec)/(255*255));
-
-        // Apply spotlight soft edges and distance attenuation
-        lR = (lR*factor)/255;
-        lG = (lG*factor)/255;
-        lB = (lB*factor)/255;
-
-        // Add ambient contribution of the light
-        // Then add the light's contribution to the final color
-        apply_light_contribution:
-        R = MIN_255(R + lR + (aR*light->ambient.r)/255);
-        G = MIN_255(G + lG + (aG*light->ambient.g)/255);
-        B = MIN_255(B + lB + (aB*light->ambient.b)/255);
-    }
-
-    // Return the final computed color
-    return (PFcolor) { R, G, B, diffuse.a };
-}
-
-
-/* Internal helper function definitions */
-
-PFvertex Helper_LerpVertex(const PFvertex* start, const PFvertex* end, PFfloat t)
-{
-    PFvertex result = { 0 };
-
-    const PFubyte *startCol = (const PFubyte*)(&start->color);
-    const PFubyte *endCol = (const PFubyte*)(&end->color);
-    PFubyte *resultCol = (PFubyte*)(&result.color);
-    PFubyte uT = 255*t;
-
-#   ifdef PF_SUPPORT_OPENMP
-#       pragma omp simd
-#   endif
-    for (int_fast8_t i = 0; i < 4; i++)
-    {
-        result.homogeneous[i] = start->homogeneous[i] + t*(end->homogeneous[i] - start->homogeneous[i]);
-        result.position[i] = start->position[i] + t*(end->position[i] - start->position[i]);
-        resultCol[i] = startCol[i] + (uT*((PFint)endCol[i] - startCol[i]))/255;
-
-        if (i < 2) result.texcoord[i] = start->texcoord[i] + t*(end->texcoord[i] - start->texcoord[i]);
-        if (i < 3) result.normal[i] = start->normal[i] + t*(end->normal[i] - start->normal[i]);
-    }
-
-    return result;
-}
-
-#ifdef PF_SCANLINES_RASTER_METHOD
-
-PFboolean Helper_FaceCanBeRendered(PFface faceToRender, PFfloat* area, const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 p3)
-{
-    PFfloat signedArea = (p2[0] - p1[0])*(p3[1] - p1[1]) - (p3[0] - p1[0])*(p2[1] - p1[1]);
-
-    if ((faceToRender == PF_FRONT && signedArea < 0) || (faceToRender == PF_BACK && signedArea > 0))
-    {
-        *area = fabsf(signedArea)*0.5f;
-        return PF_TRUE;
-    }
-
-    return PF_FALSE;
-}
-
-void Helper_SortVertices(const PFvertex** v1, const PFvertex** v2, const PFvertex** v3)
-{
-    // Sort vertices in ascending order of y coordinates
-    const PFvertex* vTmp;
-    if ((*v2)->screen[1] < (*v1)->screen[1]) { vTmp = *v1; *v1 = *v2; *v2 = vTmp; }
-    if ((*v3)->screen[1] < (*v1)->screen[1]) { vTmp = *v1; *v1 = *v3; *v3 = vTmp; }
-    if ((*v3)->screen[1] < (*v2)->screen[1]) { vTmp = *v2; *v2 = *v3; *v3 = vTmp; }
-}
-
-PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFfloat t)
-{
-    return (PFcolor) {
-        v1.r + t*(v2.r - v1.r),
-        v1.g + t*(v2.g - v1.g),
-        v1.b + t*(v2.b - v1.b),
-        v1.a + t*(v2.a - v1.a)
-    };
-}
-
-PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFfloat t)
-{
-    return (t < 0.5f) ? v1 : v2;
-}
-
-#else //PF_BARYCENTRIC_RASTER_METHOD
-
-PFcolor Helper_InterpolateColor_SMOOTH(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
-{
-    PFubyte uW1 = 255*w1;
-    PFubyte uW2 = 255*w2;
-    PFubyte uW3 = 255*w3;
-
-    return (PFcolor) {
-        ((uW1*v1.r) + (uW2*v2.r) + (uW3*v3.r))/255,
-        ((uW1*v1.g) + (uW2*v2.g) + (uW3*v3.g))/255,
-        ((uW1*v1.b) + (uW2*v2.b) + (uW3*v3.b))/255,
-        ((uW1*v1.a) + (uW2*v2.a) + (uW3*v3.a))/255
-    };
-}
-
-PFcolor Helper_InterpolateColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
-{
-    return ((w1 > w2) & (w1 > w3)) ? v1 : (w2 >= w3) ? v2 : v3;
-}
-
-#endif

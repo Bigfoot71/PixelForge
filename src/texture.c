@@ -17,7 +17,7 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "internal/context.h"
+#include "internal/context/context.h"
 #include "internal/config.h"
 #include "pixelforge.h"
 #include "pfm.h"

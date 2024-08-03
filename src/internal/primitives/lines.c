@@ -17,37 +17,138 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "./lines.h"
+#include "../context/context.h"
+#include "../helper.h"
 #include <stdlib.h>
-
-/* Including internal function prototypes */
-
-extern void pfInternal_HomogeneousToScreen(PFvertex* v);
-
-/* Internal helper function declarations */
-
-static void Helper_SwapVertex(PFvertex* a, PFvertex* b);
-static void Helper_SwapByte(PFubyte* a, PFubyte* b);
-
-static PFubyte Helper_EncodeClip2D(const PFMvec2 screen, PFint xMin, PFint yMin, PFint xMax, PFint yMax);
-static PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* t2);
-
-static PFcolor Helper_LerpColor(PFcolor a, PFcolor b, PFfloat t);
 
 /* Enums for internal use */
 
-typedef enum {
+enum PFclipcode {
     CLIP_INSIDE = 0x00, // 0000
     CLIP_LEFT   = 0x01, // 0001
     CLIP_RIGHT  = 0x02, // 0010
     CLIP_BOTTOM = 0x04, // 0100
     CLIP_TOP    = 0x08, // 1000
-} PFclipcode;
+};
+
+/* Internal helper function declarations */
+
+static PFubyte Helper_EncodeClip2D(const PFMvec2 screen, PFint xMin, PFint yMin, PFint xMax, PFint yMax);
+static PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* t2);
+
+/* Internal line processing functions declarations */
+
+static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2);
+static PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2);
+static void Process_ProjectAndClipLine(PFvertex* line, int_fast8_t* vertexCounter);
+
+/* Internal line rasterizer function declarations */
+
+static void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2);
+static void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2);
+
+static void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2);
+static void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2);
 
 
-/* Line processing functions */
+/* Line Process And Rasterize Function */
 
-static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2)
+void pfInternal_ProcessRasterize_LINE(void)
+{
+    // Process vertices
+    int_fast8_t processedCounter = 2;
+
+    PFvertex processed[2] = {
+        currentCtx->vertexBuffer[0],
+        currentCtx->vertexBuffer[1]
+    };
+
+    Process_ProjectAndClipLine(processed, &processedCounter);
+    if (processedCounter != 2) return;
+
+    // Rasterize line (review condition)
+    if (currentCtx->lineWidth > 1.5f)
+    {
+        (currentCtx->state & PF_DEPTH_TEST ? Rasterize_Line_THICK_DEPTH
+            : Rasterize_Line_THICK_NODEPTH)(&processed[0], &processed[1]);
+    }
+    else
+    {
+        (currentCtx->state & PF_DEPTH_TEST ? Rasterize_Line_DEPTH
+            : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
+    }
+}
+
+void pfInternal_ProcessRasterize_POLY_LINES(int_fast8_t vertexCount)
+{
+    for (int_fast8_t i = 0; i < vertexCount; i++)
+    {
+        // Process vertices
+        int_fast8_t processedCounter = 2;
+
+        PFvertex processed[2] = {
+            currentCtx->vertexBuffer[i],
+            currentCtx->vertexBuffer[(i + 1) % vertexCount]
+        };
+
+        Process_ProjectAndClipLine(processed, &processedCounter);
+        if (processedCounter != 2) return;
+
+        // Rasterize line
+        if (currentCtx->lineWidth > 1.5f)
+        {
+            (currentCtx->state & PF_DEPTH_TEST ? Rasterize_Line_THICK_DEPTH
+                : Rasterize_Line_THICK_NODEPTH)(&processed[0], &processed[1]);
+        }
+        else
+        {
+            (currentCtx->state & PF_DEPTH_TEST ? Rasterize_Line_DEPTH
+                : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
+        }
+    }
+}
+
+
+/* Internal helper function definitions */
+
+PFubyte Helper_EncodeClip2D(const PFMvec2 screen, PFint xMin, PFint yMin, PFint xMax, PFint yMax)
+{
+    PFubyte code = CLIP_INSIDE;
+    if (screen[0] < xMin) code |= CLIP_LEFT;
+    if (screen[0] > xMax) code |= CLIP_RIGHT;
+    if (screen[1] < yMin) code |= CLIP_TOP;
+    if (screen[1] > yMax) code |= CLIP_BOTTOM;
+    return code;
+}
+
+PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* t2)
+{
+    if (fabsf(p) < PF_CLIP_EPSILON)
+    {
+        // Check if the line is entirely outside the window
+        if (q < -PF_CLIP_EPSILON) return 0; // Completely outside
+        return 1;                           // Completely inside or on the edges
+    }
+
+    const float r = q / p;
+
+    if (p < 0)
+    {
+        if (r > *t2) return 0;
+        if (r > *t1) *t1 = r;
+    }
+    else
+    {
+        if (r < *t1) return 0;
+        if (r < *t2) *t2 = r;
+    }
+
+    return 1;
+}
+
+/* Internal helper function definitions */
+
+PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2)
 {
     PFint xMin = currentCtx->vpMin[0];
     PFint yMin = currentCtx->vpMin[1];
@@ -80,8 +181,8 @@ static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2
 
         if (code0 == CLIP_INSIDE)
         {
-            Helper_SwapByte(&code0, &code1);
-            Helper_SwapVertex(v1, v2);
+            pfInternal_SwapByte(&code0, &code1);
+            pfInternal_SwapVertex(v1, v2);
         }
 
         if (code0 & CLIP_LEFT)
@@ -109,7 +210,7 @@ static PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2
     return accept;
 }
 
-static PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2)
+PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2)
 {
     PFfloat t1 = 0, t2 = 1;
 
@@ -184,7 +285,6 @@ void Process_ProjectAndClipLine(PFvertex* line, int_fast8_t* vertexCounter)
     }
 }
 
-
 /* Internal line rasterizer function definitions */
 
 void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
@@ -249,7 +349,7 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
 
-            PFcolor finalColor = Helper_LerpColor(c1, c2, t);
+            PFcolor finalColor = pfInternal_LerpColor_SMOOTH(c1, c2, t);
 
             if (blendFunc) finalColor = blendFunc(
                 finalColor, pixelGetter(bufDst, pOffset));
@@ -269,7 +369,7 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
 
-            PFcolor finalColor = Helper_LerpColor(c1, c2, t);
+            PFcolor finalColor = pfInternal_LerpColor_SMOOTH(c1, c2, t);
 
             if (blendFunc) finalColor = blendFunc(
                 finalColor, pixelGetter(bufDst, pOffset));
@@ -343,7 +443,7 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
             if (currentCtx->depthFunction(z, zbDst[pOffset]))
             {
-                PFcolor finalColor = Helper_LerpColor(c1, c2, t);
+                PFcolor finalColor = pfInternal_LerpColor_SMOOTH(c1, c2, t);
 
                 if (blendFunc) finalColor = blendFunc(
                     finalColor, pixelGetter(bufDst, pOffset));
@@ -365,7 +465,7 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
             if (currentCtx->depthFunction(z, zbDst[pOffset]))
             {
-                PFcolor finalColor = Helper_LerpColor(c1, c2, t);
+                PFcolor finalColor = pfInternal_LerpColor_SMOOTH(c1, c2, t);
 
                 if (blendFunc) finalColor = blendFunc(
                     finalColor, pixelGetter(bufDst, pOffset));
@@ -476,65 +576,3 @@ void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2)
         }
     }
 }
-
-
-/* Internal helper function definitions */
-
-void Helper_SwapVertex(PFvertex* a, PFvertex* b)
-{
-    PFvertex tmp = *a;
-    *a = *b; *b = tmp;
-}
-
-void Helper_SwapByte(PFubyte* a, PFubyte* b)
-{
-    *a ^= *b;
-    *b ^= *a;
-    *a ^= *b;
-}
-
-static PFubyte Helper_EncodeClip2D(const PFMvec2 screen, PFint xMin, PFint yMin, PFint xMax, PFint yMax)
-{
-    PFubyte code = CLIP_INSIDE;
-    if (screen[0] < xMin) code |= CLIP_LEFT;
-    if (screen[0] > xMax) code |= CLIP_RIGHT;
-    if (screen[1] < yMin) code |= CLIP_TOP;
-    if (screen[1] > yMax) code |= CLIP_BOTTOM;
-    return code;
-}
-
-static PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* t2)
-{
-    if (fabsf(p) < PF_CLIP_EPSILON)
-    {
-        // Check if the line is entirely outside the window
-        if (q < -PF_CLIP_EPSILON) return 0; // Completely outside
-        return 1;                           // Completely inside or on the edges
-    }
-
-    const float r = q / p;
-
-    if (p < 0)
-    {
-        if (r > *t2) return 0;
-        if (r > *t1) *t1 = r;
-    }
-    else
-    {
-        if (r < *t1) return 0;
-        if (r < *t2) *t2 = r;
-    }
-
-    return 1;
-}
-
-PFcolor Helper_LerpColor(PFcolor a, PFcolor b, PFfloat t)
-{
-    return (PFcolor) {
-        a.r + t*(b.r - a.r),
-        a.g + t*(b.g - a.g),
-        a.b + t*(b.b - a.b),
-        a.a + t*(b.a - a.a)
-    };
-}
-
