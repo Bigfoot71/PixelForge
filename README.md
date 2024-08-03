@@ -4,20 +4,6 @@
 
 PixelForge is a lightweight software rendering library written in standard C99, designed for versatile rendering without any external dependencies beyond the C standard library.
 
-## Warning
-
-The development of PixelForge is likely to end soon because I have started developing a new software rendering library that also supports optimized 2D rendering and SIMD support, moving away from the OpenGL style, with support for "_shaders_" via function pointers, allowing more flexibility.
-
-You can find it here: [PixelFactory](https://github.com/Bigfoot71/PixelFactory)
-
-If you need a software rendering library that can be used like OpenGL, consider these options:
-- [PortableGL](https://github.com/rswinkle/PortableGL) aims to be an implementation of OpenGL 3.x written in C99 as a single-header library (similar to stb libraries). It compiles cleanly in C++ and can be easily integrated into almost any codebase.
-- [TinyGL](https://bellard.org/TinyGL/) is a library designed by Fabrice Bellard as an implementation of OpenGL 1.x written in C. It has undergone revisions, such as [C-Chad's version](https://github.com/C-Chads/tinygl), which includes OpenMP support, post-processing functions, and text rendering.
-
-I will not archive PixelForge immediately, I will make a few fixes during the development of PixelFactory. Once the major fixes are made, it will be time to archive PixelForge.
-
-If you want to contribute, you are welcome to propose changes for PixelForge, but I strongly encourage you to contribute to PixelFactory, as PixelForge's development is coming to an end.
-
 ## Features
 
 - **OpenGL-Like API**: PixelForge offers an API reminiscent of OpenGL 1.X, facilitating easy adoption for those familiar with OpenGL.
