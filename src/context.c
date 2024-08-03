@@ -19,6 +19,7 @@
 
 #include "internal/context/context.h"
 #include "internal/config.h"
+#include "internal/pixel.h"
 #include "pixelforge.h"
 #include "pfm.h"
 
@@ -33,16 +34,6 @@
 /* Current thread local-thread definition (declared in context.h) */
 
 PF_CTX_DECL PFctx *currentCtx = NULL;
-
-/* Internal types */
-
-typedef void (*RasterizeTriangleFunc)(PFface, const PFvertex*, const PFvertex*, const PFvertex*);
-typedef void (*RasterizeTriangleLightFunc)(PFface, const PFvertex*, const PFvertex*, const PFvertex*, const PFMvec3);
-
-/* Including internal function prototypes */
-
-extern void pfInternal_GetPixelGetterSetter(PFpixelgetter* getter, PFpixelsetter* setter, PFpixelformat format);
-extern PFsizei pfInternal_GetPixelBytes(PFpixelformat format);
 
 /* Some helper functions */
 
