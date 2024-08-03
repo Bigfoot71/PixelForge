@@ -601,62 +601,70 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
 void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
-    /* Get integer 2D position coordinates */
-
-    PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-    PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-    PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
-
-    /* Check if the desired face can be rendered */
-
-    PFfloat signedArea = (x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1);
-
-    if ((faceToRender == PF_FRONT && signedArea >= 0)
-     || (faceToRender == PF_BACK  && signedArea <= 0))
+    PFsizei xMin, yMin, xMax, yMax;
+    PFint w1Row, w2Row, w3Row;
+    PFint w1XStep, w1YStep;
+    PFint w2XStep, w2YStep;
+    PFint w3XStep, w3YStep;
+    PFfloat wInvSum;
     {
-        return;
+        /* Get integer 2D position coordinates */
+
+        PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
+        PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
+        PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+
+        /* Check if the desired face can be rendered */
+
+        PFfloat signedArea = (x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1);
+
+        if ((faceToRender == PF_FRONT && signedArea >= 0)
+        || (faceToRender == PF_BACK  && signedArea <= 0))
+        {
+            return;
+        }
+
+        /* Calculate the 2D bounding box of the triangle */
+
+        xMin = (PFsizei)MIN(x1, MIN(x2, x3));
+        yMin = (PFsizei)MIN(y1, MIN(y2, y3));
+        xMax = (PFsizei)MAX(x1, MAX(x2, x3));
+        yMax = (PFsizei)MAX(y1, MAX(y2, y3));
+
+        if (!is3D)
+        {
+            xMin = (PFsizei)CLAMP((PFint)xMin, currentCtx->vpMin[0], currentCtx->vpMax[0]);
+            yMin = (PFsizei)CLAMP((PFint)yMin, currentCtx->vpMin[1], currentCtx->vpMax[1]);
+            xMax = (PFsizei)CLAMP((PFint)xMax, currentCtx->vpMin[0], currentCtx->vpMax[0]);
+            yMax = (PFsizei)CLAMP((PFint)yMax, currentCtx->vpMin[1], currentCtx->vpMax[1]);
+        }
+
+        /* Barycentric interpolation */
+
+        w1XStep = y3 - y2, w1YStep = x2 - x3;
+        w2XStep = y1 - y3, w2YStep = x3 - x1;
+        w3XStep = y2 - y1, w3YStep = x1 - x2;
+
+        if (faceToRender == PF_BACK)
+        {
+            w1XStep = -w1XStep, w1YStep = -w1YStep;
+            w2XStep = -w2XStep, w2YStep = -w2YStep;
+            w3XStep = -w3XStep, w3YStep = -w3YStep;
+        }
+
+        w1Row = (xMin - x2)*w1XStep + w1YStep*(yMin - y2);
+        w2Row = (xMin - x3)*w2XStep + w2YStep*(yMin - y3);
+        w3Row = (xMin - x1)*w3XStep + w3YStep*(yMin - y1);
+
+        /*
+            Finally, we calculate the inverse of the sum of
+            the barycentric coordinates for the top-left point; this
+            sum always remains the same, regardless of the coordinate
+            within the triangle.
+        */
+
+        wInvSum = 1.0f/(w1Row + w2Row + w3Row);
     }
-
-    /* Calculate the 2D bounding box of the triangle */
-
-    PFsizei xMin = (PFsizei)MIN(x1, MIN(x2, x3));
-    PFsizei yMin = (PFsizei)MIN(y1, MIN(y2, y3));
-    PFsizei xMax = (PFsizei)MAX(x1, MAX(x2, x3));
-    PFsizei yMax = (PFsizei)MAX(y1, MAX(y2, y3));
-
-    if (!is3D)
-    {
-        xMin = (PFsizei)CLAMP((PFint)xMin, currentCtx->vpMin[0], currentCtx->vpMax[0]);
-        yMin = (PFsizei)CLAMP((PFint)yMin, currentCtx->vpMin[1], currentCtx->vpMax[1]);
-        xMax = (PFsizei)CLAMP((PFint)xMax, currentCtx->vpMin[0], currentCtx->vpMax[0]);
-        yMax = (PFsizei)CLAMP((PFint)yMax, currentCtx->vpMin[1], currentCtx->vpMax[1]);
-    }
-
-    /* Barycentric interpolation */
-
-    PFint w1XStep = y3 - y2, w1YStep = x2 - x3;
-    PFint w2XStep = y1 - y3, w2YStep = x3 - x1;
-    PFint w3XStep = y2 - y1, w3YStep = x1 - x2;
-
-    if (faceToRender == PF_BACK)
-    {
-        w1XStep = -w1XStep, w1YStep = -w1YStep;
-        w2XStep = -w2XStep, w2YStep = -w2YStep;
-        w3XStep = -w3XStep, w3YStep = -w3YStep;
-    }
-
-    PFint w1Row = (xMin - x2)*w1XStep + w1YStep*(yMin - y2);
-    PFint w2Row = (xMin - x3)*w2XStep + w2YStep*(yMin - y3);
-    PFint w3Row = (xMin - x1)*w3XStep + w3YStep*(yMin - y1);
-
-    /*
-        Finally, we calculate the inverse of the sum of
-        the barycentric coordinates for the top-left point; this
-        sum always remains the same, regardless of the coordinate
-        within the triangle.
-    */
-
-    PFfloat wInvSum = 1.0f/(w1Row + w2Row + w3Row);
 
     /* Get some contextual values */
 
@@ -664,6 +672,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         ? pfInternal_BaryColor_SMOOTH : pfInternal_BaryColor_FLAT;
 
     PFblendfunc blendFunction = currentCtx->state & PF_BLEND ? currentCtx->blendFunction : NULL;
+    PFdepthfunc depthFunction = currentCtx->depthFunction;
+
     PFpixelgetter pixelGetter = currentCtx->currentFramebuffer->texture.pixelGetter;
     PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
     PFsizei widthDst = currentCtx->currentFramebuffer->texture.width;
@@ -698,7 +708,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
                 PFfloat aW1 = w1*wInvSum, aW2 = w2*wInvSum, aW3 = w3*wInvSum;       \
                 PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3);                        \
                 PFsizei xyOffset = yOffset + x;                                     \
-                if (noDepth || currentCtx->depthFunction(z, zbDst[xyOffset]))       \
+                if (noDepth || depthFunction(z, zbDst[xyOffset]))                   \
                 {                                                                   \
                     PIXEL_CODE                                                      \
                 }                                                                   \
@@ -722,7 +732,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
                 PFfloat aW1 = w1*wInvSum, aW2 = w2*wInvSum, aW3 = w3*wInvSum;               \
                 PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3);                                \
                 PFsizei xyOffset = yOffset + x;                                             \
-                if (noDepth || currentCtx->depthFunction(z, zbDst[xyOffset]))               \
+                if (noDepth || depthFunction(z, zbDst[xyOffset]))                           \
                 {                                                                           \
                     PIXEL_CODE                                                              \
                 }                                                                           \
