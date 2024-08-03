@@ -78,7 +78,7 @@ PFtexture pfGenTextureBufferColor(PFsizei width, PFsizei height, PFcolor color, 
         return texture;
     }
 
-#   ifdef PF_SUPPORT_OPENMP
+#   ifdef _OPENMP
 #       pragma omp parallel for \
             if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
 #   endif

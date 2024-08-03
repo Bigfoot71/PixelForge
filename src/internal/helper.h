@@ -44,7 +44,7 @@ static inline PFvertex pfInternal_LerpVertex(const PFvertex* start, const PFvert
     PFubyte *resultCol = (PFubyte*)(&result.color);
     PFubyte uT = 255*t;
 
-#   ifdef PF_SUPPORT_OPENMP
+#   ifdef _OPENMP
 #       pragma omp simd
 #   endif
     for (int_fast8_t i = 0; i < 4; i++)

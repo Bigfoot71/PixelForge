@@ -53,7 +53,7 @@
 #   define PF_CLIP_EPSILON 1e-5f
 #endif //PF_CLIP_EPSILON
 
-#ifdef PF_SUPPORT_OPENMP
+#ifdef _OPENMP
 
 //  Pixel threshold for parallelizing the rasterization loop
 //  NOTE: In barycentric rendering method, this corresponds
@@ -69,6 +69,6 @@
 #       define PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD 640*480
 #   endif //PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD
 
-#endif //PF_SUPPORT_OPENMP
+#endif //_OPENMP
 
 #endif //PF_CONFIG_H

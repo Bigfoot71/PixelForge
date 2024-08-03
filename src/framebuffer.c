@@ -75,7 +75,7 @@ void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color, PFfloat depth
 {
     PFsizei size = framebuffer->texture.width*framebuffer->texture.height;
 
-#   ifdef PF_SUPPORT_OPENMP
+#   ifdef _OPENMP
 #       pragma omp parallel for \
             if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
 #   endif

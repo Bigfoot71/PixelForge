@@ -45,7 +45,7 @@
 
 #ifndef PF_CTX_DECL
 #   if defined(__GNUC__) || defined(__clang__)
-#       if defined(PF_SUPPORT_OPENMP) && defined(__GNUC__)
+#       if defined(_OPENMP) && defined(__GNUC__)
             // TODO: Using a global variable with __thread in GCC 11.4 seems to cause segmentation faults at runtime.
             //       I haven't been able to obtain more information through debugging and some research. To investigate further.
 #           define PF_CTX_DECL

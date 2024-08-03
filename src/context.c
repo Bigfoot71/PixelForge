@@ -747,9 +747,9 @@ void pfClear(PFclearflag flag)
         PFcolor color = currentCtx->clearColor;
         PFfloat depth = currentCtx->clearDepth;
 
-#       ifdef PF_SUPPORT_OPENMP
+#       ifdef _OPENMP
 #           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
-#       endif //PF_SUPPORT_OPENMP
+#       endif //_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
             pixelSetter(texture->pixels, i, color);
@@ -763,9 +763,9 @@ void pfClear(PFclearflag flag)
         PFpixelsetter pixelSetter = texture->pixelSetter;
         PFcolor color = currentCtx->clearColor;
 
-#       ifdef PF_SUPPORT_OPENMP
+#       ifdef _OPENMP
 #           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
-#       endif //PF_SUPPORT_OPENMP
+#       endif //_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
             pixelSetter(texture->pixels, i, color);
@@ -776,9 +776,9 @@ void pfClear(PFclearflag flag)
         PFfloat *zbuffer = framebuffer->zbuffer;
         PFfloat depth = currentCtx->clearDepth;
 
-#       ifdef PF_SUPPORT_OPENMP
+#       ifdef _OPENMP
 #           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
-#       endif //PF_SUPPORT_OPENMP
+#       endif //_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
             zbuffer[i] = depth;
@@ -2208,9 +2208,9 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, const voi
         currentCtx->blendFunction : NULL;
 
     // Loop through each pixel in the destination rectangle
-#   ifdef PF_SUPPORT_OPENMP
+#   ifdef _OPENMP
 #       pragma omp parallel for if ((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)
-#   endif // PF_SUPPORT_OPENMP
+#   endif // _OPENMP
     for (PFint y = yMin; y <= yMax; y++)
     {
         // Calculate texture V coordinate based on screen Y coordinate
@@ -2486,7 +2486,7 @@ void pfFogProcess(void)
     PFpixelgetter pixelGetter = currentCtx->currentFramebuffer->texture.pixelGetter;
     PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
 
-#ifdef PF_SUPPORT_OPENMP
+#ifdef _OPENMP
 #   define BEGIN_FOG_LOOP() \
     _Pragma("omp parallel for collapse(2) firstprivate(fogColor)") \
     for (PFint y = 0; y < height; y++) \
@@ -2591,7 +2591,7 @@ void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat
 
     /* Reads pixels from the framebuffer and copies them to the destination */
 
-#ifdef PF_SUPPORT_OPENMP
+#ifdef _OPENMP
 #   pragma omp parallel for collapse(2)
     for (PFsizei ySrc = yMin; ySrc < yMax; ySrc++)
     {
@@ -2624,7 +2624,7 @@ void pfPostProcess(PFpostprocessfunc postProcessFunction)
     PFpixelgetter pixelGetter = currentCtx->currentFramebuffer->texture.pixelGetter;
     PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
 
-#ifdef PF_SUPPORT_OPENMP
+#ifdef _OPENMP
 #   define BEGIN_POSTPROCESS_LOOP() \
     _Pragma("omp parallel for collapse(2)") \
     for (PFint y = 0; y < height; y++) \
