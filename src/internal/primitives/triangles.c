@@ -630,8 +630,6 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         yMin = (PFsizei)CLAMP((PFint)yMin, currentCtx->vpMin[1], currentCtx->vpMax[1]);
         xMax = (PFsizei)CLAMP((PFint)xMax, currentCtx->vpMin[0], currentCtx->vpMax[0]);
         yMax = (PFsizei)CLAMP((PFint)yMax, currentCtx->vpMin[1], currentCtx->vpMax[1]);
-
-        if (xMin == xMax && yMin == yMax) return;
     }
 
     /* Barycentric interpolation */
@@ -683,58 +681,59 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Loop macro definition */
 
-#ifdef PF_SUPPORT_OPENMP
-#   define BEGIN_LOOP() \
-    _Pragma("omp parallel for schedule(dynamic) \
-        if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)") \
-    for (PFsizei y = yMin; y <= yMax; y++) \
-    { \
-        PFint i = y - yMin; \
-        PFint w1 = w1Row + i*w1YStep; \
-        PFint w2 = w2Row + i*w2YStep; \
-        PFint w3 = w3Row + i*w3YStep; \
-        const PFsizei yOffset = y*widthDst; \
-        \
-        for (PFsizei x = xMin; x <= xMax; x++) \
-        { \
-            if ((w1 | w2 | w3) >= 0) \
-            { \
-                PFfloat aW1 = w1*wInvSum, aW2 = w2*wInvSum, aW3 = w3*wInvSum; \
-                PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
-                PFsizei xyOffset = yOffset + x; \
-                \
-                if (noDepth || currentCtx->depthFunction(z, zbDst[xyOffset])) \
-                {
-
-#   define END_LOOP() \
-                } \
-            } \
-            w1 += w1XStep, w2 += w2XStep, w3 += w3XStep; \
-        } \
+#ifdef _OPENMP
+#   define PF_TRIANGLE_TRAVEL(PIXEL_CODE)                                           \
+    _Pragma("omp parallel for schedule(dynamic)                                     \
+        if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)")        \
+    for (PFsizei y = yMin; y <= yMax; y++)                                          \
+    {                                                                               \
+        PFint w1 = w1Row + (y - yMin)*w1YStep;                                      \
+        PFint w2 = w2Row + (y - yMin)*w2YStep;                                      \
+        PFint w3 = w3Row + (y - yMin)*w3YStep;                                      \
+        const PFsizei yOffset = y*widthDst;                                         \
+        for (PFsizei x = xMin; x <= xMax; x++)                                      \
+        {                                                                           \
+            if ((w1 | w2 | w3) >= 0)                                                \
+            {                                                                       \
+                PFfloat aW1 = w1*wInvSum, aW2 = w2*wInvSum, aW3 = w3*wInvSum;       \
+                PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3);                        \
+                PFsizei xyOffset = yOffset + x;                                     \
+                if (noDepth || currentCtx->depthFunction(z, zbDst[xyOffset]))       \
+                {                                                                   \
+                    PIXEL_CODE                                                      \
+                }                                                                   \
+            }                                                                       \
+            w1 += w1XStep;                                                          \
+            w2 += w2XStep;                                                          \
+            w3 += w3XStep;                                                          \
+        }                                                                           \
     }
 #else
-#   define BEGIN_LOOP() \
-    for (PFsizei y = yMin, yOffset = yMin*widthDst; y <= yMax; y++, yOffset += widthDst) \
-    { \
-        PFint w1 = w1Row, w2 = w2Row, w3 = w3Row; \
-        \
-        for (PFsizei x = xMin; x <= xMax; x++) \
-        { \
-            if ((w1 | w2 | w3) >= 0) \
-            { \
-                PFfloat aW1 = w1*wInvSum, aW2 = w2*wInvSum, aW3 = w3*wInvSum; \
-                PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3); \
-                PFsizei xyOffset = yOffset + x; \
-                \
-                if (noDepth || currentCtx->depthFunction(z, zbDst[xyOffset])) \
-                {
-
-#   define END_LOOP() \
-                } \
-            } \
-            w1 += w1XStep, w2 += w2XStep, w3 += w3XStep; \
-        } \
-        w1Row += w1YStep, w2Row += w2YStep, w3Row += w3YStep; \
+#   define PF_TRIANGLE_TRAVEL(PIXEL_CODE)                                                   \
+    for (PFsizei y = yMin, yOffset = yMin*widthDst; y <= yMax; y++, yOffset += widthDst)    \
+    {                                                                                       \
+        PFint w1 = w1Row;                                                                   \
+        PFint w2 = w2Row;                                                                   \
+        PFint w3 = w3Row;                                                                   \
+        for (PFsizei x = xMin; x <= xMax; x++)                                              \
+        {                                                                                   \
+            if ((w1 | w2 | w3) >= 0)                                                        \
+            {                                                                               \
+                PFfloat aW1 = w1*wInvSum, aW2 = w2*wInvSum, aW3 = w3*wInvSum;               \
+                PFfloat z = 1.0f/(aW1*z1 + aW2*z2 + aW3*z3);                                \
+                PFsizei xyOffset = yOffset + x;                                             \
+                if (noDepth || currentCtx->depthFunction(z, zbDst[xyOffset]))               \
+                {                                                                           \
+                    PIXEL_CODE                                                              \
+                }                                                                           \
+            }                                                                               \
+            w1 += w1XStep;                                                                  \
+            w2 += w2XStep;                                                                  \
+            w3 += w3XStep;                                                                  \
+        }                                                                                   \
+        w1Row += w1YStep;                                                                   \
+        w2Row += w2YStep;                                                                   \
+        w3Row += w3YStep;                                                                   \
     }
 #endif
 
@@ -767,35 +766,35 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     if (texturing && lighting)
     {
-        BEGIN_LOOP();
-        GET_FRAG();
-        TEXTURING();
-        LIGHTING();
-        SET_FRAG();
-        END_LOOP();
+        PF_TRIANGLE_TRAVEL({
+            GET_FRAG();
+            TEXTURING();
+            LIGHTING();
+            SET_FRAG();
+        })
     }
     else if (texturing)
     {
-        BEGIN_LOOP();
-        GET_FRAG();
-        TEXTURING();
-        SET_FRAG();
-        END_LOOP();
+        PF_TRIANGLE_TRAVEL({
+            GET_FRAG();
+            TEXTURING();
+            SET_FRAG();
+        })
     }
     else if (lighting)
     {
-        BEGIN_LOOP();
-        GET_FRAG();
-        LIGHTING();
-        SET_FRAG();
-        END_LOOP();
+        PF_TRIANGLE_TRAVEL({
+            GET_FRAG();
+            LIGHTING();
+            SET_FRAG();
+        })
     }
     else
     {
-        BEGIN_LOOP();
-        GET_FRAG();
-        SET_FRAG();
-        END_LOOP();
+        PF_TRIANGLE_TRAVEL({
+            GET_FRAG();
+            SET_FRAG();
+        })
     }
 }
 
