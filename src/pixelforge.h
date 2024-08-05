@@ -391,38 +391,44 @@ extern "C" {
 /**
  * @brief Creates a rendering context.
  *
- * @warning This function needs a context to be defined.
+ * @param targetBuffer Pointer to the target buffer where the rendering will occur.
+ * @param width        Width of the target buffer in pixels.
+ * @param height       Height of the target buffer in pixels.
+ * @param format       Pixel format of the target buffer, which defines the color and data representation.
+ * @param type         Data type of the pixels in the target buffer (e.g., unsigned integer, floating point).
  *
- * @param targetBuffer Pointer to the target buffer.
- * @param width        Width of the target buffer.
- * @param height       Height of the target buffer.
- * @param pixelFormat  Pixel format of the target buffer.
- *
- * @return Pointer to the created rendering context.
+ * @return Pointer to the created rendering context. Returns NULL if context creation fails.
  */
 PF_API PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
 
 /**
  * @brief Deletes a rendering context.
  *
- * @warning This function needs a context to be defined.
+ * This function releases all resources associated with the specified rendering context.
  *
- * @param ctx Pointer to the rendering context to be deleted.
+ * @param ctx Pointer to the rendering context to be deleted. If `ctx` is NULL, the function does nothing.
+ *
+ * @note After calling this function, the `ctx` pointer should not be used to access the rendering context.
  */
 PF_API void pfDeleteContext(PFcontext ctx);
 
 /**
  * @brief Sets the main buffer for rendering.
  *
- * @param targetBuffer Pointer to the target buffer.
- * @param width        Width of the target buffer.
- * @param height       Height of the target buffer.
- * @param pixelFormat  Pixel format of the target buffer.
+ * This function configures the target buffer where rendering will occur. It updates the dimensions and pixel format 
+ * of the buffer. If custom pixel getters/setters are defined, you will need to reassign them after calling this function.
  * 
- * @note If you have defined custom pixel getters/setters, you will need to reassign them.
- *       If reallocation of the main depth buffer fails, the old pixel buffer will be retained.
- *       Does not free the previous pixel buffer provided, its lifespan management is your responsibility.
- *       If you have defined an auxiliary buffer it will be automatically deactivated when changing the main buffer.
+ * @warning This function requires a defined context.
+ *
+ * @param targetBuffer Pointer to the new target buffer for rendering.
+ * @param width        Width of the new target buffer in pixels.
+ * @param height       Height of the new target buffer in pixels.
+ * @param format       Pixel format of the new target buffer, defining the color and data representation.
+ * @param type         Data type of the pixels in the new target buffer (e.g., unsigned integer, floating point).
+ *
+ * @note If reallocation of the main depth buffer fails, the old buffer will be retained. 
+ *       The previous buffer is not freed by this function; you are responsible for managing its lifespan.
+ *       If an auxiliary buffer is defined, it will be automatically deactivated when changing the main buffer.
  */
 PF_API void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
 
@@ -1539,15 +1545,16 @@ PF_API void pfPostProcess(PFpostprocessfunc postProcessFunction);
 /**
  * @brief Generates a framebuffer object with the specified dimensions and pixel format.
  *
- * This function creates a new framebuffer object with the given width, height, and pixel format.
- * The framebuffer can be used for off-screen rendering or as a render target.
- * By default, the color texture of the generated framebuffer is initialized with zeros,
- * and the depth buffer is initialized with 'FLT_MAX' values.
+ * This function creates a new framebuffer object with the given width, height, pixel format, and pixel data type.
+ * The framebuffer can be used for off-screen rendering or as a render target. By default, the color texture 
+ * of the generated framebuffer is initialized with zeros, and the depth buffer is initialized with 'FLT_MAX' values.
  *
- * @param width The width of the framebuffer.
- * @param height The height of the framebuffer.
- * @param format The pixel format of the framebuffer.
- * @return PFframebuffer The generated framebuffer object.
+ * @param width  The width of the framebuffer in pixels.
+ * @param height The height of the framebuffer in pixels.
+ * @param format The pixel format of the framebuffer, defining the color and data representation.
+ * @param type   The data type of the framebuffer's pixels (e.g., unsigned integer, floating point).
+ *
+ * @return PFframebuffer The generated framebuffer object. Returns an invalid framebuffer object if creation fails.
  */
 PF_API PFframebuffer pfGenFramebuffer(PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
 
@@ -1659,16 +1666,18 @@ PF_API void pfSetFramebufferPixel(PFframebuffer* framebuffer, PFsizei x, PFsizei
 /* Texture functions */
 
 /**
- * @brief Generates a texture object with the specified pixel data, width, height, and format.
+ * @brief Generates a texture object with the specified pixel data, dimensions, and format.
  *
- * This function creates a new texture object using the provided pixel data, width, height, and format.
- * The pixel data represents the texture image, and its format should match the specified format parameter.
+ * This function creates a new texture object using the provided pixel data, width, height, pixel format, 
+ * and pixel data type. The pixel data represents the texture image and must match the specified format and type parameters.
  *
- * @param pixels Pointer to the pixel data of the texture.
- * @param width The width of the texture.
- * @param height The height of the texture.
- * @param format The pixel format of the texture.
- * @return PFtexture The generated texture object.
+ * @param pixels Pointer to the pixel data of the texture. The data should be in the format specified by `format` and `type`.
+ * @param width  The width of the texture in pixels.
+ * @param height The height of the texture in pixels.
+ * @param format The pixel format of the texture, defining the color and data representation.
+ * @param type   The data type of the texture's pixels (e.g., unsigned integer, floating point).
+ *
+ * @return PFtexture The generated texture object. Returns an invalid texture object if creation fails.
  */
 PF_API PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
 
