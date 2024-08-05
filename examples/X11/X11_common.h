@@ -1,6 +1,7 @@
 #ifndef PF_X11_COMMON_H
 #define PF_X11_COMMON_H
 
+#include "pixelforge.h"
 #ifdef PF_X11_COMMON_H
 #   define PF_COMMON_IMPL
 #endif //PF_X11_COMMON_H
@@ -10,11 +11,6 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <stdlib.h>
-
-/* Pixel getter/setter */
-
-PFcolor PF_GetPixel(const void* pixels, PFsizei offset);
-void PF_SetPixel(void* pixels, PFsizei offset, PFcolor color);
 
 /* X11 App management */
 
@@ -55,26 +51,6 @@ PFcontext PF_InitFromX11App(X11_App* app);
 /* Implementation */
 
 #ifdef PF_X11_COMMON_IMPL
-
-/* Pixel getter/setter */
-
-PFcolor PF_GetPixel(const void* pixels, PFsizei offset)
-{
-    return (PFcolor) {
-        ((PFubyte*)pixels)[offset*4 + 2],
-        ((PFubyte*)pixels)[offset*4 + 1],
-        ((PFubyte*)pixels)[offset*4],
-        ((PFubyte*)pixels)[offset*4 + 3]
-    };
-}
-
-void PF_SetPixel(void* pixels, PFsizei offset, PFcolor color)
-{
-    ((PFubyte*)pixels)[offset*4] = color.b;
-    ((PFubyte*)pixels)[offset*4 + 1] = color.g;
-    ((PFubyte*)pixels)[offset*4 + 2] = color.r;
-    ((PFubyte*)pixels)[offset*4 + 3] = color.a;
-}
 
 /* X11 App management */
 
@@ -171,9 +147,7 @@ void Clock_End(Clock* clock)
 
 PFcontext PF_InitFromX11App(X11_App* app)
 {
-    PFcontext ctx = PF_Init(app->destBuffer, app->destImage->width, app->destImage->height);
-    pfSetDefaultPixelGetter(PF_GetPixel);
-    pfSetDefaultPixelSetter(PF_SetPixel);
+    PFcontext ctx = PF_Init(app->destBuffer, app->destImage->width, app->destImage->height, PF_BGRA_8_8_8_8);
     return ctx;
 }
 

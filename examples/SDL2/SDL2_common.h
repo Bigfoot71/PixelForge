@@ -1,17 +1,13 @@
 #ifndef PF_SDL2_COMMON_H
 #define PF_SDL2_COMMON_H
 
+#include "pixelforge.h"
 #ifdef PF_SDL2_COMMON_H
 #   define PF_COMMON_IMPL
 #endif //PF_SDL2_COMMON_H
 
 #include "../common.h"
 #include <SDL2/SDL.h>
-
-/* Pixel getter/setter */
-
-PFcolor PF_GetPixel(const void* pixels, PFsizei offset);
-void PF_SetPixel(void* pixels, PFsizei offset, PFcolor color);
 
 /* Window management */
 
@@ -44,26 +40,6 @@ PFcontext PF_InitFromWindow(Window* window);
 /* Implementation */
 
 #ifdef PF_SDL2_COMMON_IMPL
-
-/* Pixel getter/setter */
-
-PFcolor PF_GetPixel(const void* pixels, PFsizei offset)
-{
-    return (PFcolor) {
-        ((PFubyte*)pixels)[offset*4 + 2],
-        ((PFubyte*)pixels)[offset*4 + 1],
-        ((PFubyte*)pixels)[offset*4],
-        ((PFubyte*)pixels)[offset*4 + 3]
-    };
-}
-
-void PF_SetPixel(void* pixels, PFsizei offset, PFcolor color)
-{
-    ((PFubyte*)pixels)[offset*4] = color.b;
-    ((PFubyte*)pixels)[offset*4 + 1] = color.g;
-    ((PFubyte*)pixels)[offset*4 + 2] = color.r;
-    ((PFubyte*)pixels)[offset*4 + 3] = color.a;
-}
 
 /* Window management */
 
@@ -155,9 +131,7 @@ void Clock_End(Clock* clock)
 
 PFcontext PF_InitFromWindow(Window* window)
 {
-    PFcontext ctx = PF_Init(window->surface->pixels, window->surface->w, window->surface->h);
-    pfSetDefaultPixelGetter(PF_GetPixel);
-    pfSetDefaultPixelSetter(PF_SetPixel);
+    PFcontext ctx = PF_Init(window->surface->pixels, window->surface->w, window->surface->h, PF_BGRA_8_8_8_8);
     return ctx;
 }
 

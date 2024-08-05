@@ -19,7 +19,7 @@ int main(void)
     // Create framebuffer
     PFframebuffer fbTarget = pfGenFramebuffer(
         SCREEN_WIDTH, SCREEN_HEIGHT,
-        PF_PIXELFORMAT_R8G8B8A8);
+        PF_RGBA_8_8_8_8);
 
     // Bind the framebuffer
     pfBindFramebuffer(&fbTarget);

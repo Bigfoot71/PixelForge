@@ -8,11 +8,6 @@
 #include "../common.h"
 #include <windows.h>
 
-/* Pixel getter/setter */
-
-PFcolor PF_GetPixel(const void* pixels, PFsizei offset);
-void PF_SetPixel(void* pixels, PFsizei offset, PFcolor color);
-
 /* Window management */
 
 typedef struct {
@@ -36,26 +31,6 @@ PFcontext PF_InitFromWindow(Window* window);
 /* Implementation */
 
 #ifdef PF_WIN_COMMON_IMPL
-
-/* Pixel getter/setter */
-
-PFcolor PF_GetPixel(const void* pixels, PFsizei offset)
-{
-    return (PFcolor) {
-        ((PFubyte*)pixels)[offset*4 + 2],
-        ((PFubyte*)pixels)[offset*4 + 1],
-        ((PFubyte*)pixels)[offset*4],
-        ((PFubyte*)pixels)[offset*4 + 3]
-    };
-}
-
-void PF_SetPixel(void* pixels, PFsizei offset, PFcolor color)
-{
-    ((PFubyte*)pixels)[offset*4] = color.b;
-    ((PFubyte*)pixels)[offset*4 + 1] = color.g;
-    ((PFubyte*)pixels)[offset*4 + 2] = color.r;
-    ((PFubyte*)pixels)[offset*4 + 3] = color.a;
-}
 
 /* Window management */
 
@@ -118,9 +93,7 @@ void Window_Update(Window* window)
 
 PFcontext PF_InitFromWindow(Window* window)
 {
-    PFcontext ctx = PF_Init(window->pixels, window->w, window->h);
-    pfSetDefaultPixelGetter(PF_GetPixel);
-    pfSetDefaultPixelSetter(PF_SetPixel);
+    PFcontext ctx = PF_Init(window->pixels, window->w, window->h, PF_BGRA_8_8_8_8);
     return ctx;
 }
 

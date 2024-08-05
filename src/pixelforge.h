@@ -360,20 +360,38 @@ typedef void (*PFpixelsetter)(void*, PFsizei, PFcolor);
 typedef PFcolor (*PFpixelgetter)(const void*, PFsizei);
 
 typedef enum {
-    PF_PIXELFORMAT_UNKNOWN = 0,
-    PF_PIXELFORMAT_GRAYSCALE,
-    PF_PIXELFORMAT_GRAY_ALPHA,
-    PF_PIXELFORMAT_R5G6B5,
-    PF_PIXELFORMAT_R8G8B8,
-    PF_PIXELFORMAT_R5G5B5A1,
-    PF_PIXELFORMAT_R4G4B4A4,
-    PF_PIXELFORMAT_R8G8B8A8,
-    PF_PIXELFORMAT_R32,
-    PF_PIXELFORMAT_R32G32B32,
-    PF_PIXELFORMAT_R32G32B32A32,
-    PF_PIXELFORMAT_R16,
-    PF_PIXELFORMAT_R16G16B16,
-    PF_PIXELFORMAT_R16G16B16A16,
+
+    PF_UNKNOWN_PIXELFORMAT  = 0,
+
+    PF_LUMINANCE            = 1,
+    PF_GRAYSCALE            = 1,
+    PF_LUMINANCE_ALPHA      = 2,
+    PF_GRAYSCALE_ALPHA      = 2,
+
+    PF_RGB_5_6_5,
+    PF_RGB_8_8_8,
+    PF_RGBA_5_5_5_1,
+    PF_RGBA_4_4_4_4,
+    PF_RGBA_8_8_8_8,
+    PF_R_32,
+    PF_RGB_32_32_32,
+    PF_RGBA_32_32_32_32 ,
+    PF_R_16,
+    PF_RGB_16_16_16,
+    PF_RGBA_16_16_16_16,
+
+    PF_BGR_5_6_5,
+    PF_BGR_8_8_8,
+    PF_BGRA_5_5_5_1,
+    PF_BGRA_4_4_4_4,
+    PF_BGRA_8_8_8_8,
+    PF_B_32,
+    PF_BGR_32_32_32,
+    PF_BGRA_32_32_32_32,
+    PF_B_16,
+    PF_BGR_16_16_16,
+    PF_BGRA_16_16_16_16,
+
 } PFpixelformat;
 
 struct PFtexture {

@@ -51,7 +51,7 @@ void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float r
 
 PFcontext PF_InitFromTargetBuffer(PF_TargetBuffer destBuffer)
 {
-    return PF_Init(destBuffer.image.data, destBuffer.image.width, destBuffer.image.height);
+    return PF_Init(destBuffer.image.data, destBuffer.image.width, destBuffer.image.height, PF_RGBA_8_8_8_8);
 }
 
 /* Load PixelForge texture */

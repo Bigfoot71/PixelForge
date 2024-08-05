@@ -10,23 +10,6 @@
 #define PF_COMMON_IMPL
 #include "../common.h"
 
-static void PixelSetter(void *framebuffer, PFsizei index, PFcolor color)
-{
-    ((uint32_t*)framebuffer)[index] = (color.r << 16) | (color.g << 8) | color.b;
-}
-
-static PFcolor PixelGetter(const void *framebuffer, PFsizei index)
-{
-    uint32_t pixel = ((const uint32_t *)framebuffer)[index];
-
-    return (PFcolor) {
-        .r = (pixel >> 16) & 0xFF,
-        .g = (pixel >> 8) & 0xFF,
-        .b = pixel & 0xFF,
-        .a = 0xFF
-    };
-}
-
 int main(void)
 {
     int fbFd = open("/dev/fb0", O_RDWR);
@@ -69,12 +52,8 @@ int main(void)
     memcpy(buffer, fbMem, screensize);
 
     // Creating the PixelForge rendering context
-    PFcontext ctx = pfCreateContext(buffer, vinfo.xres_virtual, vinfo.yres_virtual, PF_PIXELFORMAT_R8G8B8);
+    PFcontext ctx = pfCreateContext(buffer, vinfo.xres_virtual, vinfo.yres_virtual, PF_BGR_8_8_8);
     pfMakeCurrent(ctx);
-
-    // Definition of custom pixel get/set function
-    pfSetDefaultPixelGetter(PixelGetter);
-    pfSetDefaultPixelSetter(PixelSetter);
 
     while (1)
     {

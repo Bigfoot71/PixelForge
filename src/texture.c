@@ -30,7 +30,7 @@
 PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelformat format)
 {
     PFtexture texture = { NULL, NULL, pixels, width, height, format };
-    if (format == PF_PIXELFORMAT_UNKNOWN) return texture;
+    if (format == PF_UNKNOWN_PIXELFORMAT) return texture;
 
     pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format);
 
@@ -40,7 +40,7 @@ PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelforma
 PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat format)
 {
     PFtexture texture = { NULL, NULL, NULL, width, height, format };
-    if (format == PF_PIXELFORMAT_UNKNOWN) return texture;
+    if (format == PF_UNKNOWN_PIXELFORMAT) return texture;
 
     pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format);
 
@@ -62,7 +62,7 @@ PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat format
 PFtexture pfGenTextureBufferColor(PFsizei width, PFsizei height, PFcolor color, PFpixelformat format)
 {
     PFtexture texture = { NULL, NULL, NULL, width, height, format };
-    if (format == PF_PIXELFORMAT_UNKNOWN) return texture;
+    if (format == PF_UNKNOWN_PIXELFORMAT) return texture;
 
     pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format);
 
