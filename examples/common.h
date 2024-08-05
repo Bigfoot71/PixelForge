@@ -12,7 +12,7 @@ void PF_Reshape(PFuint width, PFuint height);
 /* Draw 2D */
 
 void PF_DrawRectangle(PFfloat x, PFfloat y, PFfloat largeur, PFfloat hauteur);
-void PF_DrawTexture(PFtexture* texture, PFfloat x, PFfloat y, PFfloat width, PFfloat height);
+void PF_DrawTexture(PFtexture texture, PFfloat x, PFfloat y, PFfloat width, PFfloat height);
 
 /* Draw 3D */
 
@@ -63,7 +63,7 @@ void PF_DrawRectangle(PFfloat x, PFfloat y, PFfloat width, PFfloat height)
     pfEnd();
 }
 
-void PF_DrawTexture(PFtexture* texture, PFfloat x, PFfloat y, PFfloat width, PFfloat height)
+void PF_DrawTexture(PFtexture texture, PFfloat x, PFfloat y, PFfloat width, PFfloat height)
 {
     pfBindTexture(texture);
     pfBegin(PF_QUADS);
@@ -77,7 +77,7 @@ void PF_DrawTexture(PFtexture* texture, PFfloat x, PFfloat y, PFfloat width, PFf
     pfBindTexture(0);
 }
 
-void PF_DrawTextureEx(PFtexture* texture, PFfloat x, PFfloat y, PFfloat width, PFfloat height, PFfloat ox, PFfloat oy, PFfloat angleDegrees)
+void PF_DrawTextureEx(PFtexture texture, PFfloat x, PFfloat y, PFfloat width, PFfloat height, PFfloat ox, PFfloat oy, PFfloat angleDegrees)
 {
     PFfloat angleRadians = DEG2RAD(angleDegrees);
     PFfloat c = cos(angleRadians);

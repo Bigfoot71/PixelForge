@@ -85,7 +85,7 @@ int main(void)
         PF_BeginMode3D(camera);
         {
             pfEnable(PF_TEXTURE_2D);
-            pfBindTexture(&texMap);
+            pfBindTexture(texMap);
 
                 PF_DrawModel(model, (Vector3) { 0 }, 1.0f, WHITE);
 
@@ -102,7 +102,7 @@ int main(void)
     }
 
     // Unload assets
-    pfDeleteTexture(&texMap);
+    pfDeleteTexture(&texMap, true);
     UnloadModel(model);
 
     // Unload the PixelForge context and the target buffer

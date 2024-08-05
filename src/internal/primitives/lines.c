@@ -292,15 +292,16 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
     /* Get Some Values*/
 
     PFframebuffer *fbDst = currentCtx->currentFramebuffer;
+    struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
 
-    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
-    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFpixelsetter pixelSetter = texDst->pixelSetter;
+    PFpixelgetter pixelGetter = texDst->pixelGetter;
 
     PFblendfunc blendFunc = currentCtx->state & PF_BLEND ?
         currentCtx->blendFunction : NULL;
 
-    void *bufDst = fbDst->texture.pixels;
-    PFsizei wDst = fbDst->texture.width;
+    void *bufDst = texDst->pixels;
+    PFsizei wDst = texDst->width;
     PFfloat *zbDst = fbDst->zbuffer;
 
     PFint x1 = v1->screen[0], y1 = v1->screen[1];
@@ -385,15 +386,16 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
     /* Get Some Values*/
 
     PFframebuffer *fbDst = currentCtx->currentFramebuffer;
+    struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
 
-    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
-    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFpixelsetter pixelSetter = texDst->pixelSetter;
+    PFpixelgetter pixelGetter = texDst->pixelGetter;
 
     PFblendfunc blendFunc = currentCtx->state & PF_BLEND ?
         currentCtx->blendFunction : NULL;
 
-    void *bufDst = fbDst->texture.pixels;
-    PFsizei wDst = fbDst->texture.width;
+    void *bufDst = texDst->pixels;
+    PFsizei wDst = texDst->width;
     PFfloat *zbDst = fbDst->zbuffer;
 
     PFint x1 = v1->screen[0], y1 = v1->screen[1];

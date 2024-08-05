@@ -14,7 +14,7 @@ typedef struct {
 
 Arrow Arrow_Create();
 void Arrow_Update(Arrow* arrow);
-void Arrow_Draw(Arrow* arrow, PFtexture* texture);
+void Arrow_Draw(Arrow* arrow, PFtexture texture);
 
 /* Main */
 
@@ -55,7 +55,7 @@ int main(void)
         pfDrawPixels(imBG.width, imBG.height, PF_LUMINANCE_ALPHA, PF_UNSIGNED_BYTE, imBG.data);
 
         // Draw the arrow entity
-        Arrow_Draw(&arrow, &texArrow);
+        Arrow_Draw(&arrow, texArrow);
 
         // Texture rendering via raylib
         BeginDrawing();
@@ -66,7 +66,7 @@ int main(void)
     }
 
     // Unload assets
-    pfDeleteTexture(&texArrow);
+    pfDeleteTexture(&texArrow, true);
     UnloadImage(imBG);
 
     // Unload the PixelForge context and the target buffer
@@ -97,7 +97,7 @@ void Arrow_Update(Arrow* arrow)
     }
 }
 
-void Arrow_Draw(Arrow* arrow, PFtexture* texture)
+void Arrow_Draw(Arrow* arrow, PFtexture texture)
 {
     PF_DrawTextureEx(texture, arrow->position.x, arrow->position.y, 64, 64, 32, 32, arrow->angle);
 }

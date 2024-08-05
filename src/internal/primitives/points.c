@@ -93,18 +93,19 @@ PFboolean Process_ProjectPoint(PFvertex* v)
 void Rasterize_Point_NODEPTH(const PFvertex* point)
 {
     PFframebuffer *fbDst = currentCtx->currentFramebuffer;
+    struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
 
-    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
-    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFpixelsetter pixelSetter = texDst->pixelSetter;
+    PFpixelgetter pixelGetter = texDst->pixelGetter;
 
     PFblendfunc blendFunc = currentCtx->state & PF_BLEND ?
         currentCtx->blendFunction : NULL;
 
-    void *pbDst = fbDst->texture.pixels;
+    void *pbDst = texDst->pixels;
     PFfloat *zbDst = fbDst->zbuffer;
 
-    PFsizei wDst = fbDst->texture.width;
-    PFsizei hDst = fbDst->texture.height;
+    PFsizei wDst = texDst->width;
+    PFsizei hDst = texDst->height;
 
     PFint cx = point->screen[0];
     PFint cy = point->screen[1];
@@ -145,18 +146,19 @@ void Rasterize_Point_NODEPTH(const PFvertex* point)
 void Rasterize_Point_DEPTH(const PFvertex* point)
 {
     PFframebuffer *fbDst = currentCtx->currentFramebuffer;
+    struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
 
-    PFpixelsetter pixelSetter = fbDst->texture.pixelSetter;
-    PFpixelgetter pixelGetter = fbDst->texture.pixelGetter;
+    PFpixelsetter pixelSetter = texDst->pixelSetter;
+    PFpixelgetter pixelGetter = texDst->pixelGetter;
 
     PFblendfunc blendFunc = currentCtx->state & PF_BLEND ?
         currentCtx->blendFunction : NULL;
 
-    void *pbDst = fbDst->texture.pixels;
+    void *pbDst = texDst->pixels;
     PFfloat *zbDst = fbDst->zbuffer;
 
-    PFsizei wDst = fbDst->texture.width;
-    PFsizei hDst = fbDst->texture.height;
+    PFsizei wDst = texDst->width;
+    PFsizei hDst = texDst->height;
 
     PFint cx = point->screen[0];
     PFint cy = point->screen[1];

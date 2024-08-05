@@ -391,13 +391,14 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Extract framebuffer information */
 
-    PFblendfunc blendFunction = currentCtx->state & PF_BLEND ? currentCtx->blendFunction : NULL;
-    PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
-    PFpixelgetter pixelGetter = currentCtx->currentFramebuffer->texture.pixelGetter;
-    PFsizei widthDst = currentCtx->currentFramebuffer->texture.width;
-    void *pbDst = currentCtx->currentFramebuffer->texture.pixels;
+    struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
     PFfloat *zbDst = currentCtx->currentFramebuffer->zbuffer;
-    PFtexture *texture = currentCtx->currentTexture;
+
+    PFblendfunc blendFunction = currentCtx->state & PF_BLEND ? currentCtx->blendFunction : NULL;
+    PFpixelsetter pixelSetter = texDst->pixelSetter;
+    PFpixelgetter pixelGetter = texDst->pixelGetter;
+    PFsizei widthDst = texDst->width;
+    void *pbDst = texDst->pixels;
 
     /*  */
 
@@ -566,8 +567,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
                         pfmVec2Scale(uv, uv, z);
                     }
 
-                    PFcolor tex = pfGetTextureSample(texture, uv[0], uv[1]);
-                    fragment = pfBlendMultiplicative(tex, fragment);
+                    PFcolor texel = pfGetTextureSample(texDst, uv[0], uv[1]);
+                    fragment = pfBlendMultiplicative(texel, fragment);
                 }
 
                 /* Compute lighting */
@@ -674,20 +675,23 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     PFblendfunc blendFunction = currentCtx->state & PF_BLEND ? currentCtx->blendFunction : NULL;
     PFdepthfunc depthFunction = currentCtx->depthFunction;
 
-    PFpixelgetter pixelGetter = currentCtx->currentFramebuffer->texture.pixelGetter;
-    PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
-    PFsizei widthDst = currentCtx->currentFramebuffer->texture.width;
-    void *pbDst = currentCtx->currentFramebuffer->texture.pixels;
+    struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
+    struct PFtex *texSrc = currentCtx->currentTexture;
+
     PFfloat *zbDst = currentCtx->currentFramebuffer->zbuffer;
-    PFtexture *texture = currentCtx->currentTexture;
+
+    PFpixelgetter pixelGetter = texDst->pixelGetter;
+    PFpixelsetter pixelSetter = texDst->pixelSetter;
+    PFsizei widthDst = texDst->width;
+    void *pbDst = texDst->pixels;
 
     PFfloat z1 = v1->homogeneous[2];
     PFfloat z2 = v2->homogeneous[2];
     PFfloat z3 = v3->homogeneous[2];
 
-    const PFboolean noDepth = !(currentCtx->state & PF_DEPTH_TEST);
-    const PFboolean lighting = (currentCtx->state & PF_LIGHTING) && currentCtx->activeLights;
-    const PFboolean texturing = (currentCtx->state & PF_TEXTURE_2D) && currentCtx->currentTexture;
+    const PFboolean noDepth   = !(currentCtx->state & PF_DEPTH_TEST);
+    const PFboolean texturing = (currentCtx->state & PF_TEXTURE_2D) && texSrc;
+    const PFboolean lighting  = (currentCtx->state & PF_LIGHTING) && currentCtx->activeLights;
 
     /* Loop macro definition */
 
@@ -758,7 +762,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFMvec2 texcoord; \
         pfmVec2BaryInterpR(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3); \
         if (is3D) texcoord[0] *= z, texcoord[1] *= z; /* Perspective correct */ \
-        PFcolor texel = pfGetTextureSample(texture, texcoord[0], texcoord[1]); \
+        PFcolor texel = pfGetTextureSample(texSrc, texcoord[0], texcoord[1]); \
         fragment = pfBlendMultiplicative(texel, fragment);
 
 #   define LIGHTING() \

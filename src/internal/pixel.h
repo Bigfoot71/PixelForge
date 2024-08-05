@@ -1030,8 +1030,8 @@ pfInternal_GetPixelGetterSetter(PFpixelgetter* getter, PFpixelsetter* setter, PF
 
     };
 
-    if (setter) *setter = setters[format][type];
     if (getter) *getter = getters[format][type];
+    if (setter) *setter = setters[format][type];
 }
 
 static inline PFsizei

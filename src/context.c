@@ -297,8 +297,8 @@ void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelf
 
     /* Store the old width and height of the main framebuffer */
 
-    PFsizei oldWidth = currentCtx->mainFramebuffer.texture.width;
-    PFsizei oldHeight = currentCtx->mainFramebuffer.texture.height;
+    PFsizei oldWidth = ((struct PFtex*)currentCtx->mainFramebuffer.texture)->width;
+    PFsizei oldHeight = ((struct PFtex*)currentCtx->mainFramebuffer.texture)->height;
 
     /* Check if the dimensions of the new buffer differ from the old one */
 
@@ -369,8 +369,10 @@ PF_API void pfSwapBuffers(void)
         return;
     }
 
-    void *tmp = currentCtx->currentFramebuffer->texture.pixels;
-    currentCtx->currentFramebuffer->texture.pixels = currentCtx->auxFramebuffer;
+    struct PFtex* tex = currentCtx->currentFramebuffer->texture;
+
+    void *tmp = tex->pixels;
+    tex->pixels = currentCtx->auxFramebuffer;
     currentCtx->auxFramebuffer = tmp;
 }
 
@@ -633,8 +635,8 @@ void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height)
     currentCtx->vpMin[0] = MAX(x, 0);
     currentCtx->vpMin[1] = MAX(y, 0);
 
-    currentCtx->vpMax[0] = MIN(x + width, currentCtx->mainFramebuffer.texture.width - 1);
-    currentCtx->vpMax[1] = MIN(y + height, currentCtx->mainFramebuffer.texture.height - 1);
+    currentCtx->vpMax[0] = MIN(x + width, ((struct PFtex*)currentCtx->mainFramebuffer.texture)->width - 1);
+    currentCtx->vpMax[1] = MIN(y + height, ((struct PFtex*)currentCtx->mainFramebuffer.texture)->height - 1);
 }
 
 void pfPolygonMode(PFface face, PFpolygonmode mode)
@@ -720,7 +722,7 @@ void pfBindFramebuffer(PFframebuffer* framebuffer)
     }
 }
 
-void pfBindTexture(PFtexture* texture)
+void pfBindTexture(PFtexture texture)
 {
     currentCtx->currentTexture = texture;
 }
@@ -730,14 +732,14 @@ void pfClear(PFclearflag flag)
     if (!flag) return;
 
     PFframebuffer *framebuffer = currentCtx->currentFramebuffer;
-    PFsizei size = framebuffer->texture.width*framebuffer->texture.height;
+    struct PFtex *tex = currentCtx->currentFramebuffer->texture;
+    PFsizei size = tex->width*tex->height;
 
     if (flag & (PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT))
     {
-        PFtexture *texture = &framebuffer->texture;
         PFfloat *zbuffer = framebuffer->zbuffer;
 
-        PFpixelsetter pixelSetter = texture->pixelSetter;
+        PFpixelsetter pixelSetter = tex->pixelSetter;
         PFcolor color = currentCtx->clearColor;
         PFfloat depth = currentCtx->clearDepth;
 
@@ -746,15 +748,13 @@ void pfClear(PFclearflag flag)
 #       endif //_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
-            pixelSetter(texture->pixels, i, color);
+            pixelSetter(tex->pixels, i, color);
             zbuffer[i] = depth;
         }
     }
     else if (flag & PF_COLOR_BUFFER_BIT)
     {
-        PFtexture *texture = &framebuffer->texture;
-
-        PFpixelsetter pixelSetter = texture->pixelSetter;
+        PFpixelsetter pixelSetter = tex->pixelSetter;
         PFcolor color = currentCtx->clearColor;
 
 #       ifdef _OPENMP
@@ -762,7 +762,7 @@ void pfClear(PFclearflag flag)
 #       endif //_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
-            pixelSetter(texture->pixels, i, color);
+            pixelSetter(tex->pixels, i, color);
         }
     }
     else if (flag & PF_DEPTH_BUFFER_BIT)
@@ -2131,22 +2131,18 @@ void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2)
     iX2 = CLAMP(iX2, currentCtx->vpMin[0], currentCtx->vpMax[0]);
     iY2 = CLAMP(iY2, currentCtx->vpMin[1], currentCtx->vpMax[1]);
 
-    // Retrieve framebuffer information
-    PFint wDst = currentCtx->currentFramebuffer->texture.width;
-    void *bufDst = currentCtx->currentFramebuffer->texture.pixels;
-    PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
-
-    // Retrieve current drawing color
+    // Retrieve framebuffer texture and current drawing color tint
+    struct PFtex *tex = currentCtx->currentFramebuffer->texture;
     PFcolor color = currentCtx->currentColor;
 
     // Draw rectangle
     for (PFint y = iY1; y <= iY2; y++)
     {
-        PFsizei yOffset = y * wDst;
+        PFsizei yOffset = y * tex->width;
 
         for (PFint x = iX1; x <= iX2; x++)
         {
-            pixelSetter(bufDst, yOffset + x, color);
+            tex->pixelSetter(tex->pixels, yOffset + x, color);
         }
     }
 }
@@ -2197,7 +2193,7 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PFdatatyp
     PFfloat invYLen = 1.0f/(PFfloat)(height*currentCtx->pixelZoom[1]);
 
     // Get current framebuffer and depth buffer
-    PFtexture *texDst = &currentCtx->currentFramebuffer->texture;
+    struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
     PFfloat *zBuffer = currentCtx->currentFramebuffer->zbuffer;
 
     // Check if depth test is enabled
@@ -2477,14 +2473,16 @@ void pfFogfv(PFfogparam pname, PFfloat* param)
 
 void pfFogProcess(void)
 {
-    PFint width = currentCtx->currentFramebuffer->texture.width;
-    PFint height = currentCtx->currentFramebuffer->texture.height;
+    struct PFtex* tex = currentCtx->currentFramebuffer->texture;
 
-    void *pixels = currentCtx->currentFramebuffer->texture.pixels;
+    PFint width = tex->width;
+    PFint height = tex->height;
+
+    void *pixels = tex->pixels;
     const PFfloat *zBuffer = currentCtx->currentFramebuffer->zbuffer;
 
-    PFpixelgetter pixelGetter = currentCtx->currentFramebuffer->texture.pixelGetter;
-    PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
+    PFpixelgetter pixelGetter = tex->pixelGetter;
+    PFpixelsetter pixelSetter = tex->pixelSetter;
 
 #ifdef _OPENMP
 #   define BEGIN_FOG_LOOP() \
@@ -2577,17 +2575,17 @@ void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat
 
     /* Retrieve information about the source framebuffer */
 
-    const PFframebuffer *srcFB = currentCtx->currentFramebuffer;
-    PFpixelgetter srcPixelGetter = srcFB->texture.pixelGetter;
-    const void *srcPixels = srcFB->texture.pixels;
-    PFsizei srcWidth = srcFB->texture.width;
+    const struct PFtex *texSrc = currentCtx->currentFramebuffer->texture;
+    PFpixelgetter srcPixelGetter = texSrc->pixelGetter;
+    const void *srcPixels = texSrc->pixels;
+    PFsizei srcWidth = texSrc->width;
 
     /* Calculate the minimum and maximum coordinates of the region to be read */
 
-    PFsizei xMin = CLAMP(x, 0, (PFint)srcFB->texture.width - 1);
-    PFsizei yMin = CLAMP(y, 0, (PFint)srcFB->texture.height - 1);
-    PFsizei xMax = CLAMP(x + (PFint)width, 0, (PFint)srcFB->texture.width);
-    PFsizei yMax = CLAMP(y + (PFint)height, 0, (PFint)srcFB->texture.height);
+    PFsizei xMin = CLAMP(x, 0, (PFint)texSrc->width - 1);
+    PFsizei yMin = CLAMP(y, 0, (PFint)texSrc->height - 1);
+    PFsizei xMax = CLAMP(x + (PFint)width, 0, (PFint)texSrc->width);
+    PFsizei yMax = CLAMP(y + (PFint)height, 0, (PFint)texSrc->height);
 
     /* Reads pixels from the framebuffer and copies them to the destination */
 
@@ -2615,14 +2613,16 @@ void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat
 
 void pfPostProcess(PFpostprocessfunc postProcessFunction)
 {
-    PFint width = currentCtx->currentFramebuffer->texture.width;
-    PFint height = currentCtx->currentFramebuffer->texture.height;
+    struct PFtex* tex = currentCtx->currentFramebuffer->texture;
 
-    void *pixels = currentCtx->currentFramebuffer->texture.pixels;
+    PFint width = tex->width;
+    PFint height = tex->height;
+
+    void *pixels = tex->pixels;
     const PFfloat *zBuffer = currentCtx->currentFramebuffer->zbuffer;
 
-    PFpixelgetter pixelGetter = currentCtx->currentFramebuffer->texture.pixelGetter;
-    PFpixelsetter pixelSetter = currentCtx->currentFramebuffer->texture.pixelSetter;
+    PFpixelgetter pixelGetter = tex->pixelGetter;
+    PFpixelsetter pixelSetter = tex->pixelSetter;
 
 #ifdef _OPENMP
 #   define BEGIN_POSTPROCESS_LOOP() \

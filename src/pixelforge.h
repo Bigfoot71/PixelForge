@@ -358,11 +358,6 @@ typedef PFcolor (*PFpostprocessfunc)(PFint, PFint, PFfloat, PFcolor);
 
 /* Texture definitions */
 
-typedef struct PFtexture PFtexture;
-
-typedef void (*PFpixelsetter)(void*, PFsizei, PFcolor);
-typedef PFcolor (*PFpixelgetter)(const void*, PFsizei);
-
 typedef enum {
     PF_RED,
     PF_GREEN,
@@ -376,15 +371,7 @@ typedef enum {
     PF_BGRA
 } PFpixelformat;
 
-struct PFtexture {
-    PFpixelsetter pixelSetter;
-    PFpixelgetter pixelGetter;
-    void *pixels;
-    PFsizei width;
-    PFsizei height;
-    PFdatatype type;
-    PFpixelformat format;
-};
+typedef void* PFtexture;
 
 /* Framebuffer defintions */
 
@@ -782,7 +769,7 @@ PF_API void pfBindFramebuffer(PFframebuffer* framebuffer);
  *
  * @param texture Pointer to the texture to bind.
  */
-PF_API void pfBindTexture(PFtexture* texture);
+PF_API void pfBindTexture(PFtexture texture);
 
 /**
  * @brief Clears the specified buffers of the current framebuffer.
@@ -1686,42 +1673,16 @@ PF_API void pfSetFramebufferPixel(PFframebuffer* framebuffer, PFsizei x, PFsizei
 PF_API PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
 
 /**
- * @brief Generates an empty texture buffer with the specified width, height, and format.
+ * @brief Deletes a texture object and optionally frees its associated buffer.
  *
- * This function creates a new texture buffer without any initial pixel data.
- * The texture buffer is created with the provided width, height, and pixel format.
- * The buffer allocated for the texture is initialized with zeros by default.
- *
- * @param width The width of the texture buffer.
- * @param height The height of the texture buffer.
- * @param format The pixel format of the texture buffer.
- * @return PFtexture The generated texture object.
- */
-PF_API PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
-
-/**
- * @brief Generates a texture buffer filled with a solid color.
- *
- * This function creates a new texture buffer filled with the specified color.
- * The texture buffer is created with the provided width, height, color, and pixel format.
- *
- * @param width The width of the texture buffer.
- * @param height The height of the texture buffer.
- * @param color The color to fill the texture buffer with.
- * @param format The pixel format of the texture buffer.
- * @return PFtexture The generated texture object.
- */
-PF_API PFtexture pfGenColorTextureBuffer(PFsizei width, PFsizei height, PFcolor color, PFpixelformat format, PFdatatype type);
-
-/**
- * @brief Deletes a texture object.
- *
- * This function deallocates memory associated with a texture object.
- * After deletion, the texture object becomes invalid.
+ * This function deallocates memory associated with a texture object, 
+ * rendering it invalid. If the `freeBuffer` parameter is set to true, 
+ * the buffer associated with the texture object will also be freed.
  *
  * @param texture Pointer to the texture object to delete.
+ * @param freeBuffer Boolean flag indicating whether to free the texture buffer.
  */
-PF_API void pfDeleteTexture(PFtexture* texture);
+PF_API void pfDeleteTexture(PFtexture* texture, PFboolean freeBuffer);
 
 /**
  * @brief Checks if a texture object is valid.
@@ -1732,7 +1693,23 @@ PF_API void pfDeleteTexture(PFtexture* texture);
  * @param texture Pointer to the texture object to check.
  * @return PFboolean True if the texture object is valid, false otherwise.
  */
-PF_API PFboolean pfIsValidTexture(PFtexture* texture);
+PF_API PFboolean pfIsValidTexture(const PFtexture texture);
+
+/**
+ * @brief Returns a pointer to the texels of the texture and retrieves texture details.
+ *
+ * This function provides direct access to the pixel data (texels) of the specified texture.
+ * It also retrieves the width, height, pixel format, and data type of the texture, if the
+ * corresponding pointers are not NULL.
+ *
+ * @param texture The texture object from which to retrieve the texel pointer.
+ * @param width Pointer to store the width of the texture (can be NULL).
+ * @param height Pointer to store the height of the texture (can be NULL).
+ * @param format Pointer to store the pixel format of the texture (can be NULL).
+ * @param type Pointer to store the data type of the texture (can be NULL).
+ * @return Pointer to the texels of the texture.
+ */
+PF_API void* pfGetTexturePixels(const PFtexture texture, PFsizei* width, PFsizei* height, PFpixelformat* format, PFdatatype* type);
 
 /**
  * @brief Sets the color value of a pixel in the texture.
@@ -1745,7 +1722,7 @@ PF_API PFboolean pfIsValidTexture(PFtexture* texture);
  * @param y The Y coordinate of the pixel.
  * @param color The color value of the pixel.
  */
-PF_API void pfSetTexturePixel(PFtexture* texture, PFsizei x, PFsizei y, PFcolor color);
+PF_API void pfSetTexturePixel(PFtexture texture, PFsizei x, PFsizei y, PFcolor color);
 
 /**
  * @brief Retrieves the color value of a pixel from the texture.
@@ -1758,7 +1735,7 @@ PF_API void pfSetTexturePixel(PFtexture* texture, PFsizei x, PFsizei y, PFcolor 
  * @param y The Y coordinate of the pixel.
  * @return PFcolor The color value of the pixel.
  */
-PF_API PFcolor pfGetTexturePixel(const PFtexture* texture, PFsizei x, PFsizei y);
+PF_API PFcolor pfGetTexturePixel(const PFtexture texture, PFsizei x, PFsizei y);
 
 /**
  * @brief Sets the color value of a sampled texture coordinate.
@@ -1777,7 +1754,7 @@ PF_API PFcolor pfGetTexturePixel(const PFtexture* texture, PFsizei x, PFsizei y)
  * @param v The V coordinate of the texture.
  * @param color The color value of the texture sample.
  */
-PF_API void pfSetTextureSample(PFtexture* texture, PFfloat u, PFfloat v, PFcolor color);
+PF_API void pfSetTextureSample(PFtexture texture, PFfloat u, PFfloat v, PFcolor color);
 
 /**
  * @brief Retrieves the color value of a sampled texture coordinate.
@@ -1796,7 +1773,7 @@ PF_API void pfSetTextureSample(PFtexture* texture, PFfloat u, PFfloat v, PFcolor
  * @param v The V coordinate of the texture.
  * @return PFcolor The color value of the texture sample.
  */
-PF_API PFcolor pfGetTextureSample(const PFtexture* texture, PFfloat u, PFfloat v);
+PF_API PFcolor pfGetTextureSample(const PFtexture texture, PFfloat u, PFfloat v);
 
 
 /*

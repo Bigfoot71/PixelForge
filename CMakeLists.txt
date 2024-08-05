@@ -36,7 +36,29 @@ else()
     target_compile_definitions(${PROJECT_NAME} PUBLIC PF_BUILD_STATIC)
 endif()
 
-# Enable OpenMP support if available
+# Check for SIMD support
+include(CheckCCompilerFlag)
+check_c_compiler_flag(-mavx2 HAVE_AVX2)
+if(HAVE_AVX2)
+    message(STATUS "AVX2 support detected")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mavx2")
+else()
+    # Check for SSE4.1 support
+    check_c_compiler_flag(-msse4.1 HAVE_SSE4_1)
+    if(HAVE_SSE4_1)
+        message(STATUS "SSE4.1 support detected")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4")
+    else()
+        # Check for SSE2 support
+        check_c_compiler_flag(-msse2 HAVE_SSE2)
+        if(HAVE_SSE2)
+            message(STATUS "SSE2 support detected")
+            set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse2")
+        endif()
+    endif()
+endif()
+
+# Check for OpenMP support
 find_package(OpenMP)
 if (OPENMP_FOUND)
     target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_C)

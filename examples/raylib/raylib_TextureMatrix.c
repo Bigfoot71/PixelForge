@@ -41,7 +41,7 @@ int main(void)
             pfTranslatef(translate, translate, 0);
 
             pfMatrixMode(PF_MODELVIEW);
-            pfBindTexture(&texture);
+            pfBindTexture(texture);
             pfBegin(PF_QUADS);
 
                 pfTexCoord2f(0, 0);

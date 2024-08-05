@@ -30,6 +30,37 @@
 */
 
 /**
+ * @brief Function pointer type for setting a pixel in a texture.
+ *
+ * @param pixels A pointer to the pixel data of the texture.
+ * @param index The index of the pixel to set.
+ * @param color The color value to set the pixel to.
+ */
+typedef void (*PFpixelsetter)(void* pixels, PFsizei index, PFcolor color);
+
+/**
+ * @brief Function pointer type for getting a pixel from a texture.
+ *
+ * @param pixels A pointer to the pixel data of the texture.
+ * @param index The index of the pixel to retrieve.
+ * @return The color value of the pixel at the specified index.
+ */
+typedef PFcolor (*PFpixelgetter)(const void* pixels, PFsizei index);
+
+/**
+ * @brief Structure representing a texture.
+ */
+struct PFtex {
+    PFpixelsetter pixelSetter;
+    PFpixelgetter pixelGetter;
+    void *pixels;
+    PFsizei width;
+    PFsizei height;
+    PFdatatype type;
+    PFpixelformat format;
+};
+
+/**
  * @brief Structure representing a vertex attribute buffer.
  */
 typedef struct {
@@ -116,7 +147,7 @@ typedef struct {
 typedef struct {
 
     PFframebuffer *currentFramebuffer;                      ///< Pointer to the current framebuffer
-    PFtexture *currentTexture;                              ///< Pointer to the current texture
+    PFtexture currentTexture;                               ///< Pointer to the current texture
     PFMmat4 *currentMatrix;                                 ///< Pointer to the current matrix
     void *auxFramebuffer;                                   ///< Auxiliary buffer for double buffering
 

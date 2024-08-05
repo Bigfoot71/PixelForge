@@ -28,126 +28,127 @@
 
 PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type)
 {
-    PFtexture texture = { 0 };
+    struct PFtex *texture = NULL;
+    PFpixelgetter getter = NULL;
+    PFpixelsetter setter = NULL;
 
-    pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format, type);
-    if (!texture.pixelGetter || !texture.pixelSetter) return texture;
+    pfInternal_GetPixelGetterSetter(&getter, &setter, format, type);
 
-    texture.pixels = pixels;
-    texture.format = format;
-    texture.type = type;
-
-    texture.width = width;
-    texture.height = height;
-
-    return texture;
-}
-
-PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type)
-{
-    PFtexture texture = { 0 };
-
-    pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format, type);
-    if (!texture.pixelGetter || !texture.pixelSetter) return texture;
-
-    PFsizei size = width*height;
-    texture.pixels = PF_CALLOC(size, pfInternal_GetPixelBytes(format, type));
-
-    if (!texture.pixels)
+    if (!getter || !setter)
     {
-        if (currentCtx->errCode)
+        if (currentCtx)
         {
-            currentCtx->errCode = PF_ERROR_OUT_OF_MEMORY;
+            currentCtx->errCode = PF_INVALID_ENUM;
         }
+
         return texture;
     }
 
-    return texture;
-}
+    texture = PF_MALLOC(sizeof(struct PFtex));
 
-PFtexture pfGenTextureBufferColor(PFsizei width, PFsizei height, PFcolor color, PFpixelformat format, PFdatatype type)
-{
-    PFtexture texture = { 0 };
-
-    pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format, type);
-    if (!texture.pixelGetter || !texture.pixelSetter) return texture;
-
-    PFsizei size = width*height;
-    texture.pixels = PF_MALLOC(size*pfInternal_GetPixelBytes(format, type));
-
-    if (!texture.pixels)
+    if (texture == NULL)
     {
-        if (currentCtx->errCode)
+        if (currentCtx)
         {
             currentCtx->errCode = PF_ERROR_OUT_OF_MEMORY;
         }
+
         return texture;
     }
 
-#   ifdef _OPENMP
-#       pragma omp parallel for \
-            if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
-#   endif
-    for (PFsizei i = 0; i < size; i++)
-    {
-        texture.pixelSetter(texture.pixels, i, color);
-    }
+    texture->pixels = pixels;
+    texture->format = format;
+    texture->type = type;
+
+    texture->width = width;
+    texture->height = height;
+
+    texture->pixelGetter = getter;
+    texture->pixelSetter = setter;
 
     return texture;
 }
 
-void pfDeleteTexture(PFtexture* texture)
+void pfDeleteTexture(PFtexture* texture, PFboolean freeBuffer)
 {
-    if (texture)
+    struct PFtex* tex = *texture;
+    if (tex)
     {
-        if (texture->pixels)
+        if (freeBuffer && tex->pixels)
         {
-            PF_FREE(texture->pixels);
+            PF_FREE(tex->pixels);
         }
-
-        *texture = (PFtexture) { 0 };
+        PF_FREE(tex);
+        *texture = NULL;
     }
 }
 
-PFboolean pfIsValidTexture(PFtexture* texture)
+PFboolean pfIsValidTexture(const PFtexture texture)
 {
-    return texture->pixels &&
-           texture->width > 0 && texture->height > 0 &&
-           texture->pixelGetter && texture->pixelSetter;
+    const struct PFtex* tex = texture;
+    PFboolean result = PF_FALSE;
+    if (tex)
+    {
+        result = tex->pixels &&
+                 tex->width > 0 && tex->height > 0 &&
+                 tex->pixelGetter && tex->pixelSetter;
+    }
+    return result;
 }
 
-void pfSetTexturePixel(PFtexture* texture, PFsizei x, PFsizei y, PFcolor color)
+void* pfGetTexturePixels(const PFtexture texture, PFsizei* width, PFsizei* height, PFpixelformat* format, PFdatatype* type)
 {
-    texture->pixelSetter(texture->pixels, y*texture->width + x, color);
+    const struct PFtex* tex = texture;
+    void* pixels = NULL;
+    if (tex)
+    {
+        if (width) *width = tex->width;
+        if (height) *height = tex->height;
+        if (format) *format = tex->format;
+        if (type) *type = tex->type;
+        pixels = tex->pixels;
+    }
+    return pixels;
 }
 
-PFcolor pfGetTexturePixel(const PFtexture* texture, PFsizei x, PFsizei y)
+void pfSetTexturePixel(PFtexture texture, PFsizei x, PFsizei y, PFcolor color)
 {
-    return texture->pixelGetter(texture->pixels, y*texture->width + x);
+    struct PFtex* tex = texture;
+    tex->pixelSetter(tex->pixels, y*tex->width + x, color);
 }
 
-void pfSetTextureSample(PFtexture* texture, PFfloat u, PFfloat v, PFcolor color)
+PFcolor pfGetTexturePixel(const PFtexture texture, PFsizei x, PFsizei y)
 {
+    struct PFtex* tex = texture;
+    return tex->pixelGetter(tex->pixels, y*tex->width + x);
+}
+
+void pfSetTextureSample(PFtexture texture, PFfloat u, PFfloat v, PFcolor color)
+{
+    struct PFtex* tex = texture;
+
 #ifdef PF_SUPPORT_NO_POT_TEXTURE
-    PFsizei x = (PFsizei)((u - (PFint)u)*(texture->width - 1)) % texture->width;
-    PFsizei y = (PFsizei)((v - (PFint)v)*(texture->height - 1)) % texture->height;
+    PFsizei x = (PFsizei)((u - (PFint)u)*(tex->width - 1)) % tex->width;
+    PFsizei y = (PFsizei)((v - (PFint)v)*(tex->height - 1)) % tex->height;
 #else
-    PFsizei x = (PFsizei)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
-    PFsizei y = (PFsizei)((v - (PFint)v)*(texture->height - 1)) & (texture->height - 1);
+    PFsizei x = (PFsizei)((u - (PFint)u)*(tex->width - 1)) & (tex->width - 1);
+    PFsizei y = (PFsizei)((v - (PFint)v)*(tex->height - 1)) & (tex->height - 1);
 #endif //PF_SUPPORT_NO_POT_TEXTURE
 
-    texture->pixelSetter(texture->pixels, y*texture->width + x, color);
+    tex->pixelSetter(tex->pixels, y*tex->width + x, color);
 }
 
-PFcolor pfGetTextureSample(const PFtexture* texture, PFfloat u, PFfloat v)
+PFcolor pfGetTextureSample(const PFtexture texture, PFfloat u, PFfloat v)
 {
+    struct PFtex* tex = texture;
+
 #ifdef PF_SUPPORT_NO_POT_TEXTURE
-    PFsizei x = (PFsizei)((u - (PFint)u)*(texture->width - 1)) % texture->width;
-    PFsizei y = (PFsizei)((v - (PFint)v)*(texture->height - 1)) % texture->height;
+    PFsizei x = (PFsizei)((u - (PFint)u)*(tex->width - 1)) % tex->width;
+    PFsizei y = (PFsizei)((v - (PFint)v)*(tex->height - 1)) % tex->height;
 #else
-    PFsizei x = (PFsizei)((u - (PFint)u)*(texture->width - 1)) & (texture->width - 1);
-    PFsizei y = (PFsizei)((v - (PFint)v)*(texture->height - 1)) & (texture->height - 1);
+    PFsizei x = (PFsizei)((u - (PFint)u)*(tex->width - 1)) & (tex->width - 1);
+    PFsizei y = (PFsizei)((v - (PFint)v)*(tex->height - 1)) & (tex->height - 1);
 #endif //PF_SUPPORT_NO_POT_TEXTURE
 
-    return texture->pixelGetter(texture->pixels, y*texture->width + x);
+    return tex->pixelGetter(tex->pixels, y*tex->width + x);
 }

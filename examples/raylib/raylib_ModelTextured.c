@@ -43,7 +43,7 @@ int main(void)
 
             PF_DrawGrid(10.0f, 10.0f);
 
-            pfBindTexture(&modelDiffuse);
+            pfBindTexture(modelDiffuse);
                 PF_DrawModel(model, (Vector3) { 0 }, 1.5f, WHITE);
             pfBindTexture(0);
         }
@@ -64,7 +64,7 @@ int main(void)
 
     // Unload assets
     UnloadModel(model);
-    pfDeleteTexture(&modelDiffuse);
+    pfDeleteTexture(&modelDiffuse, true);
 
     // Unload the PixelForge context and the target buffer
     pfDeleteContext(ctx);
