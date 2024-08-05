@@ -265,7 +265,7 @@ int main(void)
     memcpy(buffer, fbMem, screensize);
 
     // Creating the PixelForge rendering context
-    PFcontext ctx = pfCreateContext(buffer, vinfo.xres_virtual, vinfo.yres_virtual, PF_BGR_8_8_8);
+    PFcontext ctx = pfCreateContext(buffer, vinfo.xres_virtual, vinfo.yres_virtual, PF_BGR, PF_UNSIGNED_BYTE);
     pfMakeCurrent(ctx);
 
     // Init and reshape

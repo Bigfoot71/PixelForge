@@ -139,10 +139,14 @@ typedef double      PFdouble;
 typedef enum {
     PF_UNSIGNED_BYTE,
     PF_UNSIGNED_SHORT,
+    PF_UNSIGNED_SHORT_5_6_5,
+    PF_UNSIGNED_SHORT_5_5_5_1,
+    PF_UNSIGNED_SHORT_4_4_4_4,
     PF_UNSIGNED_INT,
     PF_BYTE,
     PF_SHORT,
     PF_INT,
+    PF_HALF_FLOAT,
     PF_FLOAT,
     PF_DOUBLE
 } PFdatatype;
@@ -360,38 +364,16 @@ typedef void (*PFpixelsetter)(void*, PFsizei, PFcolor);
 typedef PFcolor (*PFpixelgetter)(const void*, PFsizei);
 
 typedef enum {
-
-    PF_UNKNOWN_PIXELFORMAT  = 0,
-
-    PF_LUMINANCE            = 1,
-    PF_GRAYSCALE            = 1,
-    PF_LUMINANCE_ALPHA      = 2,
-    PF_GRAYSCALE_ALPHA      = 2,
-
-    PF_RGB_5_6_5,
-    PF_RGB_8_8_8,
-    PF_RGBA_5_5_5_1,
-    PF_RGBA_4_4_4_4,
-    PF_RGBA_8_8_8_8,
-    PF_R_32,
-    PF_RGB_32_32_32,
-    PF_RGBA_32_32_32_32 ,
-    PF_R_16,
-    PF_RGB_16_16_16,
-    PF_RGBA_16_16_16_16,
-
-    PF_BGR_5_6_5,
-    PF_BGR_8_8_8,
-    PF_BGRA_5_5_5_1,
-    PF_BGRA_4_4_4_4,
-    PF_BGRA_8_8_8_8,
-    PF_B_32,
-    PF_BGR_32_32_32,
-    PF_BGRA_32_32_32_32,
-    PF_B_16,
-    PF_BGR_16_16_16,
-    PF_BGRA_16_16_16_16,
-
+    PF_RED,
+    PF_GREEN,
+    PF_BLUE,
+    PF_ALPHA,
+    PF_LUMINANCE,
+    PF_LUMINANCE_ALPHA,
+    PF_RGB,
+    PF_RGBA,
+    PF_BGR,
+    PF_BGRA
 } PFpixelformat;
 
 struct PFtexture {
@@ -400,6 +382,7 @@ struct PFtexture {
     void *pixels;
     PFsizei width;
     PFsizei height;
+    PFdatatype type;
     PFpixelformat format;
 };
 
@@ -430,7 +413,7 @@ extern "C" {
  *
  * @return Pointer to the created rendering context.
  */
-PF_API PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat);
+PF_API PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
 
 /**
  * @brief Deletes a rendering context.
@@ -454,7 +437,7 @@ PF_API void pfDeleteContext(PFcontext ctx);
  *       Does not free the previous pixel buffer provided, its lifespan management is your responsibility.
  *       If you have defined an auxiliary buffer it will be automatically deactivated when changing the main buffer.
  */
-PF_API void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat);
+PF_API void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
 
 /**
  * @brief Sets the auxiliary buffer for rendering.
@@ -704,24 +687,6 @@ PF_API void pfOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top
  * @param height Height of the viewport.
  */
 PF_API void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height);
-
-/**
- * @brief Sets the default pixel getter function, used for reading pixel data from the main framebuffer.
- *
- * @warning This function needs a context to be defined.
- *
- * @param func Pointer to the pixel getter function.
- */
-PF_API void pfSetDefaultPixelGetter(PFpixelgetter func);
-
-/**
- * @brief Sets the default pixel setter function, used for writing pixel data to the main framebuffer.
- *
- * @warning This function needs a context to be defined.
- *
- * @param func Pointer to the pixel setter function.
- */
-PF_API void pfSetDefaultPixelSetter(PFpixelsetter func);
 
 /**
  * @brief Specifies the drawing mode for polygons.
@@ -1386,7 +1351,7 @@ PF_API void pfRectfv(const PFfloat* v1, const PFfloat* v2);
  * @param format Pixel format of the data.
  * @param pixels Pointer to the pixel data.
  */
-PF_API void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, const void* pixels);
+PF_API void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type, const void* pixels);
 
 /**
  * @brief Sets the zoom factor for pixel drawing.
@@ -1559,7 +1524,7 @@ PF_API void pfFogProcess(void);
  * @param format The pixel format of the framebuffer data.
  * @param pixels Pointer to the destination buffer where the pixel data will be copied.
  */
-PF_API void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat format, void* pixels);
+PF_API void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type, void* pixels);
 
 /**
  * @brief Applies a post-processing function to modify pixels in the current framebuffer.
@@ -1597,7 +1562,7 @@ PF_API void pfPostProcess(PFpostprocessfunc postProcessFunction);
  * @param format The pixel format of the framebuffer.
  * @return PFframebuffer The generated framebuffer object.
  */
-PFframebuffer pfGenFramebuffer(PFsizei width, PFsizei height, PFpixelformat format);
+PF_API PFframebuffer pfGenFramebuffer(PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
 
 /**
  * @brief Deletes a framebuffer object.
@@ -1718,7 +1683,7 @@ PF_API void pfSetFramebufferPixel(PFframebuffer* framebuffer, PFsizei x, PFsizei
  * @param format The pixel format of the texture.
  * @return PFtexture The generated texture object.
  */
-PF_API PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelformat format);
+PF_API PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
 
 /**
  * @brief Generates an empty texture buffer with the specified width, height, and format.
@@ -1732,7 +1697,7 @@ PF_API PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpix
  * @param format The pixel format of the texture buffer.
  * @return PFtexture The generated texture object.
  */
-PF_API PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat format);
+PF_API PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
 
 /**
  * @brief Generates a texture buffer filled with a solid color.
@@ -1746,7 +1711,7 @@ PF_API PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat
  * @param format The pixel format of the texture buffer.
  * @return PFtexture The generated texture object.
  */
-PF_API PFtexture pfGenColorTextureBuffer(PFsizei width, PFsizei height, PFcolor color, PFpixelformat format);
+PF_API PFtexture pfGenColorTextureBuffer(PFsizei width, PFsizei height, PFcolor color, PFpixelformat format, PFdatatype type);
 
 /**
  * @brief Deletes a texture object.

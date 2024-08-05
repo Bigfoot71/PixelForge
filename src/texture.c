@@ -23,29 +23,35 @@
 
 #include <stdlib.h>
 #include <stddef.h>
-#include <string.h>
 
 /* Texture functions */
 
-PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelformat format)
+PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type)
 {
-    PFtexture texture = { NULL, NULL, pixels, width, height, format };
-    if (format == PF_UNKNOWN_PIXELFORMAT) return texture;
+    PFtexture texture = { 0 };
 
-    pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format);
+    pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format, type);
+    if (!texture.pixelGetter || !texture.pixelSetter) return texture;
+
+    texture.pixels = pixels;
+    texture.format = format;
+    texture.type = type;
+
+    texture.width = width;
+    texture.height = height;
 
     return texture;
 }
 
-PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat format)
+PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type)
 {
-    PFtexture texture = { NULL, NULL, NULL, width, height, format };
-    if (format == PF_UNKNOWN_PIXELFORMAT) return texture;
+    PFtexture texture = { 0 };
 
-    pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format);
+    pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format, type);
+    if (!texture.pixelGetter || !texture.pixelSetter) return texture;
 
     PFsizei size = width*height;
-    texture.pixels = PF_CALLOC(size, pfInternal_GetPixelBytes(format));
+    texture.pixels = PF_CALLOC(size, pfInternal_GetPixelBytes(format, type));
 
     if (!texture.pixels)
     {
@@ -59,15 +65,15 @@ PFtexture pfGenTextureBuffer(PFsizei width, PFsizei height, PFpixelformat format
     return texture;
 }
 
-PFtexture pfGenTextureBufferColor(PFsizei width, PFsizei height, PFcolor color, PFpixelformat format)
+PFtexture pfGenTextureBufferColor(PFsizei width, PFsizei height, PFcolor color, PFpixelformat format, PFdatatype type)
 {
-    PFtexture texture = { NULL, NULL, NULL, width, height, format };
-    if (format == PF_UNKNOWN_PIXELFORMAT) return texture;
+    PFtexture texture = { 0 };
 
-    pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format);
+    pfInternal_GetPixelGetterSetter(&texture.pixelGetter, &texture.pixelSetter, format, type);
+    if (!texture.pixelGetter || !texture.pixelSetter) return texture;
 
     PFsizei size = width*height;
-    texture.pixels = PF_MALLOC(size*pfInternal_GetPixelBytes(format));
+    texture.pixels = PF_MALLOC(size*pfInternal_GetPixelBytes(format, type));
 
     if (!texture.pixels)
     {

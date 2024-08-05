@@ -51,7 +51,7 @@ void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float r
 
 PFcontext PF_InitFromTargetBuffer(PF_TargetBuffer destBuffer)
 {
-    return PF_Init(destBuffer.image.data, destBuffer.image.width, destBuffer.image.height, PF_RGBA_8_8_8_8);
+    return PF_Init(destBuffer.image.data, destBuffer.image.width, destBuffer.image.height, PF_RGBA, PF_UNSIGNED_BYTE);
 }
 
 /* Load PixelForge texture */
@@ -62,11 +62,83 @@ PFtexture PF_LoadTexture(const char* fileName)
     // Therefore, we should not unload the image loaded with raylib, but we will obviously need
     // to unload the PixelForge texture to which we have entrusted the memory pointer.
 
-    // NOTE 2: The values ​​of raylib's PixelFormat enum are the same as for PixelForge,
-    // at least for uncompressed formats. It's cool, right? ^^
-
     Image image = LoadImage(fileName);
-    return pfGenTexture(image.data, image.width, image.height, (PFpixelformat)image.format);
+
+    PFpixelformat format = 0;
+    PFdatatype type = 0;
+
+    switch (image.format)
+    {
+        case PIXELFORMAT_UNCOMPRESSED_GRAYSCALE:
+            format = PF_LUMINANCE;
+            type = PF_UNSIGNED_BYTE;
+            break;
+
+        case PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA:
+            format = PF_LUMINANCE_ALPHA;
+            type = PF_UNSIGNED_BYTE;
+            break;
+
+        case PIXELFORMAT_UNCOMPRESSED_R5G6B5:
+            format = PF_RGB;
+            type = PF_UNSIGNED_SHORT_5_6_5;
+            break;
+
+        case PIXELFORMAT_UNCOMPRESSED_R8G8B8:
+            format = PF_RGB;
+            type = PF_UNSIGNED_BYTE;
+            break;
+
+        case PIXELFORMAT_UNCOMPRESSED_R5G5B5A1:
+            format = PF_RGBA;
+            type = PF_UNSIGNED_SHORT_5_5_5_1;
+            break;
+
+        case PIXELFORMAT_UNCOMPRESSED_R4G4B4A4:
+            format = PF_RGBA;
+            type = PF_UNSIGNED_SHORT_4_4_4_4;
+            break;
+
+        case PIXELFORMAT_UNCOMPRESSED_R8G8B8A8:
+            format = PF_RGBA;
+            type = PF_UNSIGNED_BYTE;
+            break;
+
+        case PIXELFORMAT_UNCOMPRESSED_R32:
+            format = PF_RED;
+            type = PF_FLOAT;
+            break;
+
+        case PIXELFORMAT_UNCOMPRESSED_R32G32B32:
+            format = PF_RGB;
+            type = PF_FLOAT;
+            break;
+
+        case PIXELFORMAT_UNCOMPRESSED_R32G32B32A32:
+            format = PF_RGBA;
+            type = PF_FLOAT;
+            break;
+
+        case PIXELFORMAT_UNCOMPRESSED_R16:
+            format = PF_RED;
+            type = PF_HALF_FLOAT;
+            break;
+
+        case PIXELFORMAT_UNCOMPRESSED_R16G16B16:
+            format = PF_RGB;
+            type = PF_HALF_FLOAT;
+            break;
+
+        case PIXELFORMAT_UNCOMPRESSED_R16G16B16A16:
+            format = PF_RGBA;
+            type = PF_HALF_FLOAT;
+            break;
+
+        default:
+            return (PFtexture) { 0 };
+    }
+
+    return pfGenTexture(image.data, image.width, image.height, format, type);
 }
 
 /* Destination buffer management functions */

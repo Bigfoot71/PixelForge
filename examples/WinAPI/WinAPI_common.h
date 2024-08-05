@@ -1,6 +1,7 @@
 #ifndef PF_WIN_COMMON_H
 #define PF_WIN_COMMON_H
 
+#include "pixelforge.h"
 #ifdef PF_WIN_COMMON_IMPL
 #   define PF_COMMON_IMPL
 #endif //PF_WIN_COMMON_IMPL
@@ -93,7 +94,7 @@ void Window_Update(Window* window)
 
 PFcontext PF_InitFromWindow(Window* window)
 {
-    PFcontext ctx = PF_Init(window->pixels, window->w, window->h, PF_BGRA_8_8_8_8);
+    PFcontext ctx = PF_Init(window->pixels, window->w, window->h, PF_BGRA, PF_UNSIGNED_BYTE);
     return ctx;
 }
 

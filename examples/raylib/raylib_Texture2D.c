@@ -1,3 +1,4 @@
+#include "pixelforge.h"
 #define PF_RAYLIB_COMMON_IMPL
 #include "raylib_common.h"
 
@@ -51,7 +52,7 @@ int main(void)
         // Draw the background with pfDrawPixels
         pfRasterPos2i(0, SCREEN_HEIGHT - 400);
         pfPixelZoom(800.0f/imBG.width, 400.0f/imBG.height);
-        pfDrawPixels(imBG.width, imBG.height, imBG.format, imBG.data);
+        pfDrawPixels(imBG.width, imBG.height, PF_LUMINANCE_ALPHA, PF_UNSIGNED_BYTE, imBG.data);
 
         // Draw the arrow entity
         Arrow_Draw(&arrow, &texArrow);

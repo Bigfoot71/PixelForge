@@ -131,7 +131,7 @@ void Clock_End(Clock* clock)
 
 PFcontext PF_InitFromWindow(Window* window)
 {
-    PFcontext ctx = PF_Init(window->surface->pixels, window->surface->w, window->surface->h, PF_BGRA_8_8_8_8);
+    PFcontext ctx = PF_Init(window->surface->pixels, window->surface->w, window->surface->h, PF_BGRA, PF_UNSIGNED_BYTE);
     return ctx;
 }
 

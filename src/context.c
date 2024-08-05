@@ -81,14 +81,18 @@ static PFsizei pfInternal_GetDataTypeSize(PFdatatype type)
 {
     switch (type)
     {
-        case PF_UNSIGNED_BYTE:  return sizeof(PFubyte);
-        case PF_UNSIGNED_SHORT: return sizeof(PFushort);
-        case PF_UNSIGNED_INT:   return sizeof(PFuint);
-        case PF_BYTE:           return sizeof(PFbyte);
-        case PF_SHORT:          return sizeof(PFshort);
-        case PF_INT:            return sizeof(PFint);
-        case PF_FLOAT:          return sizeof(PFfloat);
-        case PF_DOUBLE:         return sizeof(PFdouble);
+        case PF_UNSIGNED_BYTE:          return sizeof(PFubyte);
+        case PF_UNSIGNED_SHORT_5_6_5:
+        case PF_UNSIGNED_SHORT_5_5_5_1:
+        case PF_UNSIGNED_SHORT_4_4_4_4:
+        case PF_UNSIGNED_SHORT:         return sizeof(PFushort);
+        case PF_UNSIGNED_INT:           return sizeof(PFuint);
+        case PF_BYTE:                   return sizeof(PFbyte);
+        case PF_HALF_FLOAT:
+        case PF_SHORT:                  return sizeof(PFshort);
+        case PF_INT:                    return sizeof(PFint);
+        case PF_FLOAT:                  return sizeof(PFfloat);
+        case PF_DOUBLE:                 return sizeof(PFdouble);
     }
 
     return 0;
@@ -121,7 +125,7 @@ static void pfInternal_UpdateMatrices(PFboolean matNormal)
 
 /* Context API functions */
 
-PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat)
+PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type)
 {
     /* Memory allocation for the context */
 
@@ -131,7 +135,7 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
     /* Initialization of the main framebuffer */
 
     ctx->mainFramebuffer = (PFframebuffer) { 0 };
-    ctx->mainFramebuffer.texture = pfGenTexture(targetBuffer, width, height, pixelFormat);
+    ctx->mainFramebuffer.texture = pfGenTexture(targetBuffer, width, height, format, type);
 
     const PFsizei bufferSize = width*height;
     ctx->mainFramebuffer.zbuffer = (PFfloat*)PF_MALLOC(bufferSize * sizeof(PFfloat));
@@ -281,7 +285,7 @@ void pfDeleteContext(PFcontext ctx)
     }
 }
 
-void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat pixelFormat)
+void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type)
 {
     /* Check if targetBuffer, width, or height is invalid */
 
@@ -344,7 +348,7 @@ void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelf
 
     /* Generate the new texture for the main framebuffer */
 
-    currentCtx->mainFramebuffer.texture = pfGenTexture(targetBuffer, width, height, pixelFormat);
+    currentCtx->mainFramebuffer.texture = pfGenTexture(targetBuffer, width, height, format, type);
 
     /* Reset the auxiliary framebuffer, it needs to be redefined after changing the main buffer */
 
@@ -631,16 +635,6 @@ void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height)
 
     currentCtx->vpMax[0] = MIN(x + width, currentCtx->mainFramebuffer.texture.width - 1);
     currentCtx->vpMax[1] = MIN(y + height, currentCtx->mainFramebuffer.texture.height - 1);
-}
-
-void pfSetDefaultPixelGetter(PFpixelgetter func)
-{
-    currentCtx->mainFramebuffer.texture.pixelGetter = func;
-}
-
-void pfSetDefaultPixelSetter(PFpixelsetter func)
-{
-    currentCtx->mainFramebuffer.texture.pixelSetter = func;
 }
 
 void pfPolygonMode(PFface face, PFpolygonmode mode)
@@ -1344,13 +1338,15 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
 
         const void *p = (const PFubyte*)indices + i*indicesTypeSize;
 
-        PFsizei j;
+        PFsizei j = 0;
         switch(type)
         {
             case PF_UNSIGNED_BYTE:  j = *((const PFubyte*)p);  break;
             case PF_UNSIGNED_SHORT: j = *((const PFushort*)p); break;
             case PF_UNSIGNED_INT:   j = *((const PFuint*)p);   break;
-            default: break;
+            default:
+                currentCtx->errCode = PF_INVALID_ENUM;
+                return;
         }
 
         // Fill the vertex with given vertices data
@@ -1397,7 +1393,8 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
             break;
 
             default:
-                break;
+                currentCtx->errCode = PF_INVALID_ENUM;
+                return;
         }
 
         if (useNormalArray)
@@ -1425,7 +1422,8 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
                 break;
 
                 default:
-                    break;
+                    currentCtx->errCode = PF_INVALID_ENUM;
+                    return;
             }
         }
 
@@ -1454,7 +1452,8 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
                 break;
 
                 default:
-                    break;
+                    currentCtx->errCode = PF_INVALID_ENUM;
+                    return;
             }
         }
 
@@ -1510,7 +1509,8 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
                 break;
 
                 default:
-                    break;
+                    currentCtx->errCode = PF_INVALID_ENUM;
+                    return;
             }
         }
 
@@ -2159,11 +2159,11 @@ void pfRectfv(const PFfloat* v1, const PFfloat* v2)
 
 /* Drawing pixels API functions */
 
-void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, const void* pixels)
+void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type, const void* pixels)
 {
     // Retrieve the appropriate pixel getter function for the given buffer format
     PFpixelgetter getPixelSrc = NULL;
-    pfInternal_GetPixelGetterSetter(&getPixelSrc, NULL, format);
+    pfInternal_GetPixelGetterSetter(&getPixelSrc, NULL, format, type);
 
     // Check if we were able to get the pixel getter function
     if (!getPixelSrc)
@@ -2560,12 +2560,12 @@ void pfFogProcess(void)
 
 /* Misc API functions */
 
-void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat format, void* pixels)
+void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type, void* pixels)
 {
     /* Get the appropriate pixel setter function for the given format */
 
     PFpixelsetter dstPixelSetter = NULL;
-    pfInternal_GetPixelGetterSetter(NULL, &dstPixelSetter, format);
+    pfInternal_GetPixelGetterSetter(NULL, &dstPixelSetter, format, type);
 
     /* Check if the pixel setter function is available */
 

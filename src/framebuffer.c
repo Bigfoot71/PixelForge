@@ -24,9 +24,9 @@
 
 /* Framebuffer functions */
 
-PFframebuffer pfGenFramebuffer(PFsizei width, PFsizei height, PFpixelformat format)
+PFframebuffer pfGenFramebuffer(PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type)
 {
-    PFtexture texture = pfGenTextureBuffer(width, height, format);
+    PFtexture texture = pfGenTextureBuffer(width, height, format, type);
     if (!texture.pixels) return (PFframebuffer) { 0 };
 
     PFsizei size = width*height;

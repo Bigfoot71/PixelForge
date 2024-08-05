@@ -6,7 +6,7 @@
 
 /* Base functions */
 
-PFcontext PF_Init(void* pixels, PFuint width, PFuint height, PFpixelformat format);
+PFcontext PF_Init(void* pixels, PFuint width, PFuint height, PFpixelformat format, PFdatatype type);
 void PF_Reshape(PFuint width, PFuint height);
 
 /* Draw 2D */
@@ -32,9 +32,9 @@ void PF_DrawGrid(PFint slices, PFfloat spacing);
 
 #include <math.h>
 
-PFcontext PF_Init(void* pixels, PFuint width, PFuint height, PFpixelformat format)
+PFcontext PF_Init(void* pixels, PFuint width, PFuint height, PFpixelformat format, PFdatatype type)
 {
-    PFcontext ctx = pfCreateContext(pixels, width, height, format);
+    PFcontext ctx = pfCreateContext(pixels, width, height, format, type);
     pfMakeCurrent(ctx);
     return ctx;
 }

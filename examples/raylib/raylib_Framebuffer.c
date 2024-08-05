@@ -19,7 +19,7 @@ int main(void)
     // Create framebuffer
     PFframebuffer fbTarget = pfGenFramebuffer(
         SCREEN_WIDTH, SCREEN_HEIGHT,
-        PF_RGBA_8_8_8_8);
+        PF_RGBA, PF_UNSIGNED_BYTE);
 
     // Bind the framebuffer
     pfBindFramebuffer(&fbTarget);
@@ -58,7 +58,7 @@ int main(void)
         // Rendering the framebuffer in the main buffer with a different scale
         pfPixelZoom(0.5f, 0.5f);
         pfRasterPos2f((SCREEN_WIDTH - 400) / 2.0f, (SCREEN_HEIGHT - 300) / 2.0f);
-        pfDrawPixels(SCREEN_WIDTH, SCREEN_HEIGHT, fbTarget.texture.format, fbTarget.texture.pixels);
+        pfDrawPixels(SCREEN_WIDTH, SCREEN_HEIGHT, fbTarget.texture.format, fbTarget.texture.type, fbTarget.texture.pixels);
 
         // NOTE: We can also render the framebuffer texture onto a quad directly
         // but then the dimensions of the framebuffer texture must be powers of 2.

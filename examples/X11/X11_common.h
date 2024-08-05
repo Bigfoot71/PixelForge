@@ -147,7 +147,7 @@ void Clock_End(Clock* clock)
 
 PFcontext PF_InitFromX11App(X11_App* app)
 {
-    PFcontext ctx = PF_Init(app->destBuffer, app->destImage->width, app->destImage->height, PF_BGRA_8_8_8_8);
+    PFcontext ctx = PF_Init(app->destBuffer, app->destImage->width, app->destImage->height, PF_BGRA, PF_UNSIGNED_BYTE);
     return ctx;
 }
 
