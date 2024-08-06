@@ -2971,6 +2971,13 @@ pfmSimdVec2Set(PFMsimd_vec2 dst, float x, float y)
 }
 
 static inline void
+pfmSimdVec2Load(PFMsimd_vec2 dst, const PFMvec2 src)
+{
+    dst[0] = pfmSimdSet1_F32(src[0]);
+    dst[1] = pfmSimdSet1_F32(src[1]);
+}
+
+static inline void
 pfmSimdVec2Copy(aPFMsimd_vec2 restrict dst, const aPFMsimd_vec2 restrict src)
 {
     memcpy(dst, src, sizeof(PFMsimd_vec2));
@@ -3442,6 +3449,14 @@ pfmSimdVec3Set(PFMsimd_vec3 dst, float x, float y, float z)
     dst[0] = pfmSimdSet1_F32(x);
     dst[1] = pfmSimdSet1_F32(y);
     dst[2] = pfmSimdSet1_F32(z);
+}
+
+static inline void
+pfmSimdVec3Load(PFMsimd_vec3 dst, const PFMvec3 src)
+{
+    dst[0] = pfmSimdSet1_F32(src[0]);
+    dst[1] = pfmSimdSet1_F32(src[1]);
+    dst[2] = pfmSimdSet1_F32(src[2]);
 }
 
 static inline void
@@ -4133,6 +4148,15 @@ pfmSimdVec4Set(PFMsimd_vec4 dst, float x, float y, float z, float w)
     dst[1] = pfmSimdSet1_F32(y);
     dst[2] = pfmSimdSet1_F32(z);
     dst[4] = pfmSimdSet1_F32(w);
+}
+
+static inline void
+pfmSimdVec4Load(PFMsimd_vec4 dst, const PFMvec4 src)
+{
+    dst[0] = pfmSimdSet1_F32(src[0]);
+    dst[1] = pfmSimdSet1_F32(src[1]);
+    dst[2] = pfmSimdSet1_F32(src[2]);
+    dst[3] = pfmSimdSet1_F32(src[3]);
 }
 
 static inline void
