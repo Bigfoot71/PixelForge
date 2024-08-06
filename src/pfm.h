@@ -24,6 +24,16 @@
 #include <string.h>
 #include <math.h>
 
+#if defined(__AVX2__)
+#   include <immintrin.h>
+#   define PF_SIMD_SIZE 8
+#elif defined(__SSE2__)
+#   include <immintrin.h>
+#   define PF_SIMD_SIZE 4
+#else
+#   define PF_SIMD_SIZE 1
+#endif
+
 /* Defines and Macros */
 
 #ifndef PFM_API
@@ -58,7 +68,7 @@ PFM_API float rsqrtf(float x)
 }
 #endif //PFM_FISR
 
-/* Types and Structs definitions */
+/* SISD types definitions */
 
 typedef float PFMvec2[2];
 typedef float PFMvec3[3];
@@ -70,29 +80,55 @@ typedef float* aPFMvec3;
 typedef float* aPFMvec4;
 typedef float* aPFMmat4;
 
-/* 2D Vector functions definition */
+/* SIMD types definitions */
 
-PFM_API void pfmVec2Zero(PFMvec2 dst)
+#if defined(__AVX2__)
+typedef __m256 PFMsimd_f;
+typedef __m256i PFMsimd_i;
+#elif defined(__SSE2__)
+typedef __m128 PFMsimd_f;
+typedef __m128i PFMsimd_i;
+#else
+typedef double PFMsimd_f;
+typedef int64_t PFMsimd_i;
+#endif
+
+typedef PFMsimd_f PFMsimd_vec2[2];
+typedef PFMsimd_f PFMsimd_vec3[3];
+typedef PFMsimd_f PFMsimd_vec4[4];
+
+typedef PFMsimd_f* aPFMsimd_vec2;
+typedef PFMsimd_f* aPFMsimd_vec3;
+typedef PFMsimd_f* aPFMsimd_vec4;
+
+/* 2D Vector function definitions */
+
+PFM_API void
+pfmVec2Zero(PFMvec2 dst)
 {
     memset(dst, 0, sizeof(PFMvec2));
 }
 
-PFM_API void pfmVec2One(PFMvec2 dst, float v)
+PFM_API void
+pfmVec2One(PFMvec2 dst, float v)
 {
     dst[0] = dst[1] = v;
 }
 
-PFM_API void pfmVec2Set(PFMvec2 dst, float x, float y)
+PFM_API void
+pfmVec2Set(PFMvec2 dst, float x, float y)
 {
     dst[0] = x, dst[1] = y;
 }
 
-PFM_API void pfmVec2Copy(aPFMvec2 restrict dst, const aPFMvec2 restrict src)
+PFM_API void
+pfmVec2Copy(aPFMvec2 restrict dst, const aPFMvec2 restrict src)
 {
     memcpy(dst, src, sizeof(PFMvec2));
 }
 
-PFM_API void pfmVec2Swap(aPFMvec2 restrict a, aPFMvec2 restrict b)
+PFM_API void
+pfmVec2Swap(aPFMvec2 restrict a, aPFMvec2 restrict b)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -102,7 +138,8 @@ PFM_API void pfmVec2Swap(aPFMvec2 restrict a, aPFMvec2 restrict b)
     }
 }
 
-PFM_API void pfmVec2Neg(PFMvec2 dst, const PFMvec2 v)
+PFM_API void
+pfmVec2Neg(PFMvec2 dst, const PFMvec2 v)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -110,7 +147,8 @@ PFM_API void pfmVec2Neg(PFMvec2 dst, const PFMvec2 v)
     }
 }
 
-PFM_API void pfmVec2NegR(aPFMvec2 restrict dst, const PFMvec2 v)
+PFM_API void
+pfmVec2NegR(aPFMvec2 restrict dst, const PFMvec2 v)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -118,7 +156,8 @@ PFM_API void pfmVec2NegR(aPFMvec2 restrict dst, const PFMvec2 v)
     }
 }
 
-PFM_API void pfmVec2Add(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
+PFM_API void
+pfmVec2Add(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -126,7 +165,8 @@ PFM_API void pfmVec2Add(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
     }
 }
 
-PFM_API void pfmVec2AddR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
+PFM_API void
+pfmVec2AddR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -134,7 +174,8 @@ PFM_API void pfmVec2AddR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 
     }
 }
 
-PFM_API void pfmVec2Sub(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
+PFM_API void
+pfmVec2Sub(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -142,7 +183,8 @@ PFM_API void pfmVec2Sub(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
     }
 }
 
-PFM_API void pfmVec2SubR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
+PFM_API void
+pfmVec2SubR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -150,7 +192,8 @@ PFM_API void pfmVec2SubR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 
     }
 }
 
-PFM_API void pfmVec2Mul(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
+PFM_API void
+pfmVec2Mul(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -158,7 +201,8 @@ PFM_API void pfmVec2Mul(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
     }
 }
 
-PFM_API void pfmVec2MulR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
+PFM_API void
+pfmVec2MulR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -166,7 +210,8 @@ PFM_API void pfmVec2MulR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 
     }
 }
 
-PFM_API void pfmVec2Div(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
+PFM_API void
+pfmVec2Div(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -174,7 +219,8 @@ PFM_API void pfmVec2Div(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
     }
 }
 
-PFM_API void pfmVec2DivR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
+PFM_API void
+pfmVec2DivR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -182,7 +228,8 @@ PFM_API void pfmVec2DivR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 
     }
 }
 
-PFM_API void pfmVec2Offset(PFMvec2 dst, const PFMvec2 v, float scalar)
+PFM_API void
+pfmVec2Offset(PFMvec2 dst, const PFMvec2 v, float scalar)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -190,7 +237,8 @@ PFM_API void pfmVec2Offset(PFMvec2 dst, const PFMvec2 v, float scalar)
     }
 }
 
-PFM_API void pfmVec2OffsetR(aPFMvec2 restrict dst, const PFMvec2 v, float scalar)
+PFM_API void
+pfmVec2OffsetR(aPFMvec2 restrict dst, const PFMvec2 v, float scalar)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -198,7 +246,8 @@ PFM_API void pfmVec2OffsetR(aPFMvec2 restrict dst, const PFMvec2 v, float scalar
     }
 }
 
-PFM_API void pfmVec2Scale(PFMvec2 dst, const PFMvec2 v, float scalar)
+PFM_API void
+pfmVec2Scale(PFMvec2 dst, const PFMvec2 v, float scalar)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -206,7 +255,8 @@ PFM_API void pfmVec2Scale(PFMvec2 dst, const PFMvec2 v, float scalar)
     }
 }
 
-PFM_API void pfmVec2ScaleR(aPFMvec2 restrict dst, const PFMvec2 v, float scalar)
+PFM_API void
+pfmVec2ScaleR(aPFMvec2 restrict dst, const PFMvec2 v, float scalar)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -214,7 +264,8 @@ PFM_API void pfmVec2ScaleR(aPFMvec2 restrict dst, const PFMvec2 v, float scalar)
     }
 }
 
-PFM_API void pfmVec2Normalize(PFMvec2 dst, const PFMvec2 v)
+PFM_API void
+pfmVec2Normalize(PFMvec2 dst, const PFMvec2 v)
 {
     float squaredLength = v[0]*v[0] + v[1]*v[1];
     if (squaredLength == 0.0f) return;
@@ -226,7 +277,8 @@ PFM_API void pfmVec2Normalize(PFMvec2 dst, const PFMvec2 v)
     }
 }
 
-PFM_API void pfmVec2NormalizeR(aPFMvec2 restrict dst, const PFMvec2 v)
+PFM_API void
+pfmVec2NormalizeR(aPFMvec2 restrict dst, const PFMvec2 v)
 {
     float squaredLength = v[0]*v[0] + v[1]*v[1];
     if (squaredLength == 0.0f) return;
@@ -238,22 +290,26 @@ PFM_API void pfmVec2NormalizeR(aPFMvec2 restrict dst, const PFMvec2 v)
     }
 }
 
-PFM_API float pfmVec2Length(const PFMvec2 v)
+PFM_API float
+pfmVec2Length(const PFMvec2 v)
 {
     return sqrtf(v[0]*v[0] + v[1]*v[1]);
 }
 
-PFM_API float pfmVec2LengthSq(const PFMvec2 v)
+PFM_API float
+pfmVec2LengthSq(const PFMvec2 v)
 {
     return v[0]*v[0] + v[1]*v[1];
 }
 
-PFM_API float pfmVec2Dot(const PFMvec2 v1, const PFMvec2 v2)
+PFM_API float
+pfmVec2Dot(const PFMvec2 v1, const PFMvec2 v2)
 {
     return v1[0]*v2[0] + v1[1]*v2[1];
 }
 
-PFM_API float pfmVec2Distance(const PFMvec2 v1, const PFMvec2 v2)
+PFM_API float
+pfmVec2Distance(const PFMvec2 v1, const PFMvec2 v2)
 {
     PFMvec2 dt = {
         v1[0] - v2[0],
@@ -270,13 +326,15 @@ PFM_API float pfmVec2Distance(const PFMvec2 v1, const PFMvec2 v2)
 #endif
 }
 
-PFM_API float pfmVec2DistanceSq(const PFMvec2 v1, const PFMvec2 v2)
+PFM_API float
+pfmVec2DistanceSq(const PFMvec2 v1, const PFMvec2 v2)
 {
     PFMvec2 dt = { v1[0] - v2[0], v1[1] - v2[1] };
     return dt[0]*dt[0] + dt[1]*dt[1];
 }
 
-PFM_API void pfmVec2Direction(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
+PFM_API void
+pfmVec2Direction(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     PFMvec2 tmp;
     float lengthSq = 0.0f;
@@ -301,7 +359,8 @@ PFM_API void pfmVec2Direction(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
     }
 }
 
-PFM_API void pfmVec2DirectionR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
+PFM_API void
+pfmVec2DirectionR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     float lengthSq = 0.0f;
 
@@ -325,7 +384,8 @@ PFM_API void pfmVec2DirectionR(aPFMvec2 restrict dst, const PFMvec2 v1, const PF
     }
 }
 
-PFM_API void pfmVec2Lerp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, float t)
+PFM_API void
+pfmVec2Lerp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, float t)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -333,7 +393,8 @@ PFM_API void pfmVec2Lerp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, float 
     }
 }
 
-PFM_API void pfmVec2LerpR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2, float t)
+PFM_API void
+pfmVec2LerpR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2, float t)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -341,7 +402,8 @@ PFM_API void pfmVec2LerpR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2
     }
 }
 
-PFM_API void pfmVec2BaryInterp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, float w1, float w2, float w3)
+PFM_API void
+pfmVec2BaryInterp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, float w1, float w2, float w3)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -349,7 +411,8 @@ PFM_API void pfmVec2BaryInterp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, 
     }
 }
 
-PFM_API void pfmVec2BaryInterpR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, float w1, float w2, float w3)
+PFM_API void
+pfmVec2BaryInterpR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, float w1, float w2, float w3)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -357,7 +420,8 @@ PFM_API void pfmVec2BaryInterpR(aPFMvec2 restrict dst, const PFMvec2 v1, const P
     }
 }
 
-PFM_API void pfmVec2BaryInterpV(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, const PFMvec3 w)
+PFM_API void
+pfmVec2BaryInterpV(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, const PFMvec3 w)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -365,7 +429,8 @@ PFM_API void pfmVec2BaryInterpV(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2,
     }
 }
 
-PFM_API void pfmVec2BaryInterpVR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, const PFMvec3 w)
+PFM_API void
+pfmVec2BaryInterpVR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, const PFMvec3 w)
 {
     for (int_fast8_t i = 0; i < 2; i++)
     {
@@ -373,7 +438,8 @@ PFM_API void pfmVec2BaryInterpVR(aPFMvec2 restrict dst, const PFMvec2 v1, const 
     }
 }
 
-PFM_API void pfmVec2Transform(PFMvec2 dst, const PFMvec2 v, const PFMmat4 mat)
+PFM_API void
+pfmVec2Transform(PFMvec2 dst, const PFMvec2 v, const PFMmat4 mat)
 {
     PFMvec2 tmp = {
         mat[0]*v[0] + mat[4]*v[1] + mat[12],
@@ -383,13 +449,15 @@ PFM_API void pfmVec2Transform(PFMvec2 dst, const PFMvec2 v, const PFMmat4 mat)
     memcpy(dst, tmp, sizeof(PFMvec2));
 }
 
-PFM_API void pfmVec2TransformR(aPFMvec2 restrict dst, const PFMvec2 v, const PFMmat4 mat)
+PFM_API void
+pfmVec2TransformR(aPFMvec2 restrict dst, const PFMvec2 v, const PFMmat4 mat)
 {
     dst[0] = mat[0]*v[0] + mat[4]*v[1] + mat[12];
     dst[1] = mat[1]*v[0] + mat[5]*v[1] + mat[13];
 }
 
-PFM_API void pfmVec2TransformWT(PFMvec2 dst, const PFMvec2 v, float wTranslation, const PFMmat4 mat)
+PFM_API void
+pfmVec2TransformWT(PFMvec2 dst, const PFMvec2 v, float wTranslation, const PFMmat4 mat)
 {
     PFMvec2 tmp = {
         mat[0]*v[0] + mat[4]*v[1] + wTranslation*mat[12],
@@ -399,35 +467,41 @@ PFM_API void pfmVec2TransformWT(PFMvec2 dst, const PFMvec2 v, float wTranslation
     memcpy(dst, tmp, sizeof(PFMvec2));
 }
 
-PFM_API void pfmVec2TransformWTR(aPFMvec2 restrict dst, const PFMvec2 v, float wTranslation, const PFMmat4 mat)
+PFM_API void
+pfmVec2TransformWTR(aPFMvec2 restrict dst, const PFMvec2 v, float wTranslation, const PFMmat4 mat)
 {
     dst[0] = mat[0]*v[0] + mat[4]*v[1] + wTranslation*mat[12];
     dst[1] = mat[1]*v[0] + mat[5]*v[1] + wTranslation*mat[13];
 }
 
-/* 3D Vector functions definition */
+/* 3D Vector function definitions */
 
-PFM_API void pfmVec3Zero(PFMvec3 dst)
+PFM_API void
+pfmVec3Zero(PFMvec3 dst)
 {
     memset(dst, 0, sizeof(PFMvec3));
 }
 
-PFM_API void pfmVec3One(PFMvec3 dst, float v)
+PFM_API void
+pfmVec3One(PFMvec3 dst, float v)
 {
     dst[0] = dst[1] = dst[2] = v;
 }
 
-PFM_API void pfmVec3Set(PFMvec3 dst, float x, float y, float z)
+PFM_API void
+pfmVec3Set(PFMvec3 dst, float x, float y, float z)
 {
     dst[0] = x, dst[1] = y, dst[2] = z;
 }
 
-PFM_API void pfmVec3Copy(aPFMvec3 restrict dst, const aPFMvec3 restrict src)
+PFM_API void
+pfmVec3Copy(aPFMvec3 restrict dst, const aPFMvec3 restrict src)
 {
     memcpy(dst, src, sizeof(PFMvec3));
 }
 
-PFM_API void pfmVec3Swap(aPFMvec3 restrict a, aPFMvec3 restrict b)
+PFM_API void
+pfmVec3Swap(aPFMvec3 restrict a, aPFMvec3 restrict b)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -440,7 +514,8 @@ PFM_API void pfmVec3Swap(aPFMvec3 restrict a, aPFMvec3 restrict b)
     }
 }
 
-PFM_API void pfmVec3Neg(PFMvec3 dst, const PFMvec3 v)
+PFM_API void
+pfmVec3Neg(PFMvec3 dst, const PFMvec3 v)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -451,7 +526,8 @@ PFM_API void pfmVec3Neg(PFMvec3 dst, const PFMvec3 v)
     }
 }
 
-PFM_API void pfmVec3NegR(aPFMvec3 restrict dst, const PFMvec3 v)
+PFM_API void
+pfmVec3NegR(aPFMvec3 restrict dst, const PFMvec3 v)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -462,7 +538,8 @@ PFM_API void pfmVec3NegR(aPFMvec3 restrict dst, const PFMvec3 v)
     }
 }
 
-PFM_API void pfmVec3Add(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
+PFM_API void
+pfmVec3Add(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -473,7 +550,8 @@ PFM_API void pfmVec3Add(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
     }
 }
 
-PFM_API void pfmVec3AddR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+PFM_API void
+pfmVec3AddR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -484,7 +562,8 @@ PFM_API void pfmVec3AddR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 
     }
 }
 
-PFM_API void pfmVec3Sub(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
+PFM_API void
+pfmVec3Sub(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -495,7 +574,8 @@ PFM_API void pfmVec3Sub(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
     }
 }
 
-PFM_API void pfmVec3SubR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+PFM_API void
+pfmVec3SubR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -506,7 +586,8 @@ PFM_API void pfmVec3SubR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 
     }
 }
 
-PFM_API void pfmVec3Mul(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
+PFM_API void
+pfmVec3Mul(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -517,7 +598,8 @@ PFM_API void pfmVec3Mul(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
     }
 }
 
-PFM_API void pfmVec3MulR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+PFM_API void
+pfmVec3MulR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -528,7 +610,8 @@ PFM_API void pfmVec3MulR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 
     }
 }
 
-PFM_API void pfmVec3Div(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
+PFM_API void
+pfmVec3Div(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -539,7 +622,8 @@ PFM_API void pfmVec3Div(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
     }
 }
 
-PFM_API void pfmVec3DivR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+PFM_API void
+pfmVec3DivR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -550,7 +634,8 @@ PFM_API void pfmVec3DivR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 
     }
 }
 
-PFM_API void pfmVec3Offset(PFMvec3 dst, const PFMvec3 v, float scalar)
+PFM_API void
+pfmVec3Offset(PFMvec3 dst, const PFMvec3 v, float scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -561,7 +646,8 @@ PFM_API void pfmVec3Offset(PFMvec3 dst, const PFMvec3 v, float scalar)
     }
 }
 
-PFM_API void pfmVec3OffsetR(aPFMvec3 restrict dst, const PFMvec3 v, float scalar)
+PFM_API void
+pfmVec3OffsetR(aPFMvec3 restrict dst, const PFMvec3 v, float scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -572,7 +658,8 @@ PFM_API void pfmVec3OffsetR(aPFMvec3 restrict dst, const PFMvec3 v, float scalar
     }
 }
 
-PFM_API void pfmVec3Scale(PFMvec3 dst, const PFMvec3 v, float scalar)
+PFM_API void
+pfmVec3Scale(PFMvec3 dst, const PFMvec3 v, float scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -583,7 +670,8 @@ PFM_API void pfmVec3Scale(PFMvec3 dst, const PFMvec3 v, float scalar)
     }
 }
 
-PFM_API void pfmVec3ScaleR(aPFMvec3 restrict dst, const PFMvec3 v, float scalar)
+PFM_API void
+pfmVec3ScaleR(aPFMvec3 restrict dst, const PFMvec3 v, float scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -594,7 +682,8 @@ PFM_API void pfmVec3ScaleR(aPFMvec3 restrict dst, const PFMvec3 v, float scalar)
     }
 }
 
-PFM_API void pfmVec3Normalize(PFMvec3 dst, const PFMvec3 v)
+PFM_API void
+pfmVec3Normalize(PFMvec3 dst, const PFMvec3 v)
 {
     float squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
     if (squaredLength == 0.0f) return;
@@ -610,7 +699,8 @@ PFM_API void pfmVec3Normalize(PFMvec3 dst, const PFMvec3 v)
     }
 }
 
-PFM_API void pfmVec3NormalizeR(aPFMvec3 restrict dst, const PFMvec3 v)
+PFM_API void
+pfmVec3NormalizeR(aPFMvec3 restrict dst, const PFMvec3 v)
 {
     float squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
     if (squaredLength == 0.0f) return;
@@ -626,17 +716,20 @@ PFM_API void pfmVec3NormalizeR(aPFMvec3 restrict dst, const PFMvec3 v)
     }
 }
 
-PFM_API float pfmVec3Length(const PFMvec3 v)
+PFM_API float
+pfmVec3Length(const PFMvec3 v)
 {
     return sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
 }
 
-PFM_API float pfmVec3LengthSq(const PFMvec3 v)
+PFM_API float
+pfmVec3LengthSq(const PFMvec3 v)
 {
     return v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
 }
 
-PFM_API float pfmVec3Dot(const PFMvec3 v1, const PFMvec3 v2)
+PFM_API float
+pfmVec3Dot(const PFMvec3 v1, const PFMvec3 v2)
 {
 #ifdef _OPENMP
     float dotProduct = 0.0f;
@@ -651,7 +744,8 @@ PFM_API float pfmVec3Dot(const PFMvec3 v1, const PFMvec3 v2)
 #endif
 }
 
-PFM_API void pfmVec3Cross(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
+PFM_API void
+pfmVec3Cross(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 {
     PFMvec3 tmp = {
         v1[1]*v2[2] - v1[2]*v2[1],
@@ -662,14 +756,16 @@ PFM_API void pfmVec3Cross(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
     memcpy(dst, tmp, sizeof(PFMvec3));
 }
 
-PFM_API void pfmVec3CrossR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+PFM_API void
+pfmVec3CrossR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
 {
     dst[0] = v1[1]*v2[2] - v1[2]*v2[1];
     dst[1] = v1[2]*v2[0] - v1[0]*v2[2];
     dst[2] = v1[0]*v2[1] - v1[1]*v2[0];
 }
 
-PFM_API float pfmVec3Distance(const PFMvec3 v1, const PFMvec3 v2)
+PFM_API float
+pfmVec3Distance(const PFMvec3 v1, const PFMvec3 v2)
 {
     // NOTE: Here, the loop version adds a conditional branch, in doubt we keep it simple.
 
@@ -690,7 +786,8 @@ PFM_API float pfmVec3Distance(const PFMvec3 v1, const PFMvec3 v2)
 #endif
 }
 
-PFM_API float pfmVec3DistanceSq(const PFMvec3 v1, const PFMvec3 v2)
+PFM_API float
+pfmVec3DistanceSq(const PFMvec3 v1, const PFMvec3 v2)
 {
     // NOTE 1: The code generated by GCC 11/13 in O3 utilizes SIMD operations more efficiently than the non-loop version
     // NOTE 2: Still with GCC 13 in O3, the code generated with 'omp simd' is the same as without, but on GCC versions lower than 11.1 the code generated with 'omp simd' retains the loop...
@@ -704,7 +801,8 @@ PFM_API float pfmVec3DistanceSq(const PFMvec3 v1, const PFMvec3 v2)
     return distanceSq;
 }
 
-PFM_API void pfmVec3Direction(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
+PFM_API void
+pfmVec3Direction(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 {
     PFMvec3 tmp;
     float lengthSq = 0.0f;
@@ -729,7 +827,8 @@ PFM_API void pfmVec3Direction(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
     }
 }
 
-PFM_API void pfmVec3DirectionR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+PFM_API void
+pfmVec3DirectionR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
 {
     float lengthSq = 0.0f;
 
@@ -753,7 +852,8 @@ PFM_API void pfmVec3DirectionR(aPFMvec3 restrict dst, const PFMvec3 v1, const PF
     }
 }
 
-PFM_API void pfmVec3Lerp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, float t)
+PFM_API void
+pfmVec3Lerp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, float t)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -764,7 +864,8 @@ PFM_API void pfmVec3Lerp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, float 
     }
 }
 
-PFM_API void pfmVec3LerpR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2, float t)
+PFM_API void
+pfmVec3LerpR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2, float t)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -775,7 +876,8 @@ PFM_API void pfmVec3LerpR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3
     }
 }
 
-PFM_API void pfmVec3BaryInterp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, float w1, float w2, float w3)
+PFM_API void
+pfmVec3BaryInterp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, float w1, float w2, float w3)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -786,7 +888,8 @@ PFM_API void pfmVec3BaryInterp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, 
     }
 }
 
-PFM_API void pfmVec3BaryInterpR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, float w1, float w2, float w3)
+PFM_API void
+pfmVec3BaryInterpR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, float w1, float w2, float w3)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -797,7 +900,8 @@ PFM_API void pfmVec3BaryInterpR(aPFMvec3 restrict dst, const PFMvec3 v1, const P
     }
 }
 
-PFM_API void pfmVec3BaryInterpV(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, const PFMvec3 w)
+PFM_API void
+pfmVec3BaryInterpV(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, const PFMvec3 w)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -808,7 +912,8 @@ PFM_API void pfmVec3BaryInterpV(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2,
     }
 }
 
-PFM_API void pfmVec3BaryInterpVR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, const PFMvec3 w)
+PFM_API void
+pfmVec3BaryInterpVR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, const PFMvec3 w)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -819,7 +924,8 @@ PFM_API void pfmVec3BaryInterpVR(aPFMvec3 restrict dst, const PFMvec3 v1, const 
     }
 }
 
-PFM_API void pfmVec3Transform(PFMvec3 dst, const PFMvec3 v, const PFMmat4 mat)
+PFM_API void
+pfmVec3Transform(PFMvec3 dst, const PFMvec3 v, const PFMmat4 mat)
 {
     PFMvec3 tmp = {
         mat[0]*v[0] + mat[4]*v[1] + mat[8]*v[2] + mat[12],
@@ -830,14 +936,16 @@ PFM_API void pfmVec3Transform(PFMvec3 dst, const PFMvec3 v, const PFMmat4 mat)
     memcpy(dst, tmp, sizeof(PFMvec3));
 }
 
-PFM_API void pfmVec3TransformR(aPFMvec3 restrict dst, const PFMvec3 v, const PFMmat4 mat)
+PFM_API void
+pfmVec3TransformR(aPFMvec3 restrict dst, const PFMvec3 v, const PFMmat4 mat)
 {
     dst[0] = mat[0]*v[0] + mat[4]*v[1] + mat[8]*v[2] + mat[12];
     dst[1] = mat[1]*v[0] + mat[5]*v[1] + mat[9]*v[2] + mat[13];
     dst[2] = mat[2]*v[0] + mat[6]*v[1] + mat[10]*v[2] + mat[14];
 }
 
-PFM_API void pfmVec3TransformWT(PFMvec3 dst, const PFMvec3 v, float wTranslation, const PFMmat4 mat)
+PFM_API void
+pfmVec3TransformWT(PFMvec3 dst, const PFMvec3 v, float wTranslation, const PFMmat4 mat)
 {
     PFMvec3 tmp = {
         mat[0]*v[0] + mat[4]*v[1] + mat[8]*v[2] + wTranslation*mat[12],
@@ -848,14 +956,16 @@ PFM_API void pfmVec3TransformWT(PFMvec3 dst, const PFMvec3 v, float wTranslation
     memcpy(dst, tmp, sizeof(PFMvec3));
 }
 
-PFM_API void pfmVec3TransformWTR(aPFMvec3 restrict dst, const PFMvec3 v, float wTranslation, const PFMmat4 mat)
+PFM_API void
+pfmVec3TransformWTR(aPFMvec3 restrict dst, const PFMvec3 v, float wTranslation, const PFMmat4 mat)
 {
     dst[0] = mat[0]*v[0] + mat[4]*v[1] + mat[8]*v[2] + wTranslation*mat[12];
     dst[1] = mat[1]*v[0] + mat[5]*v[1] + mat[9]*v[2] + wTranslation*mat[13];
     dst[2] = mat[2]*v[0] + mat[6]*v[1] + mat[10]*v[2] + wTranslation*mat[14];
 }
 
-PFM_API void pfmVec3Reflect(PFMvec3 dst, const PFMvec3 incident, const PFMvec3 normal)
+PFM_API void
+pfmVec3Reflect(PFMvec3 dst, const PFMvec3 incident, const PFMvec3 normal)
 {
     float dotProduct = 0.0f;
 
@@ -878,7 +988,8 @@ PFM_API void pfmVec3Reflect(PFMvec3 dst, const PFMvec3 incident, const PFMvec3 n
     }
 }
 
-PFM_API void pfmVec3ReflectR(aPFMvec3 restrict dst, const PFMvec3 incident, const PFMvec3 normal)
+PFM_API void
+pfmVec3ReflectR(aPFMvec3 restrict dst, const PFMvec3 incident, const PFMvec3 normal)
 {
     float dotProduct = 0.0f;
 
@@ -901,29 +1012,34 @@ PFM_API void pfmVec3ReflectR(aPFMvec3 restrict dst, const PFMvec3 incident, cons
     }
 }
 
-/* 4D Vector functions definition */
+/* 4D Vector function definitions */
 
-PFM_API void pfmVec4Zero(PFMvec4 dst)
+PFM_API void
+pfmVec4Zero(PFMvec4 dst)
 {
     memset(dst, 0, sizeof(PFMvec4));
 }
 
-PFM_API void pfmVec4One(PFMvec4 dst, float v)
+PFM_API void
+pfmVec4One(PFMvec4 dst, float v)
 {
     dst[0] = dst[1] = dst[2] = dst[3] = v;
 }
 
-PFM_API void pfmVec4Set(PFMvec4 dst, float x, float y, float z, float w)
+PFM_API void
+pfmVec4Set(PFMvec4 dst, float x, float y, float z, float w)
 {
     dst[0] = x, dst[1] = y, dst[2] = z, dst[3] = w;
 }
 
-PFM_API void pfmVec4Copy(aPFMvec4 restrict dst, const aPFMvec4 restrict src)
+PFM_API void
+pfmVec4Copy(aPFMvec4 restrict dst, const aPFMvec4 restrict src)
 {
     memcpy(dst, src, sizeof(PFMvec4));
 }
 
-PFM_API void pfmVec4Swap(aPFMvec4 restrict a, aPFMvec4 restrict b)
+PFM_API void
+pfmVec4Swap(aPFMvec4 restrict a, aPFMvec4 restrict b)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -936,7 +1052,8 @@ PFM_API void pfmVec4Swap(aPFMvec4 restrict a, aPFMvec4 restrict b)
     }
 }
 
-PFM_API void pfmVec4Neg(PFMvec4 dst, const PFMvec4 v)
+PFM_API void
+pfmVec4Neg(PFMvec4 dst, const PFMvec4 v)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -947,7 +1064,8 @@ PFM_API void pfmVec4Neg(PFMvec4 dst, const PFMvec4 v)
     }
 }
 
-PFM_API void pfmVec4NegR(aPFMvec4 restrict dst, const PFMvec4 v)
+PFM_API void
+pfmVec4NegR(aPFMvec4 restrict dst, const PFMvec4 v)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -958,7 +1076,8 @@ PFM_API void pfmVec4NegR(aPFMvec4 restrict dst, const PFMvec4 v)
     }
 }
 
-PFM_API void pfmVec4Add(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
+PFM_API void
+pfmVec4Add(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -969,7 +1088,8 @@ PFM_API void pfmVec4Add(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
     }
 }
 
-PFM_API void pfmVec4AddR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
+PFM_API void
+pfmVec4AddR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -980,7 +1100,8 @@ PFM_API void pfmVec4AddR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 
     }
 }
 
-PFM_API void pfmVec4Sub(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
+PFM_API void
+pfmVec4Sub(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -991,7 +1112,8 @@ PFM_API void pfmVec4Sub(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
     }
 }
 
-PFM_API void pfmVec4SubR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
+PFM_API void
+pfmVec4SubR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1002,7 +1124,8 @@ PFM_API void pfmVec4SubR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 
     }
 }
 
-PFM_API void pfmVec4Mul(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
+PFM_API void
+pfmVec4Mul(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1013,7 +1136,8 @@ PFM_API void pfmVec4Mul(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
     }
 }
 
-PFM_API void pfmVec4MulR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
+PFM_API void
+pfmVec4MulR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1024,7 +1148,8 @@ PFM_API void pfmVec4MulR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 
     }
 }
 
-PFM_API void pfmVec4Div(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
+PFM_API void
+pfmVec4Div(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1035,7 +1160,8 @@ PFM_API void pfmVec4Div(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
     }
 }
 
-PFM_API void pfmVec4DivR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
+PFM_API void
+pfmVec4DivR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1046,7 +1172,8 @@ PFM_API void pfmVec4DivR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 
     }
 }
 
-PFM_API void pfmVec4Offset(PFMvec4 dst, const PFMvec4 v, float scalar)
+PFM_API void
+pfmVec4Offset(PFMvec4 dst, const PFMvec4 v, float scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1057,7 +1184,8 @@ PFM_API void pfmVec4Offset(PFMvec4 dst, const PFMvec4 v, float scalar)
     }
 }
 
-PFM_API void pfmVec4OffsetR(aPFMvec4 restrict dst, const PFMvec4 v, float scalar)
+PFM_API void
+pfmVec4OffsetR(aPFMvec4 restrict dst, const PFMvec4 v, float scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1068,7 +1196,8 @@ PFM_API void pfmVec4OffsetR(aPFMvec4 restrict dst, const PFMvec4 v, float scalar
     }
 }
 
-PFM_API void pfmVec4Scale(PFMvec4 dst, const PFMvec4 v, float scalar)
+PFM_API void
+pfmVec4Scale(PFMvec4 dst, const PFMvec4 v, float scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1079,7 +1208,8 @@ PFM_API void pfmVec4Scale(PFMvec4 dst, const PFMvec4 v, float scalar)
     }
 }
 
-PFM_API void pfmVec4ScaleR(aPFMvec4 restrict dst, const PFMvec4 v, float scalar)
+PFM_API void
+pfmVec4ScaleR(aPFMvec4 restrict dst, const PFMvec4 v, float scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1090,7 +1220,8 @@ PFM_API void pfmVec4ScaleR(aPFMvec4 restrict dst, const PFMvec4 v, float scalar)
     }
 }
 
-PFM_API void pfmVec4Normalize(PFMvec4 dst, const PFMvec4 v)
+PFM_API void
+pfmVec4Normalize(PFMvec4 dst, const PFMvec4 v)
 {
     float squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3];
     if (squaredLength == 0.0f) return;
@@ -1106,7 +1237,8 @@ PFM_API void pfmVec4Normalize(PFMvec4 dst, const PFMvec4 v)
     }
 }
 
-PFM_API void pfmVec4NormalizeR(aPFMvec4 restrict dst, const PFMvec4 v)
+PFM_API void
+pfmVec4NormalizeR(aPFMvec4 restrict dst, const PFMvec4 v)
 {
     float squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3];
     if (squaredLength == 0.0f) return;
@@ -1122,22 +1254,26 @@ PFM_API void pfmVec4NormalizeR(aPFMvec4 restrict dst, const PFMvec4 v)
     }
 }
 
-PFM_API float pfmVec4Length(const PFMvec4 v)
+PFM_API float
+pfmVec4Length(const PFMvec4 v)
 {
     return sqrtf(v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3]);
 }
 
-PFM_API float pfmVec4LengthSq(const PFMvec4 v)
+PFM_API float
+pfmVec4LengthSq(const PFMvec4 v)
 {
     return v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3];
 }
 
-PFM_API float pfmVec4Dot(const PFMvec4 v1, const PFMvec4 v2)
+PFM_API float
+pfmVec4Dot(const PFMvec4 v1, const PFMvec4 v2)
 {
     return v1[0]*v2[0] + v1[1]*v2[1] + v1[2]*v2[2] + v1[3]*v2[3];
 }
 
-PFM_API void pfmVec4Lerp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, float t)
+PFM_API void
+pfmVec4Lerp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, float t)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1148,7 +1284,8 @@ PFM_API void pfmVec4Lerp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, float 
     }
 }
 
-PFM_API void pfmVec4LerpR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2, float t)
+PFM_API void
+pfmVec4LerpR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2, float t)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1159,7 +1296,8 @@ PFM_API void pfmVec4LerpR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4
     }
 }
 
-PFM_API void pfmVec4BaryInterp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
+PFM_API void
+pfmVec4BaryInterp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1170,7 +1308,8 @@ PFM_API void pfmVec4BaryInterp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, 
     }
 }
 
-PFM_API void pfmVec4BaryInterpR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
+PFM_API void
+pfmVec4BaryInterpR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1181,7 +1320,8 @@ PFM_API void pfmVec4BaryInterpR(aPFMvec4 restrict dst, const PFMvec4 v1, const P
     }
 }
 
-PFM_API void pfmVec4BaryInterpV(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
+PFM_API void
+pfmVec4BaryInterpV(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1192,7 +1332,8 @@ PFM_API void pfmVec4BaryInterpV(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2,
     }
 }
 
-PFM_API void pfmVec4BaryInterpVR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
+PFM_API void
+pfmVec4BaryInterpVR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1203,7 +1344,8 @@ PFM_API void pfmVec4BaryInterpVR(aPFMvec4 restrict dst, const PFMvec4 v1, const 
     }
 }
 
-PFM_API void pfmVec4Transform(PFMvec4 dst, const PFMvec4 v, const PFMmat4 mat)
+PFM_API void
+pfmVec4Transform(PFMvec4 dst, const PFMvec4 v, const PFMmat4 mat)
 {
     PFMvec4 tmp = {
         mat[0]*v[0] + mat[4]*v[1] + mat[8]*v[2] + mat[12]*v[3],
@@ -1215,7 +1357,8 @@ PFM_API void pfmVec4Transform(PFMvec4 dst, const PFMvec4 v, const PFMmat4 mat)
     memcpy(dst, tmp, sizeof(PFMvec4));
 }
 
-PFM_API void pfmVec4TransformR(aPFMvec4 restrict dst, const PFMvec4 v, const PFMmat4 mat)
+PFM_API void
+pfmVec4TransformR(aPFMvec4 restrict dst, const PFMvec4 v, const PFMmat4 mat)
 {
     dst[0] = mat[0]*v[0] + mat[4]*v[1] + mat[8]*v[2] + mat[12]*v[3];
     dst[1] = mat[1]*v[0] + mat[5]*v[1] + mat[9]*v[2] + mat[13]*v[3];
@@ -1223,14 +1366,16 @@ PFM_API void pfmVec4TransformR(aPFMvec4 restrict dst, const PFMvec4 v, const PFM
     dst[3] = mat[3]*v[0] + mat[7]*v[1] + mat[11]*v[2] + mat[15]*v[3];
 }
 
-/* Matrix 4x4 functions definition */
+/* Matrix 4x4 function definitions */
 
-PFM_API void pfmMat4Copy(aPFMmat4 restrict dst, const aPFMmat4 restrict src)
+PFM_API void
+pfmMat4Copy(aPFMmat4 restrict dst, const aPFMmat4 restrict src)
 {
     memcpy(dst, src, sizeof(PFMmat4));
 }
 
-PFM_API float pfmMat4Determinant(const PFMmat4 mat)
+PFM_API float
+pfmMat4Determinant(const PFMmat4 mat)
 {
     float result = 0.0f;
 
@@ -1250,12 +1395,14 @@ PFM_API float pfmMat4Determinant(const PFMmat4 mat)
     return result;
 }
 
-PFM_API float pfmMat4Trace(const PFMmat4 mat)
+PFM_API float
+pfmMat4Trace(const PFMmat4 mat)
 {
     return mat[0] + mat[5] + mat[10] + mat[15];
 }
 
-PFM_API void pfmMat4Transpose(PFMmat4 dst, const PFMmat4 src)
+PFM_API void
+pfmMat4Transpose(PFMmat4 dst, const PFMmat4 src)
 {
     // NOTE 1: Seems more optimized in O3 by GCC 13 without "omp simd collapse(2)"
     // NOTE 2: Also using "omp simd" produces exactly the same code in O3 with GCC 13.
@@ -1272,7 +1419,8 @@ PFM_API void pfmMat4Transpose(PFMmat4 dst, const PFMmat4 src)
     memcpy(dst, result, sizeof(PFMmat4));
 }
 
-PFM_API void pfmMat4TransposeR(aPFMmat4 restrict dst, const PFMmat4 src)
+PFM_API void
+pfmMat4TransposeR(aPFMmat4 restrict dst, const PFMmat4 src)
 {
     // NOTE 1: Seems more optimized in O3 by GCC 13 without "omp simd collapse(2)"
     // NOTE 2: Also using "omp simd" produces exactly the same code in O3 with GCC 13.
@@ -1286,7 +1434,8 @@ PFM_API void pfmMat4TransposeR(aPFMmat4 restrict dst, const PFMmat4 src)
     }
 }
 
-PFM_API void pfmMat4Invert(PFMmat4 dst, const PFMmat4 src)
+PFM_API void
+pfmMat4Invert(PFMmat4 dst, const PFMmat4 src)
 {
     // Cache the matrix values (speed optimization)
     float a00 = src[0],  a01 = src[1],  a02 = src[2],  a03 = src[3];
@@ -1328,13 +1477,15 @@ PFM_API void pfmMat4Invert(PFMmat4 dst, const PFMmat4 src)
     dst[15] = (a20*b03 - a21*b01 + a22*b00)*invDet;
 }
 
-PFM_API void pfmMat4Identity(PFMmat4 dst)
+PFM_API void
+pfmMat4Identity(PFMmat4 dst)
 {
     memset(dst, 0, sizeof(PFMmat4));
     dst[0] = dst[5] = dst[10] = dst[15] = 1.0;
 }
 
-PFM_API void pfmMat4Add(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
+PFM_API void
+pfmMat4Add(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1345,7 +1496,8 @@ PFM_API void pfmMat4Add(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
     }
 }
 
-PFM_API void pfmMat4AddR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat4 right)
+PFM_API void
+pfmMat4AddR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat4 right)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1356,7 +1508,8 @@ PFM_API void pfmMat4AddR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat
     }
 }
 
-PFM_API void pfmMat4Sub(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
+PFM_API void
+pfmMat4Sub(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1367,7 +1520,8 @@ PFM_API void pfmMat4Sub(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
     }
 }
 
-PFM_API void pfmMat4SubR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat4 right)
+PFM_API void
+pfmMat4SubR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat4 right)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1378,7 +1532,8 @@ PFM_API void pfmMat4SubR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat
     }
 }
 
-PFM_API void pfmMat4Mul(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
+PFM_API void
+pfmMat4Mul(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
 {
     PFMmat4 result;
 
@@ -1403,7 +1558,8 @@ PFM_API void pfmMat4Mul(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
     memcpy(dst, result, sizeof(PFMmat4));
 }
 
-PFM_API void pfmMat4MulR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat4 right)
+PFM_API void
+pfmMat4MulR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat4 right)
 {
 #   ifdef _OPENMP
 #       pragma omp simd collapse(2)
@@ -1424,7 +1580,8 @@ PFM_API void pfmMat4MulR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat
     }
 }
 
-PFM_API void pfmMat4Translate(PFMmat4 dst, float x, float y, float z)
+PFM_API void
+pfmMat4Translate(PFMmat4 dst, float x, float y, float z)
 {
     memset(dst, 0, sizeof(PFMmat4));
     dst[12] = x, dst[13] = y, dst[14] = z;
@@ -1432,7 +1589,8 @@ PFM_API void pfmMat4Translate(PFMmat4 dst, float x, float y, float z)
 }
 
 // NOTE: Angle should be provided in radians
-PFM_API void pfmMat4Rotate(PFMmat4 dst, const PFMvec3 axis, float angle)
+PFM_API void
+pfmMat4Rotate(PFMmat4 dst, const PFMvec3 axis, float angle)
 {
     // pfmMat4Identity()
     memset(dst, 0, sizeof(PFMmat4));
@@ -1467,7 +1625,8 @@ PFM_API void pfmMat4Rotate(PFMmat4 dst, const PFMvec3 axis, float angle)
 }
 
 // NOTE: Angle must be provided in radians
-PFM_API void pfmMat4RotateX(PFMmat4 dst, float angle)
+PFM_API void
+pfmMat4RotateX(PFMmat4 dst, float angle)
 {
     // pfmMat4Identity()
     memset(dst, 0, sizeof(PFMmat4));
@@ -1483,7 +1642,8 @@ PFM_API void pfmMat4RotateX(PFMmat4 dst, float angle)
 }
 
 // NOTE: Angle must be provided in radians
-PFM_API void pfmMat4RotateY(PFMmat4 dst, float angle)
+PFM_API void
+pfmMat4RotateY(PFMmat4 dst, float angle)
 {
     // pfmMat4Identity()
     memset(dst, 0, sizeof(PFMmat4));
@@ -1499,7 +1659,8 @@ PFM_API void pfmMat4RotateY(PFMmat4 dst, float angle)
 }
 
 // NOTE: Angle must be provided in radians
-PFM_API void pfmMat4RotateZ(PFMmat4 dst, float angle)
+PFM_API void
+pfmMat4RotateZ(PFMmat4 dst, float angle)
 {
     // pfmMat4Identity()
     memset(dst, 0, sizeof(PFMmat4));
@@ -1515,7 +1676,8 @@ PFM_API void pfmMat4RotateZ(PFMmat4 dst, float angle)
 }
 
 // NOTE: Angle must be provided in radians
-PFM_API void pfmMat4RotateXYZ(PFMmat4 dst, const PFMvec3 angle)
+PFM_API void
+pfmMat4RotateXYZ(PFMmat4 dst, const PFMvec3 angle)
 {
     // pfmMat4Identity()
     memset(dst, 0, sizeof(PFMmat4));
@@ -1542,7 +1704,8 @@ PFM_API void pfmMat4RotateXYZ(PFMmat4 dst, const PFMvec3 angle)
 }
 
 // NOTE: Angle must be provided in radians
-PFM_API void pfmMat4RotateZYX(PFMmat4 dst, const PFMvec3 angle)
+PFM_API void
+pfmMat4RotateZYX(PFMmat4 dst, const PFMvec3 angle)
 {
     // pfmMat4Identity()
     memset(dst, 0, sizeof(PFMmat4));
@@ -1568,13 +1731,15 @@ PFM_API void pfmMat4RotateZYX(PFMmat4 dst, const PFMvec3 angle)
     dst[10] = cy*cx;
 }
 
-PFM_API void pfmMat4Scale(PFMmat4 dst, float x, float y, float z)
+PFM_API void
+pfmMat4Scale(PFMmat4 dst, float x, float y, float z)
 {
     memset(dst, 0, sizeof(PFMmat4));
     dst[0] = x, dst[5] = y, dst[10] = z, dst[15] = 1.0;
 }
 
-PFM_API void pfmMat4Frustum(PFMmat4 dst, float left, float right, float bottom, float top, float nearPlane, float farPlane)
+PFM_API void
+pfmMat4Frustum(PFMmat4 dst, float left, float right, float bottom, float top, float nearPlane, float farPlane)
 {
     memset(dst, 0, sizeof(PFMmat4));
 
@@ -1594,7 +1759,8 @@ PFM_API void pfmMat4Frustum(PFMmat4 dst, float left, float right, float bottom, 
 }
 
 // NOTE: Fovy angle must be provided in radians
-PFM_API void pfmMat4Perspective(PFMmat4 dst, float fovY, float aspect, float nearPlane, float farPlane)
+PFM_API void
+pfmMat4Perspective(PFMmat4 dst, float fovY, float aspect, float nearPlane, float farPlane)
 {
     memset(dst, 0, sizeof(PFMmat4));
 
@@ -1619,7 +1785,8 @@ PFM_API void pfmMat4Perspective(PFMmat4 dst, float fovY, float aspect, float nea
     dst[14] = -(farPlane*nearPlane*2.0f)/fn;
 }
 
-PFM_API void pfmMat4Ortho(PFMmat4 dst, float left, float right, float bottom, float top, float nearPlane, float farPlane)
+PFM_API void
+pfmMat4Ortho(PFMmat4 dst, float left, float right, float bottom, float top, float nearPlane, float farPlane)
 {
     memset(dst, 0, sizeof(PFMmat4));
 
@@ -1639,7 +1806,8 @@ PFM_API void pfmMat4Ortho(PFMmat4 dst, float left, float right, float bottom, fl
     dst[15] = 1.0f;
 }
 
-PFM_API void pfmMat4LookAt(PFMmat4 dst, const PFMvec3 eye, const PFMvec3 target, const PFMvec3 up)
+PFM_API void
+pfmMat4LookAt(PFMmat4 dst, const PFMvec3 eye, const PFMvec3 target, const PFMvec3 up)
 {
     memset(dst, 0, sizeof(PFMmat4));
 
@@ -1701,6 +1869,2681 @@ PFM_API void pfmMat4LookAt(PFMmat4 dst, const PFMvec3 eye, const PFMvec3 target,
     dst[13] = -(vy[0]*eye[0] + vy[1]*eye[1] + vy[2]*eye[2]);   // pfVec3Dot(vy, eye)
     dst[14] = -(vz[0]*eye[0] + vz[1]*eye[1] + vz[2]*eye[2]);   // pfVec3Dot(vz, eye)
     dst[15] = 1.0f;
+}
+
+
+/* SIMD function defintions */
+
+#ifdef __SSE2__
+
+PFM_API __m128i
+_mm_mullo_epi32_sse2(__m128i x, __m128i y)
+{
+    // From Agner Fog's Vector Class Library
+    // SEE: https://github.com/vectorclass/version2/blob/master/vectori128.h#L3108
+
+    __m128i x13 = _mm_shuffle_epi32(x, 0xF5);              // (-,x3,-,x1)
+    __m128i y13 = _mm_shuffle_epi32(y, 0xF5);              // (-,y3,-,y1)
+    __m128i prod02 = _mm_mul_epu32(x, y);                  // (-,x2*y2,-,x0*y0)
+    __m128i prod13 = _mm_mul_epu32(x13, y13);              // (-,x3*y3,-,x1*y1)
+    __m128i prod01 = _mm_unpacklo_epi32(prod02, prod13);   // (-,-,x1*y1,x0*y0)
+    __m128i prod23 = _mm_unpackhi_epi32(prod02, prod13);   // (-,-,x3*y3,x2*y2)
+    return           _mm_unpacklo_epi64(prod01, prod23);   // (xy3,xy2,xy1,xy0)
+}
+
+PFM_API __m128i
+_mm_shuffle_epi8_sse2(__m128i x, __m128i y)
+{
+    // From Agner Fog's Vector Class Library
+    // SEE: https://github.com/vectorclass/version2/blob/master/vectori128.h#L5516
+
+    uint8_t yy[16];
+    int8_t  xx[16], rr[16];
+    _mm_storeu_si128((__m128i*)xx, x);
+    _mm_storeu_si128((__m128i*)yy, y);
+    for (int j = 0; j < 16; j++) rr[j] = xx[yy[j] & 0x0F];
+    return _mm_loadu_si128((__m128i const*)rr);
+}
+
+PFM_API __m128i
+_mm_blendv_epi8_sse2(__m128i x, __m128i y, __m128i mask)
+{
+    __m128i not_mask = _mm_andnot_si128(mask, x);   // _mm_andnot_si128(mask, x) : bits of x where mask is 0
+    __m128i masked_y = _mm_and_si128(mask, y);      // _mm_and_si128(mask, y) : bits of y where mask is 1
+    return _mm_or_si128(not_mask, masked_y);        // Combine the two results to get the final result
+}
+
+#endif
+
+PFM_API PFMsimd_f
+pfSimdSet1_F32(float x)
+{
+#if defined(__AVX2__)
+    return _mm256_set1_ps(x);
+#elif defined(__SSE2__)
+    return _mm_set1_ps(x);
+#else
+    PFMsimd_f result = 0;
+    ((float*)&result)[0] = x;
+    ((float*)&result)[1] = x;
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdSet1_I32(int32_t x)
+{
+#if defined(__AVX2__)
+    return _mm256_set1_epi32(x);
+#elif defined(__SSE2__)
+    return _mm_set1_epi32(x);
+#else
+    PFMsimd_i result = 0;
+    ((int32_t*)&result)[0] = x;
+    ((int32_t*)&result)[1] = x;
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdSetR_x4_I8(int8_t i0, int8_t i1, int8_t i2, int8_t i3)
+{
+#if defined(__AVX2__)
+    return _mm256_setr_epi8(i0, i1, i2, i3,
+                            i0, i1, i2, i3,
+                            i0, i1, i2, i3,
+                            i0, i1, i2, i3,
+                            i0, i1, i2, i3,
+                            i0, i1, i2, i3,
+                            i0, i1, i2, i3,
+                            i0, i1, i2, i3);
+#elif defined(__SSE2__)
+    return _mm_setr_epi8(i0, i1, i2, i3,
+                         i0, i1, i2, i3,
+                         i0, i1, i2, i3,
+                         i0, i1, i2, i3);
+#else
+    PFMsimd_i result = 0;
+    ((int8_t*)&result)[0] = i0;
+    ((int8_t*)&result)[1] = i1;
+    ((int8_t*)&result)[2] = i2;
+    ((int8_t*)&result)[3] = i3;
+    ((int8_t*)&result)[4] = i0;
+    ((int8_t*)&result)[5] = i1;
+    ((int8_t*)&result)[6] = i2;
+    ((int8_t*)&result)[7] = i3;
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdSetR_I32(int32_t i0, int32_t i1, int32_t i2, int32_t i3, int32_t i4, int32_t i5, int32_t i6, int32_t i7)
+{
+#if defined(__AVX2__)
+    return _mm256_setr_epi32(i0, i1, i2, i3, i4, i5, i6, i7);
+#elif defined(__SSE2__)
+    (void)i4, (void)i5, (void)i6, (void)i7;
+    return _mm_setr_epi32(i0, i1, i2, i3);
+#else
+    (void)i2, (void)i3, (void)i4, (void)i5, (void)i6, (void)i7;
+    PFMsimd_i result = 0;
+    ((int32_t*)&result)[0] = i0;
+    ((int32_t*)&result)[1] = i1;
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdSetZero_I32(void)
+{
+#if defined(__AVX2__)
+    return _mm256_setzero_si256();
+#elif defined(__SSE2__)
+    return _mm_setzero_si128();
+#else
+    return 0;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfSimdSetZero_F32(void)
+{
+#if defined(__AVX2__)
+    return _mm256_setzero_ps();
+#elif defined(__SSE2__)
+    return _mm_setzero_ps();
+#else
+    return 0.0;
+#endif
+}
+
+#if defined(__AVX2__)
+#   define pfSimdRound_F32(x, imm) \
+        _mm256_round_ps(x, imm)
+#elif defined(__SSE2__)
+#   define pfSimdRound_F32(x, imm) \
+        _mm_round_ps(x, imm)
+#else
+PFM_API PFMsimd_f
+pfSimdRound_F32(PFMsimd_f x, const int imm)
+{
+    (void)imm;
+    ((float*)&x)[0] = roundf(((float*)&x)[0]);
+    ((float*)&x)[1] = roundf(((float*)&x)[1]);
+    return x;
+}
+#endif
+
+PFM_API PFMsimd_i
+pfSimdUnpackLo_I8(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_unpacklo_epi8(x, y);
+#elif defined(__SSE2__)
+    return _mm_unpacklo_epi8(x, y);
+#else
+    PFMsimd_i result = 0;
+    ((int8_t*)&result)[0] = ((int8_t*)&x)[0];
+    ((int8_t*)&result)[1] = ((int8_t*)&y)[0];
+    ((int8_t*)&result)[2] = ((int8_t*)&x)[1];
+    ((int8_t*)&result)[3] = ((int8_t*)&y)[1];
+    ((int8_t*)&result)[4] = ((int8_t*)&x)[2];
+    ((int8_t*)&result)[5] = ((int8_t*)&y)[2];
+    ((int8_t*)&result)[6] = ((int8_t*)&x)[3];
+    ((int8_t*)&result)[7] = ((int8_t*)&y)[3];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdUnpackLo_I16(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_unpacklo_epi16(x, y);
+#elif defined(__SSE2__)
+    return _mm_unpacklo_epi16(x, y);
+#else
+    PFMsimd_i result = 0;
+    ((int16_t*)&result)[0] = ((int16_t*)&x)[0];
+    ((int16_t*)&result)[1] = ((int16_t*)&y)[0];
+    ((int16_t*)&result)[2] = ((int16_t*)&x)[1];
+    ((int16_t*)&result)[3] = ((int16_t*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API void
+pfSimdStore_I8(void* p, PFMsimd_i x)
+{
+#if defined(__AVX2__)
+    _mm256_storeu_si64((__m256i*)p, x);
+#elif defined(__SSE2__)
+    _mm_storeu_si32((__m128i*)p, x);
+#else
+    int8_t* dest = (int8_t*)p;
+    for (int_fast8_t i = 0; i < 8; ++i) {
+        dest[i] = ((int8_t*)&x)[i];
+    }
+#endif
+}
+
+PFM_API void
+pfSimdStore_I16(void* p, PFMsimd_i x)
+{
+#if defined(__AVX2__)
+    _mm256_storeu_si128((__m256i*)p, x);
+#elif defined(__SSE2__)
+    _mm_storeu_si64((__m128i*)p, x);
+#else
+    int16_t* dest = (int16_t*)p;
+    for (int_fast8_t i = 0; i < 4; ++i) {
+        dest[i] = ((int16_t*)&x)[i];
+    }
+#endif
+}
+
+PFM_API void
+pfSimdStore_I32(void* p, PFMsimd_i x)
+{
+#if defined(__AVX2__)
+    _mm256_storeu_si256((__m256i*)p, x);
+#elif defined(__SSE2__)
+    _mm_storeu_si128((__m128i*)p, x);
+#else
+    int32_t* dest = (int32_t*)p;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        dest[i] = ((int32_t*)&x)[i];
+    }
+#endif
+}
+
+PFM_API void
+pfSimdStore_F32(void* p, PFMsimd_f x)
+{
+#if defined(__AVX2__)
+    _mm256_storeu_ps((float*)p, x);
+#elif defined(__SSE2__)
+    _mm_storeu_ps((float*)p, x);
+#else
+    float* dest = (float*)p;
+    dest[0] = ((float*)&x)[0];
+    dest[1] = ((float*)&x)[1];
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdLoad_I32(const void* p)
+{
+#if defined(__AVX2__)
+    return _mm256_loadu_si256((const __m256i*)p);
+#elif defined(__SSE2__)
+    return _mm_loadu_si128((const __m128i*)p);
+#else
+    PFMsimd_i result = 0;
+    ((int32_t*)&result)[0] = ((const int32_t*)p)[0];
+    ((int32_t*)&result)[1] = ((const int32_t*)p)[1];
+    return result;
+#endif
+}
+
+#if defined(__AVX2__)
+#   define pfSimdExtract_I32(v, index)  \
+        _mm256_extract_epi32(v, index)
+#elif defined(__SSE2__)
+#   define pfSimdExtract_I32(v, index)  \
+        _mm_extract_epi32(v, index % 4)
+#else
+#   define pfSimdExtract_I32(v, index)  \
+        *((int32_t*)&v + (index % 2))
+#endif
+
+PFM_API int32_t
+pfSimdExtractVarIdx_I32(PFMsimd_i x, int32_t index)
+{
+#if defined(__AVX2__)
+    __m128i idx = _mm_cvtsi32_si128(index);
+    __m256i val = _mm256_permutevar8x32_epi32(x, _mm256_castsi128_si256(idx));
+    return _mm_cvtsi128_si32(_mm256_castsi256_si128(val));
+#elif defined(__SSE2__)
+    union v_u { __m128i vec; int arr[4]; };
+    union v_u v = { .vec = x };
+    return v.arr[index % 4];
+#else
+    return *((int32_t*)&x + (index % 2));
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdGather_I32(const void* p, PFMsimd_i offsets)
+{
+#if defined(__AVX2__)
+    return _mm256_i32gather_epi32(
+        (const int32_t*)p, offsets, sizeof(int32_t));
+#elif defined(__SSE2__)
+    return _mm_set_epi32(
+        ((const int*)p)[pfSimdExtract_I32(offsets, 0)],
+        ((const int*)p)[pfSimdExtract_I32(offsets, 1)],
+        ((const int*)p)[pfSimdExtract_I32(offsets, 2)],
+        ((const int*)p)[pfSimdExtract_I32(offsets, 3)]);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = ((const int32_t*)p)[((int32_t*)&offsets)[0]];
+    ((int32_t*)&result)[1] = ((const int32_t*)p)[((int32_t*)&offsets)[1]];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdShuffle_I8(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+        _mm256_shuffle_epi8(x, y);
+#elif defined(__SSE4_1__)
+    return _mm_shuffle_epi8(x, y);
+#elif defined(__SSE2__)
+    return _mm_shuffle_epi8_sse2(x, y);
+#else
+    PFMsimd_i result = 0;
+    for (int_fast8_t i = 0; i < 16; ++i) {
+        int8_t index = ((int8_t*)&y)[i];
+        if (index >= 0 && index < 16) {
+            ((int8_t*)&result)[i] = ((int8_t*)&x)[index];
+        } else {
+            ((int8_t*)&result)[i] = 0;
+        }
+    }
+    return result;
+#endif
+}
+
+#if defined(__AVX2__)
+#   define pfSimdShuffle_F32(v1, v2, mask)  \
+        _mm256_shuffle_ps(v1, v2, mask)
+#elif defined(__SSE2__)
+#   define pfSimdShuffle_F32(v1, v2, mask)  \
+        _mm_shuffle_ps(v1, v2, mask)
+#else
+PFM_API PFMsimd_f
+pfSimdShuffle_F32(PFMsimd_f v1, PFMsimd_f v2, int mask)
+{
+    PFMsimd_f result;
+    ((float*)&result)[0] = ((float*)&v1)[(mask & 0x03)];
+    ((float*)&result)[1] = ((float*)&v1)[(mask >> 2) & 0x03];
+    ((float*)&result)[2] = ((float*)&v2)[(mask >> 4) & 0x03];
+    ((float*)&result)[3] = ((float*)&v2)[(mask >> 6) & 0x03];
+    return result;
+}
+#endif
+
+PFM_API PFMsimd_i
+pfSimdConvert_F32_I32(PFMsimd_f x)
+{
+#if defined(__AVX2__)
+    return _mm256_cvtps_epi32(x);
+#elif defined(__SSE2__)
+    return _mm_cvtps_epi32(x);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = (int32_t)((float*)&x)[0];
+    ((int32_t*)&result)[1] = (int32_t)((float*)&x)[1];
+    return result;
+#endif
+}
+
+#if defined(__AVX2__)
+#   define pfSimdConvert_F32_F16(x, imm)  \
+        _mm256_cvtps_ph(x, index)
+#elif defined(__SSE2__)
+#   define pfSimdConvert_F32_F16(x, imm)  \
+        _mm_cvtps_ph(x, imm)
+#else
+PFM_API PFMsimd_f
+pfSimdConvert_F32_F16(PFMsimd_f x, const int imm)
+{
+    // REVIEW: Incorrect behavior
+
+    (void)imm;
+    PFMsimd_f result = 0;
+    for (int_fast8_t i = 0; i < 2; ++i)
+    {
+        const float in = ((float*)&x)[i];
+        const uint32_t b = (*(uint32_t*)&in)+0x00001000; // round-to-nearest-even: add last bit after truncated mantissa
+        const uint32_t e = (b&0x7F800000)>>23; // exponent
+        const uint32_t m = b&0x007FFFFF; // mantissa; in line below: 0x007FF000 = 0x00800000-0x00001000 = decimal indicator flag - initial rounding
+        ((uint16_t*)&result)[i] = (b&0x80000000)>>16 | (e>112)*((((e-112)<<10)&0x7C00)|m>>13) | ((e<113)&(e>101))*((((0x007FF000+m)>>(125-e))+1)>>1) | (e>143)*0x7FFF; // sign : normalized : denormalized : saturate
+    }
+    return result;
+}
+#endif
+
+#if PF_SIMD_SIZE > 1
+PFM_API PFMsimd_f
+pfSimdConvert_F16_F32(PFMsimd_f x)
+{
+#if defined(__AVX2__)
+    return _mm256_cvtph_ps(x);
+#elif defined(__SSE3__)
+    return _mm_cvtph_ps(x);
+#endif
+}
+#else
+PFM_API float
+pfSimdConvert_F16_F32(uint16_t x)
+{
+    // REVIEW: Incorrect behavior
+
+    PFMsimd_f result = 0;
+    for (int_fast8_t i = 0; i < 2; ++i)
+    {
+        const uint16_t in = ((uint16_t*)&x)[i];
+        const uint32_t e = (in&0x7C00)>>10; // exponent
+        const uint32_t m = (in&0x03FF)<<13; // mantissa
+        const float fm = (float)m;
+        const uint32_t v = (*(uint32_t*)&fm)>>23; // evil log2 bit hack to count leading zeros in denormalized format
+        const uint32_t r = (in&0x8000)<<16 | (e!=0)*((e+112)<<23|m) | ((e==0)&(m!=0))*((v-37)<<23|((m<<(150-v))&0x007FE000)); // sign : normalized : denormalized
+        ((float*)&result)[i] = *(float*)&r;
+    }
+    return result;
+}
+#endif
+
+PFM_API PFMsimd_f
+pfSimdConvert_I32_F32(PFMsimd_i x)
+{
+#if defined(__AVX2__)
+    return _mm256_cvtepi32_ps(x);
+#elif defined(__SSE2__)
+    return _mm_cvtepi32_ps(x);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = (float)((int32_t*)&x)[0];
+    ((float*)&result)[1] = (float)((int32_t*)&x)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdCast_F32_I32(PFMsimd_f x)
+{
+#if defined(__AVX2__)
+    return _mm256_castps_si256(x);
+#elif defined(__SSE2__)
+    return _mm_castps_si128(x);
+#else
+    return *(PFMsimd_i*)&x;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfSimdCast_I32_F32(PFMsimd_i x)
+{
+#if defined(__AVX2__)
+    return _mm256_castsi256_ps(x);
+#elif defined(__SSE2__)
+    return _mm_castsi128_ps(x);
+#else
+    return *(PFMsimd_f*)&x;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdAdd_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_add_epi32(x, y);
+#elif defined(__SSE2__)
+    return _mm_add_epi32(x, y);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = ((int32_t*)&x)[0] + ((int32_t*)&y)[0];
+    ((int32_t*)&result)[1] = ((int32_t*)&x)[1] + ((int32_t*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfSimdAdd_F32(PFMsimd_f x, PFMsimd_f y)
+{
+#if defined(__AVX2__)
+    return _mm256_add_ps(x, y);
+#elif defined(__SSE2__)
+    return _mm_add_ps(x, y);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = ((float*)&x)[0] + ((float*)&y)[0];
+    ((float*)&result)[1] = ((float*)&x)[1] + ((float*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdSub_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_sub_epi32(x, y);
+#elif defined(__SSE2__)
+    return _mm_sub_epi32(x, y);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = ((int32_t*)&x)[0] - ((int32_t*)&y)[0];
+    ((int32_t*)&result)[1] = ((int32_t*)&x)[1] - ((int32_t*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfSimdSub_F32(PFMsimd_f x, PFMsimd_f y)
+{
+#if defined(__AVX2__)
+    return _mm256_sub_ps(x, y);
+#elif defined(__SSE2__)
+    return _mm_sub_ps(x, y);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = ((float*)&x)[0] - ((float*)&y)[0];
+    ((float*)&result)[1] = ((float*)&x)[1] - ((float*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdMullo_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_mullo_epi32(x, y);
+#elif defined(__SSE4_1__)
+    return _mm_mullo_epi32(x, y);
+#elif defined(__SSE2__)
+    return _mm_mullo_epi32_sse2(x, y);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = ((int32_t*)&x)[0] * ((int32_t*)&y)[0];
+    ((int32_t*)&result)[1] = ((int32_t*)&x)[1] * ((int32_t*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfSimdMul_F32(PFMsimd_f x, PFMsimd_f y)
+{
+#if defined(__AVX2__)
+    return _mm256_mul_ps(x, y);
+#elif defined(__SSE2__)
+    return _mm_mul_ps(x, y);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = ((float*)&x)[0] * ((float*)&y)[0];
+    ((float*)&result)[1] = ((float*)&x)[1] * ((float*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfSimdDiv_F32(PFMsimd_f x, PFMsimd_f y)
+{
+#if defined(__AVX2__)
+    return _mm256_div_ps(x, y);
+#elif defined(__SSE2__)
+    return _mm_div_ps(x, y);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = ((float*)&x)[0] / ((float*)&y)[0];
+    ((float*)&result)[1] = ((float*)&x)[1] / ((float*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdNeg_I32(PFMsimd_i x)
+{
+#if defined(__AVX2__)
+    return _mm256_sub_epi32(_mm256_setzero_si256(), x);
+#elif defined(__SSE2__)
+    return _mm_sub_epi32(_mm_setzero_si128(), x);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = -((int32_t*)&x)[0];
+    ((int32_t*)&result)[1] = -((int32_t*)&x)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfSimdNeg_F32(PFMsimd_f x)
+{
+#if defined(__AVX2__)
+    return _mm256_sub_ps(_mm256_setzero_ps(), x);
+#elif defined(__SSE2__)
+    return _mm_sub_ps(_mm_setzero_ps(), x);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = -((float*)&x)[0];
+    ((float*)&result)[1] = -((float*)&x)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfSimdRCP_F32(PFMsimd_f x)
+{
+#if defined(__AVX2__)
+    return _mm256_rcp_ps(x);
+#elif defined(__SSE2__)
+    return _mm_rcp_ps(x);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = 1.0f / ((float*)&x)[0];
+    ((float*)&result)[1] = 1.0f / ((float*)&x)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfSimdSqrt_F32(PFMsimd_f x)
+{
+#if defined(__AVX2__)
+    return _mm256_sqrt_ps(x);
+#elif defined(__SSE2__)
+    return _mm_sqrt_ps(x);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = sqrtf(((float*)&x)[0]);
+    ((float*)&result)[1] = sqrtf(((float*)&x)[1]);
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfSimdRSqrt_F32(PFMsimd_f x)
+{
+#if defined(__AVX2__)
+    return _mm256_rsqrt_ps(x);
+#elif defined(__SSE2__)
+    return _mm_rsqrt_ps(x);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = rsqrtf(((float*)&x)[0]);
+    ((float*)&result)[1] = rsqrtf(((float*)&x)[1]);
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdPermute_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_permutevar8x32_epi32(x, y);
+#elif defined(__SSE4_1__)
+    y = _mm_and_si128(y, _mm_set1_epi32(0x00000003));
+    y = _mm_mullo_epi32(y, _mm_set1_epi32(0x04040404));
+    y = _mm_or_si128(y, _mm_set1_epi32(0x03020100));
+    return _mm_shuffle_epi8(x, y);
+#elif defined(__SSE2__)
+    y = _mm_and_si128(y, _mm_set1_epi32(0x00000003));
+    y = _mm_mullo_epi32_sse2(y, _mm_set1_epi32(0x04040404));
+    y = _mm_or_si128(y, _mm_set1_epi32(0x03020100));
+    return _mm_shuffle_epi8_sse2(x, y);
+#else
+    PFMsimd_i result = 0;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        int index = ((int32_t*)&y)[i] % 2;
+        ((int32_t*)&result)[i] = ((int32_t*)&x)[index];
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdAnd_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_and_si256(x, y);
+#elif defined(__SSE2__)
+    return _mm_and_si128(x, y);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = ((int32_t*)&x)[0] & ((int32_t*)&y)[0];
+    ((int32_t*)&result)[1] = ((int32_t*)&x)[1] & ((int32_t*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfSimdAnd_F32(PFMsimd_f x, PFMsimd_f y)
+{
+#if defined(__AVX2__)
+    return _mm256_and_ps(x, y);
+#elif defined(__SSE2__)
+    return _mm_and_ps(x, y);
+#else
+    PFMsimd_f result;
+    ((int32_t*)&result)[0] = ((int32_t*)&x)[0] & ((int32_t*)&y)[0];
+    ((int32_t*)&result)[1] = ((int32_t*)&x)[1] & ((int32_t*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdOr_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_or_si256(x, y);
+#elif defined(__SSE2__)
+    return _mm_or_si128(x, y);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = ((int32_t*)&x)[0] | ((int32_t*)&y)[0];
+    ((int32_t*)&result)[1] = ((int32_t*)&x)[1] | ((int32_t*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdOr_F32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_or_ps(x, y);
+#elif defined(__SSE2__)
+    return _mm_or_ps(x, y);
+#else
+    PFMsimd_f result;
+    ((int32_t*)&result)[0] = ((int32_t*)&x)[0] | ((int32_t*)&y)[0];
+    ((int32_t*)&result)[1] = ((int32_t*)&x)[1] | ((int32_t*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdShr_I32(PFMsimd_i x, int32_t imm8)
+{
+#if defined(__AVX2__)
+    return _mm256_srli_epi32(x, imm8);
+#elif defined(__SSE2__)
+    return _mm_srli_epi32(x, imm8);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = ((int32_t*)&x)[0] >> imm8;
+    ((int32_t*)&result)[1] = ((int32_t*)&x)[1] >> imm8;
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdShl_I32(PFMsimd_i x, int32_t imm8)
+{
+#if defined(__AVX2__)
+    return _mm256_slli_epi32(x, imm8);
+#elif defined(__SSE2__)
+    return _mm_slli_epi32(x, imm8);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = ((int32_t*)&x)[0] << imm8;
+    ((int32_t*)&result)[1] = ((int32_t*)&x)[1] << imm8;
+    return result;
+#endif
+}
+
+PFM_API int32_t
+pfSimdMoveMask_F32(PFMsimd_f x)
+{
+#if defined(__AVX2__)
+    return _mm256_movemask_ps(x);
+#elif defined(__SSE2__)
+    return _mm_movemask_ps(x);
+#else
+    int32_t mask = 0;
+    float* fx = (float*)&x;
+    mask |= ((*(int32_t*)&fx[0] >> 31) & 0x1) << 0;
+    mask |= ((*(int32_t*)&fx[1] >> 31) & 0x1) << 1;
+    return mask;
+#endif
+}
+
+PFM_API int32_t
+pfSimdMoveMask_I8(PFMsimd_i x)
+{
+#if defined(__AVX2__)
+    return _mm256_movemask_epi8(x);
+#elif defined(__SSE2__)
+    return _mm_movemask_epi8(x);
+#else
+    int32_t mask = 0;
+    int8_t* ix = (int8_t*)&x;
+    for (int_fast8_t i = 0; i < 8; ++i) {
+        mask |= ((ix[i] >> 7) & 0x1) << i;
+    }
+    return mask;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdBlendV_I8(PFMsimd_i a, PFMsimd_i b, PFMsimd_i mask)
+{
+#if defined(__AVX2__)
+    return _mm256_blendv_epi8(a, b, mask);
+#elif defined(__SSE4_1__)
+    return _mm_blendv_epi8(a, b, mask);
+#elif defined(__SSE2__)
+    return _mm_blendv_epi8_sse2(a, b, mask);
+#else
+    return (mask ? b : a);
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdBlendV_I16(PFMsimd_i a, PFMsimd_i b, PFMsimd_i mask)
+{
+#if defined(__AVX2__)
+
+    // Extend mask from 16 bits to 32 bits
+    __m256i mask_ext = _mm256_unpacklo_epi16(mask, mask);
+    __m256i mask_inv = _mm256_xor_si256(mask_ext, _mm256_set1_epi32(0xFFFFFFFF));
+    
+    // Select elements based on extended mask
+    __m256i blend_a = _mm256_and_si256(a, mask_inv); // a & ~mask
+    __m256i blend_b = _mm256_and_si256(b, mask_ext); // b & mask
+    
+    // Combine selected items
+    return _mm256_or_si256(blend_a, blend_b); // (a & ~mask) | (b & mask)
+
+#elif defined(__SSE2__)
+
+    // Extend mask from 16 bits to 32 bits for multiplication by 0xFFFF
+    __m128i mask_ext = _mm_unpacklo_epi16(mask, mask);
+    __m128i mask_inv = _mm_xor_si128(mask_ext, _mm_set1_epi32(0xFFFFFFFF));
+
+    // Select elements based on extended mask
+    __m128i blend_a = _mm_and_si128(a, mask_inv); // a & ~mask
+    __m128i blend_b = _mm_and_si128(b, mask_ext); // b & mask
+
+    // Combine selected items
+    return _mm_or_si128(blend_a, blend_b); // (a & ~mask) | (b & mask)
+
+#else
+    PFMsimd_i result;
+    int16_t* pa = (int16_t*)&a;
+    int16_t* pb = (int16_t*)&b;
+    int16_t* pmask = (int16_t*)&mask;
+    int16_t* presult = (int16_t*)&result;
+    for (int i = 0; i < 4; ++i) {
+        presult[i] = (pmask[i] < 0) ? pb[i] : pa[i];
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdCmpEQ_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_cmpeq_epi32(x, y);
+#elif defined(__SSE2__)
+    return _mm_cmpeq_epi32(x, y);
+#else
+    PFMsimd_i result;
+    int32_t* px = (int32_t*)&x;
+    int32_t* py = (int32_t*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (px[i] == py[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdCmpEQ_F32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_cmpeq_ps(x, y);
+#elif defined(__SSE2__)
+    return _mm_cmpeq_ps(x, y);
+#else
+    PFMsimd_i result;
+    float* fx = (float*)&x;
+    float* fy = (float*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (fx[i] == fy[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdCmpLT_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_cmpgt_epi32(y, x);
+#elif defined(__SSE2__)
+    return _mm_cmplt_epi32(x, y);
+#else
+    PFMsimd_i result;
+    int32_t* px = (int32_t*)&x;
+    int32_t* py = (int32_t*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (px[i] < py[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdCmpLT_F32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_cmpgt_ps(y, x);
+#elif defined(__SSE2__)
+    return _mm_cmplt_ps(x, y);
+#else
+    PFMsimd_i result;
+    float* fx = (float*)&x;
+    float* fy = (float*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (fx[i] < fy[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdCmpGT_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_cmpgt_epi32(x, y);
+#elif defined(__SSE2__)
+    return _mm_cmpgt_epi32(x, y);
+#else
+    PFMsimd_i result;
+    int32_t* px = (int32_t*)&x;
+    int32_t* py = (int32_t*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (px[i] > py[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdCmpGT_F32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_cmpgt_ps(x, y);
+#elif defined(__SSE2__)
+    return _mm_cmpgt_ps(x, y);
+#else
+    PFMsimd_i result;
+    float* fx = (float*)&x;
+    float* fy = (float*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (fx[i] > fy[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdCmpLE_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_cmpgt_epi32(y, x);
+#elif defined(__SSE2__)
+    return _mm_cmplt_epi32(x, y);
+#else
+    PFMsimd_i result;
+    int32_t* px = (int32_t*)&x;
+    int32_t* py = (int32_t*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (px[i] <= py[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdCmpLE_F32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_cmpgt_ps(y, x);
+#elif defined(__SSE2__)
+    return _mm_cmplt_ps(x, y);
+#else
+    PFMsimd_i result;
+    float* fx = (float*)&x;
+    float* fy = (float*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (fx[i] <= fy[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdCmpGE_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_cmpgt_epi32(y, x);
+#elif defined(__SSE2__)
+    return _mm_cmpgt_epi32(y, x);
+#else
+    PFMsimd_i result;
+    int32_t* px = (int32_t*)&x;
+    int32_t* py = (int32_t*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (px[i] >= py[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfSimdCmpGE_F32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_cmpgt_ps(y, x);
+#elif defined(__SSE2__)
+    return _mm_cmpgt_ps(y, x);
+#else
+    PFMsimd_i result;
+    float* fx = (float*)&x;
+    float* fy = (float*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (fx[i] >= fy[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+/* 2D SIMD Vector functions definition */
+
+static inline void
+pfmVec2Zero_simd(PFMsimd_vec2 dst)
+{
+    dst[0] = pfSimdSetZero_F32();
+    dst[1] = pfSimdSetZero_F32();
+}
+
+static inline void
+pfmVec2One_simd(PFMsimd_vec2 dst, float v)
+{
+    dst[0] = pfSimdSet1_F32(v);
+    dst[1] = pfSimdSet1_F32(v);
+}
+
+static inline void
+pfmVec2Set_simd(PFMsimd_vec2 dst, float x, float y)
+{
+    dst[0] = pfSimdSet1_F32(x);
+    dst[1] = pfSimdSet1_F32(y);
+}
+
+static inline void
+pfmVec2Copy_simd(aPFMsimd_vec2 restrict dst, const aPFMsimd_vec2 restrict src)
+{
+    memcpy(dst, src, sizeof(PFMsimd_vec2));
+}
+
+static inline void
+pfmVec2Swap_simd(aPFMsimd_vec2 restrict a, aPFMsimd_vec2 restrict b)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        PFMsimd_f tmp = a[i];
+        a[i] = b[i];
+        b[i] = tmp;
+    }
+}
+
+static inline void
+pfmVec2Neg_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdNeg_F32(v[i]);
+    }
+}
+
+static inline void
+pfmVec2NegR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdNeg_F32(v[i]);
+    }
+}
+
+static inline void
+pfmVec2Add_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdAdd_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec2AddR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdAdd_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec2Sub_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdSub_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec2SubR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdSub_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec2Mul_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdMul_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec2MulR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdMul_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec2Div_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdDiv_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec2DivR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdDiv_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec2Offset_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v, PFMsimd_f offset)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdAdd_F32(v[i], offset);
+    }
+}
+
+static inline void
+pfmVec2OffsetR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v, PFMsimd_f offset)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdAdd_F32(v[i], offset);
+    }
+}
+
+static inline void
+pfmVec2Scale_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v, PFMsimd_f scale)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdMul_F32(v[i], scale);
+    }
+}
+
+static inline void
+pfmVec2ScaleR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v, PFMsimd_f scale)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfSimdMul_F32(v[i], scale);
+    }
+}
+
+static inline void
+pfmVec2Normalize_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v)
+{
+    // Calculate the sum of squares of elements
+    PFMsimd_f squaredLength = pfSimdAdd_F32(
+        pfSimdMul_F32(v[0], v[0]),
+        pfSimdMul_F32(v[1], v[1]));
+
+    // Calculate the inverse of the square root of length squared
+    PFMsimd_f invLength = pfSimdRSqrt_F32(squaredLength);
+
+    // Normalize vectors
+    dst[0] = pfSimdMul_F32(v[0], invLength);
+    dst[1] = pfSimdMul_F32(v[1], invLength);
+}
+
+static inline void
+pfmVec2NormalizeR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v)
+{
+    // Calculate the sum of squares of elements
+    PFMsimd_f squaredLength = pfSimdAdd_F32(
+        pfSimdMul_F32(v[0], v[0]),
+        pfSimdMul_F32(v[1], v[1]));
+
+    // Calculate the inverse of the square root of length squared
+    PFMsimd_f invLength = pfSimdRSqrt_F32(squaredLength);
+
+    // Normalize vectors
+    dst[0] = pfSimdMul_F32(v[0], invLength);
+    dst[1] = pfSimdMul_F32(v[1], invLength);
+}
+
+static inline PFMsimd_f
+pfmVec2Length_simd(const PFMsimd_vec2 v)
+{
+    return pfSimdSqrt_F32(pfSimdAdd_F32(
+        pfSimdMul_F32(v[0], v[0]),
+        pfSimdMul_F32(v[1], v[1])));
+}
+
+static inline PFMsimd_f
+pfmVec2LengthSq_simd(const PFMsimd_vec2 v)
+{
+    return pfSimdAdd_F32(
+        pfSimdMul_F32(v[0], v[0]),
+        pfSimdMul_F32(v[1], v[1]));
+}
+
+static inline PFMsimd_f
+pfmVec2Dot_simd(const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
+{
+    return pfSimdAdd_F32(
+        pfSimdMul_F32(v1[0], v2[0]),
+        pfSimdMul_F32(v1[1], v2[1]));
+}
+
+static inline PFMsimd_f
+pfmVec2Distance_simd(const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
+{
+    // Calculate the differences between corresponding elements of the vectors
+    PFMsimd_f dt0 = pfSimdSub_F32(v1[0], v2[0]);
+    PFMsimd_f dt1 = pfSimdSub_F32(v1[1], v2[1]);
+
+    // Calculate the squared differences
+    PFMsimd_f dt0Sq = pfSimdMul_F32(dt0, dt0);
+    PFMsimd_f dt1Sq = pfSimdMul_F32(dt1, dt1);
+
+    // Sum the squared differences
+    PFMsimd_f distanceSq = pfSimdAdd_F32(dt0Sq, dt1Sq);
+
+    // Calculate and return the square root of the sum of squared differences
+    return pfSimdSqrt_F32(distanceSq);
+}
+
+static inline PFMsimd_f
+pfmVec2DistanceSq_simd(const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
+{
+    // Calculate the differences between corresponding elements of the vectors
+    PFMsimd_f dt0 = pfSimdSub_F32(v1[0], v2[0]);
+    PFMsimd_f dt1 = pfSimdSub_F32(v1[1], v2[1]);
+
+    // Calculate the squared differences
+    PFMsimd_f dt0Sq = pfSimdMul_F32(dt0, dt0);
+    PFMsimd_f dt1Sq = pfSimdMul_F32(dt1, dt1);
+
+    // Sum the squared differences and return the result
+    return pfSimdAdd_F32(dt0Sq, dt1Sq);
+}
+
+static inline void
+pfmVec2Direction_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
+{
+    // Calculate the differences between the elements of the two vectors
+    PFMsimd_f tmp0 = pfSimdSub_F32(v1[0], v2[0]);
+    PFMsimd_f tmp1 = pfSimdSub_F32(v1[1], v2[1]);
+
+    // Calculate the sum of the squares of these differences to obtain the length squared
+    PFMsimd_f lengthSq = pfSimdAdd_F32(pfSimdMul_F32(tmp0, tmp0), pfSimdMul_F32(tmp1, tmp1));
+
+    // Calculate the inverse of the square root of the length squared to normalize the differences
+    PFMsimd_f invLength = pfSimdRSqrt_F32(lengthSq);
+
+    // Multiply each difference by this inverse to obtain the normalized direction
+    dst[0] = pfSimdMul_F32(tmp0, invLength);
+    dst[1] = pfSimdMul_F32(tmp1, invLength);
+}
+
+static inline void
+pfmVec2DirectionR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
+{
+    // Calculate the differences between the elements of the two vectors
+    dst[0] = pfSimdSub_F32(v1[0], v2[0]);
+    dst[1] = pfSimdSub_F32(v1[1], v2[1]);
+
+    // Calculate the sum of the squares of these differences to obtain the length squared
+    PFMsimd_f lengthSq = pfSimdAdd_F32(pfSimdMul_F32(dst[0], dst[0]), pfSimdMul_F32(dst[1], dst[1]));
+
+    // Calculate the inverse of the square root of the length squared to normalize the differences
+    PFMsimd_f invLength = pfSimdRSqrt_F32(lengthSq);
+
+    // Multiply each difference by this inverse to obtain the normalized direction
+    dst[0] = pfSimdMul_F32(dst[0], invLength);
+    dst[1] = pfSimdMul_F32(dst[1], invLength);
+}
+
+static inline void
+pfmVec2Lerp_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, PFMsimd_f t)
+{
+    dst[0] = pfSimdAdd_F32(v1[0], pfSimdMul_F32(t, pfSimdSub_F32(v2[0], v1[0])));
+    dst[1] = pfSimdAdd_F32(v1[1], pfSimdMul_F32(t, pfSimdSub_F32(v2[1], v1[1])));
+}
+
+static inline void
+pfmVec2LerpR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, PFMsimd_f t)
+{
+    // Calculate the difference (v2 - v1)
+    PFMsimd_f diff0 = pfSimdSub_F32(v2[0], v1[0]);
+    PFMsimd_f diff1 = pfSimdSub_F32(v2[1], v1[1]);
+
+    // Multiply the difference by t
+    PFMsimd_f t_diff0 = pfSimdMul_F32(t, diff0);
+    PFMsimd_f t_diff1 = pfSimdMul_F32(t, diff1);
+
+    // Add the result to v1 to get the interpolation result
+    dst[0] = pfSimdAdd_F32(v1[0], t_diff0);
+    dst[1] = pfSimdAdd_F32(v1[1], t_diff1);
+}
+
+static inline void
+pfmVec2BaryInterp_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
+{
+    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
+    PFMsimd_f v1_w1_0 = pfSimdMul_F32(v1[0], w1);
+    PFMsimd_f v1_w1_1 = pfSimdMul_F32(v1[1], w1);
+
+    PFMsimd_f v2_w2_0 = pfSimdMul_F32(v2[0], w2);
+    PFMsimd_f v2_w2_1 = pfSimdMul_F32(v2[1], w2);
+
+    PFMsimd_f v3_w3_0 = pfSimdMul_F32(v3[0], w3);
+    PFMsimd_f v3_w3_1 = pfSimdMul_F32(v3[1], w3);
+
+    // Add the results to obtain the barycentric interpolation
+    dst[0] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+}
+
+
+static inline void
+pfmVec2BaryInterpR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
+{
+    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
+    PFMsimd_f v1_w1_0 = pfSimdMul_F32(v1[0], w1);
+    PFMsimd_f v1_w1_1 = pfSimdMul_F32(v1[1], w1);
+
+    PFMsimd_f v2_w2_0 = pfSimdMul_F32(v2[0], w2);
+    PFMsimd_f v2_w2_1 = pfSimdMul_F32(v2[1], w2);
+
+    PFMsimd_f v3_w3_0 = pfSimdMul_F32(v3[0], w3);
+    PFMsimd_f v3_w3_1 = pfSimdMul_F32(v3[1], w3);
+
+    // Add the results to obtain the barycentric interpolation
+    dst[0] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+}
+
+static inline void
+pfmVec2BaryInterpV_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, const PFMsimd_vec3 w)
+{
+    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
+    PFMsimd_f v1_w1_0 = pfSimdMul_F32(v1[0], w[0]);
+    PFMsimd_f v1_w1_1 = pfSimdMul_F32(v1[1], w[0]);
+
+    PFMsimd_f v2_w2_0 = pfSimdMul_F32(v2[0], w[1]);
+    PFMsimd_f v2_w2_1 = pfSimdMul_F32(v2[1], w[1]);
+
+    PFMsimd_f v3_w3_0 = pfSimdMul_F32(v3[0], w[2]);
+    PFMsimd_f v3_w3_1 = pfSimdMul_F32(v3[1], w[2]);
+
+    // Add the results to obtain the barycentric interpolation
+    dst[0] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+}
+
+static inline void
+pfmVec2BaryInterpVR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, const PFMsimd_vec3 w)
+{
+    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
+    PFMsimd_f v1_w1_0 = pfSimdMul_F32(v1[0], w[0]);
+    PFMsimd_f v1_w1_1 = pfSimdMul_F32(v1[1], w[0]);
+
+    PFMsimd_f v2_w2_0 = pfSimdMul_F32(v2[0], w[1]);
+    PFMsimd_f v2_w2_1 = pfSimdMul_F32(v2[1], w[1]);
+
+    PFMsimd_f v3_w3_0 = pfSimdMul_F32(v3[0], w[2]);
+    PFMsimd_f v3_w3_1 = pfSimdMul_F32(v3[1], w[2]);
+
+    // Add the results to obtain the barycentric interpolation
+    dst[0] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+}
+
+static inline void pfmVec2Transform_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v, const float mat[16])
+{
+    // Load array elements into SIMD registers
+    PFMsimd_f mat_col0 = pfSimdSet1_F32(mat[0]);
+    PFMsimd_f mat_col1 = pfSimdSet1_F32(mat[1]);
+    PFMsimd_f mat_col4 = pfSimdSet1_F32(mat[4]);
+    PFMsimd_f mat_col5 = pfSimdSet1_F32(mat[5]);
+    PFMsimd_f mat_col12 = pfSimdSet1_F32(mat[12]);
+    PFMsimd_f mat_col13 = pfSimdSet1_F32(mat[13]);
+
+    // Perform SIMD operations and store results in destination vector
+    PFMsimd_f tmp0 = pfSimdAdd_F32(pfSimdAdd_F32(pfSimdMul_F32(mat_col0, v[0]), pfSimdMul_F32(mat_col4, v[1])), mat_col12);
+    PFMsimd_f tmp1 = pfSimdAdd_F32(pfSimdAdd_F32(pfSimdMul_F32(mat_col1, v[0]), pfSimdMul_F32(mat_col5, v[1])), mat_col13);
+
+    dst[0] = tmp0;
+    dst[1] = tmp1;
+}
+
+static inline void
+pfmVec2TransformR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v, const float mat[16])
+{
+    // Load array elements into SIMD registers
+    PFMsimd_f mat_col0 = pfSimdSet1_F32(mat[0]);
+    PFMsimd_f mat_col1 = pfSimdSet1_F32(mat[1]);
+    PFMsimd_f mat_col4 = pfSimdSet1_F32(mat[4]);
+    PFMsimd_f mat_col5 = pfSimdSet1_F32(mat[5]);
+    PFMsimd_f mat_col12 = pfSimdSet1_F32(mat[12]);
+    PFMsimd_f mat_col13 = pfSimdSet1_F32(mat[13]);
+
+    // Perform SIMD operations and store results in destination vector
+    dst[0] = pfSimdAdd_F32(pfSimdAdd_F32(pfSimdMul_F32(mat_col0, v[0]), pfSimdMul_F32(mat_col4, v[1])), mat_col12);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(pfSimdMul_F32(mat_col1, v[0]), pfSimdMul_F32(mat_col5, v[1])), mat_col13);
+}
+
+static inline void
+pfmVec2TransformWT_simd(PFMsimd_vec2 dst, const PFMsimd_vec2 v, float wTranslation, const float mat[16])
+{
+    // Load array elements into SIMD registers
+    PFMsimd_f mat_col0 = pfSimdSet1_F32(mat[0]);
+    PFMsimd_f mat_col1 = pfSimdSet1_F32(mat[1]);
+    PFMsimd_f mat_col4 = pfSimdSet1_F32(mat[4]);
+    PFMsimd_f mat_col5 = pfSimdSet1_F32(mat[5]);
+    PFMsimd_f mat_col12 = pfSimdSet1_F32(mat[12]);
+    PFMsimd_f mat_col13 = pfSimdSet1_F32(mat[13]);
+    
+    // Load wTranslation into a SIMD register
+    PFMsimd_f wTrans = pfSimdSet1_F32(wTranslation);
+
+    // Perform SIMD operations and store results in destination vector
+    PFMsimd_f tmp0 = pfSimdAdd_F32(
+                    pfSimdAdd_F32(pfSimdMul_F32(mat_col0, v[0]), pfSimdMul_F32(mat_col4, v[1])), 
+                    pfSimdMul_F32(wTrans, mat_col12));
+    PFMsimd_f tmp1 = pfSimdAdd_F32(
+                    pfSimdAdd_F32(pfSimdMul_F32(mat_col1, v[0]), pfSimdMul_F32(mat_col5, v[1])), 
+                    pfSimdMul_F32(wTrans, mat_col13));
+
+    dst[0] = tmp0;
+    dst[1] = tmp1;
+}
+
+
+static inline void
+pfmVec2TransformWTR_simd(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v, float wTranslation, const float mat[16])
+{
+    // Load array elements into SIMD registers
+    PFMsimd_f mat_col0 = pfSimdSet1_F32(mat[0]);
+    PFMsimd_f mat_col1 = pfSimdSet1_F32(mat[1]);
+    PFMsimd_f mat_col4 = pfSimdSet1_F32(mat[4]);
+    PFMsimd_f mat_col5 = pfSimdSet1_F32(mat[5]);
+    PFMsimd_f mat_col12 = pfSimdSet1_F32(mat[12]);
+    PFMsimd_f mat_col13 = pfSimdSet1_F32(mat[13]);
+    
+    // Load wTranslation into a SIMD register
+    PFMsimd_f wTrans = pfSimdSet1_F32(wTranslation);
+
+    // Perform SIMD operations and store results in destination vector
+    dst[0] = pfSimdAdd_F32(
+                pfSimdAdd_F32(pfSimdMul_F32(mat_col0, v[0]), pfSimdMul_F32(mat_col4, v[1])), 
+                pfSimdMul_F32(wTrans, mat_col12));
+    dst[1] = pfSimdAdd_F32(
+                pfSimdAdd_F32(pfSimdMul_F32(mat_col1, v[0]), pfSimdMul_F32(mat_col5, v[1])), 
+                pfSimdMul_F32(wTrans, mat_col13));
+}
+
+/* 3D SIMD Vector functions definition */
+
+static inline void
+pfmVec3Zero_simd(PFMsimd_vec3 dst)
+{
+    dst[0] = pfSimdSetZero_F32();
+    dst[1] = pfSimdSetZero_F32();
+    dst[2] = pfSimdSetZero_F32();
+}
+
+static inline void
+pfmVec3One_simd(PFMsimd_vec3 dst, float v)
+{
+    dst[0] = pfSimdSet1_F32(v);
+    dst[1] = pfSimdSet1_F32(v);
+    dst[2] = pfSimdSet1_F32(v);
+}
+
+static inline void
+pfmVec3Set_simd(PFMsimd_vec3 dst, float x, float y, float z)
+{
+    dst[0] = pfSimdSet1_F32(x);
+    dst[1] = pfSimdSet1_F32(y);
+    dst[2] = pfSimdSet1_F32(z);
+}
+
+static inline void
+pfmVec3Copy_simd(aPFMsimd_vec3 restrict dst, const aPFMsimd_vec3 restrict src)
+{
+    memcpy(dst, src, sizeof(PFMsimd_vec3));
+}
+
+static inline void
+pfmVec3Swap_simd(aPFMsimd_vec3 restrict a, aPFMsimd_vec3 restrict b)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        PFMsimd_f tmp = a[i];
+        a[i] = b[i];
+        b[i] = tmp;
+    }
+}
+
+static inline void
+pfmVec3Neg_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdNeg_F32(v[i]);
+    }
+}
+
+static inline void
+pfmVec3NegR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdNeg_F32(v[i]);
+    }
+}
+
+static inline void
+pfmVec3Add_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdAdd_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec3AddR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdAdd_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec3Sub_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdSub_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec3SubR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdSub_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec3Mul_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdMul_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec3MulR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdMul_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec3Div_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdDiv_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec3DivR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdDiv_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec3Offset_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v, PFMsimd_f offset)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdAdd_F32(v[i], offset);
+    }
+}
+
+static inline void
+pfmVec3OffsetR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v, PFMsimd_f offset)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdAdd_F32(v[i], offset);
+    }
+}
+
+static inline void
+pfmVec3Scale_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v, PFMsimd_f scale)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdMul_F32(v[i], scale);
+    }
+}
+
+static inline void
+pfmVec3ScaleR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v, PFMsimd_f scale)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdMul_F32(v[i], scale);
+    }
+}
+
+static inline void
+pfmVec3Normalize_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v)
+{
+    // Calculate the sum of squares of elements
+    PFMsimd_f squaredLength = pfSimdAdd_F32(
+        pfSimdMul_F32(v[0], v[0]),
+        pfSimdMul_F32(v[1], v[1]));
+
+    squaredLength = pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v[2], v[2]));
+
+    // Calculate the inverse of the square root of length squared
+    PFMsimd_f invLength = pfSimdRSqrt_F32(squaredLength);
+
+    // Normalize vectors
+    dst[0] = pfSimdMul_F32(v[0], invLength);
+    dst[1] = pfSimdMul_F32(v[1], invLength);
+    dst[2] = pfSimdMul_F32(v[2], invLength);
+}
+
+static inline void
+pfmVec3NormalizeR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v)
+{
+    // Calculate the sum of squares of elements
+    PFMsimd_f squaredLength = pfSimdAdd_F32(
+        pfSimdMul_F32(v[0], v[0]),
+        pfSimdMul_F32(v[1], v[1]));
+
+    squaredLength = pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v[2], v[2]));
+
+    // Calculate the inverse of the square root of length squared
+    PFMsimd_f invLength = pfSimdRSqrt_F32(squaredLength);
+
+    // Normalize vectors
+    dst[0] = pfSimdMul_F32(v[0], invLength);
+    dst[1] = pfSimdMul_F32(v[1], invLength);
+    dst[2] = pfSimdMul_F32(v[2], invLength);
+}
+
+static inline PFMsimd_f
+pfmVec3Length_simd(const PFMsimd_vec3 v)
+{
+    PFMsimd_f squaredLength = pfSimdAdd_F32(
+        pfSimdMul_F32(v[0], v[0]),
+        pfSimdMul_F32(v[1], v[1]));
+
+    squaredLength = pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v[2], v[2]));
+
+    return pfSimdSqrt_F32(squaredLength);
+}
+
+static inline PFMsimd_f
+pfmVec3LengthSq_simd(const PFMsimd_vec3 v)
+{
+    PFMsimd_f squaredLength = pfSimdAdd_F32(
+        pfSimdMul_F32(v[0], v[0]),
+        pfSimdMul_F32(v[1], v[1]));
+
+    return pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v[2], v[2]));
+}
+
+static inline PFMsimd_f
+pfmVec3Dot_simd(const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    PFMsimd_f squaredLength = pfSimdAdd_F32(
+        pfSimdMul_F32(v1[0], v2[0]),
+        pfSimdMul_F32(v1[1], v2[1]));
+
+    return pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v1[2], v2[2]));
+}
+
+static inline void
+pfmVec3Cross_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    PFMsimd_vec3 tmp = { 0 };
+
+    tmp[0] = pfSimdSub_F32(
+        pfSimdMul_F32(v1[1], v2[2]),
+        pfSimdMul_F32(v1[2], v2[1]));
+
+    tmp[1] = pfSimdSub_F32(
+        pfSimdMul_F32(v1[2], v2[0]),
+        pfSimdMul_F32(v1[0], v2[2]));
+
+    tmp[2] = pfSimdSub_F32(
+        pfSimdMul_F32(v1[0], v2[1]),
+        pfSimdMul_F32(v1[1], v2[0]));
+
+    memcpy(dst, tmp, sizeof(PFMsimd_vec3));
+}
+
+static inline void
+pfmVec3CrossR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    dst[0] = pfSimdSub_F32(
+        pfSimdMul_F32(v1[1], v2[2]),
+        pfSimdMul_F32(v1[2], v2[1]));
+
+    dst[1] = pfSimdSub_F32(
+        pfSimdMul_F32(v1[2], v2[0]),
+        pfSimdMul_F32(v1[0], v2[2]));
+
+    dst[2] = pfSimdSub_F32(
+        pfSimdMul_F32(v1[0], v2[1]),
+        pfSimdMul_F32(v1[1], v2[0]));
+}
+
+static inline PFMsimd_f
+pfmVec3Distance_simd(const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    // Calculate the differences between corresponding elements of the vectors
+    PFMsimd_f dt0 = pfSimdSub_F32(v1[0], v2[0]);
+    PFMsimd_f dt1 = pfSimdSub_F32(v1[1], v2[1]);;
+    PFMsimd_f dt2 = pfSimdSub_F32(v1[1], v2[1]);
+
+    // Calculate the squared differences
+    PFMsimd_f dt0Sq = pfSimdMul_F32(dt0, dt0);
+    PFMsimd_f dt1Sq = pfSimdMul_F32(dt1, dt1);
+    PFMsimd_f dt2Sq = pfSimdMul_F32(dt2, dt2);
+
+    // Sum the squared differences
+    PFMsimd_f distanceSq = pfSimdAdd_F32(dt0Sq,
+        pfSimdAdd_F32(dt1Sq, dt2Sq));
+
+    // Calculate and return the square root of the sum of squared differences
+    return pfSimdSqrt_F32(distanceSq);
+}
+
+static inline PFMsimd_f
+pfmVec3DistanceSq_simd(const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    // Calculate the differences between corresponding elements of the vectors
+    PFMsimd_f dt0 = pfSimdSub_F32(v1[0], v2[0]);
+    PFMsimd_f dt1 = pfSimdSub_F32(v1[1], v2[1]);;
+    PFMsimd_f dt2 = pfSimdSub_F32(v1[1], v2[1]);
+
+    // Calculate the squared differences
+    PFMsimd_f dt0Sq = pfSimdMul_F32(dt0, dt0);
+    PFMsimd_f dt1Sq = pfSimdMul_F32(dt1, dt1);
+    PFMsimd_f dt2Sq = pfSimdMul_F32(dt2, dt2);
+
+    // Sum the squared differences
+    PFMsimd_f distanceSq = pfSimdAdd_F32(dt0Sq,
+        pfSimdAdd_F32(dt1Sq, dt2Sq));
+
+    // Calculate and return the square root of the sum of squared differences
+    return distanceSq;
+}
+
+static inline void
+pfmVec3Direction_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    // Calculate the differences between the elements of the two vectors
+    PFMsimd_f tmp0 = pfSimdSub_F32(v1[0], v2[0]);
+    PFMsimd_f tmp1 = pfSimdSub_F32(v1[1], v2[1]);
+    PFMsimd_f tmp2 = pfSimdSub_F32(v1[2], v2[2]);
+
+    // Calculate the sum of the squares of these differences to obtain the length squared
+    PFMsimd_f lengthSq = pfSimdAdd_F32(pfSimdMul_F32(tmp0, tmp0), pfSimdMul_F32(tmp1, tmp1));
+    lengthSq = pfSimdAdd_F32(lengthSq, pfSimdMul_F32(tmp2, tmp2));
+
+    // Calculate the inverse of the square root of the length squared to normalize the differences
+    PFMsimd_f invLength = pfSimdRSqrt_F32(lengthSq);
+
+    // Multiply each difference by this inverse to obtain the normalized direction
+    dst[0] = pfSimdMul_F32(tmp0, invLength);
+    dst[1] = pfSimdMul_F32(tmp1, invLength);
+    dst[2] = pfSimdMul_F32(tmp2, invLength);
+}
+
+static inline void
+pfmVec3DirectionR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
+{
+    // Calculate the differences between the elements of the two vectors
+    dst[0] = pfSimdSub_F32(v1[0], v2[0]);
+    dst[1] = pfSimdSub_F32(v1[1], v2[1]);
+    dst[2] = pfSimdSub_F32(v1[2], v2[2]);
+
+    // Calculate the sum of the squares of these differences to obtain the length squared
+    PFMsimd_f lengthSq = pfSimdAdd_F32(pfSimdMul_F32(dst[0], dst[0]), pfSimdMul_F32(dst[1], dst[1]));
+    lengthSq = pfSimdAdd_F32(lengthSq, pfSimdMul_F32(dst[2], dst[2]));
+
+    // Calculate the inverse of the square root of the length squared to normalize the differences
+    PFMsimd_f invLength = pfSimdRSqrt_F32(lengthSq);
+
+    // Multiply each difference by this inverse to obtain the normalized direction
+    dst[0] = pfSimdMul_F32(dst[0], invLength);
+    dst[1] = pfSimdMul_F32(dst[1], invLength);
+    dst[2] = pfSimdMul_F32(dst[2], invLength);
+}
+
+static inline void
+pfmVec3Lerp_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, PFMsimd_f t)
+{
+    dst[0] = pfSimdAdd_F32(v1[0], pfSimdMul_F32(t, pfSimdSub_F32(v2[0], v1[0])));
+    dst[1] = pfSimdAdd_F32(v1[1], pfSimdMul_F32(t, pfSimdSub_F32(v2[1], v1[1])));
+    dst[2] = pfSimdAdd_F32(v1[2], pfSimdMul_F32(t, pfSimdSub_F32(v2[2], v1[2])));
+}
+
+static inline void
+pfmVec3LerpR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, PFMsimd_f t)
+{
+    dst[0] = pfSimdAdd_F32(v1[0], pfSimdMul_F32(t, pfSimdSub_F32(v2[0], v1[0])));
+    dst[1] = pfSimdAdd_F32(v1[1], pfSimdMul_F32(t, pfSimdSub_F32(v2[1], v1[1])));
+    dst[2] = pfSimdAdd_F32(v1[2], pfSimdMul_F32(t, pfSimdSub_F32(v2[2], v1[2])));
+}
+
+static inline void
+pfmVec3BaryInterp_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
+{
+    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
+    PFMsimd_f v1_w1_0 = pfSimdMul_F32(v1[0], w1);
+    PFMsimd_f v1_w1_1 = pfSimdMul_F32(v1[1], w1);
+    PFMsimd_f v1_w1_2 = pfSimdMul_F32(v1[2], w1);
+
+    PFMsimd_f v2_w2_0 = pfSimdMul_F32(v2[0], w2);
+    PFMsimd_f v2_w2_1 = pfSimdMul_F32(v2[1], w2);
+    PFMsimd_f v2_w2_2 = pfSimdMul_F32(v2[2], w2);
+
+    PFMsimd_f v3_w3_0 = pfSimdMul_F32(v3[0], w3);
+    PFMsimd_f v3_w3_1 = pfSimdMul_F32(v3[1], w3);
+    PFMsimd_f v3_w3_2 = pfSimdMul_F32(v3[2], w3);
+
+    // Add the results to obtain the barycentric interpolation
+    dst[0] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    dst[2] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+}
+
+
+static inline void
+pfmVec3BaryInterpR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
+{
+    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
+    PFMsimd_f v1_w1_0 = pfSimdMul_F32(v1[0], w1);
+    PFMsimd_f v1_w1_1 = pfSimdMul_F32(v1[1], w1);
+    PFMsimd_f v1_w1_2 = pfSimdMul_F32(v1[2], w1);
+
+    PFMsimd_f v2_w2_0 = pfSimdMul_F32(v2[0], w2);
+    PFMsimd_f v2_w2_1 = pfSimdMul_F32(v2[1], w2);
+    PFMsimd_f v2_w2_2 = pfSimdMul_F32(v2[2], w2);
+
+    PFMsimd_f v3_w3_0 = pfSimdMul_F32(v3[0], w3);
+    PFMsimd_f v3_w3_1 = pfSimdMul_F32(v3[1], w3);
+    PFMsimd_f v3_w3_2 = pfSimdMul_F32(v3[2], w3);
+
+    // Add the results to obtain the barycentric interpolation
+    dst[0] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+}
+
+static inline void
+pfmVec3BaryInterpV_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, const PFMsimd_vec3 w)
+{
+    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
+    PFMsimd_f v1_w1_0 = pfSimdMul_F32(v1[0], w[0]);
+    PFMsimd_f v1_w1_1 = pfSimdMul_F32(v1[1], w[0]);
+    PFMsimd_f v1_w1_2 = pfSimdMul_F32(v1[2], w[0]);
+
+    PFMsimd_f v2_w2_0 = pfSimdMul_F32(v2[0], w[1]);
+    PFMsimd_f v2_w2_1 = pfSimdMul_F32(v2[1], w[1]);
+    PFMsimd_f v2_w2_2 = pfSimdMul_F32(v2[2], w[1]);
+
+    PFMsimd_f v3_w3_0 = pfSimdMul_F32(v3[0], w[2]);
+    PFMsimd_f v3_w3_1 = pfSimdMul_F32(v3[1], w[2]);
+    PFMsimd_f v3_w3_2 = pfSimdMul_F32(v3[2], w[2]);
+
+    // Add the results to obtain the barycentric interpolation
+    dst[0] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+}
+
+static inline void
+pfmVec3BaryInterpVR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, const PFMsimd_vec3 w)
+{
+    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
+    PFMsimd_f v1_w1_0 = pfSimdMul_F32(v1[0], w[0]);
+    PFMsimd_f v1_w1_1 = pfSimdMul_F32(v1[1], w[0]);
+    PFMsimd_f v1_w1_2 = pfSimdMul_F32(v1[2], w[0]);
+
+    PFMsimd_f v2_w2_0 = pfSimdMul_F32(v2[0], w[1]);
+    PFMsimd_f v2_w2_1 = pfSimdMul_F32(v2[1], w[1]);
+    PFMsimd_f v2_w2_2 = pfSimdMul_F32(v2[2], w[1]);
+
+    PFMsimd_f v3_w3_0 = pfSimdMul_F32(v3[0], w[2]);
+    PFMsimd_f v3_w3_1 = pfSimdMul_F32(v3[1], w[2]);
+    PFMsimd_f v3_w3_2 = pfSimdMul_F32(v3[2], w[2]);
+
+    // Add the results to obtain the barycentric interpolation
+    dst[0] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+}
+
+static inline void
+pfmVec3Transform_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v, const float mat[16])
+{
+    // Charger les éléments de la matrice dans les registres SIMD
+    PFMsimd_f mat_col0 = pfSimdSet1_F32(mat[0]);
+    PFMsimd_f mat_col1 = pfSimdSet1_F32(mat[1]);
+    PFMsimd_f mat_col2 = pfSimdSet1_F32(mat[2]);
+    PFMsimd_f mat_col4 = pfSimdSet1_F32(mat[4]);
+    PFMsimd_f mat_col5 = pfSimdSet1_F32(mat[5]);
+    PFMsimd_f mat_col6 = pfSimdSet1_F32(mat[6]);
+    PFMsimd_f mat_col8 = pfSimdSet1_F32(mat[8]);
+    PFMsimd_f mat_col9 = pfSimdSet1_F32(mat[9]);
+    PFMsimd_f mat_col10 = pfSimdSet1_F32(mat[10]);
+    PFMsimd_f mat_col12 = pfSimdSet1_F32(mat[12]);
+    PFMsimd_f mat_col13 = pfSimdSet1_F32(mat[13]);
+    PFMsimd_f mat_col14 = pfSimdSet1_F32(mat[14]);
+
+    // Calculer les composants du vecteur transformé
+    PFMsimd_f tmp0 = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col0, v[0]), pfSimdMul_F32(mat_col4, v[1])),
+            pfSimdMul_F32(mat_col8, v[2])
+        ),
+        mat_col12
+    );
+
+    PFMsimd_f tmp1 = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col1, v[0]), pfSimdMul_F32(mat_col5, v[1])),
+            pfSimdMul_F32(mat_col9, v[2])
+        ),
+        mat_col13
+    );
+
+    PFMsimd_f tmp2 = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col2, v[0]), pfSimdMul_F32(mat_col6, v[1])),
+            pfSimdMul_F32(mat_col10, v[2])
+        ),
+        mat_col14
+    );
+
+    // Stocker les résultats dans le vecteur destination
+    dst[0] = tmp0;
+    dst[1] = tmp1;
+    dst[2] = tmp2;
+}
+
+static inline void
+pfmVec3TransformR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v, const float mat[16])
+{
+    PFMsimd_f mat_col0 = pfSimdSet1_F32(mat[0]);
+    PFMsimd_f mat_col1 = pfSimdSet1_F32(mat[1]);
+    PFMsimd_f mat_col2 = pfSimdSet1_F32(mat[2]);
+    PFMsimd_f mat_col4 = pfSimdSet1_F32(mat[4]);
+    PFMsimd_f mat_col5 = pfSimdSet1_F32(mat[5]);
+    PFMsimd_f mat_col6 = pfSimdSet1_F32(mat[6]);
+    PFMsimd_f mat_col8 = pfSimdSet1_F32(mat[8]);
+    PFMsimd_f mat_col9 = pfSimdSet1_F32(mat[9]);
+    PFMsimd_f mat_col10 = pfSimdSet1_F32(mat[10]);
+    PFMsimd_f mat_col12 = pfSimdSet1_F32(mat[12]);
+    PFMsimd_f mat_col13 = pfSimdSet1_F32(mat[13]);
+    PFMsimd_f mat_col14 = pfSimdSet1_F32(mat[14]);
+
+    dst[0] = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col0, v[0]), pfSimdMul_F32(mat_col4, v[1])),
+            pfSimdMul_F32(mat_col8, v[2])
+        ),
+        mat_col12
+    );
+
+    dst[1] = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col1, v[0]), pfSimdMul_F32(mat_col5, v[1])),
+            pfSimdMul_F32(mat_col9, v[2])
+        ),
+        mat_col13
+    );
+
+    dst[2] = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col2, v[0]), pfSimdMul_F32(mat_col6, v[1])),
+            pfSimdMul_F32(mat_col10, v[2])
+        ),
+        mat_col14
+    );
+}
+
+static inline void
+pfmVec3TransformWT_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 v, float wTranslation, const float mat[16])
+{
+    PFMsimd_f mat_col0 = pfSimdSet1_F32(mat[0]);
+    PFMsimd_f mat_col1 = pfSimdSet1_F32(mat[1]);
+    PFMsimd_f mat_col2 = pfSimdSet1_F32(mat[2]);
+    PFMsimd_f mat_col4 = pfSimdSet1_F32(mat[4]);
+    PFMsimd_f mat_col5 = pfSimdSet1_F32(mat[5]);
+    PFMsimd_f mat_col6 = pfSimdSet1_F32(mat[6]);
+    PFMsimd_f mat_col8 = pfSimdSet1_F32(mat[8]);
+    PFMsimd_f mat_col9 = pfSimdSet1_F32(mat[9]);
+    PFMsimd_f mat_col10 = pfSimdSet1_F32(mat[10]);
+    PFMsimd_f mat_col12 = pfSimdSet1_F32(mat[12]);
+    PFMsimd_f mat_col13 = pfSimdSet1_F32(mat[13]);
+    PFMsimd_f mat_col14 = pfSimdSet1_F32(mat[14]);
+
+    PFMsimd_f wTranslation_simd = pfSimdSet1_F32(wTranslation);
+
+    PFMsimd_f tmp0 = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col0, v[0]), pfSimdMul_F32(mat_col4, v[1])),
+            pfSimdMul_F32(mat_col8, v[2])
+        ),
+        pfSimdMul_F32(wTranslation_simd, mat_col12)
+    );
+
+    PFMsimd_f tmp1 = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col1, v[0]), pfSimdMul_F32(mat_col5, v[1])),
+            pfSimdMul_F32(mat_col9, v[2])
+        ),
+        pfSimdMul_F32(wTranslation_simd, mat_col13)
+    );
+
+    PFMsimd_f tmp2 = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col2, v[0]), pfSimdMul_F32(mat_col6, v[1])),
+            pfSimdMul_F32(mat_col10, v[2])
+        ),
+        pfSimdMul_F32(wTranslation_simd, mat_col14)
+    );
+
+    dst[0] = tmp0;
+    dst[1] = tmp1;
+    dst[2] = tmp2;
+}
+
+static inline void
+pfmVec3TransformWTR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v, float wTranslation, const float mat[16])
+{
+    PFMsimd_f mat_col0 = pfSimdSet1_F32(mat[0]);
+    PFMsimd_f mat_col1 = pfSimdSet1_F32(mat[1]);
+    PFMsimd_f mat_col2 = pfSimdSet1_F32(mat[2]);
+    PFMsimd_f mat_col4 = pfSimdSet1_F32(mat[4]);
+    PFMsimd_f mat_col5 = pfSimdSet1_F32(mat[5]);
+    PFMsimd_f mat_col6 = pfSimdSet1_F32(mat[6]);
+    PFMsimd_f mat_col8 = pfSimdSet1_F32(mat[8]);
+    PFMsimd_f mat_col9 = pfSimdSet1_F32(mat[9]);
+    PFMsimd_f mat_col10 = pfSimdSet1_F32(mat[10]);
+    PFMsimd_f mat_col12 = pfSimdSet1_F32(mat[12]);
+    PFMsimd_f mat_col13 = pfSimdSet1_F32(mat[13]);
+    PFMsimd_f mat_col14 = pfSimdSet1_F32(mat[14]);
+
+    PFMsimd_f wTranslation_simd = pfSimdSet1_F32(wTranslation);
+
+    dst[0] = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col0, v[0]), pfSimdMul_F32(mat_col4, v[1])),
+            pfSimdMul_F32(mat_col8, v[2])
+        ),
+        pfSimdMul_F32(wTranslation_simd, mat_col12)
+    );
+
+    dst[1] = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col1, v[0]), pfSimdMul_F32(mat_col5, v[1])),
+            pfSimdMul_F32(mat_col9, v[2])
+        ),
+        pfSimdMul_F32(wTranslation_simd, mat_col13)
+    );
+
+    dst[2] = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col2, v[0]), pfSimdMul_F32(mat_col6, v[1])),
+            pfSimdMul_F32(mat_col10, v[2])
+        ),
+        pfSimdMul_F32(wTranslation_simd, mat_col14)
+    );
+}
+
+static inline void
+pfmVec3Reflect_simd(PFMsimd_vec3 dst, const PFMsimd_vec3 incident, const PFMsimd_vec3 normal)
+{
+    PFMsimd_f dotProduct = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdMul_F32(incident[0], normal[0]),
+            pfSimdMul_F32(incident[1], normal[1])
+        ),
+        pfSimdMul_F32(incident[2], normal[2])
+    );
+
+    PFMsimd_f dotProduct2 = pfSimdMul_F32(dotProduct, pfSimdSet1_F32(2.0f));
+
+    PFMsimd_f tmp0 = pfSimdSub_F32(incident[0], pfSimdMul_F32(dotProduct2, normal[0]));
+    PFMsimd_f tmp1 = pfSimdSub_F32(incident[1], pfSimdMul_F32(dotProduct2, normal[1]));
+    PFMsimd_f tmp2 = pfSimdSub_F32(incident[2], pfSimdMul_F32(dotProduct2, normal[2]));
+
+    dst[0] = tmp0;
+    dst[1] = tmp1;
+    dst[2] = tmp2;
+}
+
+static inline void
+pfmVec3ReflectR_simd(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 incident, const PFMsimd_vec3 normal)
+{
+    PFMsimd_f dotProduct = pfSimdAdd_F32(
+        pfSimdAdd_F32(
+            pfSimdMul_F32(incident[0], normal[0]),
+            pfSimdMul_F32(incident[1], normal[1])
+        ),
+        pfSimdMul_F32(incident[2], normal[2])
+    );
+
+    PFMsimd_f dotProduct2 = pfSimdMul_F32(dotProduct, pfSimdSet1_F32(2.0f));
+
+    dst[0] = pfSimdSub_F32(incident[0], pfSimdMul_F32(dotProduct2, normal[0]));
+    dst[1] = pfSimdSub_F32(incident[1], pfSimdMul_F32(dotProduct2, normal[1]));
+    dst[2] = pfSimdSub_F32(incident[2], pfSimdMul_F32(dotProduct2, normal[2]));
+}
+
+/* 4D SIMD Vector functions definition */
+
+static inline void
+pfmVec4Zero_simd(PFMsimd_vec4 dst)
+{
+    dst[0] = pfSimdSetZero_F32();
+    dst[1] = pfSimdSetZero_F32();
+    dst[2] = pfSimdSetZero_F32();
+    dst[3] = pfSimdSetZero_F32();
+}
+
+static inline void
+pfmVec4One_simd(PFMsimd_vec4 dst, float v)
+{
+    dst[0] = pfSimdSet1_F32(v);
+    dst[1] = pfSimdSet1_F32(v);
+    dst[2] = pfSimdSet1_F32(v);
+    dst[3] = pfSimdSet1_F32(v);
+}
+
+static inline void
+pfmVec4Set_simd(PFMsimd_vec4 dst, float x, float y, float z, float w)
+{
+    dst[0] = pfSimdSet1_F32(x);
+    dst[1] = pfSimdSet1_F32(y);
+    dst[2] = pfSimdSet1_F32(z);
+    dst[4] = pfSimdSet1_F32(w);
+}
+
+static inline void
+pfmVec4Copy_simd(aPFMsimd_vec4 restrict dst, const aPFMsimd_vec4 restrict src)
+{
+    memcpy(dst, src, sizeof(PFMsimd_vec4));
+}
+
+static inline void
+pfmVec4Swap_simd(aPFMsimd_vec4 restrict a, aPFMsimd_vec4 restrict b)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        PFMsimd_f tmp = a[i];
+        a[i] = b[i];
+        b[i] = tmp;
+    }
+}
+
+static inline void
+pfmVec4Neg_simd(PFMsimd_vec4 dst, const PFMsimd_vec4 v)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = pfSimdNeg_F32(v[i]);
+    }
+}
+
+static inline void
+pfmVec4NegR_simd(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = pfSimdNeg_F32(v[i]);
+    }
+}
+
+static inline void
+pfmVec4Add_simd(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = pfSimdAdd_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec4AddR_simd(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = pfSimdAdd_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec4Sub_simd(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = pfSimdSub_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec4SubR_simd(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = pfSimdSub_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec4Mul_simd(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = pfSimdMul_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec4MulR_simd(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = pfSimdMul_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec4Div_simd(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = pfSimdDiv_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec4DivR_simd(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = pfSimdDiv_F32(v1[i], v2[i]);
+    }
+}
+
+static inline void
+pfmVec4Offset_simd(PFMsimd_vec4 dst, const PFMsimd_vec4 v, PFMsimd_f offset)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdAdd_F32(v[i], offset);
+    }
+}
+
+static inline void
+pfmVec4OffsetR_simd(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v, PFMsimd_f offset)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdAdd_F32(v[i], offset);
+    }
+}
+
+static inline void
+pfmVec4Scale_simd(PFMsimd_vec4 dst, const PFMsimd_vec4 v, PFMsimd_f scale)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdMul_F32(v[i], scale);
+    }
+}
+
+static inline void
+pfmVec4ScaleR_simd(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v, PFMsimd_f scale)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfSimdMul_F32(v[i], scale);
+    }
+}
+
+static inline void
+pfmVec4Normalize_simd(PFMsimd_vec4 dst, const PFMsimd_vec4 v)
+{
+    // Calculate the sum of squares of elements
+    PFMsimd_f squaredLength = pfSimdAdd_F32(
+        pfSimdMul_F32(v[0], v[0]),
+        pfSimdMul_F32(v[1], v[1]));
+
+    squaredLength = pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v[2], v[2]));
+
+    squaredLength = pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v[3], v[3]));
+
+    // Calculate the inverse of the square root of length squared
+    PFMsimd_f invLength = pfSimdRSqrt_F32(squaredLength);
+
+    // Normalize vectors
+    dst[0] = pfSimdMul_F32(v[0], invLength);
+    dst[1] = pfSimdMul_F32(v[1], invLength);
+    dst[2] = pfSimdMul_F32(v[2], invLength);
+    dst[3] = pfSimdMul_F32(v[3], invLength);
+}
+
+static inline void
+pfmVec4NormalizeR_simd(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v)
+{
+    // Calculate the sum of squares of elements
+    PFMsimd_f squaredLength = pfSimdAdd_F32(
+        pfSimdMul_F32(v[0], v[0]),
+        pfSimdMul_F32(v[1], v[1]));
+
+    squaredLength = pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v[2], v[2]));
+
+    squaredLength = pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v[3], v[3]));
+
+    // Calculate the inverse of the square root of length squared
+    PFMsimd_f invLength = pfSimdRSqrt_F32(squaredLength);
+
+    // Normalize vectors
+    dst[0] = pfSimdMul_F32(v[0], invLength);
+    dst[1] = pfSimdMul_F32(v[1], invLength);
+    dst[2] = pfSimdMul_F32(v[2], invLength);
+    dst[3] = pfSimdMul_F32(v[3], invLength);
+}
+
+static inline PFMsimd_f
+pfmVec4Length_simd(const PFMsimd_vec4 v)
+{
+    PFMsimd_f squaredLength = pfSimdAdd_F32(
+        pfSimdMul_F32(v[0], v[0]),
+        pfSimdMul_F32(v[1], v[1]));
+
+    squaredLength = pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v[2], v[2]));
+
+    squaredLength = pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v[3], v[3]));
+
+    return pfSimdSqrt_F32(squaredLength);
+}
+
+static inline PFMsimd_f
+pfmVec4LengthSq_simd(const PFMsimd_vec4 v)
+{
+    PFMsimd_f squaredLength = pfSimdAdd_F32(
+        pfSimdMul_F32(v[0], v[0]),
+        pfSimdMul_F32(v[1], v[1]));
+
+    squaredLength = pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v[2], v[2]));
+
+    return pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v[3], v[3]));
+}
+
+static inline PFMsimd_f
+pfmVec4Dot_simd(const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
+{
+    PFMsimd_f squaredLength = pfSimdAdd_F32(
+        pfSimdMul_F32(v1[0], v2[0]),
+        pfSimdMul_F32(v1[1], v2[1]));
+
+    squaredLength = pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v1[2], v2[2]));
+
+    return pfSimdAdd_F32(squaredLength,
+        pfSimdMul_F32(v1[3], v2[3]));
+}
+
+static inline void
+pfmVec4Lerp_simd(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, PFMsimd_f t)
+{
+    dst[0] = pfSimdAdd_F32(v1[0], pfSimdMul_F32(t, pfSimdSub_F32(v2[0], v1[0])));
+    dst[1] = pfSimdAdd_F32(v1[1], pfSimdMul_F32(t, pfSimdSub_F32(v2[1], v1[1])));
+    dst[2] = pfSimdAdd_F32(v1[2], pfSimdMul_F32(t, pfSimdSub_F32(v2[2], v1[2])));
+    dst[3] = pfSimdAdd_F32(v1[3], pfSimdMul_F32(t, pfSimdSub_F32(v2[3], v1[3])));
+}
+
+static inline void
+pfmVec4LerpR_simd(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, PFMsimd_f t)
+{
+    dst[0] = pfSimdAdd_F32(v1[0], pfSimdMul_F32(t, pfSimdSub_F32(v2[0], v1[0])));
+    dst[1] = pfSimdAdd_F32(v1[1], pfSimdMul_F32(t, pfSimdSub_F32(v2[1], v1[1])));
+    dst[2] = pfSimdAdd_F32(v1[2], pfSimdMul_F32(t, pfSimdSub_F32(v2[2], v1[2])));
+    dst[3] = pfSimdAdd_F32(v1[3], pfSimdMul_F32(t, pfSimdSub_F32(v2[3], v1[3])));
+}
+
+static inline void
+pfmVec4BaryInterp_simd(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
+{
+    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
+    PFMsimd_f v1_w1_0 = pfSimdMul_F32(v1[0], w1);
+    PFMsimd_f v1_w1_1 = pfSimdMul_F32(v1[1], w1);
+    PFMsimd_f v1_w1_2 = pfSimdMul_F32(v1[2], w1);
+    PFMsimd_f v1_w1_3 = pfSimdMul_F32(v1[2], w1);
+
+    PFMsimd_f v2_w2_0 = pfSimdMul_F32(v2[0], w2);
+    PFMsimd_f v2_w2_1 = pfSimdMul_F32(v2[1], w2);
+    PFMsimd_f v2_w2_2 = pfSimdMul_F32(v2[2], w2);
+    PFMsimd_f v2_w2_3 = pfSimdMul_F32(v2[2], w2);
+
+    PFMsimd_f v3_w3_0 = pfSimdMul_F32(v3[0], w3);
+    PFMsimd_f v3_w3_1 = pfSimdMul_F32(v3[1], w3);
+    PFMsimd_f v3_w3_2 = pfSimdMul_F32(v3[2], w3);
+    PFMsimd_f v3_w3_3 = pfSimdMul_F32(v3[2], w3);
+
+    // Add the results to obtain the barycentric interpolation
+    dst[0] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    dst[2] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+    dst[3] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
+}
+
+static inline void
+pfmVec4BaryInterpR_simd(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
+{
+    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
+    PFMsimd_f v1_w1_0 = pfSimdMul_F32(v1[0], w1);
+    PFMsimd_f v1_w1_1 = pfSimdMul_F32(v1[1], w1);
+    PFMsimd_f v1_w1_2 = pfSimdMul_F32(v1[2], w1);
+    PFMsimd_f v1_w1_3 = pfSimdMul_F32(v1[2], w1);
+
+    PFMsimd_f v2_w2_0 = pfSimdMul_F32(v2[0], w2);
+    PFMsimd_f v2_w2_1 = pfSimdMul_F32(v2[1], w2);
+    PFMsimd_f v2_w2_2 = pfSimdMul_F32(v2[2], w2);
+    PFMsimd_f v2_w2_3 = pfSimdMul_F32(v2[2], w2);
+
+    PFMsimd_f v3_w3_0 = pfSimdMul_F32(v3[0], w3);
+    PFMsimd_f v3_w3_1 = pfSimdMul_F32(v3[1], w3);
+    PFMsimd_f v3_w3_2 = pfSimdMul_F32(v3[2], w3);
+    PFMsimd_f v3_w3_3 = pfSimdMul_F32(v3[2], w3);
+
+    // Add the results to obtain the barycentric interpolation
+    dst[0] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    dst[2] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+    dst[3] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
+}
+
+static inline void
+pfmVec4BaryInterpV_simd(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, const PFMsimd_vec3 w)
+{
+    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
+    PFMsimd_f v1_w1_0 = pfSimdMul_F32(v1[0], w[0]);
+    PFMsimd_f v1_w1_1 = pfSimdMul_F32(v1[1], w[0]);
+    PFMsimd_f v1_w1_2 = pfSimdMul_F32(v1[2], w[0]);
+    PFMsimd_f v1_w1_3 = pfSimdMul_F32(v1[2], w[0]);
+
+    PFMsimd_f v2_w2_0 = pfSimdMul_F32(v2[0], w[1]);
+    PFMsimd_f v2_w2_1 = pfSimdMul_F32(v2[1], w[1]);
+    PFMsimd_f v2_w2_2 = pfSimdMul_F32(v2[2], w[1]);
+    PFMsimd_f v2_w2_3 = pfSimdMul_F32(v2[2], w[1]);
+
+    PFMsimd_f v3_w3_0 = pfSimdMul_F32(v3[0], w[2]);
+    PFMsimd_f v3_w3_1 = pfSimdMul_F32(v3[1], w[2]);
+    PFMsimd_f v3_w3_2 = pfSimdMul_F32(v3[2], w[2]);
+    PFMsimd_f v3_w3_3 = pfSimdMul_F32(v3[2], w[2]);
+
+    // Add the results to obtain the barycentric interpolation
+    dst[0] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    dst[2] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+    dst[3] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
+}
+
+static inline void
+pfmVec4BaryInterpVR_simd(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, const PFMsimd_vec3 w)
+{
+    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
+    PFMsimd_f v1_w1_0 = pfSimdMul_F32(v1[0], w[0]);
+    PFMsimd_f v1_w1_1 = pfSimdMul_F32(v1[1], w[0]);
+    PFMsimd_f v1_w1_2 = pfSimdMul_F32(v1[2], w[0]);
+    PFMsimd_f v1_w1_3 = pfSimdMul_F32(v1[2], w[0]);
+
+    PFMsimd_f v2_w2_0 = pfSimdMul_F32(v2[0], w[1]);
+    PFMsimd_f v2_w2_1 = pfSimdMul_F32(v2[1], w[1]);
+    PFMsimd_f v2_w2_2 = pfSimdMul_F32(v2[2], w[1]);
+    PFMsimd_f v2_w2_3 = pfSimdMul_F32(v2[2], w[1]);
+
+    PFMsimd_f v3_w3_0 = pfSimdMul_F32(v3[0], w[2]);
+    PFMsimd_f v3_w3_1 = pfSimdMul_F32(v3[1], w[2]);
+    PFMsimd_f v3_w3_2 = pfSimdMul_F32(v3[2], w[2]);
+    PFMsimd_f v3_w3_3 = pfSimdMul_F32(v3[2], w[2]);
+
+    // Add the results to obtain the barycentric interpolation
+    dst[0] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
+    dst[1] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    dst[2] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+    dst[3] = pfSimdAdd_F32(pfSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
+}
+
+static inline void
+pfmVec4Transform_simd(PFMsimd_vec4 dst, const PFMsimd_vec4 v, const float mat[16])
+{
+    PFMsimd_f mat_col0 = pfSimdSet1_F32(mat[0]);
+    PFMsimd_f mat_col1 = pfSimdSet1_F32(mat[1]);
+    PFMsimd_f mat_col2 = pfSimdSet1_F32(mat[2]);
+    PFMsimd_f mat_col3 = pfSimdSet1_F32(mat[3]);
+    PFMsimd_f mat_col4 = pfSimdSet1_F32(mat[4]);
+    PFMsimd_f mat_col5 = pfSimdSet1_F32(mat[5]);
+    PFMsimd_f mat_col6 = pfSimdSet1_F32(mat[6]);
+    PFMsimd_f mat_col7 = pfSimdSet1_F32(mat[7]);
+    PFMsimd_f mat_col8 = pfSimdSet1_F32(mat[8]);
+    PFMsimd_f mat_col9 = pfSimdSet1_F32(mat[9]);
+    PFMsimd_f mat_col10 = pfSimdSet1_F32(mat[10]);
+    PFMsimd_f mat_col11 = pfSimdSet1_F32(mat[11]);
+    PFMsimd_f mat_col12 = pfSimdSet1_F32(mat[12]);
+    PFMsimd_f mat_col13 = pfSimdSet1_F32(mat[13]);
+    PFMsimd_f mat_col14 = pfSimdSet1_F32(mat[14]);
+    PFMsimd_f mat_col15 = pfSimdSet1_F32(mat[15]);
+
+    PFMsimd_f tmp0 = pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col0, v[0]), pfSimdMul_F32(mat_col4, v[1])),
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col8, v[2]), pfSimdMul_F32(mat_col12, v[3])));
+
+    PFMsimd_f tmp1 = pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col1, v[0]), pfSimdMul_F32(mat_col5, v[1])),
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col9, v[2]), pfSimdMul_F32(mat_col13, v[3])));
+
+    PFMsimd_f tmp2 = pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col2, v[0]), pfSimdMul_F32(mat_col6, v[1])),
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col10, v[2]), pfSimdMul_F32(mat_col14, v[3])));
+
+    PFMsimd_f tmp3 = pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col3, v[0]), pfSimdMul_F32(mat_col7, v[1])),
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col11, v[2]), pfSimdMul_F32(mat_col15, v[3])));
+
+    dst[0] = tmp0;
+    dst[1] = tmp1;
+    dst[2] = tmp2;
+    dst[3] = tmp3;
+}
+
+static inline void
+pfmVec4TransformR_simd(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v, const float mat[16])
+{
+    PFMsimd_f mat_col0 = pfSimdSet1_F32(mat[0]);
+    PFMsimd_f mat_col1 = pfSimdSet1_F32(mat[1]);
+    PFMsimd_f mat_col2 = pfSimdSet1_F32(mat[2]);
+    PFMsimd_f mat_col3 = pfSimdSet1_F32(mat[3]);
+    PFMsimd_f mat_col4 = pfSimdSet1_F32(mat[4]);
+    PFMsimd_f mat_col5 = pfSimdSet1_F32(mat[5]);
+    PFMsimd_f mat_col6 = pfSimdSet1_F32(mat[6]);
+    PFMsimd_f mat_col7 = pfSimdSet1_F32(mat[7]);
+    PFMsimd_f mat_col8 = pfSimdSet1_F32(mat[8]);
+    PFMsimd_f mat_col9 = pfSimdSet1_F32(mat[9]);
+    PFMsimd_f mat_col10 = pfSimdSet1_F32(mat[10]);
+    PFMsimd_f mat_col11 = pfSimdSet1_F32(mat[11]);
+    PFMsimd_f mat_col12 = pfSimdSet1_F32(mat[12]);
+    PFMsimd_f mat_col13 = pfSimdSet1_F32(mat[13]);
+    PFMsimd_f mat_col14 = pfSimdSet1_F32(mat[14]);
+    PFMsimd_f mat_col15 = pfSimdSet1_F32(mat[15]);
+
+    dst[0] = pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col0, v[0]), pfSimdMul_F32(mat_col4, v[1])),
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col8, v[2]), pfSimdMul_F32(mat_col12, v[3])));
+
+    dst[1] = pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col1, v[0]), pfSimdMul_F32(mat_col5, v[1])),
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col9, v[2]), pfSimdMul_F32(mat_col13, v[3])));
+
+    dst[2] = pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col2, v[0]), pfSimdMul_F32(mat_col6, v[1])),
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col10, v[2]), pfSimdMul_F32(mat_col14, v[3])));
+
+    dst[3] = pfSimdAdd_F32(
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col3, v[0]), pfSimdMul_F32(mat_col7, v[1])),
+            pfSimdAdd_F32(pfSimdMul_F32(mat_col11, v[2]), pfSimdMul_F32(mat_col15, v[3])));
 }
 
 #endif //PFM_H
