@@ -1,3 +1,22 @@
+/**
+ *  Copyright (c) 2024 Le Juez Victor
+ *
+ *  This software is provided "as-is", without any express or implied warranty. In no event 
+ *  will the authors be held liable for any damages arising from the use of this software.
+ *
+ *  Permission is granted to anyone to use this software for any purpose, including commercial 
+ *  applications, and to alter it and redistribute it freely, subject to the following restrictions:
+ *
+ *  1. The origin of this software must not be misrepresented; you must not claim that you 
+ *  wrote the original software. If you use this software in a product, an acknowledgment 
+ *  in the product documentation would be appreciated but is not required.
+ *
+ *  2. Altered source versions must be plainly marked as such, and must not be misrepresented
+ *  as being the original software.
+ *
+ *   3. This notice may not be removed or altered from any source distribution.
+ */
+
 #ifndef PF_INTERNAL_PIXEL_H
 #define PF_INTERNAL_PIXEL_H
 
@@ -699,335 +718,102 @@ pfInternal_PixelGet_BGRA_FLOAT(const void* pixels, PFsizei offset)
 static inline void
 pfInternal_GetPixelGetterSetter(PFpixelgetter* getter, PFpixelsetter* setter, PFpixelformat format, PFdatatype type)
 {
-    // Defined as [FORMAT][TYPE]
+#   define ENTRY(FORMAT, TYPE, FUNC) [FORMAT][TYPE] = FUNC
 
     static const PFpixelgetter getters[10][12] = {
+        ENTRY(PF_RED, PF_UNSIGNED_BYTE, pfInternal_PixelGet_RED_UBYTE),
+        ENTRY(PF_RED, PF_HALF_FLOAT, pfInternal_PixelGet_RED_HALF),
+        ENTRY(PF_RED, PF_FLOAT, pfInternal_PixelGet_RED_FLOAT),
 
-        // PF_RED
-        {
-            pfInternal_PixelGet_RED_UBYTE,              // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelGet_RED_HALF,               // PF_HALF_FLOAT
-            pfInternal_PixelGet_RED_FLOAT,              // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_GREEN, PF_UNSIGNED_BYTE, pfInternal_PixelGet_GREEN_UBYTE),
+        ENTRY(PF_GREEN, PF_HALF_FLOAT, pfInternal_PixelGet_GREEN_HALF),
+        ENTRY(PF_GREEN, PF_FLOAT, pfInternal_PixelGet_GREEN_FLOAT),
 
-        // PF_GREEN
-        {
-            pfInternal_PixelGet_GREEN_UBYTE,            // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelGet_GREEN_HALF,             // PF_HALF_FLOAT
-            pfInternal_PixelGet_GREEN_FLOAT,            // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_BLUE, PF_UNSIGNED_BYTE, pfInternal_PixelGet_BLUE_UBYTE),
+        ENTRY(PF_BLUE, PF_HALF_FLOAT, pfInternal_PixelGet_BLUE_HALF),
+        ENTRY(PF_BLUE, PF_FLOAT, pfInternal_PixelGet_BLUE_FLOAT),
 
-        // PF_BLUE
-        {
-            pfInternal_PixelGet_BLUE_UBYTE,             // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelGet_BLUE_HALF,              // PF_HALF_FLOAT
-            pfInternal_PixelGet_BLUE_FLOAT,             // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_ALPHA, PF_UNSIGNED_BYTE, pfInternal_PixelGet_ALPHA_UBYTE),
+        ENTRY(PF_ALPHA, PF_HALF_FLOAT, pfInternal_PixelGet_ALPHA_HALF),
+        ENTRY(PF_ALPHA, PF_FLOAT, pfInternal_PixelGet_ALPHA_FLOAT),
 
-        // PF_ALPHA
-        {
-            pfInternal_PixelGet_ALPHA_UBYTE,            // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelGet_ALPHA_HALF,             // PF_HALF_FLOAT
-            pfInternal_PixelGet_ALPHA_FLOAT,            // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_LUMINANCE, PF_UNSIGNED_BYTE, pfInternal_PixelGet_Luminance_UBYTE),
+        ENTRY(PF_LUMINANCE, PF_HALF_FLOAT, pfInternal_PixelGet_Luminance_HALF),
+        ENTRY(PF_LUMINANCE, PF_FLOAT, pfInternal_PixelGet_Luminance_FLOAT),
 
-        // PF_LUMINANCE
-        {
-            pfInternal_PixelGet_Luminance_UBYTE,        // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelGet_Luminance_HALF,         // PF_HALF_FLOAT
-            pfInternal_PixelGet_Luminance_FLOAT,        // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_LUMINANCE_ALPHA, PF_UNSIGNED_BYTE, pfInternal_PixelGet_Luminance_Alpha_UBYTE),
+        ENTRY(PF_LUMINANCE_ALPHA, PF_HALF_FLOAT, pfInternal_PixelGet_Luminance_Alpha_HALF),
+        ENTRY(PF_LUMINANCE_ALPHA, PF_FLOAT, pfInternal_PixelGet_Luminance_Alpha_FLOAT),
 
-        // PF_LUMINANCE_ALPHA
-        {
-            pfInternal_PixelGet_Luminance_Alpha_UBYTE,  // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelGet_Luminance_Alpha_HALF,   // PF_HALF_FLOAT
-            pfInternal_PixelGet_Luminance_Alpha_FLOAT,  // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_RGB, PF_UNSIGNED_BYTE, pfInternal_PixelGet_RGB_UBYTE),
+        ENTRY(PF_RGB, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelGet_RGB_USHORT_5_6_5),
+        ENTRY(PF_RGB, PF_HALF_FLOAT, pfInternal_PixelGet_RGB_HALF),
+        ENTRY(PF_RGB, PF_FLOAT, pfInternal_PixelGet_RGB_FLOAT),
 
-        // PF_RGB
-        {
-            pfInternal_PixelGet_RGB_UBYTE,              // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            pfInternal_PixelGet_RGB_USHORT_5_6_5,       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelGet_RGB_HALF,               // PF_HALF_FLOAT
-            pfInternal_PixelGet_RGB_FLOAT,             // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_RGBA, PF_UNSIGNED_BYTE, pfInternal_PixelGet_RGBA_UBYTE),
+        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelGet_RGBA_USHORT_5_5_5_1),
+        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelGet_RGBA_USHORT_4_4_4_4),
+        ENTRY(PF_RGBA, PF_HALF_FLOAT, pfInternal_PixelGet_RGBA_HALF),
+        ENTRY(PF_RGBA, PF_FLOAT, pfInternal_PixelGet_RGBA_FLOAT),
 
-        // PF_RGBA
-        {
-            pfInternal_PixelGet_RGBA_UBYTE,             // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            pfInternal_PixelGet_RGBA_USHORT_5_5_5_1,    // PF_UNSIGNED_SHORT_5_5_5_1
-            pfInternal_PixelGet_RGBA_USHORT_4_4_4_4,    // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelGet_RGBA_HALF,              // PF_HALF_FLOAT
-            pfInternal_PixelGet_RGBA_FLOAT,             // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_BGR, PF_UNSIGNED_BYTE, pfInternal_PixelGet_BGR_UBYTE),
+        ENTRY(PF_BGR, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelGet_BGR_USHORT_5_6_5),
+        ENTRY(PF_BGR, PF_HALF_FLOAT, pfInternal_PixelGet_BGR_HALF),
+        ENTRY(PF_BGR, PF_FLOAT, pfInternal_PixelGet_BGR_FLOAT),
 
-        // PF_BGR
-        {
-            pfInternal_PixelGet_BGR_UBYTE,              // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            pfInternal_PixelGet_BGR_USHORT_5_6_5,       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelGet_BGR_HALF,               // PF_HALF_FLOAT
-            pfInternal_PixelGet_BGR_FLOAT,             // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
-
-        // PF_BGRA
-        {
-            pfInternal_PixelGet_BGRA_UBYTE,             // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            pfInternal_PixelGet_BGRA_USHORT_5_5_5_1,    // PF_UNSIGNED_SHORT_5_5_5_1
-            pfInternal_PixelGet_BGRA_USHORT_4_4_4_4,    // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelGet_BGRA_HALF,              // PF_HALF_FLOAT
-            pfInternal_PixelGet_BGRA_FLOAT,             // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
-
+        ENTRY(PF_BGRA, PF_UNSIGNED_BYTE, pfInternal_PixelGet_BGRA_UBYTE),
+        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelGet_BGRA_USHORT_5_5_5_1),
+        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelGet_BGRA_USHORT_4_4_4_4),
+        ENTRY(PF_BGRA, PF_HALF_FLOAT, pfInternal_PixelGet_BGRA_HALF),
+        ENTRY(PF_BGRA, PF_FLOAT, pfInternal_PixelGet_BGRA_FLOAT),
     };
 
     static const PFpixelsetter setters[10][12] = {
+        ENTRY(PF_RED, PF_UNSIGNED_BYTE, pfInternal_PixelSet_Luminance_UBYTE),
+        ENTRY(PF_RED, PF_HALF_FLOAT, pfInternal_PixelSet_Luminance_HALF),
+        ENTRY(PF_RED, PF_FLOAT, pfInternal_PixelSet_Luminance_FLOAT),
 
+        ENTRY(PF_GREEN, PF_UNSIGNED_BYTE, pfInternal_PixelSet_Luminance_UBYTE),
+        ENTRY(PF_GREEN, PF_HALF_FLOAT, pfInternal_PixelSet_Luminance_HALF),
+        ENTRY(PF_GREEN, PF_FLOAT, pfInternal_PixelSet_Luminance_FLOAT),
 
-        // PF_RED
-        {
-            pfInternal_PixelSet_Luminance_UBYTE,        // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelSet_Luminance_HALF,         // PF_HALF_FLOAT
-            pfInternal_PixelSet_Luminance_FLOAT,        // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_BLUE, PF_UNSIGNED_BYTE, pfInternal_PixelSet_Luminance_UBYTE),
+        ENTRY(PF_BLUE, PF_HALF_FLOAT, pfInternal_PixelSet_Luminance_HALF),
+        ENTRY(PF_BLUE, PF_FLOAT, pfInternal_PixelSet_Luminance_FLOAT),
 
-        // PF_GREEN
-        {
-            pfInternal_PixelSet_Luminance_UBYTE,        // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelSet_Luminance_HALF,         // PF_HALF_FLOAT
-            pfInternal_PixelSet_Luminance_FLOAT,        // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_ALPHA, PF_UNSIGNED_BYTE, pfInternal_PixelSet_Luminance_UBYTE),
+        ENTRY(PF_ALPHA, PF_HALF_FLOAT, pfInternal_PixelSet_Luminance_HALF),
+        ENTRY(PF_ALPHA, PF_FLOAT, pfInternal_PixelSet_Luminance_FLOAT),
 
-        // PF_BLUE
-        {
-            pfInternal_PixelSet_Luminance_UBYTE,        // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelSet_Luminance_HALF,         // PF_HALF_FLOAT
-            pfInternal_PixelSet_Luminance_FLOAT,        // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_LUMINANCE, PF_UNSIGNED_BYTE, pfInternal_PixelSet_Luminance_UBYTE),
+        ENTRY(PF_LUMINANCE, PF_HALF_FLOAT, pfInternal_PixelSet_Luminance_HALF),
+        ENTRY(PF_LUMINANCE, PF_FLOAT, pfInternal_PixelSet_Luminance_FLOAT),
 
-        // PF_ALPHA
-        {
-            pfInternal_PixelSet_Luminance_UBYTE,        // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelSet_Luminance_HALF,         // PF_HALF_FLOAT
-            pfInternal_PixelSet_Luminance_FLOAT,        // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_LUMINANCE_ALPHA, PF_UNSIGNED_BYTE, pfInternal_PixelSet_Luminance_Alpha_UBYTE),
+        ENTRY(PF_LUMINANCE_ALPHA, PF_HALF_FLOAT, pfInternal_PixelSet_Luminance_Alpha_HALF),
+        ENTRY(PF_LUMINANCE_ALPHA, PF_FLOAT, pfInternal_PixelSet_Luminance_Alpha_FLOAT),
 
-        // PF_LUMINANCE
-        {
-            pfInternal_PixelSet_Luminance_UBYTE,        // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelSet_Luminance_HALF,         // PF_HALF_FLOAT
-            pfInternal_PixelSet_Luminance_FLOAT,        // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_RGB, PF_UNSIGNED_BYTE, pfInternal_PixelSet_RGB_UBYTE),
+        ENTRY(PF_RGB, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelSet_RGB_USHORT_5_6_5),
+        ENTRY(PF_RGB, PF_HALF_FLOAT, pfInternal_PixelSet_RGB_HALF),
+        ENTRY(PF_RGB, PF_FLOAT, pfInternal_PixelSet_RGB_FLOAT),
 
-        // PF_LUMINANCE_ALPHA
-        {
-            pfInternal_PixelSet_Luminance_Alpha_UBYTE,  // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelSet_Luminance_Alpha_HALF,   // PF_HALF_FLOAT
-            pfInternal_PixelSet_Luminance_Alpha_FLOAT,  // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_RGBA, PF_UNSIGNED_BYTE, pfInternal_PixelSet_RGBA_UBYTE),
+        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelSet_RGBA_USHORT_5_5_5_1),
+        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelSet_RGBA_USHORT_4_4_4_4),
+        ENTRY(PF_RGBA, PF_HALF_FLOAT, pfInternal_PixelSet_RGBA_HALF),
+        ENTRY(PF_RGBA, PF_FLOAT, pfInternal_PixelSet_RGBA_FLOAT),
 
-        // PF_RGB
-        {
-            pfInternal_PixelSet_RGB_UBYTE,              // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            pfInternal_PixelSet_RGB_USHORT_5_6_5,       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelSet_RGB_HALF,               // PF_HALF_FLOAT
-            pfInternal_PixelSet_RGB_FLOAT,             // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
+        ENTRY(PF_BGR, PF_UNSIGNED_BYTE, pfInternal_PixelSet_BGR_UBYTE),
+        ENTRY(PF_BGR, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelSet_BGR_USHORT_5_6_5),
+        ENTRY(PF_BGR, PF_HALF_FLOAT, pfInternal_PixelSet_BGR_HALF),
+        ENTRY(PF_BGR, PF_FLOAT, pfInternal_PixelSet_BGR_FLOAT),
 
-        // PF_RGBA
-        {
-            pfInternal_PixelSet_RGBA_UBYTE,             // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            pfInternal_PixelSet_RGBA_USHORT_5_5_5_1,    // PF_UNSIGNED_SHORT_5_5_5_1
-            pfInternal_PixelSet_RGBA_USHORT_4_4_4_4,    // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelSet_RGBA_HALF,              // PF_HALF_FLOAT
-            pfInternal_PixelSet_RGBA_FLOAT,             // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
-
-        // PF_BGR
-        {
-            pfInternal_PixelSet_BGR_UBYTE,              // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            pfInternal_PixelSet_BGR_USHORT_5_6_5,       // PF_UNSIGNED_SHORT_5_6_5
-            NULL,                                       // PF_UNSIGNED_SHORT_5_5_5_1
-            NULL,                                       // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelSet_BGR_HALF,               // PF_HALF_FLOAT
-            pfInternal_PixelSet_BGR_FLOAT,             // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
-
-        // PF_BGRA
-        {
-            pfInternal_PixelSet_BGRA_UBYTE,             // PF_UNSIGNED_BYTE
-            NULL,                                       // PF_UNSIGNED_SHORT
-            NULL,                                       // PF_UNSIGNED_SHORT_5_6_5
-            pfInternal_PixelSet_BGRA_USHORT_5_5_5_1,    // PF_UNSIGNED_SHORT_5_5_5_1
-            pfInternal_PixelSet_BGRA_USHORT_4_4_4_4,    // PF_UNSIGNED_SHORT_4_4_4_4
-            NULL,                                       // PF_UNSIGNED_INT
-            NULL,                                       // PF_BYTE
-            NULL,                                       // PF_SHORT
-            NULL,                                       // PF_INT
-            pfInternal_PixelSet_BGRA_HALF,              // PF_HALF_FLOAT
-            pfInternal_PixelSet_BGRA_FLOAT,             // PF_FLOAT
-            NULL                                        // PF_DOUBLE
-        },
-
+        ENTRY(PF_BGRA, PF_UNSIGNED_BYTE, pfInternal_PixelSet_BGRA_UBYTE),
+        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelSet_BGRA_USHORT_5_5_5_1),
+        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelSet_BGRA_USHORT_4_4_4_4),
+        ENTRY(PF_BGRA, PF_HALF_FLOAT, pfInternal_PixelSet_BGRA_HALF),
+        ENTRY(PF_BGRA, PF_FLOAT, pfInternal_PixelSet_BGRA_FLOAT),
     };
 
     if (getter) *getter = getters[format][type];
