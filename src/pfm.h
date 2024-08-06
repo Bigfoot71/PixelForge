@@ -2949,41 +2949,41 @@ pfmSimdCmpGE_F32(PFMsimd_i x, PFMsimd_i y)
 
 /* 2D SIMD Vector functions definition */
 
-static inline void
+PFM_API void
 pfmSimdVec2Zero(PFMsimd_vec2 dst)
 {
     dst[0] = pfmSimdSetZero_F32();
     dst[1] = pfmSimdSetZero_F32();
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2One(PFMsimd_vec2 dst, float v)
 {
     dst[0] = pfmSimdSet1_F32(v);
     dst[1] = pfmSimdSet1_F32(v);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Set(PFMsimd_vec2 dst, float x, float y)
 {
     dst[0] = pfmSimdSet1_F32(x);
     dst[1] = pfmSimdSet1_F32(y);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Load(PFMsimd_vec2 dst, const PFMvec2 src)
 {
     dst[0] = pfmSimdSet1_F32(src[0]);
     dst[1] = pfmSimdSet1_F32(src[1]);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Copy(aPFMsimd_vec2 restrict dst, const aPFMsimd_vec2 restrict src)
 {
     memcpy(dst, src, sizeof(PFMsimd_vec2));
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Swap(aPFMsimd_vec2 restrict a, aPFMsimd_vec2 restrict b)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -2994,7 +2994,7 @@ pfmSimdVec2Swap(aPFMsimd_vec2 restrict a, aPFMsimd_vec2 restrict b)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Neg(PFMsimd_vec2 dst, const PFMsimd_vec2 v)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3003,7 +3003,7 @@ pfmSimdVec2Neg(PFMsimd_vec2 dst, const PFMsimd_vec2 v)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2NegR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3012,7 +3012,7 @@ pfmSimdVec2NegR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Add(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3021,7 +3021,7 @@ pfmSimdVec2Add(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2AddR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3030,7 +3030,7 @@ pfmSimdVec2AddR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Sub(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3039,7 +3039,7 @@ pfmSimdVec2Sub(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2SubR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3048,7 +3048,7 @@ pfmSimdVec2SubR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Mul(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3057,7 +3057,7 @@ pfmSimdVec2Mul(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2MulR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3066,7 +3066,7 @@ pfmSimdVec2MulR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Div(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3075,7 +3075,7 @@ pfmSimdVec2Div(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2DivR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3084,7 +3084,7 @@ pfmSimdVec2DivR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Offset(PFMsimd_vec2 dst, const PFMsimd_vec2 v, PFMsimd_f offset)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3093,7 +3093,7 @@ pfmSimdVec2Offset(PFMsimd_vec2 dst, const PFMsimd_vec2 v, PFMsimd_f offset)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2OffsetR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v, PFMsimd_f offset)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3102,7 +3102,7 @@ pfmSimdVec2OffsetR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v, PFMsimd_f o
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Scale(PFMsimd_vec2 dst, const PFMsimd_vec2 v, PFMsimd_f scale)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3111,7 +3111,7 @@ pfmSimdVec2Scale(PFMsimd_vec2 dst, const PFMsimd_vec2 v, PFMsimd_f scale)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2ScaleR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v, PFMsimd_f scale)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -3120,7 +3120,7 @@ pfmSimdVec2ScaleR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v, PFMsimd_f sc
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Normalize(PFMsimd_vec2 dst, const PFMsimd_vec2 v)
 {
     // Calculate the sum of squares of elements
@@ -3136,7 +3136,7 @@ pfmSimdVec2Normalize(PFMsimd_vec2 dst, const PFMsimd_vec2 v)
     dst[1] = pfmSimdMul_F32(v[1], invLength);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2NormalizeR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v)
 {
     // Calculate the sum of squares of elements
@@ -3152,7 +3152,7 @@ pfmSimdVec2NormalizeR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v)
     dst[1] = pfmSimdMul_F32(v[1], invLength);
 }
 
-static inline PFMsimd_f
+PFM_API PFMsimd_f
 pfmSimdVec2Length(const PFMsimd_vec2 v)
 {
     return pfmSimdSqrt_F32(pfmSimdAdd_F32(
@@ -3160,7 +3160,7 @@ pfmSimdVec2Length(const PFMsimd_vec2 v)
         pfmSimdMul_F32(v[1], v[1])));
 }
 
-static inline PFMsimd_f
+PFM_API PFMsimd_f
 pfmSimdVec2LengthSq(const PFMsimd_vec2 v)
 {
     return pfmSimdAdd_F32(
@@ -3168,7 +3168,7 @@ pfmSimdVec2LengthSq(const PFMsimd_vec2 v)
         pfmSimdMul_F32(v[1], v[1]));
 }
 
-static inline PFMsimd_f
+PFM_API PFMsimd_f
 pfmSimdVec2Dot(const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
 {
     return pfmSimdAdd_F32(
@@ -3176,7 +3176,7 @@ pfmSimdVec2Dot(const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
         pfmSimdMul_F32(v1[1], v2[1]));
 }
 
-static inline PFMsimd_f
+PFM_API PFMsimd_f
 pfmSimdVec2Distance(const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
 {
     // Calculate the differences between corresponding elements of the vectors
@@ -3194,7 +3194,7 @@ pfmSimdVec2Distance(const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
     return pfmSimdSqrt_F32(distanceSq);
 }
 
-static inline PFMsimd_f
+PFM_API PFMsimd_f
 pfmSimdVec2DistanceSq(const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
 {
     // Calculate the differences between corresponding elements of the vectors
@@ -3209,7 +3209,7 @@ pfmSimdVec2DistanceSq(const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
     return pfmSimdAdd_F32(dt0Sq, dt1Sq);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Direction(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
 {
     // Calculate the differences between the elements of the two vectors
@@ -3227,7 +3227,7 @@ pfmSimdVec2Direction(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2
     dst[1] = pfmSimdMul_F32(tmp1, invLength);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2DirectionR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2)
 {
     // Calculate the differences between the elements of the two vectors
@@ -3245,14 +3245,14 @@ pfmSimdVec2DirectionR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const P
     dst[1] = pfmSimdMul_F32(dst[1], invLength);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2Lerp(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, PFMsimd_f t)
 {
     dst[0] = pfmSimdAdd_F32(v1[0], pfmSimdMul_F32(t, pfmSimdSub_F32(v2[0], v1[0])));
     dst[1] = pfmSimdAdd_F32(v1[1], pfmSimdMul_F32(t, pfmSimdSub_F32(v2[1], v1[1])));
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2LerpR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, PFMsimd_f t)
 {
     // Calculate the difference (v2 - v1)
@@ -3268,7 +3268,7 @@ pfmSimdVec2LerpR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsim
     dst[1] = pfmSimdAdd_F32(v1[1], t_diff1);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2BaryInterp(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
     // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
@@ -3287,7 +3287,7 @@ pfmSimdVec2BaryInterp(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec
 }
 
 
-static inline void
+PFM_API void
 pfmSimdVec2BaryInterpR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
     // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
@@ -3305,7 +3305,7 @@ pfmSimdVec2BaryInterpR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const 
     dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2BaryInterpV(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, const PFMsimd_vec3 w)
 {
     // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
@@ -3323,7 +3323,7 @@ pfmSimdVec2BaryInterpV(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_ve
     dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2BaryInterpVR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, const PFMsimd_vec3 w)
 {
     // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
@@ -3341,7 +3341,7 @@ pfmSimdVec2BaryInterpVR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const
     dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
 }
 
-static inline void pfmSimdVec2Transform(PFMsimd_vec2 dst, const PFMsimd_vec2 v, const float mat[16])
+PFM_API void pfmSimdVec2Transform(PFMsimd_vec2 dst, const PFMsimd_vec2 v, const float mat[16])
 {
     // Load array elements into SIMD registers
     PFMsimd_f mat_col0 = pfmSimdSet1_F32(mat[0]);
@@ -3359,7 +3359,7 @@ static inline void pfmSimdVec2Transform(PFMsimd_vec2 dst, const PFMsimd_vec2 v, 
     dst[1] = tmp1;
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2TransformR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v, const float mat[16])
 {
     // Load array elements into SIMD registers
@@ -3375,7 +3375,7 @@ pfmSimdVec2TransformR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v, const fl
     dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(pfmSimdMul_F32(mat_col1, v[0]), pfmSimdMul_F32(mat_col5, v[1])), mat_col13);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec2TransformWT(PFMsimd_vec2 dst, const PFMsimd_vec2 v, float wTranslation, const float mat[16])
 {
     // Load array elements into SIMD registers
@@ -3402,7 +3402,7 @@ pfmSimdVec2TransformWT(PFMsimd_vec2 dst, const PFMsimd_vec2 v, float wTranslatio
 }
 
 
-static inline void
+PFM_API void
 pfmSimdVec2TransformWTR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v, float wTranslation, const float mat[16])
 {
     // Load array elements into SIMD registers
@@ -3427,7 +3427,7 @@ pfmSimdVec2TransformWTR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v, float 
 
 /* 3D SIMD Vector functions definition */
 
-static inline void
+PFM_API void
 pfmSimdVec3Zero(PFMsimd_vec3 dst)
 {
     dst[0] = pfmSimdSetZero_F32();
@@ -3435,7 +3435,7 @@ pfmSimdVec3Zero(PFMsimd_vec3 dst)
     dst[2] = pfmSimdSetZero_F32();
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3One(PFMsimd_vec3 dst, float v)
 {
     dst[0] = pfmSimdSet1_F32(v);
@@ -3443,7 +3443,7 @@ pfmSimdVec3One(PFMsimd_vec3 dst, float v)
     dst[2] = pfmSimdSet1_F32(v);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Set(PFMsimd_vec3 dst, float x, float y, float z)
 {
     dst[0] = pfmSimdSet1_F32(x);
@@ -3451,7 +3451,7 @@ pfmSimdVec3Set(PFMsimd_vec3 dst, float x, float y, float z)
     dst[2] = pfmSimdSet1_F32(z);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Load(PFMsimd_vec3 dst, const PFMvec3 src)
 {
     dst[0] = pfmSimdSet1_F32(src[0]);
@@ -3459,13 +3459,13 @@ pfmSimdVec3Load(PFMsimd_vec3 dst, const PFMvec3 src)
     dst[2] = pfmSimdSet1_F32(src[2]);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Copy(aPFMsimd_vec3 restrict dst, const aPFMsimd_vec3 restrict src)
 {
     memcpy(dst, src, sizeof(PFMsimd_vec3));
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Swap(aPFMsimd_vec3 restrict a, aPFMsimd_vec3 restrict b)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3476,7 +3476,7 @@ pfmSimdVec3Swap(aPFMsimd_vec3 restrict a, aPFMsimd_vec3 restrict b)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Neg(PFMsimd_vec3 dst, const PFMsimd_vec3 v)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3485,7 +3485,7 @@ pfmSimdVec3Neg(PFMsimd_vec3 dst, const PFMsimd_vec3 v)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3NegR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3494,7 +3494,7 @@ pfmSimdVec3NegR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Add(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3503,7 +3503,7 @@ pfmSimdVec3Add(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3AddR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3512,7 +3512,7 @@ pfmSimdVec3AddR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Sub(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3521,7 +3521,7 @@ pfmSimdVec3Sub(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3SubR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3530,7 +3530,7 @@ pfmSimdVec3SubR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Mul(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3539,7 +3539,7 @@ pfmSimdVec3Mul(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3MulR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3548,7 +3548,7 @@ pfmSimdVec3MulR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Div(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3557,7 +3557,7 @@ pfmSimdVec3Div(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3DivR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3566,7 +3566,7 @@ pfmSimdVec3DivR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Offset(PFMsimd_vec3 dst, const PFMsimd_vec3 v, PFMsimd_f offset)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3575,7 +3575,7 @@ pfmSimdVec3Offset(PFMsimd_vec3 dst, const PFMsimd_vec3 v, PFMsimd_f offset)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3OffsetR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v, PFMsimd_f offset)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3584,7 +3584,7 @@ pfmSimdVec3OffsetR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v, PFMsimd_f o
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Scale(PFMsimd_vec3 dst, const PFMsimd_vec3 v, PFMsimd_f scale)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3593,7 +3593,7 @@ pfmSimdVec3Scale(PFMsimd_vec3 dst, const PFMsimd_vec3 v, PFMsimd_f scale)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3ScaleR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v, PFMsimd_f scale)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -3602,7 +3602,7 @@ pfmSimdVec3ScaleR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v, PFMsimd_f sc
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Normalize(PFMsimd_vec3 dst, const PFMsimd_vec3 v)
 {
     // Calculate the sum of squares of elements
@@ -3622,7 +3622,7 @@ pfmSimdVec3Normalize(PFMsimd_vec3 dst, const PFMsimd_vec3 v)
     dst[2] = pfmSimdMul_F32(v[2], invLength);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3NormalizeR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v)
 {
     // Calculate the sum of squares of elements
@@ -3642,7 +3642,7 @@ pfmSimdVec3NormalizeR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v)
     dst[2] = pfmSimdMul_F32(v[2], invLength);
 }
 
-static inline PFMsimd_f
+PFM_API PFMsimd_f
 pfmSimdVec3Length(const PFMsimd_vec3 v)
 {
     PFMsimd_f squaredLength = pfmSimdAdd_F32(
@@ -3655,7 +3655,7 @@ pfmSimdVec3Length(const PFMsimd_vec3 v)
     return pfmSimdSqrt_F32(squaredLength);
 }
 
-static inline PFMsimd_f
+PFM_API PFMsimd_f
 pfmSimdVec3LengthSq(const PFMsimd_vec3 v)
 {
     PFMsimd_f squaredLength = pfmSimdAdd_F32(
@@ -3666,7 +3666,7 @@ pfmSimdVec3LengthSq(const PFMsimd_vec3 v)
         pfmSimdMul_F32(v[2], v[2]));
 }
 
-static inline PFMsimd_f
+PFM_API PFMsimd_f
 pfmSimdVec3Dot(const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     PFMsimd_f squaredLength = pfmSimdAdd_F32(
@@ -3677,7 +3677,7 @@ pfmSimdVec3Dot(const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
         pfmSimdMul_F32(v1[2], v2[2]));
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Cross(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     PFMsimd_vec3 tmp = { 0 };
@@ -3697,7 +3697,7 @@ pfmSimdVec3Cross(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
     memcpy(dst, tmp, sizeof(PFMsimd_vec3));
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3CrossR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     dst[0] = pfmSimdSub_F32(
@@ -3713,7 +3713,7 @@ pfmSimdVec3CrossR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsi
         pfmSimdMul_F32(v1[1], v2[0]));
 }
 
-static inline PFMsimd_f
+PFM_API PFMsimd_f
 pfmSimdVec3Distance(const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     // Calculate the differences between corresponding elements of the vectors
@@ -3734,7 +3734,7 @@ pfmSimdVec3Distance(const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
     return pfmSimdSqrt_F32(distanceSq);
 }
 
-static inline PFMsimd_f
+PFM_API PFMsimd_f
 pfmSimdVec3DistanceSq(const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     // Calculate the differences between corresponding elements of the vectors
@@ -3755,7 +3755,7 @@ pfmSimdVec3DistanceSq(const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
     return distanceSq;
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Direction(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     // Calculate the differences between the elements of the two vectors
@@ -3776,7 +3776,7 @@ pfmSimdVec3Direction(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3
     dst[2] = pfmSimdMul_F32(tmp2, invLength);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3DirectionR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
     // Calculate the differences between the elements of the two vectors
@@ -3797,7 +3797,7 @@ pfmSimdVec3DirectionR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const P
     dst[2] = pfmSimdMul_F32(dst[2], invLength);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Lerp(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, PFMsimd_f t)
 {
     dst[0] = pfmSimdAdd_F32(v1[0], pfmSimdMul_F32(t, pfmSimdSub_F32(v2[0], v1[0])));
@@ -3805,7 +3805,7 @@ pfmSimdVec3Lerp(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, 
     dst[2] = pfmSimdAdd_F32(v1[2], pfmSimdMul_F32(t, pfmSimdSub_F32(v2[2], v1[2])));
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3LerpR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, PFMsimd_f t)
 {
     dst[0] = pfmSimdAdd_F32(v1[0], pfmSimdMul_F32(t, pfmSimdSub_F32(v2[0], v1[0])));
@@ -3813,7 +3813,7 @@ pfmSimdVec3LerpR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsim
     dst[2] = pfmSimdAdd_F32(v1[2], pfmSimdMul_F32(t, pfmSimdSub_F32(v2[2], v1[2])));
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3BaryInterp(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
     // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
@@ -3836,7 +3836,7 @@ pfmSimdVec3BaryInterp(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec
 }
 
 
-static inline void
+PFM_API void
 pfmSimdVec3BaryInterpR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
     // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
@@ -3858,7 +3858,7 @@ pfmSimdVec3BaryInterpR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const 
     dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3BaryInterpV(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, const PFMsimd_vec3 w)
 {
     // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
@@ -3880,7 +3880,7 @@ pfmSimdVec3BaryInterpV(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_ve
     dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3BaryInterpVR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, const PFMsimd_vec3 w)
 {
     // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
@@ -3902,7 +3902,7 @@ pfmSimdVec3BaryInterpVR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const
     dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Transform(PFMsimd_vec3 dst, const PFMsimd_vec3 v, const float mat[16])
 {
     // Charger les éléments de la matrice dans les registres SIMD
@@ -3950,7 +3950,7 @@ pfmSimdVec3Transform(PFMsimd_vec3 dst, const PFMsimd_vec3 v, const float mat[16]
     dst[2] = tmp2;
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3TransformR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v, const float mat[16])
 {
     PFMsimd_f mat_col0 = pfmSimdSet1_F32(mat[0]);
@@ -3991,7 +3991,7 @@ pfmSimdVec3TransformR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v, const fl
     );
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3TransformWT(PFMsimd_vec3 dst, const PFMsimd_vec3 v, float wTranslation, const float mat[16])
 {
     PFMsimd_f mat_col0 = pfmSimdSet1_F32(mat[0]);
@@ -4038,7 +4038,7 @@ pfmSimdVec3TransformWT(PFMsimd_vec3 dst, const PFMsimd_vec3 v, float wTranslatio
     dst[2] = tmp2;
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3TransformWTR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v, float wTranslation, const float mat[16])
 {
     PFMsimd_f mat_col0 = pfmSimdSet1_F32(mat[0]);
@@ -4081,7 +4081,7 @@ pfmSimdVec3TransformWTR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v, float 
     );
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3Reflect(PFMsimd_vec3 dst, const PFMsimd_vec3 incident, const PFMsimd_vec3 normal)
 {
     PFMsimd_f dotProduct = pfmSimdAdd_F32(
@@ -4103,7 +4103,7 @@ pfmSimdVec3Reflect(PFMsimd_vec3 dst, const PFMsimd_vec3 incident, const PFMsimd_
     dst[2] = tmp2;
 }
 
-static inline void
+PFM_API void
 pfmSimdVec3ReflectR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 incident, const PFMsimd_vec3 normal)
 {
     PFMsimd_f dotProduct = pfmSimdAdd_F32(
@@ -4123,7 +4123,7 @@ pfmSimdVec3ReflectR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 incident, con
 
 /* 4D SIMD Vector functions definition */
 
-static inline void
+PFM_API void
 pfmSimdVec4Zero(PFMsimd_vec4 dst)
 {
     dst[0] = pfmSimdSetZero_F32();
@@ -4132,7 +4132,7 @@ pfmSimdVec4Zero(PFMsimd_vec4 dst)
     dst[3] = pfmSimdSetZero_F32();
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4One(PFMsimd_vec4 dst, float v)
 {
     dst[0] = pfmSimdSet1_F32(v);
@@ -4141,7 +4141,7 @@ pfmSimdVec4One(PFMsimd_vec4 dst, float v)
     dst[3] = pfmSimdSet1_F32(v);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Set(PFMsimd_vec4 dst, float x, float y, float z, float w)
 {
     dst[0] = pfmSimdSet1_F32(x);
@@ -4150,7 +4150,7 @@ pfmSimdVec4Set(PFMsimd_vec4 dst, float x, float y, float z, float w)
     dst[4] = pfmSimdSet1_F32(w);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Load(PFMsimd_vec4 dst, const PFMvec4 src)
 {
     dst[0] = pfmSimdSet1_F32(src[0]);
@@ -4159,13 +4159,13 @@ pfmSimdVec4Load(PFMsimd_vec4 dst, const PFMvec4 src)
     dst[3] = pfmSimdSet1_F32(src[3]);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Copy(aPFMsimd_vec4 restrict dst, const aPFMsimd_vec4 restrict src)
 {
     memcpy(dst, src, sizeof(PFMsimd_vec4));
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Swap(aPFMsimd_vec4 restrict a, aPFMsimd_vec4 restrict b)
 {
     for (int_fast8_t i = 0; i < 4; i++)
@@ -4176,7 +4176,7 @@ pfmSimdVec4Swap(aPFMsimd_vec4 restrict a, aPFMsimd_vec4 restrict b)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Neg(PFMsimd_vec4 dst, const PFMsimd_vec4 v)
 {
     for (int_fast8_t i = 0; i < 4; i++)
@@ -4185,7 +4185,7 @@ pfmSimdVec4Neg(PFMsimd_vec4 dst, const PFMsimd_vec4 v)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4NegR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v)
 {
     for (int_fast8_t i = 0; i < 4; i++)
@@ -4194,7 +4194,7 @@ pfmSimdVec4NegR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Add(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
 {
     for (int_fast8_t i = 0; i < 4; i++)
@@ -4203,7 +4203,7 @@ pfmSimdVec4Add(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4AddR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
 {
     for (int_fast8_t i = 0; i < 4; i++)
@@ -4212,7 +4212,7 @@ pfmSimdVec4AddR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Sub(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
 {
     for (int_fast8_t i = 0; i < 4; i++)
@@ -4221,7 +4221,7 @@ pfmSimdVec4Sub(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4SubR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
 {
     for (int_fast8_t i = 0; i < 4; i++)
@@ -4230,7 +4230,7 @@ pfmSimdVec4SubR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Mul(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
 {
     for (int_fast8_t i = 0; i < 4; i++)
@@ -4239,7 +4239,7 @@ pfmSimdVec4Mul(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4MulR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
 {
     for (int_fast8_t i = 0; i < 4; i++)
@@ -4248,7 +4248,7 @@ pfmSimdVec4MulR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Div(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
 {
     for (int_fast8_t i = 0; i < 4; i++)
@@ -4257,7 +4257,7 @@ pfmSimdVec4Div(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4DivR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
 {
     for (int_fast8_t i = 0; i < 4; i++)
@@ -4266,7 +4266,7 @@ pfmSimdVec4DivR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Offset(PFMsimd_vec4 dst, const PFMsimd_vec4 v, PFMsimd_f offset)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -4275,7 +4275,7 @@ pfmSimdVec4Offset(PFMsimd_vec4 dst, const PFMsimd_vec4 v, PFMsimd_f offset)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4OffsetR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v, PFMsimd_f offset)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -4284,7 +4284,7 @@ pfmSimdVec4OffsetR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v, PFMsimd_f o
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Scale(PFMsimd_vec4 dst, const PFMsimd_vec4 v, PFMsimd_f scale)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -4293,7 +4293,7 @@ pfmSimdVec4Scale(PFMsimd_vec4 dst, const PFMsimd_vec4 v, PFMsimd_f scale)
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4ScaleR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v, PFMsimd_f scale)
 {
     for (int_fast8_t i = 0; i < 3; i++)
@@ -4302,7 +4302,7 @@ pfmSimdVec4ScaleR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v, PFMsimd_f sc
     }
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Normalize(PFMsimd_vec4 dst, const PFMsimd_vec4 v)
 {
     // Calculate the sum of squares of elements
@@ -4326,7 +4326,7 @@ pfmSimdVec4Normalize(PFMsimd_vec4 dst, const PFMsimd_vec4 v)
     dst[3] = pfmSimdMul_F32(v[3], invLength);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4NormalizeR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v)
 {
     // Calculate the sum of squares of elements
@@ -4350,7 +4350,7 @@ pfmSimdVec4NormalizeR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v)
     dst[3] = pfmSimdMul_F32(v[3], invLength);
 }
 
-static inline PFMsimd_f
+PFM_API PFMsimd_f
 pfmSimdVec4Length(const PFMsimd_vec4 v)
 {
     PFMsimd_f squaredLength = pfmSimdAdd_F32(
@@ -4366,7 +4366,7 @@ pfmSimdVec4Length(const PFMsimd_vec4 v)
     return pfmSimdSqrt_F32(squaredLength);
 }
 
-static inline PFMsimd_f
+PFM_API PFMsimd_f
 pfmSimdVec4LengthSq(const PFMsimd_vec4 v)
 {
     PFMsimd_f squaredLength = pfmSimdAdd_F32(
@@ -4380,7 +4380,7 @@ pfmSimdVec4LengthSq(const PFMsimd_vec4 v)
         pfmSimdMul_F32(v[3], v[3]));
 }
 
-static inline PFMsimd_f
+PFM_API PFMsimd_f
 pfmSimdVec4Dot(const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
 {
     PFMsimd_f squaredLength = pfmSimdAdd_F32(
@@ -4394,7 +4394,7 @@ pfmSimdVec4Dot(const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
         pfmSimdMul_F32(v1[3], v2[3]));
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Lerp(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, PFMsimd_f t)
 {
     dst[0] = pfmSimdAdd_F32(v1[0], pfmSimdMul_F32(t, pfmSimdSub_F32(v2[0], v1[0])));
@@ -4403,7 +4403,7 @@ pfmSimdVec4Lerp(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, 
     dst[3] = pfmSimdAdd_F32(v1[3], pfmSimdMul_F32(t, pfmSimdSub_F32(v2[3], v1[3])));
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4LerpR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, PFMsimd_f t)
 {
     dst[0] = pfmSimdAdd_F32(v1[0], pfmSimdMul_F32(t, pfmSimdSub_F32(v2[0], v1[0])));
@@ -4412,7 +4412,7 @@ pfmSimdVec4LerpR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsim
     dst[3] = pfmSimdAdd_F32(v1[3], pfmSimdMul_F32(t, pfmSimdSub_F32(v2[3], v1[3])));
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4BaryInterp(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
     // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
@@ -4438,7 +4438,7 @@ pfmSimdVec4BaryInterp(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec
     dst[3] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4BaryInterpR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
     // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
@@ -4464,7 +4464,7 @@ pfmSimdVec4BaryInterpR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const 
     dst[3] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4BaryInterpV(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, const PFMsimd_vec3 w)
 {
     // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
@@ -4490,7 +4490,7 @@ pfmSimdVec4BaryInterpV(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_ve
     dst[3] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4BaryInterpVR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, const PFMsimd_vec3 w)
 {
     // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
@@ -4516,7 +4516,7 @@ pfmSimdVec4BaryInterpVR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const
     dst[3] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4Transform(PFMsimd_vec4 dst, const PFMsimd_vec4 v, const float mat[16])
 {
     PFMsimd_f mat_col0 = pfmSimdSet1_F32(mat[0]);
@@ -4558,7 +4558,7 @@ pfmSimdVec4Transform(PFMsimd_vec4 dst, const PFMsimd_vec4 v, const float mat[16]
     dst[3] = tmp3;
 }
 
-static inline void
+PFM_API void
 pfmSimdVec4TransformR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v, const float mat[16])
 {
     PFMsimd_f mat_col0 = pfmSimdSet1_F32(mat[0]);
