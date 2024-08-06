@@ -20,6 +20,7 @@
 #ifndef PFM_H
 #define PFM_H
 
+#include <smmintrin.h>
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
@@ -2368,6 +2369,66 @@ pfmSimdCast_I32_F32(PFMsimd_i x)
     return _mm_castsi128_ps(x);
 #else
     return *(PFMsimd_f*)&x;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfmSimdMin_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_min_epi32(x, y);
+#elif defined(__SSE2__)
+    return _mm_min_epi32(x, y);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = fminf(((int32_t*)&x)[0], ((int32_t*)&y)[0]);
+    ((int32_t*)&result)[1] = fminf(((int32_t*)&x)[1], ((int32_t*)&y)[1]);
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfmSimdMin_F32(PFMsimd_f x, PFMsimd_f y)
+{
+#if defined(__AVX2__)
+    return _mm256_min_ps(x, y);
+#elif defined(__SSE2__)
+    return _mm_min_ps(x, y);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = fminf(((float*)&x)[0], ((float*)&y)[0]);
+    ((float*)&result)[1] = fminf(((float*)&x)[1], ((float*)&y)[1]);
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfmSimdMax_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_max_epi32(x, y);
+#elif defined(__SSE2__)
+    return _mm_max_epi32(x, y);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = fmaxf(((int32_t*)&x)[0], ((int32_t*)&y)[0]);
+    ((int32_t*)&result)[1] = fmaxf(((int32_t*)&x)[1], ((int32_t*)&y)[1]);
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfmSimdMax_F32(PFMsimd_f x, PFMsimd_f y)
+{
+#if defined(__AVX2__)
+    return _mm256_max_ps(x, y);
+#elif defined(__SSE2__)
+    return _mm_max_ps(x, y);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = fmaxf(((float*)&x)[0], ((float*)&y)[0]);
+    ((float*)&result)[1] = fmaxf(((float*)&x)[1], ((float*)&y)[1]);
+    return result;
 #endif
 }
 
