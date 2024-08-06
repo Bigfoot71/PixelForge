@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
+#include <tmmintrin.h>
 
 #if defined(__AVX2__)
 #   include <immintrin.h>
@@ -2033,6 +2034,36 @@ pfmSimdRound_F32(PFMsimd_f x, const int imm)
     return x;
 }
 #endif
+
+PFM_API PFMsimd_i
+pfmSimdAbs_I32(PFMsimd_i x)
+{
+#if defined(__AVX2__)
+    return _mm256_abs_epi32(x);
+#elif defined(__SSE2__)
+    return _mm_abs_epi32(x);
+#else
+    ((int32_t*)&x)[0] = abs(((int32_t*)&x)[0]);
+    ((int32_t*)&x)[1] = abs(((int32_t*)&x)[1]);
+    return x;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfmSimdAbs_F32(PFMsimd_f x)
+{
+#if defined(__AVX2__)
+    return _mm256_andnot_ps(
+        _mm256_set1_ps(-0.0f), x);
+#elif defined(__SSE2__)
+    return _mm_andnot_ps(
+        _mm_set1_ps(-0.0f), x);
+#else
+    ((float*)&x)[0] = fabsf(((float*)&x)[0]);
+    ((float*)&x)[1] = fabsf(((float*)&x)[1]);
+    return x;
+#endif
+}
 
 PFM_API PFMsimd_i
 pfmSimdUnpackLo_I8(PFMsimd_i x, PFMsimd_i y)
