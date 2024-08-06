@@ -2276,20 +2276,14 @@ pfSimdConvert_F32_F16(PFMsimd_f x, const int imm)
 }
 #endif
 
-#if PF_SIMD_SIZE > 1
 PFM_API PFMsimd_f
 pfSimdConvert_F16_F32(PFMsimd_f x)
 {
 #if defined(__AVX2__)
     return _mm256_cvtph_ps(x);
-#elif defined(__SSE3__)
+#elif defined(__SSE2__)
     return _mm_cvtph_ps(x);
-#endif
-}
 #else
-PFM_API float
-pfSimdConvert_F16_F32(uint16_t x)
-{
     // REVIEW: Incorrect behavior
 
     PFMsimd_f result = 0;
@@ -2304,8 +2298,8 @@ pfSimdConvert_F16_F32(uint16_t x)
         ((float*)&result)[i] = *(float*)&r;
     }
     return result;
-}
 #endif
+}
 
 PFM_API PFMsimd_f
 pfSimdConvert_I32_F32(PFMsimd_i x)
