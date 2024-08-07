@@ -741,8 +741,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
                 Load the current barycentric coordinates into AVX registers
             */                                                                              \
             PFMsimd_i w1V = pfmSimdAdd_I32(pfmSimdSet1_I32(w1), w1XStepV);                  \
-            PFMsimd_i w2V = pfmSimdAdd_I32(pfmSimdSet1_I32(w2), w1XStepV);                  \
-            PFMsimd_i w3V = pfmSimdAdd_I32(pfmSimdSet1_I32(w3), w1XStepV);                  \
+            PFMsimd_i w2V = pfmSimdAdd_I32(pfmSimdSet1_I32(w2), w2XStepV);                  \
+            PFMsimd_i w3V = pfmSimdAdd_I32(pfmSimdSet1_I32(w3), w3XStepV);                  \
             /*
                 Test if pixels are inside the triangle
             */                                                                              \

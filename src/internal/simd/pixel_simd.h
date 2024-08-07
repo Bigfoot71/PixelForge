@@ -222,20 +222,21 @@ pfInternal_PixelSet_BGRA_USHORT_4_4_4_4_simd(void* pixels, PFsizei offset, PFMsi
 static inline void
 pfInternal_PixelSet_RGBA_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
-    PFMsimd_i pixelsColors = pfmSimdLoad_I32((PFMsimd_i*)(pixels + offset));
+    PFMsimd_i pixelsColors = pfmSimdLoad_I32((PFuint*)pixels + offset);
     PFMsimd_i maskedColors = pfmSimdBlendV_I8(pixelsColors, colors, mask);
 
-    pfmSimdStore_I32((PFMsimd_i*)(pixels + offset), maskedColors);
+    pfmSimdStore_I32((PFuint*)pixels + offset, maskedColors);
 }
 
 static inline void
 pfInternal_PixelSet_BGRA_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
-    PFMsimd_i pixelsColors = pfmSimdLoad_I32((PFMsimd_i*)(pixels + offset));
     PFMsimd_i bgraColors = pfmSimdShuffle_I8(colors, pfmSimdSetR_x4_I8(2, 1, 0, 3));
+
+    PFMsimd_i pixelsColors = pfmSimdLoad_I32((PFuint*)pixels + offset);
     PFMsimd_i maskedColors = pfmSimdBlendV_I8(pixelsColors, bgraColors, mask);
 
-    pfmSimdStore_I32((PFMsimd_i*)(pixels + offset), maskedColors);
+    pfmSimdStore_I32((PFuint*)pixels + offset, maskedColors);
 }
 
 static inline void
