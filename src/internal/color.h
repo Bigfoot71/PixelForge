@@ -154,30 +154,30 @@ pfInternal_SimdColorBarySmooth(PFsimd_color out,
 
 static inline void
 pfInternal_SimdColorBaryFlat(PFsimd_color out,
-                              const PFsimd_color c1,
-                              const PFsimd_color c2,
-                              const PFsimd_color c3,
-                              PFMsimd_f w1,
-                              PFMsimd_f w2,
-                              PFMsimd_f w3)
+                             const PFsimd_color c1,
+                             const PFsimd_color c2,
+                             const PFsimd_color c3,
+                             PFMsimd_f w1,
+                             PFMsimd_f w2,
+                             PFMsimd_f w3)
 {
-    // Multiply weights by 255 and convert them to integers
-    PFMsimd_f scale = pfmSimdSet1_F32(255.0f);
-    PFMsimd_i uW1 = pfmSimdConvert_F32_I32(pfmSimdMul_F32(w1, scale));
-    PFMsimd_i uW2 = pfmSimdConvert_F32_I32(pfmSimdMul_F32(w2, scale));
-    PFMsimd_i uW3 = pfmSimdConvert_F32_I32(pfmSimdMul_F32(w3, scale));
+    // Compare the weights to find the index of the maximum weight
+    PFMsimd_f maxWeight = pfmSimdMax_F32(w1, pfmSimdMax_F32(w2, w3));
+    
+    // Compare maxWeight to each weight to find which one is the max
+    PFMsimd_i mask1 = pfmSimdCast_F32_I32(pfmSimdCmpEQ_F32(maxWeight, w1));
+    PFMsimd_i mask2 = pfmSimdCast_F32_I32(pfmSimdCmpEQ_F32(maxWeight, w2));
+    PFMsimd_i mask3 = pfmSimdCast_F32_I32(pfmSimdCmpEQ_F32(maxWeight, w3));
 
-    // Perform multiplications and additions for each channel
-    // Then approximate division by 255
-    PFMsimd_i factor = pfmSimdSet1_I32(257);
+    // Use masks to select the corresponding color
     for (int_fast8_t i = 0; i < 4; ++i) {
-        out[i] = pfmSimdAdd_I32(
-            pfmSimdAdd_I32(
-                pfmSimdMullo_I32(uW1, c1[i]), 
-                pfmSimdMullo_I32(uW2, c2[i])),
-                pfmSimdMullo_I32(uW3, c3[i]));
-        out[i] = pfmSimdShr_I32(
-            pfmSimdMullo_I32(out[i], factor), 16);
+        out[i] = pfmSimdOr_I32(
+            pfmSimdAnd_I32(mask1, c1[i]),
+            pfmSimdOr_I32(
+                pfmSimdAnd_I32(mask2, c2[i]),
+                pfmSimdAnd_I32(mask3, c3[i])
+            )
+        );
     }
 }
 
