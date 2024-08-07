@@ -2453,6 +2453,36 @@ pfmSimdMax_F32(PFMsimd_f x, PFMsimd_f y)
 }
 
 PFM_API PFMsimd_i
+pfmSimdClamp_I32(PFMsimd_i x, PFMsimd_i min, PFMsimd_i max)
+{
+#if defined(__AVX2__)
+    return _mm256_min_epi32(_mm256_max_epi32(x, min), max);
+#elif defined(__SSE2__)
+    return _mm_min_epi32(_mm_max_epi32(x, min), max);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = fminf(fmaxf(((int32_t*)&x)[0], ((int32_t*)&min)[0]), ((int32_t*)&max)[0]);
+    ((int32_t*)&result)[1] = fminf(fmaxf(((int32_t*)&x)[1], ((int32_t*)&min)[1]), ((int32_t*)&max)[1]);
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfmSimdClamp_F32(PFMsimd_f x, PFMsimd_f min, PFMsimd_f max)
+{
+#if defined(__AVX2__)
+    return _mm256_min_ps(_mm256_max_ps(x, min), max);
+#elif defined(__SSE2__)
+    return _mm_min_ps(_mm_max_ps(x, min), max);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = fminf(fmaxf(((float*)&x)[0], ((float*)&min)[0]), ((float*)&max)[0]);
+    ((float*)&result)[1] = fminf(fmaxf(((float*)&x)[1], ((float*)&min)[1]), ((float*)&max)[1]);
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
 pfmSimdAdd_I32(PFMsimd_i x, PFMsimd_i y)
 {
 #if defined(__AVX2__)
@@ -2555,6 +2585,27 @@ pfmSimdDiv_F32(PFMsimd_f x, PFMsimd_f y)
     PFMsimd_f result;
     ((float*)&result)[0] = ((float*)&x)[0] / ((float*)&y)[0];
     ((float*)&result)[1] = ((float*)&x)[1] / ((float*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfmSimdMod_F32(PFMsimd_f x, PFMsimd_f y)
+{
+#if defined(__AVX2__)
+    __m256 quotient = _mm256_div_ps(x, y);                              // Calculate the quotient
+    __m256 floor_quotient = _mm256_floor_ps(quotient);                  // Use floor to get the integer part
+    __m256 floor_quotient_times_y = _mm256_mul_ps(floor_quotient, y);   // Multiply y by the integer part of the quotient
+    return _mm256_sub_ps(x, floor_quotient_times_y);                    // Subtract this product from x to get the modulo result
+#elif defined(__SSE2__)
+    __m128 quotient = _mm_div_ps(x, y);
+    __m128 floor_quotient = _mm_floor_ps(quotient);
+    __m128 floor_quotient_times_y = _mm_mul_ps(floor_quotient, y);
+    return _mm_sub_ps(x, floor_quotient_times_y);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = fmodf(((float*)&x)[0], ((float*)&y)[0]);
+    ((float*)&result)[1] = fmodf(((float*)&x)[1], ((float*)&y)[1]);
     return result;
 #endif
 }

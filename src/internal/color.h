@@ -22,10 +22,12 @@
 
 #include "../pixelforge.h"
 #include "../pfm.h"
+#include <stdint.h>
 
 /* SISD Implementation */
 
-static inline PFcolor pfInternal_ColorLerpSmooth(PFcolor a, PFcolor b, PFfloat t)
+static inline PFcolor
+pfInternal_ColorLerpSmooth(PFcolor a, PFcolor b, PFfloat t)
 {
     return (PFcolor) {
         a.r + t*(b.r - a.r),
@@ -35,12 +37,14 @@ static inline PFcolor pfInternal_ColorLerpSmooth(PFcolor a, PFcolor b, PFfloat t
     };
 }
 
-static inline PFcolor pfInternal_ColorLerpFlat(PFcolor v1, PFcolor v2, PFfloat t)
+static inline PFcolor
+pfInternal_ColorLerpFlat(PFcolor v1, PFcolor v2, PFfloat t)
 {
     return (t < 0.5f) ? v1 : v2;
 }
 
-static inline PFcolor pfInternal_ColorBarySmooth(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
+static inline PFcolor
+pfInternal_ColorBarySmooth(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
 {
     PFubyte uW1 = 255*w1;
     PFubyte uW2 = 255*w2;
@@ -54,7 +58,8 @@ static inline PFcolor pfInternal_ColorBarySmooth(PFcolor v1, PFcolor v2, PFcolor
     };
 }
 
-static inline PFcolor pfInternal_ColorBaryFlat(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
+static inline PFcolor
+pfInternal_ColorBaryFlat(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
 {
     return ((w1 > w2) & (w1 > w3)) ? v1 : (w2 >= w3) ? v2 : v3;
 }
@@ -71,7 +76,8 @@ pfInternal_SimdColorLoadUnpacked(PFsimd_color dst, PFcolor src)
     }
 }
 
-static inline void pfInternal_SimdColorUnpack(PFsimd_color out, const PFMsimd_i packed)
+static inline void
+pfInternal_SimdColorUnpack(PFsimd_color out, const PFMsimd_i packed)
 {
     const PFMsimd_i mask = pfmSimdSet1_I32(0xFF);
 
@@ -92,6 +98,29 @@ pfInternal_SimdColorPack(const PFsimd_color unpacked)
         pfmSimdOr_I32(
             pfmSimdShl_I32(unpacked[1], 8), 
             unpacked[0]));
+}
+
+static inline void
+pfInternal_SimdColorLerpSmooth(PFsimd_color out, const PFsimd_color a, const PFsimd_color b, PFMsimd_f t)
+{
+    PFMsimd_f scale = pfmSimdSet1_F32(255.0f);
+    PFMsimd_i uT = pfmSimdConvert_F32_I32(pfmSimdMul_F32(t, scale));
+    out[0] = pfmSimdAdd_I32(a[0], pfmSimdShr_I32(pfmSimdMullo_I32(uT, pfmSimdSub_I32(b[0], a[0])), 8));
+    out[1] = pfmSimdAdd_I32(a[1], pfmSimdShr_I32(pfmSimdMullo_I32(uT, pfmSimdSub_I32(b[1], a[1])), 8));
+    out[2] = pfmSimdAdd_I32(a[2], pfmSimdShr_I32(pfmSimdMullo_I32(uT, pfmSimdSub_I32(b[2], a[2])), 8));
+    out[3] = pfmSimdAdd_I32(a[3], pfmSimdShr_I32(pfmSimdMullo_I32(uT, pfmSimdSub_I32(b[3], a[3])), 8));
+}
+
+static inline void
+pfInternal_SimdColorLerpFlat(PFsimd_color out, const PFsimd_color a, const PFsimd_color b, PFMsimd_f t)
+{
+    PFMsimd_i mask = pfmSimdCast_F32_I32(
+        pfmSimdCmpLT_F32(t, pfmSimdSet1_F32(0.5f)));
+    
+    out[0] = pfmSimdBlendV_I8(b[0], a[0], mask);
+    out[1] = pfmSimdBlendV_I8(b[1], a[1], mask);
+    out[2] = pfmSimdBlendV_I8(b[2], a[2], mask);
+    out[3] = pfmSimdBlendV_I8(b[3], a[3], mask);
 }
 
 static inline void

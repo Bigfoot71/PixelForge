@@ -18,12 +18,12 @@
  */
 
 #include "internal/context/context.h"
+#include "internal/sampler.h"
 #include "internal/pixel.h"
-#include "pfm.h"
+#include "pixelforge.h"
 
 #include <stdlib.h>
 #include <stddef.h>
-#include <xmmintrin.h>
 
 /* Texture functions */
 
@@ -66,14 +66,20 @@ PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelforma
     texture->format = format;
     texture->type = type;
 
-    texture->width = width;
-    texture->height = height;
+    texture->w = width;
+    texture->h = height;
+
+    texture->tx = 1.0f/width;
+    texture->ty = 1.0f/height;
 
     texture->getter = getter;
     texture->setter = setter;
 
     texture->getterSimd = getterSimd;
     texture->setterSimd = setterSimd;
+
+    texture->sampler = pfInternal_Texture2DSampler_NEAREST_REPEAT;
+    texture->samplerSimd = pfInternal_SimdTexture2DSampler_NEAREST_REPEAT;
 
     return texture;
 }
@@ -99,10 +105,25 @@ PFboolean pfIsValidTexture(const PFtexture texture)
     if (tex)
     {
         result = tex->pixels &&
-                 tex->width > 0 && tex->height > 0 &&
+                 tex->w > 0 && tex->h > 0 &&
                  tex->getter && tex->setter;
     }
     return result;
+}
+
+void pfTextureParameter(PFtexture texture, PFtexturewrap wrapMode, PFtexturefilter filterMode)
+{
+    struct PFtex* tex = texture;
+
+    if (!pfInternal_IsTextureParameterValid(wrapMode, filterMode))
+    {
+        if (currentCtx) currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
+
+    pfInternal_GetTexture2DSampler(
+        &tex->sampler, &tex->samplerSimd,
+        wrapMode, filterMode);
 }
 
 void* pfGetTexturePixels(const PFtexture texture, PFsizei* width, PFsizei* height, PFpixelformat* format, PFdatatype* type)
@@ -111,88 +132,11 @@ void* pfGetTexturePixels(const PFtexture texture, PFsizei* width, PFsizei* heigh
     void* pixels = NULL;
     if (tex)
     {
-        if (width) *width = tex->width;
-        if (height) *height = tex->height;
+        if (width) *width = tex->w;
+        if (height) *height = tex->h;
         if (format) *format = tex->format;
         if (type) *type = tex->type;
         pixels = tex->pixels;
     }
     return pixels;
-}
-
-void pfSetTexturePixel(PFtexture texture, PFsizei x, PFsizei y, PFcolor color)
-{
-    struct PFtex* tex = texture;
-    tex->setter(tex->pixels, y*tex->width + x, color);
-}
-
-void pfSetTexturePixelSimd(PFtexture texture, PFsizei xFrom, PFsizei yRow, PFMsimd_i color, PFMsimd_i mask)
-{
-    struct PFtex* tex = texture;
-    PFsizei offset = yRow*tex->width + xFrom;
-    tex->setterSimd(tex->pixels, offset, color, mask);
-}
-
-PFcolor pfGetTexturePixel(const PFtexture texture, PFsizei x, PFsizei y)
-{
-    struct PFtex* tex = texture;
-    return tex->getter(tex->pixels, y*tex->width + x);
-}
-
-PFMsimd_i pfGetTexturePixelSimd(const PFtexture texture, PFMsimd_i positions[2])
-{
-    struct PFtex* tex = texture;
-
-    PFMsimd_i offsets = pfmSimdAdd_I32(
-        pfmSimdMullo_I32(positions[1], pfmSimdSet1_I32(tex->width)),
-        positions[0]);
-
-    return tex->getterSimd(tex->pixels, offsets);
-}
-
-PFcolor pfTextureSampleNearestWrap(const PFtexture texture, PFfloat u, PFfloat v)
-{
-    const struct PFtex* tex = texture;
-
-    // Wrap UVs (use to int cast to round toward zero)
-    u = (u - (PFint)u);
-    v = (v - (PFint)v);
-
-    // Upscale to nearest texture coordinates
-    // NOTE: We use '(int)(x+0.5)' although this is incorrect
-    //       regarding the direction of rounding in case of negative values
-    //       and also less accurate than roundf, but it remains so much more
-    //       efficient that it is preferable for now to opt for this option.
-    PFint x = (PFint)(u * ((PFint)tex->width - 1) + 0.5f);
-    PFint y = (PFint)(v * ((PFint)tex->height - 1) + 0.5f);
-
-    // Make sure the coordinates are positive (in case of negative UV input)
-    x = abs(x), y = abs(y);
-
-    // Return texel color
-    return tex->getter(tex->pixels, y*tex->width + x);
-}
-
-PFMsimd_i pfTextureSampleNearestWrapSimd(const PFtexture texture, const PFMsimd_vec2 texcoords)
-{
-    const struct PFtex* tex = texture;
-
-    PFMsimd_f u = texcoords[0];
-    PFMsimd_f v = texcoords[1];
-
-    u = pfmSimdMul_F32(
-        pfmSimdSub_F32(u, pfmSimdRound_F32(u, _MM_FROUND_TO_ZERO)),
-        pfmSimdSet1_F32((float)(tex->width - 1)));
-
-    v = pfmSimdMul_F32(
-        pfmSimdSub_F32(v, pfmSimdRound_F32(v, _MM_FROUND_TO_ZERO)),
-        pfmSimdSet1_F32((float)(tex->height - 1)));
-
-    PFMsimd_i x = pfmSimdAbs_I32(pfmSimdConvert_F32_I32(u));
-    PFMsimd_i y = pfmSimdAbs_I32(pfmSimdConvert_F32_I32(v));
-
-    PFMsimd_i offsets = pfmSimdAdd_I32(
-        pfmSimdMullo_I32(y, pfmSimdSet1_I32(tex->width)), x);
-
-    return tex->getterSimd(tex->pixels, offsets);
 }

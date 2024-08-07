@@ -713,7 +713,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     PFpixelgetter_simd getter = texDst->getterSimd;
     PFpixelsetter_simd setter = texDst->setterSimd;
-    PFsizei widthDst = texDst->width;
+    PFsizei widthDst = texDst->w;
     void *pbDst = texDst->pixels;
 
     PFMsimd_f z1V = pfmSimdSet1_F32(v1->homogeneous[2]);
@@ -764,9 +764,9 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             /* Run the pixel code! */                                                       \
             PIXEL_CODE                                                                      \
             /* Increment the barycentric coordinates for the next pixels */                 \
-            w1 += PF_SIMD_SIZE * w1XStep;                                                   \
-            w2 += PF_SIMD_SIZE * w2XStep;                                                   \
-            w3 += PF_SIMD_SIZE * w3XStep;                                                   \
+            w1 += PF_SIMD_SIZE*w1XStep;                                                     \
+            w2 += PF_SIMD_SIZE*w2XStep;                                                     \
+            w3 += PF_SIMD_SIZE*w3XStep;                                                     \
         }                                                                                   \
         /* Move to the next row in the bounding box */                                      \
         w1Row += w1YStep;                                                                   \
@@ -784,8 +784,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFMsimd_vec2 texcoords; \
         pfmSimdVec2BaryInterpR(texcoords, tc1V, tc2V, tc3V, w1NormV, w2NormV, w3NormV); \
         if (is3D) pfmSimdVec2Scale(texcoords, texcoords, zV); /* Perspective correct */ \
-        PFMsimd_i texelsPacked = pfTextureSampleNearestWrapSimd(texSrc, texcoords); \
-        PFsimd_color texels; pfInternal_SimdColorUnpack(texels, texelsPacked); \
+        PFsimd_color texels; pfInternal_SimdColorUnpack(texels, texSrc->samplerSimd(texSrc, texcoords)); \
         pfInternal_SimdBlendMultiplicative(fragments, texels, fragments);
 
 #   define LIGHTING() \
@@ -924,7 +923,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     PFpixelgetter getter = texDst->getter;
     PFpixelsetter setter = texDst->setter;
-    PFsizei widthDst = texDst->width;
+    PFsizei widthDst = texDst->w;
     void *pbDst = texDst->pixels;
 
     PFfloat z1 = v1->homogeneous[2];
@@ -1007,7 +1006,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFMvec2 texcoord; \
         pfmVec2BaryInterpR(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, w1Norm, w2Norm, w3Norm); \
         if (is3D) texcoord[0] *= z, texcoord[1] *= z; /* Perspective correct */ \
-        PFcolor texel = pfTextureSampleNearestWrap(texSrc, texcoord[0], texcoord[1]); \
+        PFcolor texel = texSrc->sampler(texSrc, texcoord[0], texcoord[1]); \
         fragment = pfInternal_BlendMultiplicative(texel, fragment);
 
 #   define LIGHTING() \

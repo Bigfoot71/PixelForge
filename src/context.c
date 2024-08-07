@@ -299,12 +299,12 @@ void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelf
 
     /* Store the old width and height of the main framebuffer */
 
-    PFsizei oldWidth = ((struct PFtex*)currentCtx->mainFramebuffer.texture)->width;
-    PFsizei oldHeight = ((struct PFtex*)currentCtx->mainFramebuffer.texture)->height;
+    PFsizei oldW = ((struct PFtex*)currentCtx->mainFramebuffer.texture)->w;
+    PFsizei oldH = ((struct PFtex*)currentCtx->mainFramebuffer.texture)->h;
 
     /* Check if the dimensions of the new buffer differ from the old one */
 
-    if (oldWidth != width || oldHeight != height)
+    if (oldW != width || oldH != height)
     {
         // Calculate the new buffer size
         const PFsizei bufferSize = width*height;
@@ -320,22 +320,22 @@ void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelf
         }
 
         // Initialize the new areas of the z-buffer
-        if (width > oldWidth)
+        if (width > oldW)
         {
             for (PFsizei y = 0; y < height; y++)
             {
-                for (PFsizei x = oldWidth; x < width; x++)
+                for (PFsizei x = oldW; x < width; x++)
                 {
                     zbuffer[y * width + x] = currentCtx->clearDepth;
                 }
             }
         }
 
-        if (height > oldHeight)
+        if (height > oldH)
         {
-            const PFsizei xMax = (oldWidth > width) ? oldWidth : width;
+            const PFsizei xMax = (oldW > width) ? oldW : width;
 
-            for (PFsizei y = oldHeight; y < height; y++)
+            for (PFsizei y = oldH; y < height; y++)
             {
                 for (PFsizei x = 0; x < xMax; x++)
                 {
@@ -637,8 +637,8 @@ void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height)
     currentCtx->vpMin[0] = MAX(x, 0);
     currentCtx->vpMin[1] = MAX(y, 0);
 
-    currentCtx->vpMax[0] = MIN(x + width, ((struct PFtex*)currentCtx->mainFramebuffer.texture)->width - 1);
-    currentCtx->vpMax[1] = MIN(y + height, ((struct PFtex*)currentCtx->mainFramebuffer.texture)->height - 1);
+    currentCtx->vpMax[0] = MIN(x + width, ((struct PFtex*)currentCtx->mainFramebuffer.texture)->w - 1);
+    currentCtx->vpMax[1] = MIN(y + height, ((struct PFtex*)currentCtx->mainFramebuffer.texture)->h - 1);
 }
 
 void pfPolygonMode(PFface face, PFpolygonmode mode)
@@ -751,7 +751,7 @@ void pfClear(PFclearflag flag)
 
     PFframebuffer *framebuffer = currentCtx->currentFramebuffer;
     struct PFtex *tex = currentCtx->currentFramebuffer->texture;
-    PFsizei size = tex->width*tex->height;
+    PFsizei size = tex->w*tex->h;
 
     if (flag & (PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT))
     {
@@ -2156,7 +2156,7 @@ void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2)
     // Draw rectangle
     for (PFint y = iY1; y <= iY2; y++)
     {
-        PFsizei yOffset = y * tex->width;
+        PFsizei yOffset = y * tex->w;
 
         for (PFint x = iX1; x <= iX2; x++)
         {
@@ -2232,7 +2232,7 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PFdatatyp
         PFsizei ySrcOffset = (PFsizei)(v*height)*width; // Offset into source texture
 
         // Calculate destination offset for this scanline
-        PFsizei yDstOffset = y*texDst->width;
+        PFsizei yDstOffset = y*texDst->w;
 
         for (PFint x = xMin; x <= xMax; x++)
         {
@@ -2493,8 +2493,8 @@ void pfFogProcess(void)
 {
     struct PFtex* tex = currentCtx->currentFramebuffer->texture;
 
-    PFint width = tex->width;
-    PFint height = tex->height;
+    PFint width = tex->w;
+    PFint height = tex->h;
 
     void *pixels = tex->pixels;
     const PFfloat *zBuffer = currentCtx->currentFramebuffer->zbuffer;
@@ -2596,14 +2596,14 @@ void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat
     const struct PFtex *texSrc = currentCtx->currentFramebuffer->texture;
     PFpixelgetter srcPixelGetter = texSrc->getter;
     const void *srcPixels = texSrc->pixels;
-    PFsizei srcWidth = texSrc->width;
+    PFsizei srcWidth = texSrc->w;
 
     /* Calculate the minimum and maximum coordinates of the region to be read */
 
-    PFsizei xMin = CLAMP(x, 0, (PFint)texSrc->width - 1);
-    PFsizei yMin = CLAMP(y, 0, (PFint)texSrc->height - 1);
-    PFsizei xMax = CLAMP(x + (PFint)width, 0, (PFint)texSrc->width);
-    PFsizei yMax = CLAMP(y + (PFint)height, 0, (PFint)texSrc->height);
+    PFsizei xMin = CLAMP(x, 0, (PFint)texSrc->w - 1);
+    PFsizei yMin = CLAMP(y, 0, (PFint)texSrc->h - 1);
+    PFsizei xMax = CLAMP(x + (PFint)width, 0, (PFint)texSrc->w);
+    PFsizei yMax = CLAMP(y + (PFint)height, 0, (PFint)texSrc->h);
 
     /* Reads pixels from the framebuffer and copies them to the destination */
 
@@ -2633,8 +2633,8 @@ void pfPostProcess(PFpostprocessfunc postProcessFunction)
 {
     struct PFtex* tex = currentCtx->currentFramebuffer->texture;
 
-    PFint width = tex->width;
-    PFint height = tex->height;
+    PFint width = tex->w;
+    PFint height = tex->h;
 
     void *pixels = tex->pixels;
     const PFfloat *zBuffer = currentCtx->currentFramebuffer->zbuffer;

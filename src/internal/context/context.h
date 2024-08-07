@@ -127,18 +127,46 @@ typedef void (*PFpixelsetter)(void* pixels, PFsizei index, PFcolor color);
 typedef void (*PFpixelsetter_simd)(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask);
 
 /**
+ * @brief PFtex (texture) forward declaration
+ */
+struct PFtex;
+
+/**
+ * @brief Texture sampler function pointer type.
+ * This function samples a texture at the given (u, v) coordinates.
+ *
+ * @param tex A pointer to the texture to sample from.
+ * @param u The u coordinate for texture sampling.
+ * @param v The v coordinate for texture sampling.
+ * @return The color sampled from the texture at the specified coordinates.
+ */
+typedef PFcolor (*PFtexturesampler)(const struct PFtex* tex, PFfloat u, PFfloat v);
+
+/**
+ * @brief SIMD texture sampler function pointer type.
+ * This function samples a texture using SIMD (Single Instruction, Multiple Data) coordinates.
+ *
+ * @param tex A pointer to the texture to sample from.
+ * @param texcoords A SIMD vector containing the texture coordinates.
+ * @return The SIMD integer result sampled from the texture at the specified coordinates.
+ */
+typedef PFMsimd_i (*PFtexturesampler_simd)(const struct PFtex* tex, const PFMsimd_vec2 texcoords);
+
+/**
  * @brief Structure representing a texture.
  */
 struct PFtex {
-    PFpixelgetter getter;
-    PFpixelsetter setter;
-    PFpixelgetter_simd getterSimd;
-    PFpixelsetter_simd setterSimd;
-    void *pixels;
-    PFsizei width;
-    PFsizei height;
-    PFdatatype type;
-    PFpixelformat format;
+    PFpixelgetter           getter;
+    PFpixelsetter           setter;
+    PFpixelgetter_simd      getterSimd;
+    PFpixelsetter_simd      setterSimd;
+    PFtexturesampler        sampler;
+    PFtexturesampler_simd   samplerSimd;
+    void                    *pixels;
+    PFfloat                 tx, ty;
+    PFsizei                 w, h;
+    PFdatatype              type;
+    PFpixelformat           format;
 };
 
 /**

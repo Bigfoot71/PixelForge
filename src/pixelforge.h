@@ -320,6 +320,17 @@ typedef enum {                  // NOTE 1: PF_FRONT and PF_BACK are used as indi
 } PFface;
 
 typedef enum {
+    PF_REPEAT,
+    PF_MIRRORED_REPEAT,
+    PF_CLAMP_TO_EDGE
+} PFtexturewrap;
+
+typedef enum {
+    PF_NEAREST,
+    PF_BILINEAR
+} PFtexturefilter;
+
+typedef enum {
     PF_LIGHT0 = 0,
     PF_LIGHT1,
     PF_LIGHT2,
@@ -1723,6 +1734,19 @@ PF_API void pfDeleteTexture(PFtexture* texture, PFboolean freeBuffer);
 PF_API PFboolean pfIsValidTexture(const PFtexture texture);
 
 /**
+ * @brief Sets the texture parameters for wrapping and filtering modes.
+ *
+ * This function defines the wrapping and filtering modes to be used when rendering the specified texture.
+ * The wrap mode determines how texture coordinates outside the range [0.0, 1.0] are handled, while the
+ * filter mode specifies how the texture is filtered when it is magnified or minified.
+ *
+ * @param texture The texture to set parameters for.
+ * @param wrapMode The wrapping mode to be used (e.g., repeat, clamp).
+ * @param filterMode The filtering mode to be used (e.g., nearest, linear).
+ */
+PF_API void pfTextureParameter(PFtexture texture, PFtexturewrap wrapMode, PFtexturefilter filterMode);
+
+/**
  * @brief Returns a pointer to the texels of the texture and retrieves texture details.
  *
  * This function provides direct access to the pixel data (texels) of the specified texture.
@@ -1737,48 +1761,6 @@ PF_API PFboolean pfIsValidTexture(const PFtexture texture);
  * @return Pointer to the texels of the texture.
  */
 PF_API void* pfGetTexturePixels(const PFtexture texture, PFsizei* width, PFsizei* height, PFpixelformat* format, PFdatatype* type);
-
-/**
- * @brief Sets the color value of a pixel in the texture.
- *
- * This function sets the color value of a specific pixel in the texture.
- * The pixel coordinates (x, y) and the color value are provided.
- *
- * @param texture Pointer to the texture object.
- * @param x The X coordinate of the pixel.
- * @param y The Y coordinate of the pixel.
- * @param color The color value of the pixel.
- */
-PF_API void pfSetTexturePixel(PFtexture texture, PFsizei x, PFsizei y, PFcolor color);
-
-/**
- * @brief Retrieves the color value of a pixel from the texture.
- *
- * This function retrieves the color value of a specific pixel from the texture.
- * The pixel coordinates (x, y) are provided.
- *
- * @param texture Pointer to the texture object.
- * @param x The X coordinate of the pixel.
- * @param y The Y coordinate of the pixel.
- * @return PFcolor The color value of the pixel.
- */
-PF_API PFcolor pfGetTexturePixel(const PFtexture texture, PFsizei x, PFsizei y);
-
-/**
- * @brief Samples a texture using nearest neighbor filtering with wrapping.
- *
- * This function samples the specified texture at the given (u, v) coordinates using
- * nearest neighbor filtering. The texture coordinates are wrapped, meaning they
- * are treated modulo 1.0, so coordinates outside the range [0.0, 1.0] will be
- * wrapped around.
- *
- * @param texture The texture to sample from.
- * @param u The horizontal texture coordinate.
- * @param v The vertical texture coordinate.
- * @return The color sampled from the texture at the given coordinates.
- */
-PF_API PFcolor pfTextureSampleNearestWrap(const PFtexture texture, PFfloat u, PFfloat v);
-
 
 #if defined(__cplusplus)
 }
