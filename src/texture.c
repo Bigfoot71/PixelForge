@@ -152,15 +152,30 @@ PFMsimd_i pfGetTexturePixelSimd(const PFtexture texture, PFMsimd_i positions[2])
 
 PFcolor pfTextureSampleNearestWrap(const PFtexture texture, PFfloat u, PFfloat v)
 {
-    struct PFtex* tex = texture;
-    PFsizei x = abs((PFint)roundf((u - (PFint)u)*(tex->width - 1)));
-    PFsizei y = abs((PFint)roundf((v - (PFint)v)*(tex->height - 1)));
+    const struct PFtex* tex = texture;
+
+    // Wrap UVs (use to int cast to round toward zero)
+    u = (u - (PFint)u);
+    v = (v - (PFint)v);
+
+    // Upscale to nearest texture coordinates
+    // NOTE: We use '(int)(x+0.5)' although this is incorrect
+    //       regarding the direction of rounding in case of negative values
+    //       and also less accurate than roundf, but it remains so much more
+    //       efficient that it is preferable for now to opt for this option.
+    PFint x = (PFint)(u * ((PFint)tex->width - 1) + 0.5f);
+    PFint y = (PFint)(v * ((PFint)tex->height - 1) + 0.5f);
+
+    // Make sure the coordinates are positive (in case of negative UV input)
+    x = abs(x), y = abs(y);
+
+    // Return texel color
     return tex->getter(tex->pixels, y*tex->width + x);
 }
 
 PFMsimd_i pfTextureSampleNearestWrapSimd(const PFtexture texture, const PFMsimd_vec2 texcoords)
 {
-    struct PFtex* tex = texture;
+    const struct PFtex* tex = texture;
 
     PFMsimd_f u = texcoords[0];
     PFMsimd_f v = texcoords[1];
