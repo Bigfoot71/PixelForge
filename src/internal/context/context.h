@@ -21,13 +21,45 @@
 #define PF_INTERNAL_CONTEXT_H
 
 #include "../../pixelforge.h"
-#include "./../config.h"
+#include "../config.h"
 #include "../../pfm.h"
+#include "../color.h"
 
 /*
     This file contains all the internal structures and functions
     not exposed that are used by the public context API.
 */
+
+/**
+ * @brief Defines a function pointer type for color blending functions.
+ *
+ * This function pointer type is used to specify a function that blends two colors together.
+ * The function should take two colors as input and return the resulting blended color.
+ *
+ * @param src The source color to blend. This is the color that will be blended with the destination color.
+ * @param dst The destination color to blend with. This is the color that will be blended with the source color.
+ * 
+ * @return The resulting blended color after applying the blending function to the source and destination colors.
+ */
+typedef PFcolor (*PFblendfunc)(PFcolor src, PFcolor dst);
+
+/**
+ * @brief Defines a function pointer type for SIMD color blending functions.
+ *
+ * This function pointer type is used to specify a function that blends multiple colors together
+ * using SIMD operations. It processes arrays of colors efficiently
+ * in parallel.
+ *
+ * @param[out] out The output color array where the resulting blended colors will be stored.
+ * @param[in] src The source color array to blend. This is the array of colors that will be blended with
+ *                the destination color array.
+ * @param[in] dst The destination color array to blend with. This is the array of colors that will be
+ *                blended with the source color array.
+ *
+ * @return void This function does not return a value; instead, it writes the blended results directly
+ *               to the `out` array.
+ */
+typedef void (*PFblendfunc_simd)(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst);
 
 /**
  * @brief Function pointer type for getting a pixel from a texture.
@@ -176,7 +208,9 @@ typedef struct {
     PFMmat4 *currentMatrix;                                 ///< Pointer to the current matrix
     void *auxFramebuffer;                                   ///< Auxiliary buffer for double buffering
 
-    PFblendfunc blendFunction;                              ///< Blend function for alpha blending
+    PFblendfunc blendFunction;                              ///< SISD Blend function for color blending
+    PFblendfunc_simd blendSimdFunction;                     ///< SIMD Blend function for color blending
+
     PFdepthfunc depthFunction;                              ///< Function for depth testing
 
     PFint vpPos[2];                                         ///< Represents the top-left corner of the viewport

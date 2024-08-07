@@ -20,6 +20,7 @@
 #include "internal/context/context.h"
 #include "internal/config.h"
 #include "internal/pixel.h"
+#include "internal/blend.h"
 #include "pixelforge.h"
 #include "pfm.h"
 
@@ -28,8 +29,6 @@
 #include <stddef.h>
 #include <string.h>
 #include <float.h>
-
-// TODO: Review all enums to give them unique values
 
 /* Current thread local-thread definition (declared in context.h) */
 
@@ -167,7 +166,8 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
     /* Initialization of default rendering members */
 
     ctx->currentDrawMode = 0;
-    ctx->blendFunction = pfBlendAlpha;
+    ctx->blendFunction = pfInternal_BlendAlpha;
+    ctx->blendSimdFunction = pfInternal_SimdBlendAlpha;
     ctx->depthFunction = pfDepthLess;
     ctx->clearColor = (PFcolor) { 0 };
     ctx->clearDepth = FLT_MAX;
@@ -701,9 +701,17 @@ void pfCullFace(PFface face)
     currentCtx->cullFace = face;
 }
 
-void pfBlendFunc(PFblendfunc func)
+void pfBlendMode(PFblendmode mode)
 {
-    currentCtx->blendFunction = func;
+    if (!pfInternal_IsBlendModeValid(mode))
+    {
+        currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
+
+    pfInternal_GetBlendFuncs(mode,
+        &currentCtx->blendFunction,
+        &currentCtx->blendSimdFunction);
 }
 
 void pfDepthFunc(PFdepthfunc func)
@@ -2526,7 +2534,7 @@ void pfFogProcess(void)
         {
             fogColor.a = alpha;
             setter(pixels, xyOffset, alpha == 255 ? fogColor
-                : pfBlendAlpha(fogColor, getter(pixels, xyOffset)));
+                : pfInternal_BlendAlpha(fogColor, getter(pixels, xyOffset)));
         }
         else if (depth > start)
         {
@@ -2549,7 +2557,7 @@ void pfFogProcess(void)
 
             fogColor.a = (PFubyte)(t * alpha);
             PFcolor color = getter(pixels, xyOffset);
-            setter(pixels, xyOffset, pfBlendAlpha(fogColor, color));
+            setter(pixels, xyOffset, pfInternal_BlendAlpha(fogColor, color));
         }
     }
     END_FOG_LOOP()

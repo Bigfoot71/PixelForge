@@ -283,6 +283,17 @@ typedef enum {
 } PFdrawmode;
 
 typedef enum {
+    PF_BLEND_AVERAGE,
+    PF_BLEND_ALPHA,
+    PF_BLEND_ADD,
+    PF_BLEND_SUB,
+    PF_BLEND_MUL,
+    PF_BLEND_SCREEN,
+    PF_BLEND_LIGHTEN,
+    PF_BLEND_DARKEN
+} PFblendmode;
+
+typedef enum {
     PF_POINT,
     PF_LINE,
     PF_FILL
@@ -352,7 +363,6 @@ typedef struct {
     PFubyte r, g, b, a;
 } PFcolor;
 
-typedef PFcolor (*PFblendfunc)(PFcolor, PFcolor);
 typedef PFboolean (*PFdepthfunc)(PFfloat, PFfloat);
 typedef PFcolor (*PFpostprocessfunc)(PFint, PFint, PFfloat, PFcolor);
 
@@ -740,9 +750,9 @@ PF_API void pfCullFace(PFface face);
  *
  * @warning This function needs a context to be defined.
  *
- * @param func The blending function to use.
+ * @param mode The blending mode to use.
  */
-PF_API void pfBlendFunc(PFblendfunc func);
+PF_API void pfBlendMode(PFblendmode mode);
 
 /**
  * @brief Specifies the depth testing function.
@@ -1760,19 +1770,6 @@ PF_API PFcolor pfGetTexturePixel(const PFtexture texture, PFsizei x, PFsizei y);
  * @return The color sampled from the texture at the given coordinates.
  */
 PF_API PFcolor pfTextureSampleNearestWrap(const PFtexture texture, PFfloat u, PFfloat v);
-
-/*
- *  Blending functions
- *
- *  These functions are intended to be used with `pfBlendFunc` to define the blend mode.
- *  You can also define your own functions following the signature of `PFblendfunc`.
- */
-
-PF_API PFcolor pfBlend(PFcolor source, PFcolor destination);
-PF_API PFcolor pfBlendAlpha(PFcolor source, PFcolor destination);
-PF_API PFcolor pfBlendAdditive(PFcolor source, PFcolor destination);
-PF_API PFcolor pfBlendSubtractive(PFcolor source, PFcolor destination);
-PF_API PFcolor pfBlendMultiplicative(PFcolor source, PFcolor destination);
 
 /*
  *  Depth testing functions

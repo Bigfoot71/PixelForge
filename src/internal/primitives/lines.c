@@ -350,7 +350,7 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
 
-            PFcolor finalColor = pfInternal_LerpColor_SMOOTH(c1, c2, t);
+            PFcolor finalColor = pfInternal_ColorLerpSmooth(c1, c2, t);
 
             if (blendFunc) finalColor = blendFunc(
                 finalColor, getter(bufDst, pOffset));
@@ -370,7 +370,7 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
 
-            PFcolor finalColor = pfInternal_LerpColor_SMOOTH(c1, c2, t);
+            PFcolor finalColor = pfInternal_ColorLerpSmooth(c1, c2, t);
 
             if (blendFunc) finalColor = blendFunc(
                 finalColor, getter(bufDst, pOffset));
@@ -445,7 +445,7 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
             if (currentCtx->depthFunction(z, zbDst[pOffset]))
             {
-                PFcolor finalColor = pfInternal_LerpColor_SMOOTH(c1, c2, t);
+                PFcolor finalColor = pfInternal_ColorLerpSmooth(c1, c2, t);
 
                 if (blendFunc) finalColor = blendFunc(
                     finalColor, getter(bufDst, pOffset));
@@ -467,7 +467,7 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
             if (currentCtx->depthFunction(z, zbDst[pOffset]))
             {
-                PFcolor finalColor = pfInternal_LerpColor_SMOOTH(c1, c2, t);
+                PFcolor finalColor = pfInternal_ColorLerpSmooth(c1, c2, t);
 
                 if (blendFunc) finalColor = blendFunc(
                     finalColor, getter(bufDst, pOffset));

@@ -18,20 +18,16 @@
  */
 
 #include "../lighting/lighting.h"
-#include "../simd/helper_simd.h"
 #include "../context/context.h"
+#include "../../pfm.h"
 #include "../helper.h"
+#include "../color.h"
+#include "../blend.h"
 
 /* External Functions */
 
 extern PFMsimd_i
 pfTextureSampleNearestWrapSimd(const PFtexture texture, const PFMsimd_vec2 texcoords);
-
-extern void
-pfBlendMultiplicativeSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst);
-
-extern void
-pfBlendAlphaSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst);
 
 /* Internal typedefs */
 
@@ -96,7 +92,7 @@ static void pfInternal_ProcessRasterize_TRIANGLE_IMPL(PFface faceToRender, PFver
             pfmVec3Transform(processed[i].normal, processed[i].normal, currentCtx->matNormal);
             pfmVec3Normalize(processed[i].normal, processed[i].normal); // REVIEW: Only with PF_NORMALIZE state??
 
-            processed[i].color = pfBlendMultiplicative(processed[i].color,
+            processed[i].color = pfInternal_BlendMultiplicative(processed[i].color,
                 currentCtx->faceMaterial[faceToRender].diffuse);
         }
     }
@@ -399,14 +395,14 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     /* Choose color interpolation method based on shading mode */
 
     InterpolateColorFunc interpolateColor = (currentCtx->shadingMode == PF_SMOOTH)
-        ? pfInternal_LerpColor_SMOOTH : pfInternal_LerpColor_FLAT;
+        ? pfInternal_ColorLerpSmooth : pfInternal_ColorLerpFlat;
 
     /* Extract framebuffer information */
 
     struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
     PFfloat *zbDst = currentCtx->currentFramebuffer->zbuffer;
 
-    PFblendfunc blendFunction = currentCtx->state & PF_BLEND ? currentCtx->blendFunction : NULL;
+    PFblendfunc blendFunction = (currentCtx->state & PF_BLEND) ? currentCtx->blendFunction : NULL;
     PFpixelsetter setter = texDst->setter;
     PFpixelgetter getter = texDst->getter;
     PFsizei widthDst = texDst->width;
@@ -672,10 +668,10 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     }
 
     // Vector constants
-    PFMsimd_i offset = pfmSimdSetR_I32(0, 1, 2, 3, 4, 5, 6, 7);
-    PFMsimd_i w1XStepV = pfmSimdMullo_I32(pfmSimdSet1_I32(w1XStep), offset);
-    PFMsimd_i w2XStepV = pfmSimdMullo_I32(pfmSimdSet1_I32(w2XStep), offset);
-    PFMsimd_i w3XStepV = pfmSimdMullo_I32(pfmSimdSet1_I32(w3XStep), offset);
+    PFMsimd_i pixOffsetV = pfmSimdSetR_I32(0, 1, 2, 3, 4, 5, 6, 7);
+    PFMsimd_i w1XStepV = pfmSimdMullo_I32(pfmSimdSet1_I32(w1XStep), pixOffsetV);
+    PFMsimd_i w2XStepV = pfmSimdMullo_I32(pfmSimdSet1_I32(w2XStep), pixOffsetV);
+    PFMsimd_i w3XStepV = pfmSimdMullo_I32(pfmSimdSet1_I32(w3XStep), pixOffsetV);
 
     // Calculate the reciprocal of the sum of the barycentric coordinates for normalization
     // NOTE: This sum remains constant throughout the triangle
@@ -705,9 +701,9 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     /* Get some contextual values */
 
     InterpolateColorSimdFunc interpolateColor = (currentCtx->shadingMode == PF_SMOOTH)
-        ? pfInternal_SimdColorBary_SMOOTH : pfInternal_SimdColorBary_FLAT;
+        ? pfInternal_SimdColorBarySmooth : pfInternal_SimdColorBaryFlat;
 
-    PFblendfunc blendFunction = currentCtx->state & PF_BLEND ? currentCtx->blendFunction : NULL;
+    PFblendfunc_simd blendFunction = (currentCtx->state & PF_BLEND) ? currentCtx->blendSimdFunction : NULL;
     PFdepthfunc depthFunction = currentCtx->depthFunction;
 
     struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
@@ -731,12 +727,14 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     /* Loop macro definition */
 
 #define PF_TRIANGLE_TRAVEL_SIMD(PIXEL_CODE)                                                 \
-    for (int y = yMin; y <= yMax; ++y) {                                                    \
+    for (int y = yMin; y <= yMax; ++y)                                                      \
+    {                                                                                       \
         size_t yOffset = y * widthDst;                                                      \
         int w1 = w1Row;                                                                     \
         int w2 = w2Row;                                                                     \
         int w3 = w3Row;                                                                     \
-        for (int x = xMin; x <= xMax; x += PF_SIMD_SIZE) {                                  \
+        for (int x = xMin; x <= xMax; x += PF_SIMD_SIZE)                                    \
+        {                                                                                   \
             /*
                 Load the current barycentric coordinates into AVX registers
             */                                                                              \
@@ -796,7 +794,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         if (is3D) pfmSimdVec2Scale(texcoords, texcoords, zV); /* Perspective correct */ \
         PFMsimd_i texelsPacked = pfTextureSampleNearestWrapSimd(texSrc, texcoords); \
         PFsimd_color texels; pfInternal_SimdColorUnpack(texels, texelsPacked); \
-        pfBlendMultiplicativeSimd(fragments, texels, fragments);
+        pfInternal_SimdBlendMultiplicative(fragments, texels, fragments);
 
 #   define LIGHTING() \
         PFMsimd_vec3 normals, positions; \
@@ -805,7 +803,12 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         //fragment = pfInternal_ProcessLights(currentCtx->activeLights, &currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal);
 
 #   define SET_FRAG() \
-        /*PFcolor finalColor = blendFunction ? blendFunction(fragments, getter(pbDst, xyOffset)) : fragment;*/ \
+        if (blendFunction) { \
+            PFsimd_color dstCol; \
+            pfInternal_SimdColorUnpack(dstCol, getter(pbDst, \
+                pfmSimdAdd_I32(pfmSimdSet1_I32(yOffset + x), pixOffsetV))); \
+            blendFunction(fragments, fragments, dstCol); \
+        } \
         setter(pbDst, yOffset + x, pfInternal_SimdColorPack(fragments), maskGeZero);
         //zbDst[xyOffset] = z;
 
@@ -917,9 +920,9 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     /* Get some contextual values */
 
     InterpolateColorFunc interpolateColor = (currentCtx->shadingMode == PF_SMOOTH)
-        ? pfInternal_BaryColor_SMOOTH : pfInternal_BaryColor_FLAT;
+        ? pfInternal_ColorBarySmooth : pfInternal_ColorBaryFlat;
 
-    PFblendfunc blendFunction = currentCtx->state & PF_BLEND ? currentCtx->blendFunction : NULL;
+    PFblendfunc blendFunction = (currentCtx->state & PF_BLEND) ? currentCtx->blendFunction : NULL;
     PFdepthfunc depthFunction = currentCtx->depthFunction;
 
     struct PFtex *texDst = currentCtx->currentFramebuffer->texture;

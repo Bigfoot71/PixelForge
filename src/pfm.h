@@ -2777,7 +2777,12 @@ pfmSimdBlendV_I8(PFMsimd_i a, PFMsimd_i b, PFMsimd_i mask)
 #elif defined(__SSE2__)
     return _mm_blendv_epi8_sse2(a, b, mask);
 #else
-    return (mask ? b : a);
+    PFMsimd_i result;
+    ((int8_t*)&result)[0] = ((int8_t*)&mask)[0] ? ((int8_t*)&x)[0] : ((int8_t*)&y)[0];
+    ((int8_t*)&result)[1] = ((int8_t*)&mask)[1] ? ((int8_t*)&x)[1] : ((int8_t*)&y)[1];
+    ((int8_t*)&result)[2] = ((int8_t*)&mask)[2] ? ((int8_t*)&x)[2] : ((int8_t*)&y)[2];
+    ((int8_t*)&result)[3] = ((int8_t*)&mask)[3] ? ((int8_t*)&x)[3] : ((int8_t*)&y)[3];
+    return result;
 #endif
 }
 

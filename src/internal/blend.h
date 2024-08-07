@@ -17,13 +17,18 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "internal/simd/helper_simd.h"
-#include "pixelforge.h"
-#include "pfm.h"
+#ifndef PF_INTERNAL_BLEND_H
+#define PF_INTERNAL_BLEND_H
 
-/* Blending API functions */
+#include "./context/context.h"
+#include "../pixelforge.h"
+#include "./color.h"
+#include "../pfm.h"
 
-PFcolor pfBlend(PFcolor src, PFcolor dst)
+/* SISD Blending functions */
+
+static inline PFcolor
+pfInternal_BlendAverage(PFcolor src, PFcolor dst)
 {
     PFcolor result;
     result.r = (PFubyte)((src.r + dst.r) >> 1);
@@ -33,7 +38,8 @@ PFcolor pfBlend(PFcolor src, PFcolor dst)
     return result;
 }
 
-PFcolor pfBlendAlpha(PFcolor src, PFcolor dst)
+static inline PFcolor
+pfInternal_BlendAlpha(PFcolor src, PFcolor dst)
 {
     PFuint alpha = src.a + 1;
     PFuint invAlpha = 256 - alpha;
@@ -46,7 +52,8 @@ PFcolor pfBlendAlpha(PFcolor src, PFcolor dst)
     return result;
 }
 
-PFcolor pfBlendAdditive(PFcolor src, PFcolor dst)
+static inline PFcolor
+pfInternal_BlendAdditive(PFcolor src, PFcolor dst)
 {
     PFcolor result;
     result.r = (PFubyte)MIN_255((PFint)(dst.r + src.r));
@@ -56,7 +63,8 @@ PFcolor pfBlendAdditive(PFcolor src, PFcolor dst)
     return result;
 }
 
-PFcolor pfBlendSubtractive(PFcolor src, PFcolor dst)
+static inline PFcolor
+pfInternal_BlendSubtractive(PFcolor src, PFcolor dst)
 {
     PFcolor result;
     result.r = (PFubyte)MAX_0((PFint)(dst.r - src.r));
@@ -66,7 +74,8 @@ PFcolor pfBlendSubtractive(PFcolor src, PFcolor dst)
     return result;
 }
 
-PFcolor pfBlendMultiplicative(PFcolor src, PFcolor dst)
+static inline PFcolor
+pfInternal_BlendMultiplicative(PFcolor src, PFcolor dst)
 {
     PFcolor result;
     result.r = (PFubyte)((src.r*dst.r)/255);
@@ -76,7 +85,8 @@ PFcolor pfBlendMultiplicative(PFcolor src, PFcolor dst)
     return result;
 }
 
-PFcolor pfBlendScreen(PFcolor src, PFcolor dst)
+static inline PFcolor
+pfInternal_BlendScreen(PFcolor src, PFcolor dst)
 {
     PFcolor result;
     result.r = (PFubyte)MIN_255((PFint)((dst.r*(255 - src.r) >> 8) + src.r));
@@ -86,7 +96,8 @@ PFcolor pfBlendScreen(PFcolor src, PFcolor dst)
     return result;
 }
 
-PFcolor pfBlendLighten(PFcolor src, PFcolor dst)
+static inline PFcolor
+pfInternal_BlendLighten(PFcolor src, PFcolor dst)
 {
     PFcolor result;
     result.r = (PFubyte)(MAX(src.r, dst.r));
@@ -96,7 +107,8 @@ PFcolor pfBlendLighten(PFcolor src, PFcolor dst)
     return result;
 }
 
-PFcolor pfBlendDarken(PFcolor src, PFcolor dst)
+static inline PFcolor
+pfInternal_BlendDarken(PFcolor src, PFcolor dst)
 {
     PFcolor result;
     result.r = (PFubyte)(MIN(src.r, dst.r));
@@ -106,9 +118,10 @@ PFcolor pfBlendDarken(PFcolor src, PFcolor dst)
     return result;
 }
 
-/* SIMD Blending API functions */
+/* SIMD Blending functions */
 
-void pfBlendSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+static inline void
+pfInternal_SimdBlendAverage(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
     out[0] = pfmSimdShr_I32(pfmSimdAdd_I32(src[0], dst[0]), 1);
     out[1] = pfmSimdShr_I32(pfmSimdAdd_I32(src[1], dst[1]), 1);
@@ -116,7 +129,8 @@ void pfBlendSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_color ds
     out[3] = pfmSimdShr_I32(pfmSimdAdd_I32(src[3], dst[3]), 1);
 }
 
-void pfBlendAlphaSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+static inline void
+pfInternal_SimdBlendAlpha(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
     PFMsimd_i alpha = pfmSimdAdd_I32(src[0], pfmSimdSet1_I32(1));
     PFMsimd_i invAlpha = pfmSimdSub_I32(pfmSimdSet1_I32(256), alpha);
@@ -126,7 +140,8 @@ void pfBlendAlphaSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_col
     out[3] = pfmSimdShr_I32(pfmSimdAdd_I32(pfmSimdMullo_I32(pfmSimdSet1_I32(255), alpha), pfmSimdMullo_I32(dst[3], invAlpha)), 8);
 }
 
-void pfBlendAdditiveSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+static inline void
+pfInternal_SimdBlendAdditive(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
     const PFMsimd_i max = pfmSimdSet1_I32(255);
     out[0] = pfmSimdMin_I32(pfmSimdAdd_I32(src[0], dst[0]), max);
@@ -135,7 +150,8 @@ void pfBlendAdditiveSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_
     out[3] = pfmSimdMin_I32(pfmSimdAdd_I32(src[3], dst[3]), max);
 }
 
-void pfBlendSubtractiveSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+static inline void
+pfInternal_SimdBlendSubtractive(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
     const PFMsimd_i min = pfmSimdSetZero_I32();
     out[0] = pfmSimdMax_I32(pfmSimdAdd_I32(src[0], dst[0]), min);
@@ -144,7 +160,8 @@ void pfBlendSubtractiveSimd(PFsimd_color out, const PFsimd_color src, const PFsi
     out[3] = pfmSimdMax_I32(pfmSimdAdd_I32(src[3], dst[3]), min);
 }
 
-void pfBlendMultiplicativeSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+static inline void
+pfInternal_SimdBlendMultiplicative(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
     out[0] = pfmSimdShr_I32(pfmSimdMullo_I32(src[0], dst[0]), 8);
     out[1] = pfmSimdShr_I32(pfmSimdMullo_I32(src[1], dst[1]), 8);
@@ -152,7 +169,8 @@ void pfBlendMultiplicativeSimd(PFsimd_color out, const PFsimd_color src, const P
     out[3] = pfmSimdShr_I32(pfmSimdMullo_I32(src[3], dst[3]), 8);
 }
 
-void pfBlendScreenSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+static inline void
+pfInternal_SimdBlendScreen(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
     const PFMsimd_i max_val = pfmSimdSet1_I32(255);
     PFMsimd_i inv_src_r = pfmSimdSub_I32(max_val, src[0]);
@@ -166,7 +184,8 @@ void pfBlendScreenSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_co
     out[3] = pfmSimdMin_I32(pfmSimdAdd_I32(pfmSimdShr_I32(pfmSimdMullo_I32(dst[3], inv_src_a), 8), src[3]), max_val);
 }
 
-void pfBlendLightenSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+static inline void
+pfInternal_SimdBlendLighten(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
     out[0] = pfmSimdMax_I32(src[0], dst[0]);
     out[1] = pfmSimdMax_I32(src[1], dst[1]);
@@ -174,10 +193,55 @@ void pfBlendLightenSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_c
     out[3] = pfmSimdMax_I32(src[3], dst[3]);
 }
 
-void pfBlendDarkenSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+static inline void
+pfInternal_SimdBlendDarken(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
     out[0] = pfmSimdMin_I32(src[0], dst[0]);
     out[1] = pfmSimdMin_I32(src[1], dst[1]);
     out[2] = pfmSimdMin_I32(src[2], dst[2]);
     out[3] = pfmSimdMin_I32(src[3], dst[3]);
 }
+
+
+/* Get Blend Function */
+
+static inline PFboolean
+pfInternal_IsBlendModeValid(PFblendmode mode)
+{
+    return (mode >= PF_BLEND_AVERAGE && mode <= PF_BLEND_DARKEN);
+}
+
+static inline void
+pfInternal_GetBlendFuncs(PFblendmode mode, PFblendfunc* blend, PFblendfunc_simd* blendSimd)
+{
+#   define ENTRY(MODE, FUNC) [MODE] = FUNC
+
+    static const PFblendfunc blends[8] = {
+        ENTRY(PF_BLEND_AVERAGE, pfInternal_BlendAverage),
+        ENTRY(PF_BLEND_ALPHA, pfInternal_BlendAlpha),
+        ENTRY(PF_BLEND_ADD, pfInternal_BlendAdditive),
+        ENTRY(PF_BLEND_SUB, pfInternal_BlendSubtractive),
+        ENTRY(PF_BLEND_MUL, pfInternal_BlendMultiplicative),
+        ENTRY(PF_BLEND_SCREEN, pfInternal_BlendScreen),
+        ENTRY(PF_BLEND_LIGHTEN, pfInternal_BlendLighten),
+        ENTRY(PF_BLEND_DARKEN, pfInternal_BlendDarken)
+    };
+
+    static const PFblendfunc_simd blendsSimd[8] = {
+        ENTRY(PF_BLEND_AVERAGE, pfInternal_SimdBlendAverage),
+        ENTRY(PF_BLEND_ALPHA, pfInternal_SimdBlendAlpha),
+        ENTRY(PF_BLEND_ADD, pfInternal_SimdBlendAdditive),
+        ENTRY(PF_BLEND_SUB, pfInternal_SimdBlendSubtractive),
+        ENTRY(PF_BLEND_MUL, pfInternal_SimdBlendMultiplicative),
+        ENTRY(PF_BLEND_SCREEN, pfInternal_SimdBlendScreen),
+        ENTRY(PF_BLEND_LIGHTEN, pfInternal_SimdBlendLighten),
+        ENTRY(PF_BLEND_DARKEN, pfInternal_SimdBlendDarken)
+    };
+
+    if (blend) *blend = blends[mode];
+    if (blendSimd) *blendSimd = blendSimd[mode];
+
+#   undef ENTRY
+}
+
+#endif //PF_INTERNAL_BLEND_H

@@ -17,14 +17,51 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#ifndef PF_HELPER_SIMD_H
-#define PF_HELPER_SIMD_H
+#ifndef PF_INTERNAL_COLOR_H
+#define PF_INTERNAL_COLOR_H
 
-#include "../../pixelforge.h"
-#include "../../pfm.h"
+#include "../pixelforge.h"
+#include "../pfm.h"
 
-typedef PFMsimd_i
-    PFsimd_color[4];
+/* SISD Implementation */
+
+static inline PFcolor pfInternal_ColorLerpSmooth(PFcolor a, PFcolor b, PFfloat t)
+{
+    return (PFcolor) {
+        a.r + t*(b.r - a.r),
+        a.g + t*(b.g - a.g),
+        a.b + t*(b.b - a.b),
+        a.a + t*(b.a - a.a)
+    };
+}
+
+static inline PFcolor pfInternal_ColorLerpFlat(PFcolor v1, PFcolor v2, PFfloat t)
+{
+    return (t < 0.5f) ? v1 : v2;
+}
+
+static inline PFcolor pfInternal_ColorBarySmooth(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
+{
+    PFubyte uW1 = 255*w1;
+    PFubyte uW2 = 255*w2;
+    PFubyte uW3 = 255*w3;
+
+    return (PFcolor) {
+        ((uW1*v1.r) + (uW2*v2.r) + (uW3*v3.r))/255,
+        ((uW1*v1.g) + (uW2*v2.g) + (uW3*v3.g))/255,
+        ((uW1*v1.b) + (uW2*v2.b) + (uW3*v3.b))/255,
+        ((uW1*v1.a) + (uW2*v2.a) + (uW3*v3.a))/255
+    };
+}
+
+static inline PFcolor pfInternal_ColorBaryFlat(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
+{
+    return ((w1 > w2) & (w1 > w3)) ? v1 : (w2 >= w3) ? v2 : v3;
+}
+
+/* SIMD Implementation */
+
+typedef PFMsimd_i PFsimd_color[4];
 
 static inline void
 pfInternal_SimdColorLoadUnpacked(PFsimd_color dst, PFcolor src)
@@ -58,7 +95,7 @@ pfInternal_SimdColorPack(const PFsimd_color unpacked)
 }
 
 static inline void
-pfInternal_SimdColorBary_SMOOTH(PFsimd_color out,
+pfInternal_SimdColorBarySmooth(PFsimd_color out,
                                 const PFsimd_color c1,
                                 const PFsimd_color c2,
                                 const PFsimd_color c3,
@@ -87,7 +124,7 @@ pfInternal_SimdColorBary_SMOOTH(PFsimd_color out,
 }
 
 static inline void
-pfInternal_SimdColorBary_FLAT(PFsimd_color out,
+pfInternal_SimdColorBaryFlat(PFsimd_color out,
                               const PFsimd_color c1,
                               const PFsimd_color c2,
                               const PFsimd_color c3,
@@ -115,4 +152,4 @@ pfInternal_SimdColorBary_FLAT(PFsimd_color out,
     }
 }
 
-#endif //PF_HELPER_SIMD_H
+#endif //PF_INTERNAL_COLOR_H

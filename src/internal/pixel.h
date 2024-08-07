@@ -817,6 +817,8 @@ pfInternal_GetPixelGetterSetter(PFpixelgetter* getter, PFpixelsetter* setter, PF
 
     if (getter) *getter = getters[format][type];
     if (setter) *setter = setters[format][type];
+
+#   undef ENTRY
 }
 
 static inline PFsizei
@@ -1530,6 +1532,8 @@ pfInternal_GetPixelGetterSetter_simd(PFpixelgetter_simd* getter, PFpixelsetter_s
 
     if (getter) *getter = getters[format][type];
     if (setter) *setter = setters[format][type];
+
+#   undef ENTRY
 }
 
 #endif //PF_INTERNAL_PIXEL_H
