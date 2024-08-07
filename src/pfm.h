@@ -2178,6 +2178,21 @@ pfmSimdLoad_I32(const void* p)
 #endif
 }
 
+PFM_API PFMsimd_f
+pfmSimdLoad_F32(const void* p)
+{
+#if defined(__AVX2__)
+    return _mm256_loadu_ps(p);
+#elif defined(__SSE2__)
+    return _mm_loadu_ps(p);
+#else
+    PFMsimd_f result = 0;
+    ((float*)&result)[0] = ((const float*)p)[0];
+    ((float*)&result)[1] = ((const float*)p)[1];
+    return result;
+#endif
+}
+
 #if defined(__AVX2__)
 #   define pfmSimdExtract_I32(v, index)  \
         _mm256_extract_epi32(v, index)
@@ -2828,6 +2843,30 @@ pfmSimdBlendV_I16(PFMsimd_i a, PFMsimd_i b, PFMsimd_i mask)
 #endif
 }
 
+PFM_API PFMsimd_f
+pfmSimdBlendV_F32(PFMsimd_f a, PFMsimd_f b, PFMsimd_f mask)
+{
+#if defined(__AVX2__)
+    return _mm256_blendv_ps(a, b, mask);
+#elif defined(__SSE4_1__)
+    return _mm_blendv_ps(a, b, mask);
+#elif defined(__SSE2__)
+    return _mm_or_ps(
+        _mm_and_ps(mask, a),
+        _mm_andnot_ps(mask, b));
+#else
+    PFMsimd_i result;
+    float* pa = (float*)&a;
+    float* pb = (float*)&b;
+    float* pmask = (float*)&mask;
+    float* presult = (float*)&result;
+    for (int i = 0; i < 2; ++i) {
+        presult[i] = (pmask[i] < 0) ? pb[i] : pa[i];
+    }
+    return result;
+#endif
+}
+
 PFM_API PFMsimd_i
 pfmSimdCmpEQ_I32(PFMsimd_i x, PFMsimd_i y)
 {
@@ -3007,7 +3046,7 @@ PFM_API PFMsimd_f
 pfmSimdCmpLE_F32(PFMsimd_f x, PFMsimd_f y)
 {
 #if defined(__AVX2__)
-    return _mm256_cmp_ps(y, x, _CMP_LE_OS);
+    return _mm256_cmp_ps(x, y, _CMP_LE_OS);
 #elif defined(__SSE2__)
     return _mm_cmple_ps(x, y);
 #else

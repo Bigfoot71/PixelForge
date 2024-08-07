@@ -239,7 +239,7 @@ pfInternal_GetBlendFuncs(PFblendmode mode, PFblendfunc* blend, PFblendfunc_simd*
     };
 
     if (blend) *blend = blends[mode];
-    if (blendSimd) *blendSimd = blendSimd[mode];
+    if (blendSimd) *blendSimd = blendsSimd[mode];
 
 #   undef ENTRY
 }

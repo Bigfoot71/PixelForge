@@ -17,70 +17,85 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "internal/context/context.h"
-#include "pfm.h"
-#include "pixelforge.h"
+#ifndef PF_INTERNAL_DEPTH_H
+#define PF_INTERNAL_DEPTH_H
+
+#include "./context/context.h"
+#include "../pixelforge.h"
+#include "../pfm.h"
 
 /* SISD Depth testing functions */
 
-PFboolean pfInternal_DepthTest_EQ(PFfloat src, PFfloat dst)
+static inline PFboolean
+pfInternal_DepthTest_EQ(PFfloat src, PFfloat dst)
 {
     return (src == dst);
 }
 
-PFboolean pfInternal_DepthTest_NEQ(PFfloat src, PFfloat dst)
+static inline PFboolean
+pfInternal_DepthTest_NEQ(PFfloat src, PFfloat dst)
 {
     return (src != dst);
 }
 
-PFboolean pfInternal_DepthTest_LT(PFfloat src, PFfloat dst)
+static inline PFboolean
+pfInternal_DepthTest_LT(PFfloat src, PFfloat dst)
 {
     return (src < dst);
 }
 
-PFboolean pfInternal_DepthTest_LE(PFfloat src, PFfloat dst)
+static inline PFboolean
+pfInternal_DepthTest_LE(PFfloat src, PFfloat dst)
 {
     return (src <= dst);
 }
 
-PFboolean pfInternal_DepthTest_GT(PFfloat src, PFfloat dst)
+static inline PFboolean
+pfInternal_DepthTest_GT(PFfloat src, PFfloat dst)
 {
     return (src > dst);
 }
 
-PFboolean pfInternal_DepthTest_GE(PFfloat src, PFfloat dst)
+static inline PFboolean
+pfInternal_DepthTest_GE(PFfloat src, PFfloat dst)
 {
     return (src >= dst);
 }
 
 /* SIMD Depth testing functions */
 
-PFMsimd_f pfInternal_SimdDepthTest_EQ(PFMsimd_f src, PFMsimd_f dst)
+static inline PFMsimd_f
+pfInternal_SimdDepthTest_EQ(PFMsimd_f src, PFMsimd_f dst)
 {
     return pfmSimdCmpEQ_F32(src, dst);
 }
 
-PFMsimd_f pfInternal_SimdDepthTest_NEQ(PFMsimd_f src, PFMsimd_f dst)
+static inline PFMsimd_f
+pfInternal_SimdDepthTest_NEQ(PFMsimd_f src, PFMsimd_f dst)
 {
     return pfmSimdCmpEQ_F32(src, dst);
 }
 
-PFMsimd_f pfInternal_SimdDepthTest_LT(PFMsimd_f src, PFMsimd_f dst)
+static inline PFMsimd_f
+pfInternal_SimdDepthTest_LT(PFMsimd_f src, PFMsimd_f dst)
 {
     return pfmSimdCmpLT_F32(src, dst);
 }
 
-PFMsimd_f pfInternal_SimdDepthTest_LE(PFMsimd_f src, PFMsimd_f dst)
+static inline PFMsimd_f
+pfInternal_SimdDepthTest_LE(PFMsimd_f src, PFMsimd_f dst)
 {
     return pfmSimdCmpLE_F32(src, dst);
 }
 
-PFMsimd_f pfInternal_SimdDepthTest_GT(PFMsimd_f src, PFMsimd_f dst)
+static inline PFMsimd_f
+pfInternal_SimdDepthTest_GT(PFMsimd_f src, PFMsimd_f dst)
 {
     return pfmSimdCmpGT_F32(src, dst);
 }
 
-PFMsimd_f pfInternal_SimdDepthTest_GE(PFMsimd_f src, PFMsimd_f dst)
+static inline PFMsimd_f
+pfInternal_SimdDepthTest_GE(PFMsimd_f src, PFMsimd_f dst)
 {
     return pfmSimdCmpGE_F32(src, dst);
 }
@@ -121,3 +136,5 @@ pfInternal_GetDepthFuncs(PFdepthmode mode, PFdepthfunc* depthTest, PFdepthfunc_s
 
 #   undef ENTRY
 }
+
+#endif //PF_INTERNAL_DEPTH_H
