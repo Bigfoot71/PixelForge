@@ -2,8 +2,6 @@
 #define PF_INTERNAL_SAMPLER_H
 
 #include "./context/context.h"
-#include "internal/color.h"
-#include "pfm.h"
 
 static inline void
 pfInternal_Texture2DMap_REPEAT(const struct PFtex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
@@ -276,8 +274,8 @@ pfInternal_SimdTexture2DSampler_BILINEAR_REPEAT(const struct PFtex* tex, const P
     pfInternal_SimdTexture2DMap_REPEAT(tex, &x1, &y1, texcoords2);
 
     // Calculate fractions fx, fy
-    fx = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[0], pfmSimdSet1_F32(tex->w)), x0);
-    fy = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[1], pfmSimdSet1_F32(tex->h)), y0);
+    fx = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[0], pfmSimdSet1_F32(tex->w)), pfmSimdConvert_I32_F32(x0));
+    fy = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[1], pfmSimdSet1_F32(tex->h)), pfmSimdConvert_I32_F32(y0));
 
     // Get the colors of the four pixels
     PFsimd_color c00; pfInternal_SimdColorUnpack(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
@@ -311,8 +309,8 @@ pfInternal_SimdTexture2DSampler_BILINEAR_MIRRORED_REPEAT(const struct PFtex* tex
     pfInternal_SimdTexture2DMap_MIRRORED_REPEAT(tex, &x1, &y1, texcoords2);
 
     // Calculate fractions fx, fy
-    fx = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[0], pfmSimdSet1_F32(tex->w)), x0);
-    fy = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[1], pfmSimdSet1_F32(tex->h)), y0);
+    fx = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[0], pfmSimdSet1_F32(tex->w)), pfmSimdConvert_I32_F32(x0));
+    fy = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[1], pfmSimdSet1_F32(tex->h)), pfmSimdConvert_I32_F32(y0));
 
     // Get the colors of the four pixels
     PFsimd_color c00; pfInternal_SimdColorUnpack(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
@@ -346,8 +344,8 @@ pfInternal_SimdTexture2DSampler_BILINEAR_CLAMP_TO_EDGE(const struct PFtex* tex, 
     pfInternal_SimdTexture2DMap_CLAMP_TO_EDGE(tex, &x1, &y1, texcoords2);
 
     // Calculate fractions fx, fy
-    fx = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[0], pfmSimdSet1_F32(tex->w)), x0);
-    fy = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[1], pfmSimdSet1_F32(tex->h)), y0);
+    fx = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[0], pfmSimdSet1_F32(tex->w)), pfmSimdConvert_I32_F32(x0));
+    fy = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[1], pfmSimdSet1_F32(tex->h)), pfmSimdConvert_I32_F32(y0));
 
     // Get the colors of the four pixels
     PFsimd_color c00; pfInternal_SimdColorUnpack(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
