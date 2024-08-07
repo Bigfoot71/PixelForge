@@ -720,9 +720,9 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     PFsizei widthDst = texDst->width;
     void *pbDst = texDst->pixels;
 
-    PFfloat z1 = v1->homogeneous[2];
-    PFfloat z2 = v2->homogeneous[2];
-    PFfloat z3 = v3->homogeneous[2];
+    PFMsimd_f z1V = pfmSimdSet1_F32(v1->homogeneous[2]);
+    PFMsimd_f z2V = pfmSimdSet1_F32(v2->homogeneous[2]);
+    PFMsimd_f z3V = pfmSimdSet1_F32(v3->homogeneous[2]);
 
     const PFboolean noDepth   = !(currentCtx->state & PF_DEPTH_TEST);
     const PFboolean texturing = (currentCtx->state & PF_TEXTURE_2D) && texSrc;
@@ -755,6 +755,17 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             PFMsimd_f w2NormV = pfmSimdMul_F32(pfmSimdConvert_I32_F32(w2V), wInvSumV);      \
             PFMsimd_f w3NormV = pfmSimdMul_F32(pfmSimdConvert_I32_F32(w3V), wInvSumV);      \
             /*
+                Compute Z-Depth value
+            */                                                                              \
+            PFMsimd_f zV;                                                                   \
+            {                                                                               \
+                PFMsimd_f wZ1 = pfmSimdMul_F32(z1V, w1NormV);                               \
+                PFMsimd_f wZ2 = pfmSimdMul_F32(z2V, w2NormV);                               \
+                PFMsimd_f wZ3 = pfmSimdMul_F32(z3V, w3NormV);                               \
+                zV = pfmSimdAdd_F32(pfmSimdAdd_F32(wZ1, wZ2), wZ3);                         \
+                zV = pfmSimdRCP_F32(zV);                                                    \
+            }                                                                               \
+            /*
                 Run the pixel code!
             */                                                                              \
             PIXEL_CODE                                                                      \
@@ -782,7 +793,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 #   define TEXTURING() \
         PFMsimd_vec2 texcoords; \
         pfmSimdVec2BaryInterpR(texcoords, tc1V, tc2V, tc3V, w1NormV, w2NormV, w3NormV); \
-        /*if (is3D) texcoord[0] *= z, texcoord[1] *= z; // Perspective correct */ \
+        if (is3D) pfmSimdVec2Scale(texcoords, texcoords, zV); /* Perspective correct */ \
         PFMsimd_i texelsPacked = pfTextureSampleNearestWrapSimd(texSrc, texcoords); \
         PFsimd_color texels; pfInternal_SimdColorUnpack(texels, texelsPacked); \
         pfBlendMultiplicativeSimd(fragments, texels, fragments);

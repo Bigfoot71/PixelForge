@@ -18,7 +18,6 @@
  */
 
 #include "internal/context/context.h"
-#include "internal/simd/pixel_simd.h"
 #include "internal/pixel.h"
 #include "pfm.h"
 
