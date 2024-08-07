@@ -2867,6 +2867,48 @@ pfmSimdCmpEQ_F32(PFMsimd_f x, PFMsimd_f y)
 }
 
 PFM_API PFMsimd_i
+pfmSimdCmpNEQ_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    __m256i eq = _mm256_cmpeq_epi32(x, y);
+    __m256i neq = _mm256_xor_si256(eq, _mm256_set1_epi32(-1));
+    return neq;
+#elif defined(__SSE2__)
+    __m128i eq = _mm_cmpeq_epi32(x, y);
+    __m128i neq = _mm_xor_si128(eq, _mm_set1_epi32(-1));
+    return neq;
+#else
+    PFMsimd_i result;
+    int32_t* px = (int32_t*)&x;
+    int32_t* py = (int32_t*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (px[i] != py[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfmSimdCmpNEQ_F32(PFMsimd_f x, PFMsimd_f y)
+{
+#if defined(__AVX2__)
+    return _mm256_cmp_ps(x, y, _CMP_NEQ_OS);
+#elif defined(__SSE2__)
+    return _mm_cmpneq_ps(x, y);
+#else
+    PFMsimd_i result;
+    float* fx = (float*)&x;
+    float* fy = (float*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (fx[i] != fy[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
 pfmSimdCmpLT_I32(PFMsimd_i x, PFMsimd_i y)
 {
 #if defined(__AVX2__)

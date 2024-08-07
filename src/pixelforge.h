@@ -294,6 +294,15 @@ typedef enum {
 } PFblendmode;
 
 typedef enum {
+    PF_EQUAL,
+    PF_NOTEQUAL,
+    PF_LESS,
+    PF_LEQUAL,
+    PF_GREATER,
+    PF_GEQUAL
+} PFdepthmode;
+
+typedef enum {
     PF_POINT,
     PF_LINE,
     PF_FILL
@@ -363,7 +372,6 @@ typedef struct {
     PFubyte r, g, b, a;
 } PFcolor;
 
-typedef PFboolean (*PFdepthfunc)(PFfloat, PFfloat);
 typedef PFcolor (*PFpostprocessfunc)(PFint, PFint, PFfloat, PFcolor);
 
 /* Texture definitions */
@@ -752,16 +760,16 @@ PF_API void pfCullFace(PFface face);
  *
  * @param mode The blending mode to use.
  */
-PF_API void pfBlendMode(PFblendmode mode);
+PF_API void pfBlendFunc(PFblendmode mode);
 
 /**
  * @brief Specifies the depth testing function.
  *
  * @warning This function needs a context to be defined.
  *
- * @param func The depth testing function to use.
+ * @param mode The depth testing mode to use.
  */
-PF_API void pfDepthFunc(PFdepthfunc func);
+PF_API void pfDepthFunc(PFdepthmode mode);
 
 /**
  * @brief Binds the specified framebuffer for subsequent rendering operations.
@@ -1641,7 +1649,7 @@ PF_API PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x
  * @param color The color value of the pixel.
  * @param depthFunc The depth comparison function used for depth testing.
  */
-PF_API void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color, PFdepthfunc depthFunc);
+PF_API void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color, PFdepthmode depthMode);
 
 /**
  * @brief Sets the color and depth values of a pixel in the framebuffer.
@@ -1770,20 +1778,6 @@ PF_API PFcolor pfGetTexturePixel(const PFtexture texture, PFsizei x, PFsizei y);
  * @return The color sampled from the texture at the given coordinates.
  */
 PF_API PFcolor pfTextureSampleNearestWrap(const PFtexture texture, PFfloat u, PFfloat v);
-
-/*
- *  Depth testing functions
- *
- *  These functions are intended to be used with `pfDepthFunc` to define the depth testing mode.
- *  You can also define your own functions following the signature of `PFdepthfunc`.
-*/
-
-PF_API PFboolean pfDepthLess(PFfloat source, PFfloat destination);
-PF_API PFboolean pfDepthEqual(PFfloat source, PFfloat destination);
-PF_API PFboolean pfDepthLequal(PFfloat source, PFfloat destination);
-PF_API PFboolean pfDepthGreater(PFfloat source, PFfloat destination);
-PF_API PFboolean pfDepthNotequal(PFfloat source, PFfloat destination);
-PF_API PFboolean pfDepthGequal(PFfloat source, PFfloat destination);
 
 
 #if defined(__cplusplus)

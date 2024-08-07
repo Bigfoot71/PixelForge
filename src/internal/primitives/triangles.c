@@ -629,7 +629,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFfloat signedArea = (x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1);
 
         if ((faceToRender == PF_FRONT && signedArea >= 0)
-        || (faceToRender == PF_BACK  && signedArea <= 0))
+         || (faceToRender == PF_BACK  && signedArea <= 0))
         {
             return;
         }
@@ -870,7 +870,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFfloat signedArea = (x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1);
 
         if ((faceToRender == PF_FRONT && signedArea >= 0)
-        || (faceToRender == PF_BACK  && signedArea <= 0))
+         || (faceToRender == PF_BACK  && signedArea <= 0))
         {
             return;
         }

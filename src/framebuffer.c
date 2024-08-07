@@ -19,6 +19,7 @@
 
 #include "internal/context/context.h"
 #include "internal/pixel.h"
+#include "internal/depth.h"
 #include "pixelforge.h"
 #include <stdlib.h>
 #include <float.h>
@@ -123,8 +124,17 @@ PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x, PFsiz
     return framebuffer->zbuffer[y*tex->width + x];
 }
 
-void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color, PFdepthfunc depthFunc)
+void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color, PFdepthmode depthMode)
 {
+    if (!pfInternal_IsDepthModeValid(depthMode))
+    {
+        if (currentCtx) currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
+
+    PFdepthfunc depthFunc;
+    pfInternal_GetDepthFuncs(depthMode, &depthFunc, NULL);
+
     struct PFtex* tex = framebuffer->texture;
     PFsizei offset = y*tex->width + x;
 

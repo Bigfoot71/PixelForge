@@ -62,6 +62,30 @@ typedef PFcolor (*PFblendfunc)(PFcolor src, PFcolor dst);
 typedef void (*PFblendfunc_simd)(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst);
 
 /**
+ * @brief Function pointer type for depth testing.
+ *
+ * This type defines a function pointer for a depth test function that compares
+ * two floating-point values representing source and destination depths.
+ *
+ * @param src The source depth value.
+ * @param dst The destination depth value.
+ * @return A boolean value indicating the result of the depth test.
+ */
+typedef PFboolean (*PFdepthfunc)(PFfloat src, PFfloat dst);
+
+/**
+ * @brief Function pointer type for SIMD depth testing.
+ *
+ * This type defines a function pointer for a SIMD depth test function that compares
+ * two SIMD floating-point values representing source and destination depths.
+ *
+ * @param src The source depth value as a SIMD floating-point type.
+ * @param dst The destination depth value as a SIMD floating-point type.
+ * @return A SIMD floating-point value representing the result of the depth test.
+ */
+typedef PFMsimd_f (*PFdepthfunc_simd)(PFMsimd_f src, PFMsimd_f dst);
+
+/**
  * @brief Function pointer type for getting a pixel from a texture.
  *
  * @param pixels A pointer to the pixel data of the texture.
@@ -211,7 +235,8 @@ typedef struct {
     PFblendfunc blendFunction;                              ///< SISD Blend function for color blending
     PFblendfunc_simd blendSimdFunction;                     ///< SIMD Blend function for color blending
 
-    PFdepthfunc depthFunction;                              ///< Function for depth testing
+    PFdepthfunc depthFunction;                              ///< SISD Function for depth testing
+    PFdepthfunc_simd depthSimdFunction;                     ///< SIMD Function for depth testing
 
     PFint vpPos[2];                                         ///< Represents the top-left corner of the viewport
     PFsizei vpDim[2];                                       ///< Represents the dimensions of the viewport (minus one)

@@ -21,6 +21,7 @@
 #include "internal/config.h"
 #include "internal/pixel.h"
 #include "internal/blend.h"
+#include "internal/depth.h"
 #include "pixelforge.h"
 #include "pfm.h"
 
@@ -168,7 +169,8 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
     ctx->currentDrawMode = 0;
     ctx->blendFunction = pfInternal_BlendAlpha;
     ctx->blendSimdFunction = pfInternal_SimdBlendAlpha;
-    ctx->depthFunction = pfDepthLess;
+    ctx->depthFunction = pfInternal_DepthTest_LT;
+    ctx->depthSimdFunction = pfInternal_SimdDepthTest_LT;
     ctx->clearColor = (PFcolor) { 0 };
     ctx->clearDepth = FLT_MAX;
     ctx->pointSize = 1.0f;
@@ -701,7 +703,7 @@ void pfCullFace(PFface face)
     currentCtx->cullFace = face;
 }
 
-void pfBlendMode(PFblendmode mode)
+void pfBlendFunc(PFblendmode mode)
 {
     if (!pfInternal_IsBlendModeValid(mode))
     {
@@ -714,9 +716,17 @@ void pfBlendMode(PFblendmode mode)
         &currentCtx->blendSimdFunction);
 }
 
-void pfDepthFunc(PFdepthfunc func)
+void pfDepthFunc(PFdepthmode mode)
 {
-    currentCtx->depthFunction = func;
+    if (!pfInternal_IsDepthModeValid(mode))
+    {
+        currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
+
+    pfInternal_GetDepthFuncs(mode,
+        &currentCtx->depthFunction,
+        &currentCtx->depthSimdFunction);
 }
 
 void pfBindFramebuffer(PFframebuffer* framebuffer)
