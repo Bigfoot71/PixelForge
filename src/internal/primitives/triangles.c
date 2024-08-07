@@ -679,7 +679,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     // Calculate the reciprocal of the sum of the barycentric coordinates for normalization
     // NOTE: This sum remains constant throughout the triangle
-    PFMsimd_f wInvSumV = pfmSimdSet1_F32(w1Row + w2Row + w3Row);
+    PFMsimd_f wInvSumV = pfmSimdSet1_F32(1.0f / (w1Row + w2Row + w3Row));
 
     // Load vertices data into SIMD registers
     PFsimd_color c1V, c2V, c3V;
