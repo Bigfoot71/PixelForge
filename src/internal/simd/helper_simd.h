@@ -66,16 +66,11 @@ pfInternal_SimdColorBary_SMOOTH(PFsimd_color out,
                                 PFMsimd_f w2,
                                 PFMsimd_f w3)
 {
-    // Multiply weights by 255 to convert them to integers
+    // Multiply weights by 255 and convert them to integers
     PFMsimd_f scale = pfmSimdSet1_F32(255.0f);
-    PFMsimd_f uw1_vec = pfmSimdMul_F32(w1, scale);
-    PFMsimd_f uw2_vec = pfmSimdMul_F32(w2, scale);
-    PFMsimd_f uw3_vec = pfmSimdMul_F32(w3, scale);
-
-    // Convert weights to integers
-    PFMsimd_i uw1_vec_int = pfmSimdConvert_F32_I32(uw1_vec);
-    PFMsimd_i uw2_vec_int = pfmSimdConvert_F32_I32(uw2_vec);
-    PFMsimd_i uw3_vec_int = pfmSimdConvert_F32_I32(uw3_vec);
+    PFMsimd_i uW1 = pfmSimdConvert_F32_I32(pfmSimdMul_F32(w1, scale));
+    PFMsimd_i uW2 = pfmSimdConvert_F32_I32(pfmSimdMul_F32(w2, scale));
+    PFMsimd_i uW3 = pfmSimdConvert_F32_I32(pfmSimdMul_F32(w3, scale));
 
     // Perform multiplications and additions for each channel
     // Then approximate division by 255
@@ -83,9 +78,9 @@ pfInternal_SimdColorBary_SMOOTH(PFsimd_color out,
     for (int_fast8_t i = 0; i < 4; ++i) {
         out[i] = pfmSimdAdd_I32(
             pfmSimdAdd_I32(
-                pfmSimdMullo_I32(uw1_vec_int, c1[i]), 
-                pfmSimdMullo_I32(uw2_vec_int, c2[i])),
-                pfmSimdMullo_I32(uw3_vec_int, c3[i]));
+                pfmSimdMullo_I32(uW1, c1[i]), 
+                pfmSimdMullo_I32(uW2, c2[i])),
+                pfmSimdMullo_I32(uW3, c3[i]));
         out[i] = pfmSimdShr_I32(
             pfmSimdMullo_I32(out[i], factor), 16);
     }
@@ -100,16 +95,11 @@ pfInternal_SimdColorBary_FLAT(PFsimd_color out,
                               PFMsimd_f w2,
                               PFMsimd_f w3)
 {
-    // Multiply weights by 255 to convert them to integers
+    // Multiply weights by 255 and convert them to integers
     PFMsimd_f scale = pfmSimdSet1_F32(255.0f);
-    PFMsimd_f uw1_vec = pfmSimdMul_F32(w1, scale);
-    PFMsimd_f uw2_vec = pfmSimdMul_F32(w2, scale);
-    PFMsimd_f uw3_vec = pfmSimdMul_F32(w3, scale);
-
-    // Convert weights to integers
-    PFMsimd_i uw1_vec_int = pfmSimdConvert_F32_I32(uw1_vec);
-    PFMsimd_i uw2_vec_int = pfmSimdConvert_F32_I32(uw2_vec);
-    PFMsimd_i uw3_vec_int = pfmSimdConvert_F32_I32(uw3_vec);
+    PFMsimd_i uW1 = pfmSimdConvert_F32_I32(pfmSimdMul_F32(w1, scale));
+    PFMsimd_i uW2 = pfmSimdConvert_F32_I32(pfmSimdMul_F32(w2, scale));
+    PFMsimd_i uW3 = pfmSimdConvert_F32_I32(pfmSimdMul_F32(w3, scale));
 
     // Perform multiplications and additions for each channel
     // Then approximate division by 255
@@ -117,9 +107,9 @@ pfInternal_SimdColorBary_FLAT(PFsimd_color out,
     for (int_fast8_t i = 0; i < 4; ++i) {
         out[i] = pfmSimdAdd_I32(
             pfmSimdAdd_I32(
-                pfmSimdMullo_I32(uw1_vec_int, c1[i]), 
-                pfmSimdMullo_I32(uw2_vec_int, c2[i])),
-                pfmSimdMullo_I32(uw3_vec_int, c3[i]));
+                pfmSimdMullo_I32(uW1, c1[i]), 
+                pfmSimdMullo_I32(uW2, c2[i])),
+                pfmSimdMullo_I32(uW3, c3[i]));
         out[i] = pfmSimdShr_I32(
             pfmSimdMullo_I32(out[i], factor), 16);
     }
