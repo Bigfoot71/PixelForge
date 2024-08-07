@@ -17,10 +17,21 @@
  *   3. This notice may not be removed or altered from any source distribution.
  */
 
-#include "../context/context.h"
 #include "../lighting/lighting.h"
+#include "../simd/helper_simd.h"
+#include "../context/context.h"
 #include "../helper.h"
-#include <stdint.h>
+
+/* External Functions */
+
+extern PFMsimd_i
+pfTextureSampleNearestWrapSimd(const PFtexture texture, const PFMsimd_vec2 texcoords);
+
+extern void
+pfBlendMultiplicativeSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst);
+
+extern void
+pfBlendAlphaSimd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst);
 
 /* Internal typedefs */
 
@@ -28,6 +39,7 @@
 typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFfloat);
 #else //PF_BARYCENTRIC_RASTER_METHOD
 typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFcolor, PFfloat, PFfloat, PFfloat);
+typedef void (*InterpolateColorSimdFunc)(PFsimd_color, const PFsimd_color, const PFsimd_color, const PFsimd_color, PFMsimd_f, PFMsimd_f, PFMsimd_f);
 #endif //PF_RASTER_METHOD
 
 /* Internal helper function declarations */
@@ -395,8 +407,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     PFfloat *zbDst = currentCtx->currentFramebuffer->zbuffer;
 
     PFblendfunc blendFunction = currentCtx->state & PF_BLEND ? currentCtx->blendFunction : NULL;
-    PFpixelsetter pixelSetter = texDst->pixelSetter;
-    PFpixelgetter pixelGetter = texDst->pixelGetter;
+    PFpixelsetter setter = texDst->setter;
+    PFpixelgetter getter = texDst->getter;
     PFsizei widthDst = texDst->width;
     void *pbDst = texDst->pixels;
 
@@ -567,7 +579,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
                         pfmVec2Scale(uv, uv, z);
                     }
 
-                    PFcolor texel = pfGetTextureSample(texDst, uv[0], uv[1]);
+                    PFcolor texel = pfTextureSampleNearestWrap(texDst, uv[0], uv[1]);
                     fragment = pfBlendMultiplicative(texel, fragment);
                 }
 
@@ -590,8 +602,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
                 /* Apply final color and depth */
 
-                PFcolor finalColor = blendFunction ? blendFunction(fragment, pixelGetter(pbDst, xyOffset)) : fragment;
-                pixelSetter(pbDst, xyOffset, finalColor);
+                PFcolor finalColor = blendFunction ? blendFunction(fragment, getter(pbDst, xyOffset)) : fragment;
+                setter(pbDst, xyOffset, finalColor);
                 zbDst[xyOffset] = z;
             }
         }
@@ -599,6 +611,230 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 }
 
 #else //PF_BARYCENTRIC_RASTER_METHOD
+
+#if PF_SIMD_SIZE > 1
+
+void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
+{
+    PFsizei xMin, yMin, xMax, yMax;
+    PFint w1Row, w2Row, w3Row;
+    PFint w1XStep, w1YStep;
+    PFint w2XStep, w2YStep;
+    PFint w3XStep, w3YStep;
+    {
+        /* Get integer 2D position coordinates */
+
+        PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
+        PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
+        PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+
+        /* Check if the desired face can be rendered */
+
+        PFfloat signedArea = (x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1);
+
+        if ((faceToRender == PF_FRONT && signedArea >= 0)
+        || (faceToRender == PF_BACK  && signedArea <= 0))
+        {
+            return;
+        }
+
+        /* Calculate the 2D bounding box of the triangle */
+
+        xMin = (PFsizei)MIN(x1, MIN(x2, x3));
+        yMin = (PFsizei)MIN(y1, MIN(y2, y3));
+        xMax = (PFsizei)MAX(x1, MAX(x2, x3));
+        yMax = (PFsizei)MAX(y1, MAX(y2, y3));
+
+        if (!is3D)
+        {
+            xMin = (PFsizei)CLAMP((PFint)xMin, currentCtx->vpMin[0], currentCtx->vpMax[0]);
+            yMin = (PFsizei)CLAMP((PFint)yMin, currentCtx->vpMin[1], currentCtx->vpMax[1]);
+            xMax = (PFsizei)CLAMP((PFint)xMax, currentCtx->vpMin[0], currentCtx->vpMax[0]);
+            yMax = (PFsizei)CLAMP((PFint)yMax, currentCtx->vpMin[1], currentCtx->vpMax[1]);
+        }
+
+        /* Barycentric interpolation */
+
+        w1XStep = y3 - y2, w1YStep = x2 - x3;
+        w2XStep = y1 - y3, w2YStep = x3 - x1;
+        w3XStep = y2 - y1, w3YStep = x1 - x2;
+
+        if (faceToRender == PF_BACK)
+        {
+            w1XStep = -w1XStep, w1YStep = -w1YStep;
+            w2XStep = -w2XStep, w2YStep = -w2YStep;
+            w3XStep = -w3XStep, w3YStep = -w3YStep;
+        }
+
+        w1Row = (xMin - x2)*w1XStep + w1YStep*(yMin - y2);
+        w2Row = (xMin - x3)*w2XStep + w2YStep*(yMin - y3);
+        w3Row = (xMin - x1)*w3XStep + w3YStep*(yMin - y1);
+    }
+
+    // Vector constants
+    PFMsimd_i offset = pfmSimdSetR_I32(0, 1, 2, 3, 4, 5, 6, 7);
+    PFMsimd_i w1XStepV = pfmSimdMullo_I32(pfmSimdSet1_I32(w1XStep), offset);
+    PFMsimd_i w2XStepV = pfmSimdMullo_I32(pfmSimdSet1_I32(w2XStep), offset);
+    PFMsimd_i w3XStepV = pfmSimdMullo_I32(pfmSimdSet1_I32(w3XStep), offset);
+
+    // Calculate the reciprocal of the sum of the barycentric coordinates for normalization
+    // NOTE: This sum remains constant throughout the triangle
+    PFMsimd_f wInvSumV = pfmSimdSet1_F32(w1Row + w2Row + w3Row);
+
+    // Load vertices data into SIMD registers
+    PFsimd_color c1V, c2V, c3V;
+    pfInternal_SimdColorLoadUnpacked(c1V, v1->color);
+    pfInternal_SimdColorLoadUnpacked(c2V, v2->color);
+    pfInternal_SimdColorLoadUnpacked(c3V, v3->color);
+
+    PFMsimd_vec3 p1V, p2V, p3V;
+    pfmSimdVec3Load(p1V, v1->position);
+    pfmSimdVec3Load(p2V, v2->position);
+    pfmSimdVec3Load(p3V, v3->position);
+
+    PFMsimd_vec3 n1V, n2V, n3V;
+    pfmSimdVec3Load(n1V, v1->normal);
+    pfmSimdVec3Load(n2V, v2->normal);
+    pfmSimdVec3Load(n3V, v3->normal);
+
+    PFMsimd_vec2 tc1V, tc2V, tc3V;
+    pfmSimdVec2Load(tc1V, v1->texcoord);
+    pfmSimdVec2Load(tc2V, v2->texcoord);
+    pfmSimdVec2Load(tc3V, v3->texcoord);
+
+    /* Get some contextual values */
+
+    InterpolateColorSimdFunc interpolateColor = (currentCtx->shadingMode == PF_SMOOTH)
+        ? pfInternal_SimdColorBary_SMOOTH : pfInternal_SimdColorBary_FLAT;
+
+    PFblendfunc blendFunction = currentCtx->state & PF_BLEND ? currentCtx->blendFunction : NULL;
+    PFdepthfunc depthFunction = currentCtx->depthFunction;
+
+    struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
+    struct PFtex *texSrc = currentCtx->currentTexture;
+
+    PFfloat *zbDst = currentCtx->currentFramebuffer->zbuffer;
+
+    PFpixelgetter_simd getter = texDst->getterSimd;
+    PFpixelsetter_simd setter = texDst->setterSimd;
+    PFsizei widthDst = texDst->width;
+    void *pbDst = texDst->pixels;
+
+    PFfloat z1 = v1->homogeneous[2];
+    PFfloat z2 = v2->homogeneous[2];
+    PFfloat z3 = v3->homogeneous[2];
+
+    const PFboolean noDepth   = !(currentCtx->state & PF_DEPTH_TEST);
+    const PFboolean texturing = (currentCtx->state & PF_TEXTURE_2D) && texSrc;
+    const PFboolean lighting  = (currentCtx->state & PF_LIGHTING) && currentCtx->activeLights;
+
+    /* Loop macro definition */
+
+#define PF_TRIANGLE_TRAVEL_SIMD(PIXEL_CODE)                                                 \
+    for (int y = yMin; y <= yMax; ++y) {                                                    \
+        size_t yOffset = y * widthDst;                                                      \
+        int w1 = w1Row;                                                                     \
+        int w2 = w2Row;                                                                     \
+        int w3 = w3Row;                                                                     \
+        for (int x = xMin; x <= xMax; x += PF_SIMD_SIZE) {                                  \
+            /*
+                Load the current barycentric coordinates into AVX registers
+            */                                                                              \
+            PFMsimd_i w1V = pfmSimdAdd_I32(pfmSimdSet1_I32(w1), w1XStepV);                  \
+            PFMsimd_i w2V = pfmSimdAdd_I32(pfmSimdSet1_I32(w2), w1XStepV);                  \
+            PFMsimd_i w3V = pfmSimdAdd_I32(pfmSimdSet1_I32(w3), w1XStepV);                  \
+            /*
+                Test if pixels are inside the triangle
+            */                                                                              \
+            PFMsimd_i mask = pfmSimdOr_I32(pfmSimdOr_I32(w1V, w2V), w3V);                   \
+            PFMsimd_i maskGeZero = pfmSimdCmpGT_I32(mask, pfmSimdSetZero_I32());            \
+            /*
+                Normalize weights
+            */                                                                              \
+            PFMsimd_f w1NormV = pfmSimdMul_F32(pfmSimdConvert_I32_F32(w1V), wInvSumV);      \
+            PFMsimd_f w2NormV = pfmSimdMul_F32(pfmSimdConvert_I32_F32(w2V), wInvSumV);      \
+            PFMsimd_f w3NormV = pfmSimdMul_F32(pfmSimdConvert_I32_F32(w3V), wInvSumV);      \
+            /*
+                Run the pixel code!
+            */                                                                              \
+            PIXEL_CODE                                                                      \
+            /*
+                Increment the barycentric coordinates for the next pixels
+            */                                                                              \
+            w1 += PF_SIMD_SIZE * w1XStep;                                                   \
+            w2 += PF_SIMD_SIZE * w2XStep;                                                   \
+            w3 += PF_SIMD_SIZE * w3XStep;                                                   \
+        }                                                                                   \
+        /*
+            Move to the next row in the bounding box
+        */                                                                                  \
+        w1Row += w1YStep;                                                                   \
+        w2Row += w2YStep;                                                                   \
+        w3Row += w3YStep;                                                                   \
+    }
+
+    /* Processing macro definitions */
+
+#   define GET_FRAG() \
+        PFsimd_color fragments; \
+        interpolateColor(fragments, c1V, c2V, c3V, w1NormV, w2NormV, w3NormV);
+
+#   define TEXTURING() \
+        PFMsimd_vec2 texcoords; \
+        pfmSimdVec2BaryInterpR(texcoords, tc1V, tc2V, tc3V, w1NormV, w2NormV, w3NormV); \
+        /*if (is3D) texcoord[0] *= z, texcoord[1] *= z; // Perspective correct */ \
+        PFMsimd_i texelsPacked = pfTextureSampleNearestWrapSimd(texSrc, texcoords); \
+        PFsimd_color texels; pfInternal_SimdColorUnpack(texels, texelsPacked); \
+        pfBlendMultiplicativeSimd(fragments, texels, fragments);
+
+#   define LIGHTING() \
+        PFMsimd_vec3 normals, positions; \
+        pfmSimdVec3BaryInterpR(normals, n1V, n2V, n3V, w1NormV, w2NormV, w3NormV); \
+        pfmSimdVec3BaryInterpR(positions, p1V, p2V, p3V, w1NormV, w2NormV, w3NormV); \
+        //fragment = pfInternal_ProcessLights(currentCtx->activeLights, &currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal);
+
+#   define SET_FRAG() \
+        /*PFcolor finalColor = blendFunction ? blendFunction(fragments, getter(pbDst, xyOffset)) : fragment;*/ \
+        setter(pbDst, yOffset + x, pfInternal_SimdColorPack(fragments), maskGeZero);
+        //zbDst[xyOffset] = z;
+
+    /* Loop rasterization */
+
+    if (texturing && lighting)
+    {
+        PF_TRIANGLE_TRAVEL_SIMD({
+            GET_FRAG();
+            TEXTURING();
+            LIGHTING();
+            SET_FRAG();
+        })
+    }
+    else if (texturing)
+    {
+        PF_TRIANGLE_TRAVEL_SIMD({
+            GET_FRAG();
+            TEXTURING();
+            SET_FRAG();
+        })
+    }
+    else if (lighting)
+    {
+        PF_TRIANGLE_TRAVEL_SIMD({
+            GET_FRAG();
+            LIGHTING();
+            SET_FRAG();
+        })
+    }
+    else
+    {
+        PF_TRIANGLE_TRAVEL_SIMD({
+            GET_FRAG();
+            SET_FRAG();
+        })
+    }
+}
+
+#else
 
 void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
@@ -680,8 +916,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     PFfloat *zbDst = currentCtx->currentFramebuffer->zbuffer;
 
-    PFpixelgetter pixelGetter = texDst->pixelGetter;
-    PFpixelsetter pixelSetter = texDst->pixelSetter;
+    PFpixelgetter getter = texDst->getter;
+    PFpixelsetter setter = texDst->setter;
     PFsizei widthDst = texDst->width;
     void *pbDst = texDst->pixels;
 
@@ -762,7 +998,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFMvec2 texcoord; \
         pfmVec2BaryInterpR(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, aW1, aW2, aW3); \
         if (is3D) texcoord[0] *= z, texcoord[1] *= z; /* Perspective correct */ \
-        PFcolor texel = pfGetTextureSample(texSrc, texcoord[0], texcoord[1]); \
+        PFcolor texel = pfTextureSampleNearestWrap(texSrc, texcoord[0], texcoord[1]); \
         fragment = pfBlendMultiplicative(texel, fragment);
 
 #   define LIGHTING() \
@@ -772,8 +1008,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         fragment = pfInternal_ProcessLights(currentCtx->activeLights, &currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal);
 
 #   define SET_FRAG() \
-        PFcolor finalColor = blendFunction ? blendFunction(fragment, pixelGetter(pbDst, xyOffset)) : fragment; \
-        pixelSetter(pbDst, xyOffset, finalColor); \
+        PFcolor finalColor = blendFunction ? blendFunction(fragment, getter(pbDst, xyOffset)) : fragment; \
+        setter(pbDst, xyOffset, finalColor); \
         zbDst[xyOffset] = z;
 
     /* Loop rasterization */
@@ -812,4 +1048,5 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     }
 }
 
+#endif // PF_SIMD_SIZE > 1
 #endif //PF_RASTER_METHOD

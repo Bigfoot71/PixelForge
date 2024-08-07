@@ -30,15 +30,6 @@
 */
 
 /**
- * @brief Function pointer type for setting a pixel in a texture.
- *
- * @param pixels A pointer to the pixel data of the texture.
- * @param index The index of the pixel to set.
- * @param color The color value to set the pixel to.
- */
-typedef void (*PFpixelsetter)(void* pixels, PFsizei index, PFcolor color);
-
-/**
  * @brief Function pointer type for getting a pixel from a texture.
  *
  * @param pixels A pointer to the pixel data of the texture.
@@ -48,11 +39,45 @@ typedef void (*PFpixelsetter)(void* pixels, PFsizei index, PFcolor color);
 typedef PFcolor (*PFpixelgetter)(const void* pixels, PFsizei index);
 
 /**
+ * @brief Function pointer type for getting multiple pixels from a texture using SIMD instructions.
+ *
+ * This function retrieves multiple pixels at once from a texture, using SIMD (Single Instruction, Multiple Data) instructions.
+ *
+ * @param pixels A pointer to the pixel data of the texture.
+ * @param offsets A SIMD register containing the indices of the pixels to retrieve.
+ * @return A SIMD register containing the color values of the pixels at the specified indices.
+ */
+typedef PFMsimd_i (*PFpixelgetter_simd)(const void* pixels, PFMsimd_i offsets);
+
+/**
+ * @brief Function pointer type for setting a pixel in a texture.
+ *
+ * @param pixels A pointer to the pixel data of the texture.
+ * @param index The index of the pixel to set.
+ * @param color The color value to set the pixel to.
+ */
+typedef void (*PFpixelsetter)(void* pixels, PFsizei index, PFcolor color);
+
+/**
+ * @brief Function pointer type for setting multiple pixels in a texture using SIMD instructions.
+ *
+ * This function sets multiple pixels at once in a texture, using SIMD (Single Instruction, Multiple Data) instructions.
+ *
+ * @param pixels A pointer to the pixel data of the texture.
+ * @param offset The starting index of the pixels to set.
+ * @param colors A SIMD register containing the color values to set the pixels to.
+ * @param mask A SIMD register used to mask which pixels should be set.
+ */
+typedef void (*PFpixelsetter_simd)(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask);
+
+/**
  * @brief Structure representing a texture.
  */
 struct PFtex {
-    PFpixelsetter pixelSetter;
-    PFpixelgetter pixelGetter;
+    PFpixelgetter getter;
+    PFpixelsetter setter;
+    PFpixelgetter_simd getterSimd;
+    PFpixelsetter_simd setterSimd;
     void *pixels;
     PFsizei width;
     PFsizei height;

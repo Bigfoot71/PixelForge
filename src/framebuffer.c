@@ -106,7 +106,7 @@ void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color, PFfloat depth
 #   endif
     for (PFsizei i = 0; i < size; i++)
     {
-        tex->pixelSetter(tex->pixels, i, color);
+        tex->setter(tex->pixels, i, color);
         framebuffer->zbuffer[i] = depth;
     }
 }
@@ -114,7 +114,7 @@ void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color, PFfloat depth
 PFcolor pfGetFramebufferPixel(const PFframebuffer* framebuffer, PFsizei x, PFsizei y)
 {
     const struct PFtex* tex = framebuffer->texture;
-    return tex->pixelGetter(tex->pixels, y*tex->width + x);
+    return tex->getter(tex->pixels, y*tex->width + x);
 }
 
 PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x, PFsizei y)
@@ -132,7 +132,7 @@ void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsiz
 
     if (depthFunc(z, *zp))
     {
-        tex->pixelSetter(tex->pixels, offset, color);
+        tex->setter(tex->pixels, offset, color);
         *zp = z;
     }
 }
@@ -142,12 +142,12 @@ void pfSetFramebufferPixelDepth(PFframebuffer* framebuffer, PFsizei x, PFsizei y
     struct PFtex* tex = framebuffer->texture;
     PFsizei offset = y*tex->width + x;
 
-    tex->pixelSetter(tex->pixels, offset, color);
+    tex->setter(tex->pixels, offset, color);
     framebuffer->zbuffer[offset] = z;
 }
 
 void pfSetFramebufferPixel(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFcolor color)
 {
     struct PFtex* tex = framebuffer->texture;
-    tex->pixelSetter(tex->pixels, y*tex->width + x, color);
+    tex->setter(tex->pixels, y*tex->width + x, color);
 }

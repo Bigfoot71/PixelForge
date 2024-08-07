@@ -95,8 +95,8 @@ void Rasterize_Point_NODEPTH(const PFvertex* point)
     PFframebuffer *fbDst = currentCtx->currentFramebuffer;
     struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
 
-    PFpixelsetter pixelSetter = texDst->pixelSetter;
-    PFpixelgetter pixelGetter = texDst->pixelGetter;
+    PFpixelsetter setter = texDst->setter;
+    PFpixelgetter getter = texDst->getter;
 
     PFblendfunc blendFunc = currentCtx->state & PF_BLEND ?
         currentCtx->blendFunction : NULL;
@@ -115,8 +115,8 @@ void Rasterize_Point_NODEPTH(const PFvertex* point)
     if (currentCtx->pointSize <= 1.0f)
     {
         PFsizei pOffset = cy*wDst + cx;
-        pixelSetter(pbDst, pOffset, blendFunc
-            ? blendFunc(color, pixelGetter(pbDst, pOffset)) : color);
+        setter(pbDst, pOffset, blendFunc
+            ? blendFunc(color, getter(pbDst, pOffset)) : color);
         zbDst[pOffset] = z;
         return;
     }
@@ -134,8 +134,8 @@ void Rasterize_Point_NODEPTH(const PFvertex* point)
                 if (px < wDst && py < hDst)
                 {
                     PFsizei pOffset = py*wDst + px;
-                    pixelSetter(pbDst, pOffset, blendFunc
-                        ? blendFunc(color, pixelGetter(pbDst, pOffset)) : color);
+                    setter(pbDst, pOffset, blendFunc
+                        ? blendFunc(color, getter(pbDst, pOffset)) : color);
                     zbDst[pOffset] = z;
                 }
             }
@@ -148,8 +148,8 @@ void Rasterize_Point_DEPTH(const PFvertex* point)
     PFframebuffer *fbDst = currentCtx->currentFramebuffer;
     struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
 
-    PFpixelsetter pixelSetter = texDst->pixelSetter;
-    PFpixelgetter pixelGetter = texDst->pixelGetter;
+    PFpixelsetter setter = texDst->setter;
+    PFpixelgetter getter = texDst->getter;
 
     PFblendfunc blendFunc = currentCtx->state & PF_BLEND ?
         currentCtx->blendFunction : NULL;
@@ -170,8 +170,8 @@ void Rasterize_Point_DEPTH(const PFvertex* point)
         PFsizei pOffset = cy*wDst + cx;
         if (currentCtx->depthFunction(z, zbDst[pOffset]))
         {
-            pixelSetter(pbDst, pOffset, blendFunc
-                ? blendFunc(color, pixelGetter(pbDst, pOffset)) : color);
+            setter(pbDst, pOffset, blendFunc
+                ? blendFunc(color, getter(pbDst, pOffset)) : color);
             zbDst[pOffset] = z;
         }
 
@@ -193,8 +193,8 @@ void Rasterize_Point_DEPTH(const PFvertex* point)
                     PFsizei pOffset = py*wDst + px;
                     if (currentCtx->depthFunction(z, zbDst[pOffset]))
                     {
-                        pixelSetter(pbDst, pOffset, blendFunc
-                            ? blendFunc(color, pixelGetter(pbDst, pOffset)) : color);
+                        setter(pbDst, pOffset, blendFunc
+                            ? blendFunc(color, getter(pbDst, pOffset)) : color);
                         zbDst[pOffset] = z;
                     }
                 }

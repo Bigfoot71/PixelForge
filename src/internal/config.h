@@ -21,7 +21,6 @@
 #define PF_CONFIG_H
 
 //#define PF_SCANLINES_RASTER_METHOD    // Performs triangle rasterization using scanline rather than barycentric method
-//#define PF_SUPPORT_NO_POT_TEXTURE     // Allows fetching samples from texcoords on non-power-of-two textures
 //#define PF_PHONG_REFLECTION           // Disable the Blinn-Phong reflection model for Phong
 //#define PF_GOURAUD_SHADING            // Enable vertex shading for lighting instead of per-fragment shading
 

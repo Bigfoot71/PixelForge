@@ -739,7 +739,7 @@ void pfClear(PFclearflag flag)
     {
         PFfloat *zbuffer = framebuffer->zbuffer;
 
-        PFpixelsetter pixelSetter = tex->pixelSetter;
+        PFpixelsetter setter = tex->setter;
         PFcolor color = currentCtx->clearColor;
         PFfloat depth = currentCtx->clearDepth;
 
@@ -748,13 +748,13 @@ void pfClear(PFclearflag flag)
 #       endif //_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
-            pixelSetter(tex->pixels, i, color);
+            setter(tex->pixels, i, color);
             zbuffer[i] = depth;
         }
     }
     else if (flag & PF_COLOR_BUFFER_BIT)
     {
-        PFpixelsetter pixelSetter = tex->pixelSetter;
+        PFpixelsetter setter = tex->setter;
         PFcolor color = currentCtx->clearColor;
 
 #       ifdef _OPENMP
@@ -762,7 +762,7 @@ void pfClear(PFclearflag flag)
 #       endif //_OPENMP
         for (PFsizei i = 0; i < size; i++)
         {
-            pixelSetter(tex->pixels, i, color);
+            setter(tex->pixels, i, color);
         }
     }
     else if (flag & PF_DEPTH_BUFFER_BIT)
@@ -2142,7 +2142,7 @@ void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2)
 
         for (PFint x = iX1; x <= iX2; x++)
         {
-            tex->pixelSetter(tex->pixels, yOffset + x, color);
+            tex->setter(tex->pixels, yOffset + x, color);
         }
     }
 }
@@ -2237,8 +2237,8 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PFdatatyp
                 PFcolor color = getPixelSrc(pixels, xySrcOffset);
 
                 // Blend source and destination colors and update framebuffer
-                texDst->pixelSetter(texDst->pixels, xyDstOffset, blendFunction
-                    ? blendFunction(color, texDst->pixelGetter(texDst->pixels, xyDstOffset)) : color);
+                texDst->setter(texDst->pixels, xyDstOffset, blendFunction
+                    ? blendFunction(color, texDst->getter(texDst->pixels, xyDstOffset)) : color);
             }
         }
     }
@@ -2481,8 +2481,8 @@ void pfFogProcess(void)
     void *pixels = tex->pixels;
     const PFfloat *zBuffer = currentCtx->currentFramebuffer->zbuffer;
 
-    PFpixelgetter pixelGetter = tex->pixelGetter;
-    PFpixelsetter pixelSetter = tex->pixelSetter;
+    PFpixelgetter getter = tex->getter;
+    PFpixelsetter setter = tex->setter;
 
 #ifdef _OPENMP
 #   define BEGIN_FOG_LOOP() \
@@ -2525,8 +2525,8 @@ void pfFogProcess(void)
         if (depth >= end)
         {
             fogColor.a = alpha;
-            pixelSetter(pixels, xyOffset, alpha == 255 ? fogColor
-                : pfBlendAlpha(fogColor, pixelGetter(pixels, xyOffset)));
+            setter(pixels, xyOffset, alpha == 255 ? fogColor
+                : pfBlendAlpha(fogColor, getter(pixels, xyOffset)));
         }
         else if (depth > start)
         {
@@ -2548,8 +2548,8 @@ void pfFogProcess(void)
             }
 
             fogColor.a = (PFubyte)(t * alpha);
-            PFcolor color = pixelGetter(pixels, xyOffset);
-            pixelSetter(pixels, xyOffset, pfBlendAlpha(fogColor, color));
+            PFcolor color = getter(pixels, xyOffset);
+            setter(pixels, xyOffset, pfBlendAlpha(fogColor, color));
         }
     }
     END_FOG_LOOP()
@@ -2576,7 +2576,7 @@ void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat
     /* Retrieve information about the source framebuffer */
 
     const struct PFtex *texSrc = currentCtx->currentFramebuffer->texture;
-    PFpixelgetter srcPixelGetter = texSrc->pixelGetter;
+    PFpixelgetter srcPixelGetter = texSrc->getter;
     const void *srcPixels = texSrc->pixels;
     PFsizei srcWidth = texSrc->width;
 
@@ -2621,8 +2621,8 @@ void pfPostProcess(PFpostprocessfunc postProcessFunction)
     void *pixels = tex->pixels;
     const PFfloat *zBuffer = currentCtx->currentFramebuffer->zbuffer;
 
-    PFpixelgetter pixelGetter = tex->pixelGetter;
-    PFpixelsetter pixelSetter = tex->pixelSetter;
+    PFpixelgetter getter = tex->getter;
+    PFpixelsetter setter = tex->setter;
 
 #ifdef _OPENMP
 #   define BEGIN_POSTPROCESS_LOOP() \
@@ -2652,11 +2652,11 @@ void pfPostProcess(PFpostprocessfunc postProcessFunction)
 
     BEGIN_POSTPROCESS_LOOP()
     {
-        PFcolor color = pixelGetter(pixels, xyOffset);
+        PFcolor color = getter(pixels, xyOffset);
         PFfloat depth = zBuffer[xyOffset];
 
         color = postProcessFunction(x, y, depth, color);
-        pixelSetter(pixels, xyOffset, color);
+        setter(pixels, xyOffset, color);
     }
     END_POSTPROCESS_LOOP()
 }

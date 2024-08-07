@@ -1747,43 +1747,19 @@ PF_API void pfSetTexturePixel(PFtexture texture, PFsizei x, PFsizei y, PFcolor c
 PF_API PFcolor pfGetTexturePixel(const PFtexture texture, PFsizei x, PFsizei y);
 
 /**
- * @brief Sets the color value of a sampled texture coordinate.
+ * @brief Samples a texture using nearest neighbor filtering with wrapping.
  *
- * This function sets the color value of a specific texture coordinate (u, v) in the texture.
- * The texture coordinates (u, v) and the color value are provided.
+ * This function samples the specified texture at the given (u, v) coordinates using
+ * nearest neighbor filtering. The texture coordinates are wrapped, meaning they
+ * are treated modulo 1.0, so coordinates outside the range [0.0, 1.0] will be
+ * wrapped around.
  *
- * @note: To use this function correctly, textures must be power-of-two (POT).
- *        If you absolutely need support for non-POT textures, you can define
- *        `PF_SUPPORT_NO_POT_TEXTURE`. Just be aware that sample retrieval
- *        will be slower as it will perform two modulo operations per call
- *        instead of two bit-wise AND operations.
- *
- * @param texture Pointer to the texture object.
- * @param u The U coordinate of the texture.
- * @param v The V coordinate of the texture.
- * @param color The color value of the texture sample.
+ * @param texture The texture to sample from.
+ * @param u The horizontal texture coordinate.
+ * @param v The vertical texture coordinate.
+ * @return The color sampled from the texture at the given coordinates.
  */
-PF_API void pfSetTextureSample(PFtexture texture, PFfloat u, PFfloat v, PFcolor color);
-
-/**
- * @brief Retrieves the color value of a sampled texture coordinate.
- *
- * This function retrieves the color value of a specific texture coordinate (u, v) from the texture.
- * The texture coordinates (u, v) are provided.
- *
- * @note: To use this function correctly, textures must be power-of-two (POT).
- *        If you absolutely need support for non-POT textures, you can define
- *        `PF_SUPPORT_NO_POT_TEXTURE`. Just be aware that sample retrieval
- *        will be slower as it will perform two modulo operations per call
- *        instead of two bit-wise AND operations.
- *
- * @param texture Pointer to the texture object.
- * @param u The U coordinate of the texture.
- * @param v The V coordinate of the texture.
- * @return PFcolor The color value of the texture sample.
- */
-PF_API PFcolor pfGetTextureSample(const PFtexture texture, PFfloat u, PFfloat v);
-
+PF_API PFcolor pfTextureSampleNearestWrap(const PFtexture texture, PFfloat u, PFfloat v);
 
 /*
  *  Blending functions
