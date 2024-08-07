@@ -2108,7 +2108,7 @@ PFM_API void
 pfmSimdStore_I8(void* p, PFMsimd_i x)
 {
 #if defined(__AVX2__)
-    _mm256_storeu_si64((__m256i*)p, x);
+    _mm256_storeu_si256((__m256i*)p, x);    //< REVIEW: si64 ???
 #elif defined(__SSE2__)
     _mm_storeu_si32((__m128i*)p, x);
 #else
@@ -2123,7 +2123,7 @@ PFM_API void
 pfmSimdStore_I16(void* p, PFMsimd_i x)
 {
 #if defined(__AVX2__)
-    _mm256_storeu_si128((__m256i*)p, x);
+    _mm256_storeu_si256((__m256i*)p, x);    //< REVIEW: si128 ???
 #elif defined(__SSE2__)
     _mm_storeu_si64((__m128i*)p, x);
 #else
@@ -2229,7 +2229,7 @@ PFM_API PFMsimd_i
 pfmSimdShuffle_I8(PFMsimd_i x, PFMsimd_i y)
 {
 #if defined(__AVX2__)
-        _mm256_shuffle_epi8(x, y);
+    return _mm256_shuffle_epi8(x, y);
 #elif defined(__SSE4_1__)
     return _mm_shuffle_epi8(x, y);
 #elif defined(__SSE2__)
@@ -2282,6 +2282,10 @@ pfmSimdConvert_F32_I32(PFMsimd_f x)
 #endif
 }
 
+// TODO: Review the management of '_mm256_cvtph_ps' which receives a '__m128i' to return a 
+//       '__m256', and the same problem on the contrary with the macro using '_mm256_cvtps_ph'
+
+/*
 #if defined(__AVX2__)
 #   define pfmSimdConvert_F32_F16(x, imm)  \
         _mm256_cvtps_ph(x, index)
@@ -2308,7 +2312,7 @@ pfmSimdConvert_F32_F16(PFMsimd_f x, const int imm)
 }
 #endif
 
-PFM_API PFMsimd_f
+PFM_API PFMsimd_i
 pfmSimdConvert_F16_F32(PFMsimd_f x)
 {
 #if defined(__AVX2__)
@@ -2332,6 +2336,7 @@ pfmSimdConvert_F16_F32(PFMsimd_f x)
     return result;
 #endif
 }
+*/
 
 PFM_API PFMsimd_f
 pfmSimdConvert_I32_F32(PFMsimd_i x)
@@ -2684,8 +2689,8 @@ pfmSimdOr_I32(PFMsimd_i x, PFMsimd_i y)
 #endif
 }
 
-PFM_API PFMsimd_i
-pfmSimdOr_F32(PFMsimd_i x, PFMsimd_i y)
+PFM_API PFMsimd_f
+pfmSimdOr_F32(PFMsimd_f x, PFMsimd_f y)
 {
 #if defined(__AVX2__)
     return _mm256_or_ps(x, y);
@@ -2837,11 +2842,11 @@ pfmSimdCmpEQ_I32(PFMsimd_i x, PFMsimd_i y)
 #endif
 }
 
-PFM_API PFMsimd_i
-pfmSimdCmpEQ_F32(PFMsimd_i x, PFMsimd_i y)
+PFM_API PFMsimd_f
+pfmSimdCmpEQ_F32(PFMsimd_f x, PFMsimd_f y)
 {
 #if defined(__AVX2__)
-    return _mm256_cmpeq_ps(x, y);
+    return _mm256_cmp_ps(x, y, _CMP_EQ_OS);
 #elif defined(__SSE2__)
     return _mm_cmpeq_ps(x, y);
 #else
@@ -2875,11 +2880,11 @@ pfmSimdCmpLT_I32(PFMsimd_i x, PFMsimd_i y)
 #endif
 }
 
-PFM_API PFMsimd_i
-pfmSimdCmpLT_F32(PFMsimd_i x, PFMsimd_i y)
+PFM_API PFMsimd_f
+pfmSimdCmpLT_F32(PFMsimd_f x, PFMsimd_f y)
 {
 #if defined(__AVX2__)
-    return _mm256_cmpgt_ps(y, x);
+    return _mm256_cmp_ps(x, y, _CMP_LT_OS);
 #elif defined(__SSE2__)
     return _mm_cmplt_ps(x, y);
 #else
@@ -2913,11 +2918,11 @@ pfmSimdCmpGT_I32(PFMsimd_i x, PFMsimd_i y)
 #endif
 }
 
-PFM_API PFMsimd_i
-pfmSimdCmpGT_F32(PFMsimd_i x, PFMsimd_i y)
+PFM_API PFMsimd_f
+pfmSimdCmpGT_F32(PFMsimd_f x, PFMsimd_f y)
 {
 #if defined(__AVX2__)
-    return _mm256_cmpgt_ps(x, y);
+    return _mm256_cmp_ps(x, y, _CMP_GT_OS);
 #elif defined(__SSE2__)
     return _mm_cmpgt_ps(x, y);
 #else
@@ -2951,13 +2956,13 @@ pfmSimdCmpLE_I32(PFMsimd_i x, PFMsimd_i y)
 #endif
 }
 
-PFM_API PFMsimd_i
-pfmSimdCmpLE_F32(PFMsimd_i x, PFMsimd_i y)
+PFM_API PFMsimd_f
+pfmSimdCmpLE_F32(PFMsimd_f x, PFMsimd_f y)
 {
 #if defined(__AVX2__)
-    return _mm256_cmpgt_ps(y, x);
+    return _mm256_cmp_ps(y, x, _CMP_LE_OS);
 #elif defined(__SSE2__)
-    return _mm_cmplt_ps(x, y);
+    return _mm_cmple_ps(x, y);
 #else
     PFMsimd_i result;
     float* fx = (float*)&x;
@@ -2974,9 +2979,9 @@ PFM_API PFMsimd_i
 pfmSimdCmpGE_I32(PFMsimd_i x, PFMsimd_i y)
 {
 #if defined(__AVX2__)
-    return _mm256_cmpgt_epi32(y, x);
+    return _mm256_cmpgt_epi32(x, y);
 #elif defined(__SSE2__)
-    return _mm_cmpgt_epi32(y, x);
+    return _mm_cmpgt_epi32(x, y);
 #else
     PFMsimd_i result;
     int32_t* px = (int32_t*)&x;
@@ -2989,13 +2994,13 @@ pfmSimdCmpGE_I32(PFMsimd_i x, PFMsimd_i y)
 #endif
 }
 
-PFM_API PFMsimd_i
-pfmSimdCmpGE_F32(PFMsimd_i x, PFMsimd_i y)
+PFM_API PFMsimd_f
+pfmSimdCmpGE_F32(PFMsimd_f x, PFMsimd_f y)
 {
 #if defined(__AVX2__)
-    return _mm256_cmpgt_ps(y, x);
+    return _mm256_cmp_ps(x, y, _CMP_GE_OS);
 #elif defined(__SSE2__)
-    return _mm_cmpgt_ps(y, x);
+    return _mm_cmpge_ps(x, y);
 #else
     PFMsimd_i result;
     float* fx = (float*)&x;
