@@ -300,9 +300,9 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
     PFblendfunc blendFunc = currentCtx->state & PF_BLEND ?
         currentCtx->blendFunction : NULL;
 
-    void *bufDst = texDst->pixels;
-    PFsizei wDst = texDst->width;
     PFfloat *zbDst = fbDst->zbuffer;
+    void *bufDst = texDst->pixels;
+    PFsizei wDst = texDst->w;
 
     PFint x1 = v1->screen[0], y1 = v1->screen[1];
     PFint x2 = v2->screen[0], y2 = v2->screen[1];
@@ -394,9 +394,9 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
     PFblendfunc blendFunc = currentCtx->state & PF_BLEND ?
         currentCtx->blendFunction : NULL;
 
-    void *bufDst = texDst->pixels;
-    PFsizei wDst = texDst->width;
     PFfloat *zbDst = fbDst->zbuffer;
+    void *bufDst = texDst->pixels;
+    PFsizei wDst = texDst->w;
 
     PFint x1 = v1->screen[0], y1 = v1->screen[1];
     PFint x2 = v2->screen[0], y2 = v2->screen[1];

@@ -104,8 +104,8 @@ void Rasterize_Point_NODEPTH(const PFvertex* point)
     void *pbDst = texDst->pixels;
     PFfloat *zbDst = fbDst->zbuffer;
 
-    PFsizei wDst = texDst->width;
-    PFsizei hDst = texDst->height;
+    PFsizei wDst = texDst->w;
+    PFsizei hDst = texDst->h;
 
     PFint cx = point->screen[0];
     PFint cy = point->screen[1];
@@ -157,8 +157,8 @@ void Rasterize_Point_DEPTH(const PFvertex* point)
     void *pbDst = texDst->pixels;
     PFfloat *zbDst = fbDst->zbuffer;
 
-    PFsizei wDst = texDst->width;
-    PFsizei hDst = texDst->height;
+    PFsizei wDst = texDst->w;
+    PFsizei hDst = texDst->h;
 
     PFint cx = point->screen[0];
     PFint cy = point->screen[1];
