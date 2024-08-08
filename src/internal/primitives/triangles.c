@@ -475,6 +475,9 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     PFMsimd_f z2V = pfmSimdSet1_F32(v2->homogeneous[2]);
     PFMsimd_f z3V = pfmSimdSet1_F32(v3->homogeneous[2]);
 
+    PFMsimd_vec3 viewPosV;
+    pfmSimdVec3Load(viewPosV, viewPos);
+
     const PFboolean texturing = (currentCtx->state & PF_TEXTURE_2D) && texSrc;
     const PFboolean lighting  = (currentCtx->state & PF_LIGHTING) && currentCtx->activeLights;
 
@@ -595,7 +598,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFMsimd_vec3 normals, positions; \
         pfmSimdVec3BaryInterpR(normals, n1V, n2V, n3V, w1NormV, w2NormV, w3NormV); \
         pfmSimdVec3BaryInterpR(positions, p1V, p2V, p3V, w1NormV, w2NormV, w3NormV); \
-        //fragment = pfInternal_ProcessLights(currentCtx->activeLights, &currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal);
+        pfInternal_SimdLightingProcess(fragments, currentCtx->activeLights, \
+            &currentCtx->faceMaterial[faceToRender], viewPosV, positions, normals);
 
 #   define SET_FRAG() \
         if (blendFunction) { \
@@ -786,7 +790,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFMvec3 normal, position; \
         pfmVec3BaryInterpR(normal, v1->normal, v2->normal, v3->normal, w1Norm, w2Norm, w3Norm); \
         pfmVec3BaryInterpR(position, v1->position, v2->position, v3->position, w1Norm, w2Norm, w3Norm); \
-        fragment = pfInternal_ProcessLights(currentCtx->activeLights, &currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal);
+        fragment = pfInternal_LightingProcess(currentCtx->activeLights, &currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal);
 
 #   define SET_FRAG() \
         PFcolor finalColor = blendFunction ? blendFunction(fragment, getter(pbDst, xyOffset)) : fragment; \

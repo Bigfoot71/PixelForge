@@ -181,4 +181,48 @@ pfInternal_SimdColorBaryFlat(PFsimd_color out,
     }
 }
 
+/* SIMD Conversion helpers */
+
+static inline void
+pfInternal_SimdColorSisdToVec(PFMsimd_f* out, PFcolor in, int vecSize)
+{
+    const PFMsimd_f v255f = pfmSimdSet1_F32(255);
+
+    for (int i = 0; i < vecSize; ++i)
+    {
+        out[i] = pfmSimdDiv_F32(
+            pfmSimdSet1_F32(((PFubyte*)&in)[i]), v255f);
+    }
+}
+
+static inline void
+pfInternal_SimdColorUnpackedToVec(PFMsimd_f* out, PFsimd_color in, int vecSize)
+{
+    const PFMsimd_f v255f = pfmSimdSet1_F32(255);
+
+    for (int i = 0; i < vecSize; ++i)
+    {
+        out[i] = pfmSimdDiv_F32(
+            pfmSimdConvert_I32_F32(in[i]), v255f);
+    }
+}
+
+static inline void
+pfInternal_SimdColorUnpackedFromVec(PFsimd_color out, PFMsimd_f* in, int vecSize)
+{
+    const PFMsimd_i v255i = pfmSimdSet1_I32(255);
+    const PFMsimd_f v255f = pfmSimdSet1_F32(255);
+
+    out[0] = pfmSimdSetZero_I32();
+    out[1] = pfmSimdSetZero_I32();
+    out[2] = pfmSimdSetZero_I32();
+    out[3] = pfmSimdSet1_I32(255);
+
+    for (int i = 0; i < vecSize; ++i)
+    {
+        out[i] = pfmSimdConvert_F32_I32(pfmSimdMul_F32(in[i], v255f));
+        out[i] = pfmSimdClamp_I32(out[i], pfmSimdSetZero_I32(), v255i);
+    }
+}
+
 #endif //PF_INTERNAL_COLOR_H

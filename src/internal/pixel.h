@@ -1385,13 +1385,14 @@ pfInternal_PixelGet_BGRA_USHORT_4_4_4_4_simd(const void* pixels, PFMsimd_i offse
 static inline PFMsimd_i
 pfInternal_PixelGet_RGBA_UBYTE_simd(const void* pixels, PFMsimd_i offsets)
 {
-    return pfmSimdGather_I32((const PFMsimd_i*)pixels, offsets);
+    // REVIEW: Sometimes leads to segfaults, called in the triangle rasterization func
+    return pfmSimdGather_I32(pixels, offsets);
 }
 
 static inline PFMsimd_i
 pfInternal_PixelGet_BGRA_UBYTE_simd(const void* pixels, PFMsimd_i offsets)
 {
-    PFMsimd_i result = pfmSimdGather_I32((const PFMsimd_i*)pixels, offsets);
+    PFMsimd_i result = pfmSimdGather_I32(pixels, offsets);
     return pfmSimdShuffle_I8(result, pfmSimdSetR_x4_I8(2, 1, 0, 3));
 }
 

@@ -3966,74 +3966,50 @@ pfmSimdVec2LerpR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsim
 PFM_API void
 pfmSimdVec2BaryInterp(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w1);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w1);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w2);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w2);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w3);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w3);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w1);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w2);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w3);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 
 PFM_API void
 pfmSimdVec2BaryInterpR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w1);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w1);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w2);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w2);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w3);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w3);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w1);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w2);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w3);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec2BaryInterpV(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, const PFMsimd_vec3 w)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w[0]);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w[0]);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w[1]);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w[1]);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w[2]);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w[2]);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w[0]);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w[1]);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w[2]);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec2BaryInterpVR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, const PFMsimd_vec3 w)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w[0]);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w[0]);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w[1]);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w[1]);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w[2]);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w[2]);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w[0]);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w[1]);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w[2]);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void pfmSimdVec2Transform(PFMsimd_vec2 dst, const PFMsimd_vec2 v, const float mat[16])
@@ -4462,6 +4438,9 @@ pfmSimdVec3Direction(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3
     PFMsimd_f lengthSq = pfmSimdAdd_F32(pfmSimdMul_F32(tmp0, tmp0), pfmSimdMul_F32(tmp1, tmp1));
     lengthSq = pfmSimdAdd_F32(lengthSq, pfmSimdMul_F32(tmp2, tmp2));
 
+    // Add a small epsilon value to avoid division by zero
+    lengthSq = pfmSimdMax_F32(lengthSq, pfmSimdSet1_F32(1e-8f));
+
     // Calculate the inverse of the square root of the length squared to normalize the differences
     PFMsimd_f invLength = pfmSimdRSqrt_F32(lengthSq);
 
@@ -4514,90 +4493,50 @@ pfmSimdVec3LerpR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsim
 PFM_API void
 pfmSimdVec3BaryInterp(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w1);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w1);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w1);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w2);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w2);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w2);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w3);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w3);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w3);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[2] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w1);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w2);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w3);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 
 PFM_API void
 pfmSimdVec3BaryInterpR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w1);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w1);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w1);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w2);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w2);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w2);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w3);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w3);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w3);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w1);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w2);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w3);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec3BaryInterpV(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, const PFMsimd_vec3 w)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w[0]);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w[0]);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w[0]);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w[1]);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w[1]);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w[1]);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w[2]);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w[2]);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w[2]);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w[0]);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w[1]);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w[2]);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec3BaryInterpVR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, const PFMsimd_vec3 w)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w[0]);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w[0]);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w[0]);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w[1]);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w[1]);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w[1]);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w[2]);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w[2]);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w[2]);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w[0]);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w[1]);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w[2]);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
@@ -5113,105 +5052,49 @@ pfmSimdVec4LerpR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsim
 PFM_API void
 pfmSimdVec4BaryInterp(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w1);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w1);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w1);
-    PFMsimd_f v1_w1_3 = pfmSimdMul_F32(v1[2], w1);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w2);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w2);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w2);
-    PFMsimd_f v2_w2_3 = pfmSimdMul_F32(v2[2], w2);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w3);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w3);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w3);
-    PFMsimd_f v3_w3_3 = pfmSimdMul_F32(v3[2], w3);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[2] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
-    dst[3] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w1);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w2);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w3);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec4BaryInterpR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w1);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w1);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w1);
-    PFMsimd_f v1_w1_3 = pfmSimdMul_F32(v1[2], w1);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w2);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w2);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w2);
-    PFMsimd_f v2_w2_3 = pfmSimdMul_F32(v2[2], w2);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w3);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w3);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w3);
-    PFMsimd_f v3_w3_3 = pfmSimdMul_F32(v3[2], w3);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[2] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
-    dst[3] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w1);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w2);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w3);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec4BaryInterpV(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, const PFMsimd_vec3 w)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w[0]);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w[0]);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w[0]);
-    PFMsimd_f v1_w1_3 = pfmSimdMul_F32(v1[2], w[0]);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w[1]);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w[1]);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w[1]);
-    PFMsimd_f v2_w2_3 = pfmSimdMul_F32(v2[2], w[1]);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w[2]);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w[2]);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w[2]);
-    PFMsimd_f v3_w3_3 = pfmSimdMul_F32(v3[2], w[2]);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[2] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
-    dst[3] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w[0]);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w[1]);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w[2]);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec4BaryInterpVR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, const PFMsimd_vec3 w)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w[0]);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w[0]);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w[0]);
-    PFMsimd_f v1_w1_3 = pfmSimdMul_F32(v1[2], w[0]);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w[1]);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w[1]);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w[1]);
-    PFMsimd_f v2_w2_3 = pfmSimdMul_F32(v2[2], w[1]);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w[2]);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w[2]);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w[2]);
-    PFMsimd_f v3_w3_3 = pfmSimdMul_F32(v3[2], w[2]);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[2] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
-    dst[3] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w[0]);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w[1]);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w[2]);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
