@@ -60,39 +60,4 @@ static inline PFvertex pfInternal_LerpVertex(const PFvertex* start, const PFvert
     return result;
 }
 
-static inline PFcolor pfInternal_LerpColor_SMOOTH(PFcolor a, PFcolor b, PFfloat t)
-{
-    return (PFcolor) {
-        a.r + t*(b.r - a.r),
-        a.g + t*(b.g - a.g),
-        a.b + t*(b.b - a.b),
-        a.a + t*(b.a - a.a)
-    };
-}
-
-static inline PFcolor pfInternal_LerpColor_FLAT(PFcolor v1, PFcolor v2, PFfloat t)
-{
-    return (t < 0.5f) ? v1 : v2;
-}
-
-static inline PFcolor pfInternal_BaryColor_SMOOTH(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
-{
-    PFubyte uW1 = 255*w1;
-    PFubyte uW2 = 255*w2;
-    PFubyte uW3 = 255*w3;
-
-    return (PFcolor) {
-        ((uW1*v1.r) + (uW2*v2.r) + (uW3*v3.r))/255,
-        ((uW1*v1.g) + (uW2*v2.g) + (uW3*v3.g))/255,
-        ((uW1*v1.b) + (uW2*v2.b) + (uW3*v3.b))/255,
-        ((uW1*v1.a) + (uW2*v2.a) + (uW3*v3.a))/255
-    };
-}
-
-static inline PFcolor pfInternal_BaryColor_FLAT(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
-{
-    return ((w1 > w2) & (w1 > w3)) ? v1 : (w2 >= w3) ? v2 : v3;
-}
-
-
 #endif //PF_INTERNAL_HELPER_H

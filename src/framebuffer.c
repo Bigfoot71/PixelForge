@@ -19,6 +19,7 @@
 
 #include "internal/context/context.h"
 #include "internal/pixel.h"
+#include "internal/depth.h"
 #include "pixelforge.h"
 #include <stdlib.h>
 #include <float.h>
@@ -89,7 +90,7 @@ PFboolean pfIsValidFramebuffer(PFframebuffer* framebuffer)
     PFboolean result = PF_FALSE;
     if (tex)
     {
-        result = framebuffer->zbuffer && tex->width > 0 && tex->height > 0
+        result = framebuffer->zbuffer && tex->w > 0 && tex->h > 0
             && pfIsValidTexture(framebuffer->texture);
     }
     return result;
@@ -98,7 +99,7 @@ PFboolean pfIsValidFramebuffer(PFframebuffer* framebuffer)
 void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color, PFfloat depth)
 {
     struct PFtex* tex = framebuffer->texture;
-    PFsizei size = tex->width*tex->height;
+    PFsizei size = tex->w*tex->h;
 
 #   ifdef _OPENMP
 #       pragma omp parallel for \
@@ -106,7 +107,7 @@ void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color, PFfloat depth
 #   endif
     for (PFsizei i = 0; i < size; i++)
     {
-        tex->pixelSetter(tex->pixels, i, color);
+        tex->setter(tex->pixels, i, color);
         framebuffer->zbuffer[i] = depth;
     }
 }
@@ -114,25 +115,34 @@ void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color, PFfloat depth
 PFcolor pfGetFramebufferPixel(const PFframebuffer* framebuffer, PFsizei x, PFsizei y)
 {
     const struct PFtex* tex = framebuffer->texture;
-    return tex->pixelGetter(tex->pixels, y*tex->width + x);
+    return tex->getter(tex->pixels, y*tex->w + x);
 }
 
 PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x, PFsizei y)
 {
     const struct PFtex* tex = framebuffer->texture;
-    return framebuffer->zbuffer[y*tex->width + x];
+    return framebuffer->zbuffer[y*tex->w + x];
 }
 
-void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color, PFdepthfunc depthFunc)
+void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color, PFdepthmode depthMode)
 {
+    if (!pfInternal_IsDepthModeValid(depthMode))
+    {
+        if (currentCtx) currentCtx->errCode = PF_INVALID_ENUM;
+        return;
+    }
+
+    PFdepthfunc depthFunc;
+    pfInternal_GetDepthFuncs(depthMode, &depthFunc, NULL);
+
     struct PFtex* tex = framebuffer->texture;
-    PFsizei offset = y*tex->width + x;
+    PFsizei offset = y*tex->w + x;
 
     PFfloat *zp = framebuffer->zbuffer + offset;
 
     if (depthFunc(z, *zp))
     {
-        tex->pixelSetter(tex->pixels, offset, color);
+        tex->setter(tex->pixels, offset, color);
         *zp = z;
     }
 }
@@ -140,14 +150,14 @@ void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsiz
 void pfSetFramebufferPixelDepth(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color)
 {
     struct PFtex* tex = framebuffer->texture;
-    PFsizei offset = y*tex->width + x;
+    PFsizei offset = y*tex->w + x;
 
-    tex->pixelSetter(tex->pixels, offset, color);
+    tex->setter(tex->pixels, offset, color);
     framebuffer->zbuffer[offset] = z;
 }
 
 void pfSetFramebufferPixel(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFcolor color)
 {
     struct PFtex* tex = framebuffer->texture;
-    tex->pixelSetter(tex->pixels, y*tex->width + x, color);
+    tex->setter(tex->pixels, y*tex->w + x, color);
 }

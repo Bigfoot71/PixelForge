@@ -22,8 +22,14 @@
 
 #include "../context/context.h"
 
-PFcolor pfInternal_ProcessLights(const PFlight* activeLights, const PFmaterial* material,
-                                 PFcolor diffuse, const PFMvec3 viewPos, const PFMvec3 fragPos,
-                                 const PFMvec3 fragNormal);
+PFcolor pfInternal_LightingProcess(const PFlight* activeLights, const PFmaterial* material,
+                                   PFcolor diffuse, const PFMvec3 viewPos,
+                                   const PFMvec3 fragPos, const PFMvec3 N);
+
+void pfInternal_SimdLightingProcess(PFsimd_color fragments, const PFlight* activeLights,
+                                    const PFmaterial* material,
+                                    const PFMsimd_vec3 viewPos,
+                                    const PFMsimd_vec3 fragPos,
+                                    const PFMsimd_vec3 N);
 
 #endif //PF_INTERNAL_LIGHTING_H

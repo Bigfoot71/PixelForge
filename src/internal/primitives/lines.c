@@ -294,15 +294,15 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
     PFframebuffer *fbDst = currentCtx->currentFramebuffer;
     struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
 
-    PFpixelsetter pixelSetter = texDst->pixelSetter;
-    PFpixelgetter pixelGetter = texDst->pixelGetter;
+    PFpixelsetter setter = texDst->setter;
+    PFpixelgetter getter = texDst->getter;
 
     PFblendfunc blendFunc = currentCtx->state & PF_BLEND ?
         currentCtx->blendFunction : NULL;
 
-    void *bufDst = texDst->pixels;
-    PFsizei wDst = texDst->width;
     PFfloat *zbDst = fbDst->zbuffer;
+    void *bufDst = texDst->pixels;
+    PFsizei wDst = texDst->w;
 
     PFint x1 = v1->screen[0], y1 = v1->screen[1];
     PFint x2 = v2->screen[0], y2 = v2->screen[1];
@@ -350,12 +350,12 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
 
-            PFcolor finalColor = pfInternal_LerpColor_SMOOTH(c1, c2, t);
+            PFcolor finalColor = pfInternal_ColorLerpSmooth(c1, c2, t);
 
             if (blendFunc) finalColor = blendFunc(
-                finalColor, pixelGetter(bufDst, pOffset));
+                finalColor, getter(bufDst, pOffset));
 
-            pixelSetter(bufDst, pOffset, finalColor);
+            setter(bufDst, pOffset, finalColor);
             zbDst[pOffset] = z;
         }
     }
@@ -370,12 +370,12 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
 
-            PFcolor finalColor = pfInternal_LerpColor_SMOOTH(c1, c2, t);
+            PFcolor finalColor = pfInternal_ColorLerpSmooth(c1, c2, t);
 
             if (blendFunc) finalColor = blendFunc(
-                finalColor, pixelGetter(bufDst, pOffset));
+                finalColor, getter(bufDst, pOffset));
 
-            pixelSetter(bufDst, pOffset, finalColor);
+            setter(bufDst, pOffset, finalColor);
             zbDst[pOffset] = z;
         }
     }
@@ -388,15 +388,15 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
     PFframebuffer *fbDst = currentCtx->currentFramebuffer;
     struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
 
-    PFpixelsetter pixelSetter = texDst->pixelSetter;
-    PFpixelgetter pixelGetter = texDst->pixelGetter;
+    PFpixelsetter setter = texDst->setter;
+    PFpixelgetter getter = texDst->getter;
 
     PFblendfunc blendFunc = currentCtx->state & PF_BLEND ?
         currentCtx->blendFunction : NULL;
 
-    void *bufDst = texDst->pixels;
-    PFsizei wDst = texDst->width;
     PFfloat *zbDst = fbDst->zbuffer;
+    void *bufDst = texDst->pixels;
+    PFsizei wDst = texDst->w;
 
     PFint x1 = v1->screen[0], y1 = v1->screen[1];
     PFint x2 = v2->screen[0], y2 = v2->screen[1];
@@ -445,12 +445,12 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
             if (currentCtx->depthFunction(z, zbDst[pOffset]))
             {
-                PFcolor finalColor = pfInternal_LerpColor_SMOOTH(c1, c2, t);
+                PFcolor finalColor = pfInternal_ColorLerpSmooth(c1, c2, t);
 
                 if (blendFunc) finalColor = blendFunc(
-                    finalColor, pixelGetter(bufDst, pOffset));
+                    finalColor, getter(bufDst, pOffset));
 
-                pixelSetter(bufDst, pOffset, finalColor);
+                setter(bufDst, pOffset, finalColor);
                 zbDst[pOffset] = z;
             }
         }
@@ -467,12 +467,12 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
             if (currentCtx->depthFunction(z, zbDst[pOffset]))
             {
-                PFcolor finalColor = pfInternal_LerpColor_SMOOTH(c1, c2, t);
+                PFcolor finalColor = pfInternal_ColorLerpSmooth(c1, c2, t);
 
                 if (blendFunc) finalColor = blendFunc(
-                    finalColor, pixelGetter(bufDst, pOffset));
+                    finalColor, getter(bufDst, pOffset));
 
-                pixelSetter(bufDst, pOffset, finalColor);
+                setter(bufDst, pOffset, finalColor);
                 zbDst[pOffset] = z;
             }
         }

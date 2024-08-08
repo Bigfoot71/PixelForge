@@ -20,11 +20,9 @@
 #ifndef PFM_H
 #define PFM_H
 
-#include <smmintrin.h>
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
-#include <tmmintrin.h>
 
 #if defined(__AVX2__)
 #   include <immintrin.h>
@@ -1876,7 +1874,234 @@ pfmMat4LookAt(PFMmat4 dst, const PFMvec3 eye, const PFMvec3 target, const PFMvec
 
 /* SIMD function defintions */
 
-#ifdef __SSE2__
+#if defined(__AVX2__)
+
+/**
+ *  NOTE: This extract allows you to perform the 'log' and 'exp' operations for AVX2.
+ *        This is an AVX2 adaptation of Julien Pommier's SSE2 implementation by Giovanni Garberoglio.
+ *
+ * SOURCE: http://web.archive.org/web/20200216175033/http://software-lisc.fbk.eu/avx_mathfun/
+ *
+ * LICENSE:
+ *  Based on "sse_mathfun.h", by Julien Pommier
+ *  http://gruntthepeon.free.fr/ssemath/
+ *
+ *  Copyright (C) 2012 Giovanni Garberoglio
+ *  Interdisciplinary Laboratory for Computational Science (LISC)
+ *  Fondazione Bruno Kessler and University of Trento
+ *  via Sommarive, 18
+ *  I-38123 Trento (Italy)
+ *
+ *  This software is provided 'as-is', without any express or implied
+ *  warranty.  In no event will the authors be held liable for any damages
+ *  arising from the use of this software.
+ *
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *
+ *  1. The origin of this software must not be misrepresented; you must not
+ *      claim that you wrote the original software. If you use this software
+ *      in a product, an acknowledgment in the product documentation would be
+ *      appreciated but is not required.
+ *  2. Altered source versions must be plainly marked as such, and must not be
+ *      misrepresented as being the original software.
+ *  3. This notice may not be removed or altered from any source distribution.
+ *
+ *  (this is the zlib license)
+ */
+
+#ifdef _MSC_VER
+# define ALIGN32_BEG __declspec(align(32))
+# define ALIGN32_END 
+#else /* gcc or icc */
+# define ALIGN32_BEG
+# define ALIGN32_END __attribute__((aligned(32)))
+#endif
+
+/* declare some AVX constants -- why can't I figure a better way to do that? */
+#define _PI32AVX_CONST(Name, Val) static const ALIGN32_BEG int _pi32avx_##Name[4] ALIGN32_END = { Val, Val, Val, Val }
+#define _PS256_CONST(Name, Val) static const ALIGN32_BEG float _ps256_##Name[8] ALIGN32_END = { Val, Val, Val, Val, Val, Val, Val, Val }
+#define _PI32_CONST256(Name, Val) static const ALIGN32_BEG int _pi32_256_##Name[8] ALIGN32_END = { Val, Val, Val, Val, Val, Val, Val, Val }
+#define _PS256_CONST_TYPE(Name, Type, Val) static const ALIGN32_BEG Type _ps256_##Name[8] ALIGN32_END = { Val, Val, Val, Val, Val, Val, Val, Val }
+
+_PI32AVX_CONST(1, 1);
+_PI32AVX_CONST(inv1, ~1);
+_PI32AVX_CONST(2, 2);
+_PI32AVX_CONST(4, 4);
+
+_PS256_CONST(1  , 1.0f);
+_PS256_CONST(0p5, 0.5f);
+/* the smallest non denormalized float number */
+_PS256_CONST_TYPE(min_norm_pos, int, 0x00800000);
+_PS256_CONST_TYPE(mant_mask, int, 0x7f800000);
+_PS256_CONST_TYPE(inv_mant_mask, int, ~0x7f800000);
+
+_PS256_CONST_TYPE(sign_mask, int, 0x80000000);
+_PS256_CONST_TYPE(inv_sign_mask, int, ~0x80000000);
+
+_PI32_CONST256(0, 0);
+_PI32_CONST256(1, 1);
+_PI32_CONST256(inv1, ~1);
+_PI32_CONST256(2, 2);
+_PI32_CONST256(4, 4);
+_PI32_CONST256(0x7f, 0x7f);
+
+_PS256_CONST(cephes_SQRTHF, 0.707106781186547524);
+_PS256_CONST(cephes_log_p0, 7.0376836292E-2);
+_PS256_CONST(cephes_log_p1, - 1.1514610310E-1);
+_PS256_CONST(cephes_log_p2, 1.1676998740E-1);
+_PS256_CONST(cephes_log_p3, - 1.2420140846E-1);
+_PS256_CONST(cephes_log_p4, + 1.4249322787E-1);
+_PS256_CONST(cephes_log_p5, - 1.6668057665E-1);
+_PS256_CONST(cephes_log_p6, + 2.0000714765E-1);
+_PS256_CONST(cephes_log_p7, - 2.4999993993E-1);
+_PS256_CONST(cephes_log_p8, + 3.3333331174E-1);
+_PS256_CONST(cephes_log_q1, -2.12194440e-4);
+_PS256_CONST(cephes_log_q2, 0.693359375);
+
+/**
+ * natural logarithm computed for 8 simultaneous float 
+ * return NaN for x <= 0
+ */
+PFM_API __m256
+_mm256_log_ps(__m256 x)
+{
+    __m256i imm0;
+    __m256 one = *(__m256*)_ps256_1;
+
+    __m256 invalid_mask = _mm256_cmp_ps(x, _mm256_setzero_ps(), _CMP_LE_OS);
+
+    x = _mm256_max_ps(x, *(__m256*)_ps256_min_norm_pos);  /* cut off denormalized stuff */
+
+    imm0 = _mm256_srli_epi32(_mm256_castps_si256(x), 23);
+
+    // keep only the fractional part
+    x = _mm256_and_ps(x, *(__m256*)_ps256_inv_mant_mask);
+    x = _mm256_or_ps(x, *(__m256*)_ps256_0p5);
+
+    imm0 = _mm256_sub_epi32(imm0, *(__m256i*)_pi32_256_0x7f);
+    __m256 e = _mm256_cvtepi32_ps(imm0);
+
+    e = _mm256_add_ps(e, one);
+
+    /* part2: 
+       if( x < SQRTHF )
+       {
+            e -= 1;
+            x = x + x - 1.0;
+       }    else { x = x - 1.0; }
+    */
+    __m256 mask = _mm256_cmp_ps(x, *(__m256*)_ps256_cephes_SQRTHF, _CMP_LT_OS);
+    __m256 tmp = _mm256_and_ps(x, mask);
+    x = _mm256_sub_ps(x, one);
+    e = _mm256_sub_ps(e, _mm256_and_ps(one, mask));
+    x = _mm256_add_ps(x, tmp);
+
+    __m256 z = _mm256_mul_ps(x,x);
+
+    __m256 y = *(__m256*)_ps256_cephes_log_p0;
+    y = _mm256_mul_ps(y, x);
+    y = _mm256_add_ps(y, *(__m256*)_ps256_cephes_log_p1);
+    y = _mm256_mul_ps(y, x);
+    y = _mm256_add_ps(y, *(__m256*)_ps256_cephes_log_p2);
+    y = _mm256_mul_ps(y, x);
+    y = _mm256_add_ps(y, *(__m256*)_ps256_cephes_log_p3);
+    y = _mm256_mul_ps(y, x);
+    y = _mm256_add_ps(y, *(__m256*)_ps256_cephes_log_p4);
+    y = _mm256_mul_ps(y, x);
+    y = _mm256_add_ps(y, *(__m256*)_ps256_cephes_log_p5);
+    y = _mm256_mul_ps(y, x);
+    y = _mm256_add_ps(y, *(__m256*)_ps256_cephes_log_p6);
+    y = _mm256_mul_ps(y, x);
+    y = _mm256_add_ps(y, *(__m256*)_ps256_cephes_log_p7);
+    y = _mm256_mul_ps(y, x);
+    y = _mm256_add_ps(y, *(__m256*)_ps256_cephes_log_p8);
+    y = _mm256_mul_ps(y, x);
+
+    y = _mm256_mul_ps(y, z);
+  
+    tmp = _mm256_mul_ps(e, *(__m256*)_ps256_cephes_log_q1);
+    y = _mm256_add_ps(y, tmp);
+
+    tmp = _mm256_mul_ps(z, *(__m256*)_ps256_0p5);
+    y = _mm256_sub_ps(y, tmp);
+
+    tmp = _mm256_mul_ps(e, *(__m256*)_ps256_cephes_log_q2);
+    x = _mm256_add_ps(x, y);
+    x = _mm256_add_ps(x, tmp);
+    x = _mm256_or_ps(x, invalid_mask); // negative arg will be NAN
+
+    return x;
+}
+
+_PS256_CONST(exp_hi,	88.3762626647949f);
+_PS256_CONST(exp_lo,	-88.3762626647949f);
+
+_PS256_CONST(cephes_LOG2EF, 1.44269504088896341);
+_PS256_CONST(cephes_exp_C1, 0.693359375);
+_PS256_CONST(cephes_exp_C2, -2.12194440e-4);
+
+_PS256_CONST(cephes_exp_p0, 1.9875691500E-4);
+_PS256_CONST(cephes_exp_p1, 1.3981999507E-3);
+_PS256_CONST(cephes_exp_p2, 8.3334519073E-3);
+_PS256_CONST(cephes_exp_p3, 4.1665795894E-2);
+_PS256_CONST(cephes_exp_p4, 1.6666665459E-1);
+_PS256_CONST(cephes_exp_p5, 5.0000001201E-1);
+
+PFM_API __m256
+_mm256_exp_ps(__m256 x)
+{
+  __m256 tmp = _mm256_setzero_ps(), fx;
+  __m256i imm0;
+  __m256 one = *(__m256*)_ps256_1;
+
+  x = _mm256_min_ps(x, *(__m256*)_ps256_exp_hi);
+  x = _mm256_max_ps(x, *(__m256*)_ps256_exp_lo);
+
+  // express exp(x) as exp(g + n*log(2))
+  fx = _mm256_mul_ps(x, *(__m256*)_ps256_cephes_LOG2EF);
+  fx = _mm256_add_ps(fx, *(__m256*)_ps256_0p5);
+
+  tmp = _mm256_floor_ps(fx);
+
+  // if greater, substract 1
+  __m256 mask = _mm256_cmp_ps(tmp, fx, _CMP_GT_OS);    
+  mask = _mm256_and_ps(mask, one);
+  fx = _mm256_sub_ps(tmp, mask);
+
+  tmp = _mm256_mul_ps(fx, *(__m256*)_ps256_cephes_exp_C1);
+  __m256 z = _mm256_mul_ps(fx, *(__m256*)_ps256_cephes_exp_C2);
+  x = _mm256_sub_ps(x, tmp);
+  x = _mm256_sub_ps(x, z);
+
+  z = _mm256_mul_ps(x,x);
+  
+  __m256 y = *(__m256*)_ps256_cephes_exp_p0;
+  y = _mm256_mul_ps(y, x);
+  y = _mm256_add_ps(y, *(__m256*)_ps256_cephes_exp_p1);
+  y = _mm256_mul_ps(y, x);
+  y = _mm256_add_ps(y, *(__m256*)_ps256_cephes_exp_p2);
+  y = _mm256_mul_ps(y, x);
+  y = _mm256_add_ps(y, *(__m256*)_ps256_cephes_exp_p3);
+  y = _mm256_mul_ps(y, x);
+  y = _mm256_add_ps(y, *(__m256*)_ps256_cephes_exp_p4);
+  y = _mm256_mul_ps(y, x);
+  y = _mm256_add_ps(y, *(__m256*)_ps256_cephes_exp_p5);
+  y = _mm256_mul_ps(y, z);
+  y = _mm256_add_ps(y, x);
+  y = _mm256_add_ps(y, one);
+
+  // build 2^n
+  imm0 = _mm256_cvttps_epi32(fx);
+  imm0 = _mm256_add_epi32(imm0, *(__m256i*)_pi32_256_0x7f);
+  imm0 = _mm256_slli_epi32(imm0, 23);
+  __m256 pow2n = _mm256_castsi256_ps(imm0);
+  y = _mm256_mul_ps(y, pow2n);
+  return y;
+}
+
+#elif defined(__SSE2__)
 
 PFM_API __m128i
 _mm_mullo_epi32_sse2(__m128i x, __m128i y)
@@ -1915,7 +2140,219 @@ _mm_blendv_epi8_sse2(__m128i x, __m128i y, __m128i mask)
     return _mm_or_si128(not_mask, masked_y);        // Combine the two results to get the final result
 }
 
+/**
+ *  NOTE: This extract allows you to perform the 'log' and 'exp' operations for SSE2.
+ *        This implementation was written by Julien Pommier.
+ *
+ * SOURCE: http://gruntthepeon.free.fr/ssemath/
+ *
+ * LICENSE:
+ *  Copyright (C) 2007  Julien Pommier
+ *
+ *  This software is provided 'as-is', without any express or implied
+ *  warranty.  In no event will the authors be held liable for any damages
+ *  arising from the use of this software.
+ *
+ *  Permission is granted to anyone to use this software for any purpose,
+ *  including commercial applications, and to alter it and redistribute it
+ *  freely, subject to the following restrictions:
+ *
+ *  1. The origin of this software must not be misrepresented; you must not
+ *      claim that you wrote the original software. If you use this software
+ *      in a product, an acknowledgment in the product documentation would be
+ *      appreciated but is not required.
+ *  2. Altered source versions must be plainly marked as such, and must not be
+ *      misrepresented as being the original software.
+ *  3. This notice may not be removed or altered from any source distribution.
+ *
+ *  (this is the zlib license)
+ */
+
+#ifdef _MSC_VER
+# define ALIGN16_BEG __declspec(align(16))
+# define ALIGN16_END 
+#else /* gcc or icc */
+# define ALIGN16_BEG
+# define ALIGN16_END __attribute__((aligned(16)))
 #endif
+
+/* declare some SSE constants -- why can't I figure a better way to do that? */
+#define _PS_CONST(Name, Val) static const ALIGN16_BEG float _ps_##Name[4] ALIGN16_END = { Val, Val, Val, Val }
+#define _PI32_CONST(Name, Val) static const ALIGN16_BEG int _pi32_##Name[4] ALIGN16_END = { Val, Val, Val, Val }
+#define _PS_CONST_TYPE(Name, Type, Val) static const ALIGN16_BEG Type _ps_##Name[4] ALIGN16_END = { Val, Val, Val, Val }
+
+_PS_CONST(1  , 1.0f);
+_PS_CONST(0p5, 0.5f);
+/* the smallest non denormalized float number */
+_PS_CONST_TYPE(min_norm_pos, int, 0x00800000);
+_PS_CONST_TYPE(mant_mask, int, 0x7f800000);
+_PS_CONST_TYPE(inv_mant_mask, int, ~0x7f800000);
+
+_PS_CONST_TYPE(sign_mask, int, (int)0x80000000);
+_PS_CONST_TYPE(inv_sign_mask, int, ~0x80000000);
+
+_PI32_CONST(1, 1);
+_PI32_CONST(inv1, ~1);
+_PI32_CONST(2, 2);
+_PI32_CONST(4, 4);
+_PI32_CONST(0x7f, 0x7f);
+
+_PS_CONST(cephes_SQRTHF, 0.707106781186547524);
+_PS_CONST(cephes_log_p0, 7.0376836292E-2);
+_PS_CONST(cephes_log_p1, - 1.1514610310E-1);
+_PS_CONST(cephes_log_p2, 1.1676998740E-1);
+_PS_CONST(cephes_log_p3, - 1.2420140846E-1);
+_PS_CONST(cephes_log_p4, + 1.4249322787E-1);
+_PS_CONST(cephes_log_p5, - 1.6668057665E-1);
+_PS_CONST(cephes_log_p6, + 2.0000714765E-1);
+_PS_CONST(cephes_log_p7, - 2.4999993993E-1);
+_PS_CONST(cephes_log_p8, + 3.3333331174E-1);
+_PS_CONST(cephes_log_q1, -2.12194440e-4);
+_PS_CONST(cephes_log_q2, 0.693359375);
+
+/**
+ * natural logarithm computed for 4 simultaneous float 
+ * return NaN for x <= 0
+ */
+PFM_API __m128
+_mm_log_ps(__m128 x)
+{
+  __m128i emm0;
+  __m128 one = *(__m128*)_ps_1;
+
+  __m128 invalid_mask = _mm_cmple_ps(x, _mm_setzero_ps());
+
+  x = _mm_max_ps(x, *(__m128*)_ps_min_norm_pos); // cut off denormalized stuff
+  emm0 = _mm_srli_epi32(_mm_castps_si128(x), 23);
+
+  // keep only the fractional part
+  x = _mm_and_ps(x, *(__m128*)_ps_inv_mant_mask);
+  x = _mm_or_ps(x, *(__m128*)_ps_0p5);
+
+  emm0 = _mm_sub_epi32(emm0, *(__m128i*)_pi32_0x7f);
+  __m128 e = _mm_cvtepi32_ps(emm0);
+
+  e = _mm_add_ps(e, one);
+
+    /* part2: 
+       if( x < SQRTHF )
+       {
+            e -= 1;
+            x = x + x - 1.0;
+       }    else { x = x - 1.0; }
+    */
+    __m128 mask = _mm_cmplt_ps(x, *(__m128*)_ps_cephes_SQRTHF);
+    __m128 tmp = _mm_and_ps(x, mask);
+    x = _mm_sub_ps(x, one);
+    e = _mm_sub_ps(e, _mm_and_ps(one, mask));
+    x = _mm_add_ps(x, tmp);
+
+    __m128 z = _mm_mul_ps(x,x);
+
+    __m128 y = *(__m128*)_ps_cephes_log_p0;
+    y = _mm_mul_ps(y, x);
+    y = _mm_add_ps(y, *(__m128*)_ps_cephes_log_p1);
+    y = _mm_mul_ps(y, x);
+    y = _mm_add_ps(y, *(__m128*)_ps_cephes_log_p2);
+    y = _mm_mul_ps(y, x);
+    y = _mm_add_ps(y, *(__m128*)_ps_cephes_log_p3);
+    y = _mm_mul_ps(y, x);
+    y = _mm_add_ps(y, *(__m128*)_ps_cephes_log_p4);
+    y = _mm_mul_ps(y, x);
+    y = _mm_add_ps(y, *(__m128*)_ps_cephes_log_p5);
+    y = _mm_mul_ps(y, x);
+    y = _mm_add_ps(y, *(__m128*)_ps_cephes_log_p6);
+    y = _mm_mul_ps(y, x);
+    y = _mm_add_ps(y, *(__m128*)_ps_cephes_log_p7);
+    y = _mm_mul_ps(y, x);
+    y = _mm_add_ps(y, *(__m128*)_ps_cephes_log_p8);
+    y = _mm_mul_ps(y, x);
+
+    y = _mm_mul_ps(y, z);
+
+    tmp = _mm_mul_ps(e, *(__m128*)_ps_cephes_log_q1);
+    y = _mm_add_ps(y, tmp);
+
+    tmp = _mm_mul_ps(z, *(__m128*)_ps_0p5);
+    y = _mm_sub_ps(y, tmp);
+
+    tmp = _mm_mul_ps(e, *(__m128*)_ps_cephes_log_q2);
+    x = _mm_add_ps(x, y);
+    x = _mm_add_ps(x, tmp);
+    x = _mm_or_ps(x, invalid_mask); // negative arg will be NAN
+    return x;
+}
+
+_PS_CONST(exp_hi,	88.3762626647949f);
+_PS_CONST(exp_lo,	-88.3762626647949f);
+
+_PS_CONST(cephes_LOG2EF, 1.44269504088896341);
+_PS_CONST(cephes_exp_C1, 0.693359375);
+_PS_CONST(cephes_exp_C2, -2.12194440e-4);
+
+_PS_CONST(cephes_exp_p0, 1.9875691500E-4);
+_PS_CONST(cephes_exp_p1, 1.3981999507E-3);
+_PS_CONST(cephes_exp_p2, 8.3334519073E-3);
+_PS_CONST(cephes_exp_p3, 4.1665795894E-2);
+_PS_CONST(cephes_exp_p4, 1.6666665459E-1);
+_PS_CONST(cephes_exp_p5, 5.0000001201E-1);
+
+PFM_API __m128
+_mm_exp_ps(__m128 x)
+{
+    __m128 tmp = _mm_setzero_ps(), fx;
+    __m128i emm0;
+    __m128 one = *(__m128*)_ps_1;
+
+    x = _mm_min_ps(x, *(__m128*)_ps_exp_hi);
+    x = _mm_max_ps(x, *(__m128*)_ps_exp_lo);
+
+    // express exp(x) as exp(g + n*log(2))
+    fx = _mm_mul_ps(x, *(__m128*)_ps_cephes_LOG2EF);
+    fx = _mm_add_ps(fx, *(__m128*)_ps_0p5);
+
+    // how to perform a floorf with SSE: just below
+    emm0 = _mm_cvttps_epi32(fx);
+    tmp  = _mm_cvtepi32_ps(emm0);
+
+    // if greater, substract 1
+    __m128 mask = _mm_cmpgt_ps(tmp, fx);    
+    mask = _mm_and_ps(mask, one);
+    fx = _mm_sub_ps(tmp, mask);
+
+    tmp = _mm_mul_ps(fx, *(__m128*)_ps_cephes_exp_C1);
+    __m128 z = _mm_mul_ps(fx, *(__m128*)_ps_cephes_exp_C2);
+    x = _mm_sub_ps(x, tmp);
+    x = _mm_sub_ps(x, z);
+
+    z = _mm_mul_ps(x,x);
+  
+    __m128 y = *(__m128*)_ps_cephes_exp_p0;
+    y = _mm_mul_ps(y, x);
+    y = _mm_add_ps(y, *(__m128*)_ps_cephes_exp_p1);
+    y = _mm_mul_ps(y, x);
+    y = _mm_add_ps(y, *(__m128*)_ps_cephes_exp_p2);
+    y = _mm_mul_ps(y, x);
+    y = _mm_add_ps(y, *(__m128*)_ps_cephes_exp_p3);
+    y = _mm_mul_ps(y, x);
+    y = _mm_add_ps(y, *(__m128*)_ps_cephes_exp_p4);
+    y = _mm_mul_ps(y, x);
+    y = _mm_add_ps(y, *(__m128*)_ps_cephes_exp_p5);
+    y = _mm_mul_ps(y, z);
+    y = _mm_add_ps(y, x);
+    y = _mm_add_ps(y, one);
+
+    // build 2^n
+    emm0 = _mm_cvttps_epi32(fx);
+    emm0 = _mm_add_epi32(emm0, *(__m128i*)_pi32_0x7f);
+    emm0 = _mm_slli_epi32(emm0, 23);
+    __m128 pow2n = _mm_castsi128_ps(emm0);
+
+    y = _mm_mul_ps(y, pow2n);
+    return y;
+}
+
+#endif // (__AVX2__) || (__SSE2__)
 
 PFM_API PFMsimd_f
 pfmSimdSet1_F32(float x)
@@ -2178,6 +2615,21 @@ pfmSimdLoad_I32(const void* p)
 #endif
 }
 
+PFM_API PFMsimd_f
+pfmSimdLoad_F32(const void* p)
+{
+#if defined(__AVX2__)
+    return _mm256_loadu_ps(p);
+#elif defined(__SSE2__)
+    return _mm_loadu_ps(p);
+#else
+    PFMsimd_f result = 0;
+    ((float*)&result)[0] = ((const float*)p)[0];
+    ((float*)&result)[1] = ((const float*)p)[1];
+    return result;
+#endif
+}
+
 #if defined(__AVX2__)
 #   define pfmSimdExtract_I32(v, index)  \
         _mm256_extract_epi32(v, index)
@@ -2213,10 +2665,10 @@ pfmSimdGather_I32(const void* p, PFMsimd_i offsets)
         (const int32_t*)p, offsets, sizeof(int32_t));
 #elif defined(__SSE2__)
     return _mm_set_epi32(
-        ((const int*)p)[pfmSimdExtract_I32(offsets, 0)],
-        ((const int*)p)[pfmSimdExtract_I32(offsets, 1)],
-        ((const int*)p)[pfmSimdExtract_I32(offsets, 2)],
-        ((const int*)p)[pfmSimdExtract_I32(offsets, 3)]);
+        ((const int32_t*)p)[pfmSimdExtract_I32(offsets, 0)],
+        ((const int32_t*)p)[pfmSimdExtract_I32(offsets, 1)],
+        ((const int32_t*)p)[pfmSimdExtract_I32(offsets, 2)],
+        ((const int32_t*)p)[pfmSimdExtract_I32(offsets, 3)]);
 #else
     PFMsimd_i result;
     ((int32_t*)&result)[0] = ((const int32_t*)p)[((int32_t*)&offsets)[0]];
@@ -2438,6 +2890,36 @@ pfmSimdMax_F32(PFMsimd_f x, PFMsimd_f y)
 }
 
 PFM_API PFMsimd_i
+pfmSimdClamp_I32(PFMsimd_i x, PFMsimd_i min, PFMsimd_i max)
+{
+#if defined(__AVX2__)
+    return _mm256_min_epi32(_mm256_max_epi32(x, min), max);
+#elif defined(__SSE2__)
+    return _mm_min_epi32(_mm_max_epi32(x, min), max);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = fminf(fmaxf(((int32_t*)&x)[0], ((int32_t*)&min)[0]), ((int32_t*)&max)[0]);
+    ((int32_t*)&result)[1] = fminf(fmaxf(((int32_t*)&x)[1], ((int32_t*)&min)[1]), ((int32_t*)&max)[1]);
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfmSimdClamp_F32(PFMsimd_f x, PFMsimd_f min, PFMsimd_f max)
+{
+#if defined(__AVX2__)
+    return _mm256_min_ps(_mm256_max_ps(x, min), max);
+#elif defined(__SSE2__)
+    return _mm_min_ps(_mm_max_ps(x, min), max);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = fminf(fmaxf(((float*)&x)[0], ((float*)&min)[0]), ((float*)&max)[0]);
+    ((float*)&result)[1] = fminf(fmaxf(((float*)&x)[1], ((float*)&min)[1]), ((float*)&max)[1]);
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
 pfmSimdAdd_I32(PFMsimd_i x, PFMsimd_i y)
 {
 #if defined(__AVX2__)
@@ -2530,6 +3012,25 @@ pfmSimdMul_F32(PFMsimd_f x, PFMsimd_f y)
 }
 
 PFM_API PFMsimd_f
+pfmSimdPow_F32(PFMsimd_f base, float exponent)
+{
+#if defined(__AVX2__)
+    __m256 exp = _mm256_set1_ps(exponent);
+    __m256 log_base = _mm256_log_ps(base);
+    return _mm256_exp_ps(_mm256_mul_ps(log_base, exp));
+#elif defined(__SSE2__)
+    __m128 exp = _mm_set1_ps(exponent);
+    __m128 log_base = _mm_log_ps(base);
+    return _mm_exp_ps(_mm_mul_ps(log_base, exp));
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = powf(((float*)&x)[0], exponent);
+    ((float*)&result)[1] = powf(((float*)&x)[1], exponent);
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
 pfmSimdDiv_F32(PFMsimd_f x, PFMsimd_f y)
 {
 #if defined(__AVX2__)
@@ -2540,6 +3041,27 @@ pfmSimdDiv_F32(PFMsimd_f x, PFMsimd_f y)
     PFMsimd_f result;
     ((float*)&result)[0] = ((float*)&x)[0] / ((float*)&y)[0];
     ((float*)&result)[1] = ((float*)&x)[1] / ((float*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfmSimdMod_F32(PFMsimd_f x, PFMsimd_f y)
+{
+#if defined(__AVX2__)
+    __m256 quotient = _mm256_div_ps(x, y);                              // Calculate the quotient
+    __m256 floor_quotient = _mm256_floor_ps(quotient);                  // Use floor to get the integer part
+    __m256 floor_quotient_times_y = _mm256_mul_ps(floor_quotient, y);   // Multiply y by the integer part of the quotient
+    return _mm256_sub_ps(x, floor_quotient_times_y);                    // Subtract this product from x to get the modulo result
+#elif defined(__SSE2__)
+    __m128 quotient = _mm_div_ps(x, y);
+    __m128 floor_quotient = _mm_floor_ps(quotient);
+    __m128 floor_quotient_times_y = _mm_mul_ps(floor_quotient, y);
+    return _mm_sub_ps(x, floor_quotient_times_y);
+#else
+    PFMsimd_f result;
+    ((float*)&result)[0] = fmodf(((float*)&x)[0], ((float*)&y)[0]);
+    ((float*)&result)[1] = fmodf(((float*)&x)[1], ((float*)&y)[1]);
     return result;
 #endif
 }
@@ -2777,7 +3299,12 @@ pfmSimdBlendV_I8(PFMsimd_i a, PFMsimd_i b, PFMsimd_i mask)
 #elif defined(__SSE2__)
     return _mm_blendv_epi8_sse2(a, b, mask);
 #else
-    return (mask ? b : a);
+    PFMsimd_i result;
+    ((int8_t*)&result)[0] = ((int8_t*)&mask)[0] ? ((int8_t*)&x)[0] : ((int8_t*)&y)[0];
+    ((int8_t*)&result)[1] = ((int8_t*)&mask)[1] ? ((int8_t*)&x)[1] : ((int8_t*)&y)[1];
+    ((int8_t*)&result)[2] = ((int8_t*)&mask)[2] ? ((int8_t*)&x)[2] : ((int8_t*)&y)[2];
+    ((int8_t*)&result)[3] = ((int8_t*)&mask)[3] ? ((int8_t*)&x)[3] : ((int8_t*)&y)[3];
+    return result;
 #endif
 }
 
@@ -2823,6 +3350,66 @@ pfmSimdBlendV_I16(PFMsimd_i a, PFMsimd_i b, PFMsimd_i mask)
 #endif
 }
 
+PFM_API PFMsimd_f
+pfmSimdBlendV_F32(PFMsimd_f a, PFMsimd_f b, PFMsimd_f mask)
+{
+#if defined(__AVX2__)
+    return _mm256_blendv_ps(a, b, mask);
+#elif defined(__SSE4_1__)
+    return _mm_blendv_ps(a, b, mask);
+#elif defined(__SSE2__)
+    return _mm_or_ps(
+        _mm_and_ps(mask, a),
+        _mm_andnot_ps(mask, b));
+#else
+    PFMsimd_i result;
+    float* pa = (float*)&a;
+    float* pb = (float*)&b;
+    float* pmask = (float*)&mask;
+    float* presult = (float*)&result;
+    for (int i = 0; i < 2; ++i) {
+        presult[i] = (pmask[i] < 0) ? pb[i] : pa[i];
+    }
+    return result;
+#endif
+}
+
+PFM_API int
+pfmSimdAllZero_I32(PFMsimd_i x)
+{
+#if defined(__AVX2__)
+    __m256i cmp = _mm256_cmpeq_epi32(x, _mm256_setzero_si256());
+    return (_mm256_movemask_epi8(cmp) == 0xFFFF);
+#elif defined(__SSE2__)
+    __m128i cmp = _mm_cmpeq_epi32(x, _mm_setzero_si128());
+    return (_mm_movemask_epi8(cmp) == 0xFFFF);
+#else
+    int32_t* px = (int32_t*)&x;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        if (px[i] != 0) return 0;
+    }
+    return 1;
+#endif
+}
+
+PFM_API int
+pfmSimdAllZero_F32(PFMsimd_f x)
+{
+#if defined(__AVX2__)
+    __m256 cmp = _mm256_cmp_ps(x, _mm256_setzero_ps(), _CMP_EQ_OS);
+    return (_mm256_movemask_ps(cmp) == 0xFFFF);
+#elif defined(__SSE2__)
+    __m128 cmp = _mm_cmpeq_ps(x, _mm_setzero_ps());
+    return (_mm_movemask_ps(cmp) == 0xFFFF);
+#else
+    int32_t* px = (int32_t*)&x;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        if (px[i] != 0) return 0;
+    }
+    return 1;
+#endif
+}
+
 PFM_API PFMsimd_i
 pfmSimdCmpEQ_I32(PFMsimd_i x, PFMsimd_i y)
 {
@@ -2856,6 +3443,48 @@ pfmSimdCmpEQ_F32(PFMsimd_f x, PFMsimd_f y)
     int32_t* presult = (int32_t*)&result;
     for (int_fast8_t i = 0; i < 2; ++i) {
         presult[i] = (fx[i] == fy[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfmSimdCmpNEQ_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    __m256i eq = _mm256_cmpeq_epi32(x, y);
+    __m256i neq = _mm256_xor_si256(eq, _mm256_set1_epi32(-1));
+    return neq;
+#elif defined(__SSE2__)
+    __m128i eq = _mm_cmpeq_epi32(x, y);
+    __m128i neq = _mm_xor_si128(eq, _mm_set1_epi32(-1));
+    return neq;
+#else
+    PFMsimd_i result;
+    int32_t* px = (int32_t*)&x;
+    int32_t* py = (int32_t*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (px[i] != py[i]) ? 0xFFFFFFFF : 0x00000000;
+    }
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfmSimdCmpNEQ_F32(PFMsimd_f x, PFMsimd_f y)
+{
+#if defined(__AVX2__)
+    return _mm256_cmp_ps(x, y, _CMP_NEQ_OS);
+#elif defined(__SSE2__)
+    return _mm_cmpneq_ps(x, y);
+#else
+    PFMsimd_i result;
+    float* fx = (float*)&x;
+    float* fy = (float*)&y;
+    int32_t* presult = (int32_t*)&result;
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        presult[i] = (fx[i] != fy[i]) ? 0xFFFFFFFF : 0x00000000;
     }
     return result;
 #endif
@@ -2960,7 +3589,7 @@ PFM_API PFMsimd_f
 pfmSimdCmpLE_F32(PFMsimd_f x, PFMsimd_f y)
 {
 #if defined(__AVX2__)
-    return _mm256_cmp_ps(y, x, _CMP_LE_OS);
+    return _mm256_cmp_ps(x, y, _CMP_LE_OS);
 #elif defined(__SSE2__)
     return _mm_cmple_ps(x, y);
 #else
@@ -3337,74 +3966,50 @@ pfmSimdVec2LerpR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsim
 PFM_API void
 pfmSimdVec2BaryInterp(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w1);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w1);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w2);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w2);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w3);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w3);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w1);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w2);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w3);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 
 PFM_API void
 pfmSimdVec2BaryInterpR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w1);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w1);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w2);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w2);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w3);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w3);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w1);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w2);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w3);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec2BaryInterpV(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, const PFMsimd_vec3 w)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w[0]);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w[0]);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w[1]);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w[1]);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w[2]);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w[2]);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w[0]);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w[1]);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w[2]);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec2BaryInterpVR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, const PFMsimd_vec2 v3, const PFMsimd_vec3 w)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w[0]);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w[0]);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w[1]);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w[1]);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w[2]);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w[2]);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w[0]);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w[1]);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w[2]);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void pfmSimdVec2Transform(PFMsimd_vec2 dst, const PFMsimd_vec2 v, const float mat[16])
@@ -3735,11 +4340,11 @@ pfmSimdVec3LengthSq(const PFMsimd_vec3 v)
 PFM_API PFMsimd_f
 pfmSimdVec3Dot(const PFMsimd_vec3 v1, const PFMsimd_vec3 v2)
 {
-    PFMsimd_f squaredLength = pfmSimdAdd_F32(
+    PFMsimd_f dotProduct = pfmSimdAdd_F32(
         pfmSimdMul_F32(v1[0], v2[0]),
         pfmSimdMul_F32(v1[1], v2[1]));
 
-    return pfmSimdAdd_F32(squaredLength,
+    return pfmSimdAdd_F32(dotProduct,
         pfmSimdMul_F32(v1[2], v2[2]));
 }
 
@@ -3833,6 +4438,9 @@ pfmSimdVec3Direction(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3
     PFMsimd_f lengthSq = pfmSimdAdd_F32(pfmSimdMul_F32(tmp0, tmp0), pfmSimdMul_F32(tmp1, tmp1));
     lengthSq = pfmSimdAdd_F32(lengthSq, pfmSimdMul_F32(tmp2, tmp2));
 
+    // Add a small epsilon value to avoid division by zero
+    lengthSq = pfmSimdMax_F32(lengthSq, pfmSimdSet1_F32(1e-8f));
+
     // Calculate the inverse of the square root of the length squared to normalize the differences
     PFMsimd_f invLength = pfmSimdRSqrt_F32(lengthSq);
 
@@ -3853,6 +4461,9 @@ pfmSimdVec3DirectionR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const P
     // Calculate the sum of the squares of these differences to obtain the length squared
     PFMsimd_f lengthSq = pfmSimdAdd_F32(pfmSimdMul_F32(dst[0], dst[0]), pfmSimdMul_F32(dst[1], dst[1]));
     lengthSq = pfmSimdAdd_F32(lengthSq, pfmSimdMul_F32(dst[2], dst[2]));
+
+    // Add a small epsilon value to avoid division by zero
+    lengthSq = pfmSimdMax_F32(lengthSq, pfmSimdSet1_F32(1e-8f));
 
     // Calculate the inverse of the square root of the length squared to normalize the differences
     PFMsimd_f invLength = pfmSimdRSqrt_F32(lengthSq);
@@ -3882,90 +4493,50 @@ pfmSimdVec3LerpR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsim
 PFM_API void
 pfmSimdVec3BaryInterp(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w1);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w1);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w1);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w2);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w2);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w2);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w3);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w3);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w3);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[2] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w1);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w2);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w3);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 
 PFM_API void
 pfmSimdVec3BaryInterpR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w1);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w1);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w1);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w2);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w2);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w2);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w3);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w3);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w3);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w1);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w2);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w3);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec3BaryInterpV(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, const PFMsimd_vec3 w)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w[0]);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w[0]);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w[0]);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w[1]);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w[1]);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w[1]);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w[2]);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w[2]);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w[2]);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w[0]);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w[1]);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w[2]);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec3BaryInterpVR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, const PFMsimd_vec3 v3, const PFMsimd_vec3 w)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w[0]);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w[0]);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w[0]);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w[1]);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w[1]);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w[1]);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w[2]);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w[2]);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w[2]);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w[0]);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w[1]);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w[2]);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
@@ -4449,14 +5020,14 @@ pfmSimdVec4LengthSq(const PFMsimd_vec4 v)
 PFM_API PFMsimd_f
 pfmSimdVec4Dot(const PFMsimd_vec4 v1, const PFMsimd_vec4 v2)
 {
-    PFMsimd_f squaredLength = pfmSimdAdd_F32(
+    PFMsimd_f dotProduct = pfmSimdAdd_F32(
         pfmSimdMul_F32(v1[0], v2[0]),
         pfmSimdMul_F32(v1[1], v2[1]));
 
-    squaredLength = pfmSimdAdd_F32(squaredLength,
+    dotProduct = pfmSimdAdd_F32(dotProduct,
         pfmSimdMul_F32(v1[2], v2[2]));
 
-    return pfmSimdAdd_F32(squaredLength,
+    return pfmSimdAdd_F32(dotProduct,
         pfmSimdMul_F32(v1[3], v2[3]));
 }
 
@@ -4481,105 +5052,49 @@ pfmSimdVec4LerpR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsim
 PFM_API void
 pfmSimdVec4BaryInterp(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w1);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w1);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w1);
-    PFMsimd_f v1_w1_3 = pfmSimdMul_F32(v1[2], w1);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w2);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w2);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w2);
-    PFMsimd_f v2_w2_3 = pfmSimdMul_F32(v2[2], w2);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w3);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w3);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w3);
-    PFMsimd_f v3_w3_3 = pfmSimdMul_F32(v3[2], w3);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[2] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
-    dst[3] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w1);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w2);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w3);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec4BaryInterpR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, PFMsimd_f w1, PFMsimd_f w2, PFMsimd_f w3)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w1);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w1);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w1);
-    PFMsimd_f v1_w1_3 = pfmSimdMul_F32(v1[2], w1);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w2);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w2);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w2);
-    PFMsimd_f v2_w2_3 = pfmSimdMul_F32(v2[2], w2);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w3);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w3);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w3);
-    PFMsimd_f v3_w3_3 = pfmSimdMul_F32(v3[2], w3);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[2] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
-    dst[3] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w1);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w2);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w3);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec4BaryInterpV(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, const PFMsimd_vec3 w)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w[0]);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w[0]);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w[0]);
-    PFMsimd_f v1_w1_3 = pfmSimdMul_F32(v1[2], w[0]);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w[1]);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w[1]);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w[1]);
-    PFMsimd_f v2_w2_3 = pfmSimdMul_F32(v2[2], w[1]);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w[2]);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w[2]);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w[2]);
-    PFMsimd_f v3_w3_3 = pfmSimdMul_F32(v3[2], w[2]);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[2] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
-    dst[3] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w[0]);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w[1]);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w[2]);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void
 pfmSimdVec4BaryInterpVR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, const PFMsimd_vec4 v3, const PFMsimd_vec3 w)
 {
-    // Calculate w1 * v1, w2 * v2 and w3 * v3 for each component
-    PFMsimd_f v1_w1_0 = pfmSimdMul_F32(v1[0], w[0]);
-    PFMsimd_f v1_w1_1 = pfmSimdMul_F32(v1[1], w[0]);
-    PFMsimd_f v1_w1_2 = pfmSimdMul_F32(v1[2], w[0]);
-    PFMsimd_f v1_w1_3 = pfmSimdMul_F32(v1[2], w[0]);
-
-    PFMsimd_f v2_w2_0 = pfmSimdMul_F32(v2[0], w[1]);
-    PFMsimd_f v2_w2_1 = pfmSimdMul_F32(v2[1], w[1]);
-    PFMsimd_f v2_w2_2 = pfmSimdMul_F32(v2[2], w[1]);
-    PFMsimd_f v2_w2_3 = pfmSimdMul_F32(v2[2], w[1]);
-
-    PFMsimd_f v3_w3_0 = pfmSimdMul_F32(v3[0], w[2]);
-    PFMsimd_f v3_w3_1 = pfmSimdMul_F32(v3[1], w[2]);
-    PFMsimd_f v3_w3_2 = pfmSimdMul_F32(v3[2], w[2]);
-    PFMsimd_f v3_w3_3 = pfmSimdMul_F32(v3[2], w[2]);
-
-    // Add the results to obtain the barycentric interpolation
-    dst[0] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_0, v2_w2_0), v3_w3_0);
-    dst[1] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_1, v2_w2_1), v3_w3_1);
-    dst[2] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_2, v2_w2_2), v3_w3_2);
-    dst[3] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1_3, v2_w2_3), v3_w3_3);
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        PFMsimd_f v1_w1 = pfmSimdMul_F32(v1[i], w[0]);
+        PFMsimd_f v2_w2 = pfmSimdMul_F32(v2[i], w[1]);
+        PFMsimd_f v3_w3 = pfmSimdMul_F32(v3[i], w[2]);
+        dst[i] = pfmSimdAdd_F32(pfmSimdAdd_F32(v1_w1, v2_w2), v3_w3);
+    }
 }
 
 PFM_API void

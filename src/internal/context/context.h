@@ -21,8 +21,9 @@
 #define PF_INTERNAL_CONTEXT_H
 
 #include "../../pixelforge.h"
-#include "./../config.h"
+#include "../config.h"
 #include "../../pfm.h"
+#include "../color.h"
 
 /*
     This file contains all the internal structures and functions
@@ -30,13 +31,59 @@
 */
 
 /**
- * @brief Function pointer type for setting a pixel in a texture.
+ * @brief Defines a function pointer type for color blending functions.
  *
- * @param pixels A pointer to the pixel data of the texture.
- * @param index The index of the pixel to set.
- * @param color The color value to set the pixel to.
+ * This function pointer type is used to specify a function that blends two colors together.
+ * The function should take two colors as input and return the resulting blended color.
+ *
+ * @param src The source color to blend. This is the color that will be blended with the destination color.
+ * @param dst The destination color to blend with. This is the color that will be blended with the source color.
+ * 
+ * @return The resulting blended color after applying the blending function to the source and destination colors.
  */
-typedef void (*PFpixelsetter)(void* pixels, PFsizei index, PFcolor color);
+typedef PFcolor (*PFblendfunc)(PFcolor src, PFcolor dst);
+
+/**
+ * @brief Defines a function pointer type for SIMD color blending functions.
+ *
+ * This function pointer type is used to specify a function that blends multiple colors together
+ * using SIMD operations. It processes arrays of colors efficiently
+ * in parallel.
+ *
+ * @param[out] out The output color array where the resulting blended colors will be stored.
+ * @param[in] src The source color array to blend. This is the array of colors that will be blended with
+ *                the destination color array.
+ * @param[in] dst The destination color array to blend with. This is the array of colors that will be
+ *                blended with the source color array.
+ *
+ * @return void This function does not return a value; instead, it writes the blended results directly
+ *               to the `out` array.
+ */
+typedef void (*PFblendfunc_simd)(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst);
+
+/**
+ * @brief Function pointer type for depth testing.
+ *
+ * This type defines a function pointer for a depth test function that compares
+ * two floating-point values representing source and destination depths.
+ *
+ * @param src The source depth value.
+ * @param dst The destination depth value.
+ * @return A boolean value indicating the result of the depth test.
+ */
+typedef PFboolean (*PFdepthfunc)(PFfloat src, PFfloat dst);
+
+/**
+ * @brief Function pointer type for SIMD depth testing.
+ *
+ * This type defines a function pointer for a SIMD depth test function that compares
+ * two SIMD floating-point values representing source and destination depths.
+ *
+ * @param src The source depth value as a SIMD floating-point type.
+ * @param dst The destination depth value as a SIMD floating-point type.
+ * @return A SIMD floating-point value representing the result of the depth test.
+ */
+typedef PFMsimd_f (*PFdepthfunc_simd)(PFMsimd_f src, PFMsimd_f dst);
 
 /**
  * @brief Function pointer type for getting a pixel from a texture.
@@ -48,16 +95,78 @@ typedef void (*PFpixelsetter)(void* pixels, PFsizei index, PFcolor color);
 typedef PFcolor (*PFpixelgetter)(const void* pixels, PFsizei index);
 
 /**
+ * @brief Function pointer type for getting multiple pixels from a texture using SIMD instructions.
+ *
+ * This function retrieves multiple pixels at once from a texture, using SIMD (Single Instruction, Multiple Data) instructions.
+ *
+ * @param pixels A pointer to the pixel data of the texture.
+ * @param offsets A SIMD register containing the indices of the pixels to retrieve.
+ * @return A SIMD register containing the color values of the pixels at the specified indices.
+ */
+typedef PFMsimd_i (*PFpixelgetter_simd)(const void* pixels, PFMsimd_i offsets);
+
+/**
+ * @brief Function pointer type for setting a pixel in a texture.
+ *
+ * @param pixels A pointer to the pixel data of the texture.
+ * @param index The index of the pixel to set.
+ * @param color The color value to set the pixel to.
+ */
+typedef void (*PFpixelsetter)(void* pixels, PFsizei index, PFcolor color);
+
+/**
+ * @brief Function pointer type for setting multiple pixels in a texture using SIMD instructions.
+ *
+ * This function sets multiple pixels at once in a texture, using SIMD (Single Instruction, Multiple Data) instructions.
+ *
+ * @param pixels A pointer to the pixel data of the texture.
+ * @param offset The starting index of the pixels to set.
+ * @param colors A SIMD register containing the color values to set the pixels to.
+ * @param mask A SIMD register used to mask which pixels should be set.
+ */
+typedef void (*PFpixelsetter_simd)(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask);
+
+/**
+ * @brief PFtex (texture) forward declaration
+ */
+struct PFtex;
+
+/**
+ * @brief Texture sampler function pointer type.
+ * This function samples a texture at the given (u, v) coordinates.
+ *
+ * @param tex A pointer to the texture to sample from.
+ * @param u The u coordinate for texture sampling.
+ * @param v The v coordinate for texture sampling.
+ * @return The color sampled from the texture at the specified coordinates.
+ */
+typedef PFcolor (*PFtexturesampler)(const struct PFtex* tex, PFfloat u, PFfloat v);
+
+/**
+ * @brief SIMD texture sampler function pointer type.
+ * This function samples a texture using SIMD (Single Instruction, Multiple Data) coordinates.
+ *
+ * @param tex A pointer to the texture to sample from.
+ * @param texcoords A SIMD vector containing the texture coordinates.
+ * @return The SIMD integer result sampled from the texture at the specified coordinates.
+ */
+typedef PFMsimd_i (*PFtexturesampler_simd)(const struct PFtex* tex, const PFMsimd_vec2 texcoords);
+
+/**
  * @brief Structure representing a texture.
  */
 struct PFtex {
-    PFpixelsetter pixelSetter;
-    PFpixelgetter pixelGetter;
-    void *pixels;
-    PFsizei width;
-    PFsizei height;
-    PFdatatype type;
-    PFpixelformat format;
+    PFpixelgetter           getter;
+    PFpixelsetter           setter;
+    PFpixelgetter_simd      getterSimd;
+    PFpixelsetter_simd      setterSimd;
+    PFtexturesampler        sampler;
+    PFtexturesampler_simd   samplerSimd;
+    void                    *pixels;
+    PFfloat                 tx, ty;
+    PFsizei                 w, h;
+    PFdatatype              type;
+    PFpixelformat           format;
 };
 
 /**
@@ -151,8 +260,11 @@ typedef struct {
     PFMmat4 *currentMatrix;                                 ///< Pointer to the current matrix
     void *auxFramebuffer;                                   ///< Auxiliary buffer for double buffering
 
-    PFblendfunc blendFunction;                              ///< Blend function for alpha blending
-    PFdepthfunc depthFunction;                              ///< Function for depth testing
+    PFblendfunc blendFunction;                              ///< SISD Blend function for color blending
+    PFblendfunc_simd blendSimdFunction;                     ///< SIMD Blend function for color blending
+
+    PFdepthfunc depthFunction;                              ///< SISD Function for depth testing
+    PFdepthfunc_simd depthSimdFunction;                     ///< SIMD Function for depth testing
 
     PFint vpPos[2];                                         ///< Represents the top-left corner of the viewport
     PFsizei vpDim[2];                                       ///< Represents the dimensions of the viewport (minus one)
