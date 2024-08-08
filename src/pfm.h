@@ -2657,25 +2657,19 @@ pfmSimdExtractVarIdx_I32(PFMsimd_i x, int32_t index)
 #endif
 }
 
-PFM_API PFMsimd_i
-pfmSimdGather_I32(const void* p, PFMsimd_i offsets)
-{
 #if defined(__AVX2__)
-    return _mm256_i32gather_epi32(
-        (const int32_t*)p, offsets, sizeof(int32_t));
+#   define pfmSimdGather_I32(p, offsets, alignment) \
+        _mm256_i32gather_epi32(p, offsets, alignment)
 #elif defined(__SSE2__)
-    return _mm_set_epi32(
-        ((const int32_t*)p)[pfmSimdExtract_I32(offsets, 0)],
-        ((const int32_t*)p)[pfmSimdExtract_I32(offsets, 1)],
-        ((const int32_t*)p)[pfmSimdExtract_I32(offsets, 2)],
-        ((const int32_t*)p)[pfmSimdExtract_I32(offsets, 3)]);
+#   define pfmSimdGather_I32(p, offsets, alignment) \
+        _mm_i32gather_epi32(p, offsets, alignment)
 #else
-    PFMsimd_i result;
-    ((int32_t*)&result)[0] = ((const int32_t*)p)[((int32_t*)&offsets)[0]];
-    ((int32_t*)&result)[1] = ((const int32_t*)p)[((int32_t*)&offsets)[1]];
-    return result;
+#   define pfmSimdGather_I32(p, offsets, alignment) \
+        (int8_t[2]) { \
+            ((const int8_t*)p)[*((int8_t*)&offsets + 0 * alignment)], \
+            ((const int8_t*)p)[*((int8_t*)&offsets + 1 * alignment)] \
+        }
 #endif
-}
 
 PFM_API PFMsimd_i
 pfmSimdShuffle_I8(PFMsimd_i x, PFMsimd_i y)
