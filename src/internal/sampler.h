@@ -54,11 +54,11 @@ pfInternal_SimdTexture2DMap_REPEAT(const struct PFtex* tex, PFMsimd_i* xOut, PFM
 
     u = pfmSimdMul_F32(
         pfmSimdSub_F32(u, pfmSimdRound_F32(u, _MM_FROUND_TO_ZERO)),
-        pfmSimdSet1_F32((float)(tex->w - 1)));
+        pfmSimdSet1_F32(tex->w - 1));
 
     v = pfmSimdMul_F32(
         pfmSimdSub_F32(v, pfmSimdRound_F32(v, _MM_FROUND_TO_ZERO)),
-        pfmSimdSet1_F32((float)(tex->h - 1)));
+        pfmSimdSet1_F32(tex->h - 1));
 
     *xOut = pfmSimdAbs_I32(pfmSimdConvert_F32_I32(u));
     *yOut = pfmSimdAbs_I32(pfmSimdConvert_F32_I32(v));

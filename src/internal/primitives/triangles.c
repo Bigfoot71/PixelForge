@@ -455,19 +455,13 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Get some contextual values */
 
-    InterpolateColorSimdFunc interpolateColor = (currentCtx->shadingMode == PF_SMOOTH)
-        ? pfInternal_SimdColorBarySmooth : pfInternal_SimdColorBaryFlat;
-
-    PFblendfunc_simd blendFunction = (currentCtx->state & PF_BLEND) ? currentCtx->blendSimdFunction : NULL;
-    PFdepthfunc_simd depthFunction = ((currentCtx->state & PF_DEPTH_TEST)) ? currentCtx->depthSimdFunction : NULL;
-
     struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
     struct PFtex *texSrc = currentCtx->currentTexture;
 
     PFfloat *zbDst = currentCtx->currentFramebuffer->zbuffer;
 
-    PFpixelgetter_simd getter = texDst->getterSimd;
-    PFpixelsetter_simd setter = texDst->setterSimd;
+    PFpixelgetter_simd fbGetter = texDst->getterSimd;
+    PFpixelsetter_simd fbSetter = texDst->setterSimd;
     PFsizei widthDst = texDst->w;
     void *pbDst = texDst->pixels;
 
@@ -478,8 +472,13 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     PFMsimd_vec3 viewPosV;
     pfmSimdVec3Load(viewPosV, viewPos);
 
-    const PFboolean texturing = (currentCtx->state & PF_TEXTURE_2D) && texSrc;
-    const PFboolean lighting  = (currentCtx->state & PF_LIGHTING) && currentCtx->activeLights;
+    InterpolateColorSimdFunc interpolateColor = (currentCtx->shadingMode == PF_SMOOTH)
+        ? pfInternal_SimdColorBarySmooth : pfInternal_SimdColorBaryFlat;
+
+    PFlight *lights = (currentCtx->state & PF_LIGHTING) ? currentCtx->activeLights : NULL;
+    PFblendfunc_simd blendFunction = (currentCtx->state & PF_BLEND) ? currentCtx->blendSimdFunction : NULL;
+    PFdepthfunc_simd depthFunction = (currentCtx->state & PF_DEPTH_TEST) ? currentCtx->depthSimdFunction : NULL;
+    PFtexturesampler_simd texSampler = ((currentCtx->state & PF_TEXTURE_2D) && texSrc) ? texSrc->samplerSimd : NULL;
 
     /* Loop macro definition */
 
@@ -589,31 +588,36 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
 #   define TEXTURING() \
         PFMsimd_vec2 texcoords; \
-        pfmSimdVec2BaryInterpR(texcoords, tc1V, tc2V, tc3V, w1NormV, w2NormV, w3NormV); \
-        if (is3D) pfmSimdVec2Scale(texcoords, texcoords, zV); /* Perspective correct */ \
-        PFsimd_color texels; pfInternal_SimdColorUnpack(texels, texSrc->samplerSimd(texSrc, texcoords)); \
-        pfInternal_SimdBlendMultiplicative(fragments, texels, fragments);
+        { \
+            PFMsimd_vec2 zeroV2; pfmSimdVec2Zero(zeroV2); \
+            pfmSimdVec2BaryInterpR(texcoords, tc1V, tc2V, tc3V, w1NormV, w2NormV, w3NormV); \
+            if (is3D) pfmSimdVec2Scale(texcoords, texcoords, zV); /* Perspective correct */ \
+            pfmSimdVec2Blend(texcoords, zeroV2, texcoords, pfmSimdCast_I32_F32(mask)); \
+            PFsimd_color texels; pfInternal_SimdColorUnpack(texels, texSampler(texSrc, texcoords)); \
+            pfInternal_SimdBlendMultiplicative(fragments, texels, fragments); \
+        }
 
 #   define LIGHTING() \
+    { \
         PFMsimd_vec3 normals, positions; \
         pfmSimdVec3BaryInterpR(normals, n1V, n2V, n3V, w1NormV, w2NormV, w3NormV); \
         pfmSimdVec3BaryInterpR(positions, p1V, p2V, p3V, w1NormV, w2NormV, w3NormV); \
-        pfInternal_SimdLightingProcess(fragments, currentCtx->activeLights, \
-            &currentCtx->faceMaterial[faceToRender], viewPosV, positions, normals);
+        pfInternal_SimdLightingProcess(fragments, lights, &currentCtx->faceMaterial[faceToRender], viewPosV, positions, normals); \
+    }
 
 #   define SET_FRAG() \
         if (blendFunction) { \
             PFsimd_color dstCol; \
-            pfInternal_SimdColorUnpack(dstCol, getter(pbDst, \
+            pfInternal_SimdColorUnpack(dstCol, fbGetter(pbDst, \
                 pfmSimdAdd_I32(pfmSimdSet1_I32(yOffset + x), pixOffsetV))); \
             blendFunction(fragments, fragments, dstCol); \
         } \
-        setter(pbDst, yOffset + x, pfInternal_SimdColorPack(fragments), mask); \
+        fbSetter(pbDst, yOffset + x, pfInternal_SimdColorPack(fragments), mask); \
         pfmSimdStore_F32(zbDst + yOffset + x, pfmSimdBlendV_F32(depths, zV, pfmSimdCast_I32_F32(mask)));
 
     /* Loop rasterization */
 
-    if (texturing && lighting)
+    if (texSampler && lights)
     {
         PF_TRIANGLE_TRAVEL_SIMD({
             GET_FRAG();
@@ -622,7 +626,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             SET_FRAG();
         })
     }
-    else if (texturing)
+    else if (texSampler)
     {
         PF_TRIANGLE_TRAVEL_SIMD({
             GET_FRAG();
@@ -630,7 +634,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             SET_FRAG();
         })
     }
-    else if (lighting)
+    else if (lights)
     {
         PF_TRIANGLE_TRAVEL_SIMD({
             GET_FRAG();
@@ -718,12 +722,6 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Get some contextual values */
 
-    InterpolateColorFunc interpolateColor = (currentCtx->shadingMode == PF_SMOOTH)
-        ? pfInternal_ColorBarySmooth : pfInternal_ColorBaryFlat;
-
-    PFblendfunc blendFunction = (currentCtx->state & PF_BLEND) ? currentCtx->blendFunction : NULL;
-    PFdepthfunc depthFunction = (currentCtx->state & PF_DEPTH_TEST) ? currentCtx->depthFunction : NULL;
-
     struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
     struct PFtex *texSrc = currentCtx->currentTexture;
 
@@ -738,8 +736,13 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     PFfloat z2 = v2->homogeneous[2];
     PFfloat z3 = v3->homogeneous[2];
 
-    const PFboolean texturing = (currentCtx->state & PF_TEXTURE_2D) && texSrc;
-    const PFboolean lighting  = (currentCtx->state & PF_LIGHTING) && currentCtx->activeLights;
+    InterpolateColorFunc interpolateColor = (currentCtx->shadingMode == PF_SMOOTH)
+        ? pfInternal_ColorBarySmooth : pfInternal_ColorBaryFlat;
+
+    PFlight *lights = (currentCtx->state & PF_LIGHTING) ? currentCtx->activeLights : NULL;
+    PFblendfunc blendFunction = (currentCtx->state & PF_BLEND) ? currentCtx->blendFunction : NULL;
+    PFdepthfunc depthFunction = (currentCtx->state & PF_DEPTH_TEST) ? currentCtx->depthFunction : NULL;
+    PFtexturesampler texSampler = ((currentCtx->state & PF_TEXTURE_2D) && texSrc) ? texSrc->sampler : NULL;
 
     /* Loop macro definition */
 
@@ -780,17 +783,21 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         w1Norm, w2Norm, w3Norm);
 
 #   define TEXTURING() \
+    { \
         PFMvec2 texcoord; \
         pfmVec2BaryInterpR(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, w1Norm, w2Norm, w3Norm); \
         if (is3D) texcoord[0] *= z, texcoord[1] *= z; /* Perspective correct */ \
         PFcolor texel = texSrc->sampler(texSrc, texcoord[0], texcoord[1]); \
-        fragment = pfInternal_BlendMultiplicative(texel, fragment);
+        fragment = pfInternal_BlendMultiplicative(texel, fragment); \
+    }
 
 #   define LIGHTING() \
+    { \
         PFMvec3 normal, position; \
         pfmVec3BaryInterpR(normal, v1->normal, v2->normal, v3->normal, w1Norm, w2Norm, w3Norm); \
         pfmVec3BaryInterpR(position, v1->position, v2->position, v3->position, w1Norm, w2Norm, w3Norm); \
-        fragment = pfInternal_LightingProcess(currentCtx->activeLights, &currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal);
+        fragment = pfInternal_LightingProcess(lights, &currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal); \
+    }
 
 #   define SET_FRAG() \
         PFcolor finalColor = blendFunction ? blendFunction(fragment, getter(pbDst, xyOffset)) : fragment; \
@@ -799,7 +806,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Loop rasterization */
 
-    if (texturing && lighting)
+    if (texSampler && lights)
     {
         PF_TRIANGLE_TRAVEL({
             GET_FRAG();
@@ -808,7 +815,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             SET_FRAG();
         })
     }
-    else if (texturing)
+    else if (texSampler)
     {
         PF_TRIANGLE_TRAVEL({
             GET_FRAG();
@@ -816,7 +823,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             SET_FRAG();
         })
     }
-    else if (lighting)
+    else if (lights)
     {
         PF_TRIANGLE_TRAVEL({
             GET_FRAG();
@@ -839,10 +846,6 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 // TODO: Find a maintainable way to reduce conditionality in loops
 void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {
-    const PFboolean noDepth = !(currentCtx->state & PF_DEPTH_TEST);
-    const PFboolean lighting = (currentCtx->state & PF_LIGHTING) && currentCtx->activeLights;
-    const PFboolean texturing = (currentCtx->state & PF_TEXTURE_2D) && currentCtx->currentTexture;
-
     /* Check if the face can be rendered, if not, skip */
 
     PFfloat area;
@@ -875,21 +878,25 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     PFfloat invSegmentHeight21 = 1.0f/(y2 - y1 + 1);
     PFfloat invSegmentHeight32 = 1.0f/(y3 - y2 + 1);
 
-    /* Choose color interpolation method based on shading mode */
+    /* Get some contextual values */
+
+    struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
+    struct PFtex *texSrc = currentCtx->currentTexture;
+
+    PFfloat *zbDst = currentCtx->currentFramebuffer->zbuffer;
+
+    PFpixelgetter getter = texDst->getter;
+    PFpixelsetter setter = texDst->setter;
+    PFsizei widthDst = texDst->w;
+    void *pbDst = texDst->pixels;
 
     InterpolateColorFunc interpolateColor = (currentCtx->shadingMode == PF_SMOOTH)
         ? pfInternal_ColorLerpSmooth : pfInternal_ColorLerpFlat;
 
-    /* Extract framebuffer information */
-
-    struct PFtex *texDst = currentCtx->currentFramebuffer->texture;
-    PFfloat *zbDst = currentCtx->currentFramebuffer->zbuffer;
-
+    PFlight *lights = (currentCtx->state & PF_LIGHTING) ? currentCtx->activeLights : NULL;
     PFblendfunc blendFunction = (currentCtx->state & PF_BLEND) ? currentCtx->blendFunction : NULL;
-    PFpixelsetter setter = texDst->setter;
-    PFpixelgetter getter = texDst->getter;
-    PFsizei widthDst = texDst->width;
-    void *pbDst = texDst->pixels;
+    PFdepthfunc depthFunction = (currentCtx->state & PF_DEPTH_TEST) ? currentCtx->depthFunction : NULL;
+    PFtexturesampler texSampler = ((currentCtx->state & PF_TEXTURE_2D) && texSrc) ? texSrc->sampler : NULL;
 
     /*  */
 
@@ -937,13 +944,13 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             cA = interpolateColor(c1, c3, alpha);
             cB = interpolateColor(c1, c2, beta1);
 
-            if (texturing)
+            if (texSampler)
             {
                 pfmVec2LerpR(uvA, v1->texcoord, v3->texcoord, alpha);
                 pfmVec2LerpR(uvB, v1->texcoord, v2->texcoord, beta1);
             }
 
-            if (lighting)
+            if (lights)
             {
                 pfmVec3LerpR(pA, v1->position, v3->position, alpha);
                 pfmVec3LerpR(pB, v1->position, v2->position, beta1);
@@ -963,13 +970,13 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             cA = interpolateColor(c1, c3, alpha);
             cB = interpolateColor(c2, c3, beta2);
 
-            if (texturing)
+            if (texSampler)
             {
                 pfmVec2LerpR(uvA, v1->texcoord, v3->texcoord, alpha);
                 pfmVec2LerpR(uvB, v2->texcoord, v3->texcoord, beta2);
             }
 
-            if (lighting)
+            if (lights)
             {
                 pfmVec3LerpR(pA, v1->position, v3->position, alpha);
                 pfmVec3LerpR(pB, v2->position, v3->position, beta2);
@@ -1009,34 +1016,17 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
         PFfloat gamma = xInvLen*(xMin - xA);
 
-        PFfloat zStep = xInvLen*(zB - zA);
-
-        // REIVEW: Very weird issue with UV increment
-        /*
-            PFMvec2 uvStep;
-            pfmVec2SubR(uvStep, uvB, uvA);
-            pfmVec2Scale(uvStep, uvStep, xInvLen);
-        */
-
-        PFMvec3 pStep;
-        pfmVec3SubR(pStep, pB, pA);
-        pfmVec3Scale(pStep, pStep, xInvLen);
-
-        PFMvec3 nStep;
-        pfmVec3SubR(nStep, nB, nA);
-        pfmVec3Scale(nStep, nStep, xInvLen);
-
         /* Draw Horizontal Line */
 
         for (PFint x = xMin; x <= xMax; x++, xyOffset++, gamma += xInvLen)
         {
-            /* Calculate interpolation factor and Z */
+            /* Calculate current depth */
 
-            PFfloat z = 1.0f/zA; zA += zStep;
+            PFfloat z = 1.0f/(zA + (zB - zA)*gamma);
 
             /* Perform depth test */
 
-            if (noDepth || currentCtx->depthFunction(z, zbDst[xyOffset]))
+            if (!depthFunction || depthFunction(z, zbDst[xyOffset]))
             {
                 /* Obtain fragment color */
 
@@ -1044,45 +1034,31 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
                 /* Blend with corresponding texture sample */
 
-                if (texturing)
+                if (texSampler)
                 {
-                    PFMvec2 uv;
-                    //pfmVec2Copy(uv, uvA);
-                    //pfmVec2Add(uvA, uvA, uvStep);
-                    pfmVec2LerpR(uv, uvA, uvB, gamma);
+                    PFMvec2 uv; pfmVec2LerpR(uv, uvA, uvB, gamma);
+                    if (is3D) pfmVec2Scale(uv, uv, z); // Perspective correct
 
-                    if (is3D)
-                    {
-                        // NOTE 1: Divided by 'z', correct perspective
-                        // NOTE 2: 'z' is actually the reciprocal
-                        pfmVec2Scale(uv, uv, z);
-                    }
-
-                    PFcolor texel = pfTextureSampleNearestWrap(texDst, uv[0], uv[1]);
-                    fragment = pfBlendMultiplicative(texel, fragment);
+                    PFcolor texel = texSampler(texSrc, uv[0], uv[1]);
+                    fragment = pfInternal_BlendMultiplicative(texel, fragment);
                 }
 
                 /* Compute lighting */
 
-                if (lighting)
+                if (lights)
                 {
-                    PFMvec3 position;
-                    pfmVec3Copy(position, pA);
-                    pfmVec3Add(pA, pA, pStep);
+                    PFMvec3 position; pfmVec3LerpR(position, pA, pB, gamma);
+                    PFMvec3 normal; pfmVec3LerpR(normal, nA, nB, gamma);
 
-                    PFMvec3 normal;
-                    pfmVec3Copy(normal, nA);
-                    pfmVec3Add(nA, nA, nStep);
-
-                    fragment = Process_Lights(currentCtx->activeLights,
+                    fragment = pfInternal_LightingProcess(currentCtx->activeLights,
                         &currentCtx->faceMaterial[faceToRender], fragment,
                         viewPos, position, normal);
                 }
 
                 /* Apply final color and depth */
 
-                PFcolor finalColor = blendFunction ? blendFunction(fragment, getter(pbDst, xyOffset)) : fragment;
-                setter(pbDst, xyOffset, finalColor);
+                if (blendFunction) fragment = blendFunction(fragment, getter(pbDst, xyOffset));
+                setter(pbDst, xyOffset, fragment);
                 zbDst[xyOffset] = z;
             }
         }

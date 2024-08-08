@@ -3684,6 +3684,24 @@ pfmSimdVec2Swap(aPFMsimd_vec2 restrict a, aPFMsimd_vec2 restrict b)
 }
 
 PFM_API void
+pfmSimdVec2Blend(PFMsimd_vec2 dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, PFMsimd_f mask)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfmSimdBlendV_F32(v1[i], v2[i], mask);
+    }
+}
+
+PFM_API void
+pfmSimdVec2BlendR(aPFMsimd_vec2 restrict dst, const PFMsimd_vec2 v1, const PFMsimd_vec2 v2, PFMsimd_f mask)
+{
+    for (int_fast8_t i = 0; i < 2; i++)
+    {
+        dst[i] = pfmSimdBlendV_F32(v1[i], v2[i], mask);
+    }
+}
+
+PFM_API void
 pfmSimdVec2Neg(PFMsimd_vec2 dst, const PFMsimd_vec2 v)
 {
     for (int_fast8_t i = 0; i < 2; i++)
@@ -4138,6 +4156,24 @@ pfmSimdVec3Swap(aPFMsimd_vec3 restrict a, aPFMsimd_vec3 restrict b)
         PFMsimd_f tmp = a[i];
         a[i] = b[i];
         b[i] = tmp;
+    }
+}
+
+PFM_API void
+pfmSimdVec3Blend(PFMsimd_vec3 dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, PFMsimd_f mask)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfmSimdBlendV_F32(v1[i], v2[i], mask);
+    }
+}
+
+PFM_API void
+pfmSimdVec3BlendR(aPFMsimd_vec3 restrict dst, const PFMsimd_vec3 v1, const PFMsimd_vec3 v2, PFMsimd_f mask)
+{
+    for (int_fast8_t i = 0; i < 3; i++)
+    {
+        dst[i] = pfmSimdBlendV_F32(v1[i], v2[i], mask);
     }
 }
 
@@ -4804,6 +4840,24 @@ pfmSimdVec4Swap(aPFMsimd_vec4 restrict a, aPFMsimd_vec4 restrict b)
         PFMsimd_f tmp = a[i];
         a[i] = b[i];
         b[i] = tmp;
+    }
+}
+
+PFM_API void
+pfmSimdVec4Blend(PFMsimd_vec4 dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, PFMsimd_f mask)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = pfmSimdBlendV_F32(v1[i], v2[i], mask);
+    }
+}
+
+PFM_API void
+pfmSimdVec4BlendR(aPFMsimd_vec4 restrict dst, const PFMsimd_vec4 v1, const PFMsimd_vec4 v2, PFMsimd_f mask)
+{
+    for (int_fast8_t i = 0; i < 4; i++)
+    {
+        dst[i] = pfmSimdBlendV_F32(v1[i], v2[i], mask);
     }
 }
 
