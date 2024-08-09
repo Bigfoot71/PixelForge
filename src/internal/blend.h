@@ -132,7 +132,7 @@ pfInternal_SimdBlendAverage(PFsimd_color out, const PFsimd_color src, const PFsi
 static inline void
 pfInternal_SimdBlendAlpha(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
-    PFMsimd_i alpha = pfmSimdAdd_I32(src[0], pfmSimdSet1_I32(1));
+    PFMsimd_i alpha = pfmSimdAdd_I32(src[3], pfmSimdSet1_I32(1));
     PFMsimd_i invAlpha = pfmSimdSub_I32(pfmSimdSet1_I32(256), alpha);
     out[0] = pfmSimdShr_I32(pfmSimdAdd_I32(pfmSimdMullo_I32(src[0], alpha), pfmSimdMullo_I32(dst[0], invAlpha)), 8);
     out[1] = pfmSimdShr_I32(pfmSimdAdd_I32(pfmSimdMullo_I32(src[1], alpha), pfmSimdMullo_I32(dst[1], invAlpha)), 8);
