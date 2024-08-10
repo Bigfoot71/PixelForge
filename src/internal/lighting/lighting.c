@@ -229,7 +229,7 @@ void pfInternal_SimdLightingProcess(PFsimd_color fragments, const PFlight* activ
             PFMsimd_f epsilon = pfmSimdSet1_F32(light->innerCutOff - light->outerCutOff);
 
             PFMsimd_f intensity = pfmSimdDiv_F32(pfmSimdSub_F32(theta, pfmSimdSet1_F32(light->outerCutOff)), epsilon);
-            intensity = pfmSimdClamp_F32(intensity, pfmSimdSetZero_F32(), pfmSimdSet1_F32(1.0f));
+            intensity = pfmSimdClamp_F32(intensity, *(PFMsimd_f*)pfm_f32_0, *(PFMsimd_f*)pfm_f32_1);
 
             pfmSimdVec3Scale(diffuse, diffuse, intensity);
             pfmSimdVec3Scale(specular, specular, intensity);

@@ -90,22 +90,22 @@ pfInternal_SimdTexture2DMap_MIRRORED_REPEAT(const struct PFtex* tex, PFMsimd_i* 
     PFMsimd_f v = texcoords[1];
 
     // Repeating UV coordinates in the interval [0..2]
-    u = pfmSimdMod_F32(pfmSimdAbs_F32(u), pfmSimdSet1_F32(2.0f));
-    v = pfmSimdMod_F32(pfmSimdAbs_F32(v), pfmSimdSet1_F32(2.0f));
+    u = pfmSimdMod_F32(pfmSimdAbs_F32(u), *(PFMsimd_f*)pfm_f32_2);
+    v = pfmSimdMod_F32(pfmSimdAbs_F32(v), *(PFMsimd_f*)pfm_f32_2);
 
     // Reflection to get the interval [0..1] if necessary
-    PFMsimd_f uMirror = pfmSimdSub_F32(pfmSimdSet1_F32(1.0f), pfmSimdSub_F32(u, pfmSimdSet1_F32(1.0f)));
-    PFMsimd_f vMirror = pfmSimdSub_F32(pfmSimdSet1_F32(1.0f), pfmSimdSub_F32(v, pfmSimdSet1_F32(1.0f)));
+    PFMsimd_f uMirror = pfmSimdSub_F32(*(PFMsimd_f*)pfm_f32_1, pfmSimdSub_F32(u, *(PFMsimd_f*)pfm_f32_1));
+    PFMsimd_f vMirror = pfmSimdSub_F32(*(PFMsimd_f*)pfm_f32_1, pfmSimdSub_F32(v, *(PFMsimd_f*)pfm_f32_1));
 
-    u = pfmSimdBlendV_F32(u, uMirror, pfmSimdCmpGT_F32(u, pfmSimdSet1_F32(1.0f)));
-    v = pfmSimdBlendV_F32(v, vMirror, pfmSimdCmpGT_F32(v, pfmSimdSet1_F32(1.0f)));
+    u = pfmSimdBlendV_F32(u, uMirror, pfmSimdCmpGT_F32(u, *(PFMsimd_f*)pfm_f32_1));
+    v = pfmSimdBlendV_F32(v, vMirror, pfmSimdCmpGT_F32(v, *(PFMsimd_f*)pfm_f32_1));
 
     // Conversion des coordonnées UV en indices de pixels
     u = pfmSimdMul_F32(u, pfmSimdSet1_F32((float)(tex->w - 1)));
     v = pfmSimdMul_F32(v, pfmSimdSet1_F32((float)(tex->h - 1)));
 
-    *xOut = pfmSimdConvert_F32_I32(pfmSimdAdd_F32(u, pfmSimdSet1_F32(0.5f)));
-    *yOut = pfmSimdConvert_F32_I32(pfmSimdAdd_F32(v, pfmSimdSet1_F32(0.5f)));
+    *xOut = pfmSimdConvert_F32_I32(pfmSimdAdd_F32(u, *(PFMsimd_f*)pfm_f32_0p5));
+    *yOut = pfmSimdConvert_F32_I32(pfmSimdAdd_F32(v, *(PFMsimd_f*)pfm_f32_0p5));
 }
 
 static inline void
@@ -115,15 +115,15 @@ pfInternal_SimdTexture2DMap_CLAMP_TO_EDGE(const struct PFtex* tex, PFMsimd_i* xO
     PFMsimd_f v = texcoords[1];
 
     // Clamping des coordonnées UV
-    u = pfmSimdClamp_F32(u, pfmSimdSet1_F32(0.0f), pfmSimdSet1_F32(1.0f));
-    v = pfmSimdClamp_F32(v, pfmSimdSet1_F32(0.0f), pfmSimdSet1_F32(1.0f));
+    u = pfmSimdClamp_F32(u, *(PFMsimd_f*)pfm_f32_0, *(PFMsimd_f*)pfm_f32_1);
+    v = pfmSimdClamp_F32(v, *(PFMsimd_f*)pfm_f32_0, *(PFMsimd_f*)pfm_f32_1);
 
     // Conversion des coordonnées UV en indices de pixels
     u = pfmSimdMul_F32(u, pfmSimdSet1_F32((float)(tex->w - 1)));
     v = pfmSimdMul_F32(v, pfmSimdSet1_F32((float)(tex->h - 1)));
 
-    *xOut = pfmSimdConvert_F32_I32(pfmSimdAdd_F32(u, pfmSimdSet1_F32(0.5f)));
-    *yOut = pfmSimdConvert_F32_I32(pfmSimdAdd_F32(v, pfmSimdSet1_F32(0.5f)));
+    *xOut = pfmSimdConvert_F32_I32(pfmSimdAdd_F32(u, *(PFMsimd_f*)pfm_f32_0p5));
+    *yOut = pfmSimdConvert_F32_I32(pfmSimdAdd_F32(v, *(PFMsimd_f*)pfm_f32_0p5));
 }
 
 /* SISD Texture2D Sampler Functions */

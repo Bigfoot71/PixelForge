@@ -132,32 +132,31 @@ pfInternal_SimdBlendAverage(PFsimd_color out, const PFsimd_color src, const PFsi
 static inline void
 pfInternal_SimdBlendAlpha(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
-    PFMsimd_i alpha = pfmSimdAdd_I32(src[3], pfmSimdSet1_I32(1));
-    PFMsimd_i invAlpha = pfmSimdSub_I32(pfmSimdSet1_I32(256), alpha);
+    PFMsimd_i alpha = pfmSimdAdd_I32(src[3], *(PFMsimd_i*)pfm_i32_1);
+    PFMsimd_i invAlpha = pfmSimdSub_I32(*(PFMsimd_i*)pfm_i32_256, alpha);
     out[0] = pfmSimdShr_I32(pfmSimdAdd_I32(pfmSimdMullo_I32(src[0], alpha), pfmSimdMullo_I32(dst[0], invAlpha)), 8);
     out[1] = pfmSimdShr_I32(pfmSimdAdd_I32(pfmSimdMullo_I32(src[1], alpha), pfmSimdMullo_I32(dst[1], invAlpha)), 8);
     out[2] = pfmSimdShr_I32(pfmSimdAdd_I32(pfmSimdMullo_I32(src[2], alpha), pfmSimdMullo_I32(dst[2], invAlpha)), 8);
-    out[3] = pfmSimdShr_I32(pfmSimdAdd_I32(pfmSimdMullo_I32(pfmSimdSet1_I32(255), alpha), pfmSimdMullo_I32(dst[3], invAlpha)), 8);
+    out[3] = pfmSimdShr_I32(pfmSimdAdd_I32(pfmSimdMullo_I32(*(PFMsimd_i*)pfm_i32_255, alpha), pfmSimdMullo_I32(dst[3], invAlpha)), 8);
 }
 
 static inline void
 pfInternal_SimdBlendAdditive(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
-    const PFMsimd_i max = pfmSimdSet1_I32(255);
-    out[0] = pfmSimdMin_I32(pfmSimdAdd_I32(src[0], dst[0]), max);
-    out[1] = pfmSimdMin_I32(pfmSimdAdd_I32(src[1], dst[1]), max);
-    out[2] = pfmSimdMin_I32(pfmSimdAdd_I32(src[2], dst[2]), max);
-    out[3] = pfmSimdMin_I32(pfmSimdAdd_I32(src[3], dst[3]), max);
+    out[0] = pfmSimdMin_I32(pfmSimdAdd_I32(src[0], dst[0]), *(PFMsimd_i*)pfm_i32_255);
+    out[1] = pfmSimdMin_I32(pfmSimdAdd_I32(src[1], dst[1]), *(PFMsimd_i*)pfm_i32_255);
+    out[2] = pfmSimdMin_I32(pfmSimdAdd_I32(src[2], dst[2]), *(PFMsimd_i*)pfm_i32_255);
+    out[3] = pfmSimdMin_I32(pfmSimdAdd_I32(src[3], dst[3]), *(PFMsimd_i*)pfm_i32_255);
 }
 
 static inline void
 pfInternal_SimdBlendSubtractive(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
     const PFMsimd_i min = pfmSimdSetZero_I32();
-    out[0] = pfmSimdMax_I32(pfmSimdAdd_I32(src[0], dst[0]), min);
-    out[1] = pfmSimdMax_I32(pfmSimdAdd_I32(src[1], dst[1]), min);
-    out[2] = pfmSimdMax_I32(pfmSimdAdd_I32(src[2], dst[2]), min);
-    out[3] = pfmSimdMax_I32(pfmSimdAdd_I32(src[3], dst[3]), min);
+    out[0] = pfmSimdMax_I32(pfmSimdAdd_I32(src[0], dst[0]), *(PFMsimd_i*)pfm_i32_0);
+    out[1] = pfmSimdMax_I32(pfmSimdAdd_I32(src[1], dst[1]), *(PFMsimd_i*)pfm_i32_0);
+    out[2] = pfmSimdMax_I32(pfmSimdAdd_I32(src[2], dst[2]), *(PFMsimd_i*)pfm_i32_0);
+    out[3] = pfmSimdMax_I32(pfmSimdAdd_I32(src[3], dst[3]), *(PFMsimd_i*)pfm_i32_0);
 }
 
 static inline void
@@ -172,16 +171,15 @@ pfInternal_SimdBlendMultiplicative(PFsimd_color out, const PFsimd_color src, con
 static inline void
 pfInternal_SimdBlendScreen(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
-    const PFMsimd_i max_val = pfmSimdSet1_I32(255);
-    PFMsimd_i inv_src_r = pfmSimdSub_I32(max_val, src[0]);
-    PFMsimd_i inv_src_g = pfmSimdSub_I32(max_val, src[1]);
-    PFMsimd_i inv_src_b = pfmSimdSub_I32(max_val, src[2]);
-    PFMsimd_i inv_src_a = pfmSimdSub_I32(max_val, src[3]);
+    PFMsimd_i inv_src_r = pfmSimdSub_I32(*(PFMsimd_i*)pfm_i32_255, src[0]);
+    PFMsimd_i inv_src_g = pfmSimdSub_I32(*(PFMsimd_i*)pfm_i32_255, src[1]);
+    PFMsimd_i inv_src_b = pfmSimdSub_I32(*(PFMsimd_i*)pfm_i32_255, src[2]);
+    PFMsimd_i inv_src_a = pfmSimdSub_I32(*(PFMsimd_i*)pfm_i32_255, src[3]);
 
-    out[0] = pfmSimdMin_I32(pfmSimdAdd_I32(pfmSimdShr_I32(pfmSimdMullo_I32(dst[0], inv_src_r), 8), src[0]), max_val);
-    out[1] = pfmSimdMin_I32(pfmSimdAdd_I32(pfmSimdShr_I32(pfmSimdMullo_I32(dst[1], inv_src_g), 8), src[1]), max_val);
-    out[2] = pfmSimdMin_I32(pfmSimdAdd_I32(pfmSimdShr_I32(pfmSimdMullo_I32(dst[2], inv_src_b), 8), src[2]), max_val);
-    out[3] = pfmSimdMin_I32(pfmSimdAdd_I32(pfmSimdShr_I32(pfmSimdMullo_I32(dst[3], inv_src_a), 8), src[3]), max_val);
+    out[0] = pfmSimdMin_I32(pfmSimdAdd_I32(pfmSimdShr_I32(pfmSimdMullo_I32(dst[0], inv_src_r), 8), src[0]), *(PFMsimd_i*)pfm_i32_255);
+    out[1] = pfmSimdMin_I32(pfmSimdAdd_I32(pfmSimdShr_I32(pfmSimdMullo_I32(dst[1], inv_src_g), 8), src[1]), *(PFMsimd_i*)pfm_i32_255);
+    out[2] = pfmSimdMin_I32(pfmSimdAdd_I32(pfmSimdShr_I32(pfmSimdMullo_I32(dst[2], inv_src_b), 8), src[2]), *(PFMsimd_i*)pfm_i32_255);
+    out[3] = pfmSimdMin_I32(pfmSimdAdd_I32(pfmSimdShr_I32(pfmSimdMullo_I32(dst[3], inv_src_a), 8), src[3]), *(PFMsimd_i*)pfm_i32_255);
 }
 
 static inline void
