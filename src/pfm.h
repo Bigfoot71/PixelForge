@@ -20,6 +20,7 @@
 #ifndef PFM_H
 #define PFM_H
 
+#include <smmintrin.h>
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
@@ -2385,6 +2386,64 @@ pfmSimdSet1_I32(int32_t x)
 }
 
 PFM_API PFMsimd_i
+pfmSimdSetR_I8(int8_t i0,  int8_t  i1, int8_t  i2, int8_t  i3,
+               int8_t i4,  int8_t  i5, int8_t  i6, int8_t  i7,
+               int8_t i8,  int8_t  i9, int8_t i10, int8_t i11,
+               int8_t i12, int8_t i13, int8_t i14, int8_t i15,
+               int8_t i16, int8_t i17, int8_t i18, int8_t i19,
+               int8_t i20, int8_t i21, int8_t i22, int8_t i23,
+               int8_t i24, int8_t i25, int8_t i26, int8_t i27,
+               int8_t i28, int8_t i29, int8_t i30, int8_t i31)
+{
+#if defined(__AVX2__)
+
+    return _mm256_setr_epi8(i0,  i1,  i2,  i3,
+                            i4,  i5,  i6,  i7,
+                            i8,  i9,  i10, i11,
+                            i12, i13, i14, i15,
+                            i16, i17, i18, i19,
+                            i20, i21, i22, i23,
+                            i24, i25, i26, i27,
+                            i28, i29, i30, i31);
+
+#elif defined(__SSE2__)
+
+    (void)i16; (void)i17; (void)i18; (void)i19;
+    (void)i20; (void)i21; (void)i22; (void)i23;
+    (void)i24; (void)i25; (void)i26; (void)i27;
+    (void)i28; (void)i29; (void)i30; (void)i31;
+
+    return _mm_setr_epi8(i0,  i1,  i2,  i3,
+                         i4,  i5,  i6,  i7,
+                         i8,  i9,  i10, i11,
+                         i12, i13, i14, i15);
+
+#else
+
+    (void)i8; (void)i9; (void)i10; (void)i11;
+    (void)i12; (void)i13; (void)i14; (void)i15;
+    (void)i16; (void)i17; (void)i18; (void)i19;
+    (void)i20; (void)i21; (void)i22; (void)i23;
+    (void)i24; (void)i25; (void)i26; (void)i27;
+    (void)i28; (void)i29; (void)i30; (void)i31;
+
+    PFMsimd_i result = 0;
+
+    ((int8_t*)&result)[0] = i0;
+    ((int8_t*)&result)[1] = i1;
+    ((int8_t*)&result)[2] = i2;
+    ((int8_t*)&result)[3] = i3;
+    ((int8_t*)&result)[4] = i4;
+    ((int8_t*)&result)[5] = i5;
+    ((int8_t*)&result)[6] = i6;
+    ((int8_t*)&result)[7] = i7;
+
+    return result;
+
+#endif
+}
+
+PFM_API PFMsimd_i
 pfmSimdSetR_x4_I8(int8_t i0, int8_t i1, int8_t i2, int8_t i3)
 {
 #if defined(__AVX2__)
@@ -2545,7 +2604,8 @@ PFM_API void
 pfmSimdStore_I8(void* p, PFMsimd_i x)
 {
 #if defined(__AVX2__)
-    _mm256_storeu_si256((__m256i*)p, x);    //< REVIEW: si64 ???
+    __m128i lower = _mm256_castsi256_si128(x);
+    _mm_storeu_si64((__m128i*)p, lower);
 #elif defined(__SSE2__)
     _mm_storeu_si32((__m128i*)p, x);
 #else
@@ -2560,7 +2620,8 @@ PFM_API void
 pfmSimdStore_I16(void* p, PFMsimd_i x)
 {
 #if defined(__AVX2__)
-    _mm256_storeu_si256((__m256i*)p, x);    //< REVIEW: si128 ???
+    __m128i lower = _mm256_castsi256_si128(x);
+    _mm_storeu_si128((__m128i*)p, lower);
 #elif defined(__SSE2__)
     _mm_storeu_si64((__m128i*)p, x);
 #else
@@ -2601,6 +2662,38 @@ pfmSimdStore_F32(void* p, PFMsimd_f x)
 }
 
 PFM_API PFMsimd_i
+pfmSimdLoad_I8(const void* p)
+{
+#if defined(__AVX2__)
+    __m128i lower = _mm_loadu_si64((const __m128i*)p);
+    return _mm256_castsi128_si256(lower);
+#elif defined(__SSE2__)
+    return _mm_loadu_si32((const __m128i*)p);
+#else
+    PFMsimd_i result = 0;
+    ((int8_t*)&result)[0] = ((const int8_t*)p)[0];
+    ((int8_t*)&result)[1] = ((const int8_t*)p)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfmSimdLoad_I16(const void* p)
+{
+#if defined(__AVX2__)
+    __m128i lower = _mm_loadu_si128((const __m128i*)p);
+    return _mm256_castsi128_si256(lower);
+#elif defined(__SSE2__)
+    return _mm_loadu_si64((const __m128i*)p);
+#else
+    PFMsimd_i result = 0;
+    ((int16_t*)&result)[0] = ((const int16_t*)p)[0];
+    ((int16_t*)&result)[1] = ((const int16_t*)p)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
 pfmSimdLoad_I32(const void* p)
 {
 #if defined(__AVX2__)
@@ -2629,6 +2722,28 @@ pfmSimdLoad_F32(const void* p)
     return result;
 #endif
 }
+
+#if defined(__AVX2__)
+#   define pfmSimdExtract_I8(v, index)  \
+        _mm256_extract_epi8(v, index)
+#elif defined(__SSE2__)
+#   define pfmSimdExtract_I8(v, index)  \
+        _mm_extract_epi8(v, index % 16)
+#else
+#   define pfmSimdExtract_I8(v, index)  \
+        *((int8_t*)&v + (index % 8))
+#endif
+
+#if defined(__AVX2__)
+#   define pfmSimdExtract_I16(v, index)  \
+        _mm256_extract_epi16(v, index)
+#elif defined(__SSE2__)
+#   define pfmSimdExtract_I16(v, index)  \
+        _mm_extract_epi16(v, index % 8)
+#else
+#   define pfmSimdExtract_I16(v, index)  \
+        *((int16_t*)&v + (index % 4))
+#endif
 
 #if defined(__AVX2__)
 #   define pfmSimdExtract_I32(v, index)  \
@@ -2672,6 +2787,44 @@ pfmSimdExtractVarIdx_I32(PFMsimd_i x, int32_t index)
 #endif
 
 PFM_API PFMsimd_i
+pfmSimdPackus_I16_I8(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_packus_epi16(x, y);
+#elif defined(__SSE2__)
+    return _mm_packus_epi16(x, y);
+#else
+    PFMsimd_f result;
+    ((uint8_t*)&result)[0] = (uint16_t)((uint16_t*)&x)[0];
+    ((uint8_t*)&result)[1] = (uint16_t)((uint16_t*)&x)[1];
+    ((uint8_t*)&result)[2] = (uint16_t)((uint16_t*)&x)[2];
+    ((uint8_t*)&result)[3] = (uint16_t)((uint16_t*)&x)[3];
+    ((uint8_t*)&result)[4] = (uint16_t)((uint16_t*)&y)[0];
+    ((uint8_t*)&result)[5] = (uint16_t)((uint16_t*)&y)[1];
+    ((uint8_t*)&result)[6] = (uint16_t)((uint16_t*)&y)[2];
+    ((uint8_t*)&result)[7] = (uint16_t)((uint16_t*)&y)[3];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfmSimdPackus_I32_I16(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_packus_epi32(x, y);
+#elif defined(__SSE2__)
+    return _mm_packus_epi32(x, y);
+#else
+    PFMsimd_f result;
+    ((uint16_t*)&result)[0] = (uint16_t)((uint32_t*)&x)[0];
+    ((uint16_t*)&result)[1] = (uint16_t)((uint32_t*)&x)[1];
+    ((uint16_t*)&result)[2] = (uint16_t)((uint32_t*)&y)[0];
+    ((uint16_t*)&result)[3] = (uint16_t)((uint32_t*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
 pfmSimdShuffle_I8(PFMsimd_i x, PFMsimd_i y)
 {
 #if defined(__AVX2__)
@@ -2707,11 +2860,41 @@ pfmSimdShuffle_F32(PFMsimd_f v1, PFMsimd_f v2, int mask)
     PFMsimd_f result;
     ((float*)&result)[0] = ((float*)&v1)[(mask & 0x03)];
     ((float*)&result)[1] = ((float*)&v1)[(mask >> 2) & 0x03];
-    ((float*)&result)[2] = ((float*)&v2)[(mask >> 4) & 0x03];
-    ((float*)&result)[3] = ((float*)&v2)[(mask >> 6) & 0x03];
     return result;
 }
 #endif
+
+PFM_API PFMsimd_i
+pfmSimdConvert_I8_I32(PFMsimd_i x)
+{
+#if defined(__AVX2__)
+    return _mm256_cvtepi8_epi32(
+        _mm256_castsi256_si128(x));
+#elif defined(__SSE2__)
+    return _mm_cvtepi8_epi32(x);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = (int32_t)((float*)&x)[0];
+    ((int32_t*)&result)[1] = (int32_t)((float*)&x)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
+pfmSimdConvert_I16_I32(PFMsimd_i x)
+{
+#if defined(__AVX2__)
+    return _mm256_cvtepi16_epi32(
+        _mm256_castsi256_si128(x));
+#elif defined(__SSE2__)
+    return _mm_cvtepi16_epi32(x);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = (int32_t)((float*)&x)[0];
+    ((int32_t*)&result)[1] = (int32_t)((float*)&x)[1];
+    return result;
+#endif
+}
 
 PFM_API PFMsimd_i
 pfmSimdConvert_F32_I32(PFMsimd_f x)
