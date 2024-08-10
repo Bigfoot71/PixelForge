@@ -389,7 +389,7 @@ static inline PFcolor
 pfInternal_PixelGet_Luminance_Alpha_UBYTE(const void* pixels, PFsizei offset)
 {
     const PFubyte *pixel = (PFubyte*)pixels + offset*2;
-    return (PFcolor) { *pixel, *pixel, *pixel, pixel[1] };
+    return (PFcolor) { pixel[0], pixel[0], pixel[0], pixel[1] };
 }
 
 static inline PFcolor
@@ -950,13 +950,109 @@ pfInternal_PixelSet_BGR_USHORT_5_6_5_simd(void* pixels, PFsizei offset, PFMsimd_
 static inline void
 pfInternal_PixelSet_RGB_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
+    // Calculate the address in the buffer, taking into account the 24-bit RGB format
+    PFubyte* pixelPtr = (PFubyte*)pixels + 3 * offset;
 
+    // Extract the RGB components from the RGBA colors (ignoring the alpha)
+    PFMsimd_i red = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x00FF0000));
+    PFMsimd_i green = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x0000FF00));
+    PFMsimd_i blue = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x000000FF));
+
+    // Reverse the shifts to get the RGB values in the correct order
+    red = pfmSimdShr_I32(red, 16);        // Red should remain in the least significant 8 bits
+    green = pfmSimdShr_I32(green, 8);     // Shift green so it is in the middle bits
+
+    // Combine the components into a 24-bit RGB format
+    PFMsimd_i rgb24 = pfmSimdOr_I32(
+        pfmSimdOr_I32(
+            pfmSimdShl_I32(blue, 16),     // Blue in the most significant 8 bits
+            pfmSimdShl_I32(green, 8)      // Green in the middle 8 bits
+        ),
+        red  // Red in the least significant 8 bits
+    );
+
+#define WRITE_RGB_PIXEL(index) \
+    { \
+        uint32_t pixelColor = pfmSimdExtract_I32(rgb24, index); \
+        uint32_t maskValue = pfmSimdExtract_I32(mask, index); \
+        PFubyte* targetPixel = pixelPtr + index * 3; \
+        uint32_t oldPixelColor = (targetPixel[0] << 16) | (targetPixel[1] << 8) | targetPixel[2]; \
+        uint32_t newPixelColor = (pixelColor & maskValue) | (oldPixelColor & ~maskValue); \
+        targetPixel[0] = (newPixelColor >> 16) & 0xFF; \
+        targetPixel[1] = (newPixelColor >> 8) & 0xFF; \
+        targetPixel[2] = newPixelColor & 0xFF; \
+    }
+
+    WRITE_RGB_PIXEL(0);
+    WRITE_RGB_PIXEL(1);
+
+#ifdef __SSE2__
+    WRITE_RGB_PIXEL(2);
+    WRITE_RGB_PIXEL(3);
+#endif // __SSE2__
+
+#ifdef __AVX2__
+    WRITE_RGB_PIXEL(4);
+    WRITE_RGB_PIXEL(5);
+    WRITE_RGB_PIXEL(6);
+    WRITE_RGB_PIXEL(7);
+#endif // __AVX2__
+
+#undef WRITE_RGB_PIXEL
 }
 
 static inline void
 pfInternal_PixelSet_BGR_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
+    // Calculate the address in the buffer, taking into account the 24-bit BGR format
+    PFubyte* pixelPtr = (PFubyte*)pixels + 3 * offset;
 
+    // Extract the BGR components from the RGBA colors (ignoring the alpha)
+    PFMsimd_i blue = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x00FF0000));
+    PFMsimd_i green = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x0000FF00));
+    PFMsimd_i red = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x000000FF));
+
+    // Shift the components to obtain the BGR values
+    blue = pfmSimdShr_I32(blue, 16);      // Shift blue to the correct 8 bits
+    green = pfmSimdShr_I32(green, 8);     // Shift green to the correct 8 bits
+
+    // Combine the components into a 24-bit BGR format
+    PFMsimd_i bgr24 = pfmSimdOr_I32(
+        pfmSimdOr_I32(
+            pfmSimdShl_I32(blue, 16),    // Position blue
+            pfmSimdShl_I32(green, 8)     // Position green
+        ),
+        red // Position red
+    );
+
+#   define WRITE_RGB_PIXEL(index) \
+    { \
+        uint32_t pixelColor = pfmSimdExtract_I32(bgr24, index); \
+        uint32_t maskValue = pfmSimdExtract_I32(mask, index); \
+        PFubyte* targetPixel = pixelPtr + index * 3; \
+        uint32_t oldPixelColor = (targetPixel[0] << 16) | (targetPixel[1] << 8) | targetPixel[2]; \
+        uint32_t newPixelColor = (pixelColor & maskValue) | (oldPixelColor & ~maskValue); \
+        targetPixel[0] = (newPixelColor >> 16) & 0xFF; \
+        targetPixel[1] = (newPixelColor >> 8) & 0xFF; \
+        targetPixel[2] = newPixelColor & 0xFF; \
+    }
+
+    WRITE_RGB_PIXEL(0);
+    WRITE_RGB_PIXEL(1);
+
+#ifdef __SSE2__
+    WRITE_RGB_PIXEL(2);
+    WRITE_RGB_PIXEL(3);
+#endif //__SSE2__
+
+#ifdef __AVX2__
+    WRITE_RGB_PIXEL(4);
+    WRITE_RGB_PIXEL(5);
+    WRITE_RGB_PIXEL(6);
+    WRITE_RGB_PIXEL(7);
+#endif //__AVX2__
+
+#undef WRITE_RGB_PIXEL
 }
 
 static inline void
@@ -989,85 +1085,13 @@ pfInternal_PixelSet_BGR_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i color
 static inline void
 pfInternal_PixelSet_RGBA_USHORT_5_5_5_1_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
-/*
-    // Define the conversion constant from 255 to 31 (5 bits)
-    const PFMsimd_i scale = pfmSimdSet1_F32(31.0f / 255.0f);
 
-    // Extract the R, G, B, A components
-    PFMsimd_i ri = pfmSimdShuffle_I8(colors, pfmSimdSetR_x4_I8(0, 0, 0, 0)); // Extract R channels
-    PFMsimd_i gi = pfmSimdShuffle_I8(colors, pfmSimdSetR_x4_I8(1, 1, 1, 1)); // Extract G channels
-    PFMsimd_i bi = pfmSimdShuffle_I8(colors, pfmSimdSetR_x4_I8(2, 2, 2, 2)); // Extract B channels
-    PFMsimd_i ai = pfmSimdShuffle_I8(colors, pfmSimdSetR_x4_I8(3, 3, 3, 3)); // Extract A channels
-
-    // Convert values from [0, 255] to [0, 31] for R, G, B
-    PFMsimd_f rf = pfmSimdMul_F32(pfmSimdConvert_I32_F32(ri), scale);
-    PFMsimd_f gf = pfmSimdMul_F32(pfmSimdConvert_I32_F32(gi), scale);
-    PFMsimd_f bf = pfmSimdMul_F32(pfmSimdConvert_I32_F32(bi), scale);
-
-    // Convert A values to bit (0 or 1)
-    PFMsimd_f threshold = pfmSimdSet1_F32(PF_RGBA_5_5_5_1_ALPHA_THRESHOLD / 255.0f);
-    PFMsimd_f af = pfmSimdCmpGT_F32(pfmSimdConvert_I32_F32(ai), threshold); // a = 1 if > threshold, otherwise 0
-
-    // Convert float values to int
-    ri = pfmSimdConvert_F32_I32(pfmSimdRound_F32(rf, _MM_FROUND_TO_NEAREST_INT));
-    gi = pfmSimdConvert_F32_I32(pfmSimdRound_F32(gf, _MM_FROUND_TO_NEAREST_INT));
-    bi = pfmSimdConvert_F32_I32(pfmSimdRound_F32(bf, _MM_FROUND_TO_NEAREST_INT));
-    ai = pfmSimdConvert_F32_I32(pfmSimdRound_F32(af, _MM_FROUND_TO_NEAREST_INT));
-
-    // Combine components into a 5-5-5-1 format
-    ri = pfmSimdShl_I32(ri, 11);                     // Shift R by 11 bits
-    gi = pfmSimdShl_I32(gi, 6);                      // Shift G by 6 bits
-    bi = pfmSimdShl_I32(bi, 1);                      // Shift B by 1 bit
-
-    PFMsimd_i combined = pfmSimdOr_I32(ri, gi);        // Combine R and G
-    combined = pfmSimdOr_I32(combined, bi);          // Add B
-    combined = pfmSimdOr_I32(combined, ai);          // Add A
-
-    // Store the result in memory
-    pfmSimdStore_I16((PFMsimd_i*)(pixels + offset), combined);
-*/
 }
 
 static inline void
 pfInternal_PixelSet_BGRA_USHORT_5_5_5_1_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
-/*
-    // Define the conversion constant from 255 to 31 (5 bits)
-    const PFMsimd_i scale = pfmSimdSet1_F32(31.0f / 255.0f);
 
-    // Extract the R, G, B, A components
-    PFMsimd_i bi = pfmSimdShuffle_I8(colors, pfmSimdSetR_x4_I8(2, 2, 2, 2)); // Extract B channels
-    PFMsimd_i gi = pfmSimdShuffle_I8(colors, pfmSimdSetR_x4_I8(1, 1, 1, 1)); // Extract G channels
-    PFMsimd_i ri = pfmSimdShuffle_I8(colors, pfmSimdSetR_x4_I8(0, 0, 0, 0)); // Extract R channels
-    PFMsimd_i ai = pfmSimdShuffle_I8(colors, pfmSimdSetR_x4_I8(3, 3, 3, 3)); // Extract A channels
-
-    // Convert values from [0, 255] to [0, 31] for R, G, B
-    PFMsimd_f bf = pfmSimdMul_F32(pfmSimdConvert_I32_F32(bi), scale);
-    PFMsimd_f gf = pfmSimdMul_F32(pfmSimdConvert_I32_F32(gi), scale);
-    PFMsimd_f rf = pfmSimdMul_F32(pfmSimdConvert_I32_F32(ri), scale);
-
-    // Convert A values to bit (0 or 1)
-    PFMsimd_f threshold = pfmSimdSet1_F32(PF_RGBA_5_5_5_1_ALPHA_THRESHOLD / 255.0f);
-    PFMsimd_f af = pfmSimdCmpGT_F32(pfmSimdConvert_I32_F32(ai), threshold); // a = 1 if > threshold, otherwise 0
-
-    // Convert float values to int
-    bi = pfmSimdConvert_F32_I32(pfmSimdRound_F32(bf, _MM_FROUND_TO_NEAREST_INT));
-    gi = pfmSimdConvert_F32_I32(pfmSimdRound_F32(gf, _MM_FROUND_TO_NEAREST_INT));
-    ri = pfmSimdConvert_F32_I32(pfmSimdRound_F32(rf, _MM_FROUND_TO_NEAREST_INT));
-    ai = pfmSimdConvert_F32_I32(pfmSimdRound_F32(af, _MM_FROUND_TO_NEAREST_INT));
-
-    // Combine components into a 5-5-5-1 format
-    bi = pfmSimdShl_I32(bi, 11);                     // Shift B by 11 bits
-    gi = pfmSimdShl_I32(gi, 6);                      // Shift G by 6 bits
-    ri = pfmSimdShl_I32(ri, 1);                      // Shift R by 1 bit
-
-    PFMsimd_i combined = pfmSimdOr_I32(bi, gi);        // Combine B and G
-    combined = pfmSimdOr_I32(combined, ri);          // Add R
-    combined = pfmSimdOr_I32(combined, ai);          // Add A
-
-    // Store the result in memory
-    pfmSimdStore_I16((PFMsimd_i*)(pixels + offset), combined);
-*/
 }
 
 static inline void
@@ -1159,9 +1183,20 @@ pfInternal_PixelGet_Luminance_FLOAT_simd(const void* pixels, PFMsimd_i offsets)
 static inline PFMsimd_i
 pfInternal_PixelGet_Luminance_Alpha_UBYTE_simd(const void* pixels, PFMsimd_i offsets)
 {
-    PFMsimd_i result = { 0 };
+    PFMsimd_i lumAlpha = pfmSimdGather_I32(
+        (const PFubyte*)pixels, offsets, 2 * sizeof(PFubyte));
 
-    return result;
+    PFMsimd_i mask = pfmSimdSetR_I8(
+         2,  2,  2,  3,
+         6,  6,  6,  7,
+        10, 10, 10, 11,
+        14, 14, 14, 15,
+        18, 18, 18, 19,
+        22, 22, 22, 23,
+        26, 26, 26, 27,
+        30, 30, 30, 31);
+
+    return pfmSimdShuffle_I8(lumAlpha, mask);
 }
 
 static inline PFMsimd_i
@@ -1301,17 +1336,69 @@ pfInternal_PixelGet_BGR_USHORT_5_6_5_simd(const void* pixels, PFMsimd_i offsets)
 static inline PFMsimd_i
 pfInternal_PixelGet_RGB_UBYTE_simd(const void* pixels, PFMsimd_i offsets)
 {
-    PFMsimd_i result = { 0 };
+    // Read the 24-bit RGB values from the buffer.
+    PFMsimd_i rgb24 = pfmSimdGather_I32(pixels, pfmSimdMullo_I32(offsets, pfmSimdSet1_I32(3 * sizeof(PFubyte))), 1);
 
-    return result;
+    // Extract the RGB components using the appropriate masks
+    PFMsimd_i red = pfmSimdAnd_I32(rgb24, pfmSimdSet1_I32(0xFF0000));
+    PFMsimd_i green = pfmSimdAnd_I32(rgb24, pfmSimdSet1_I32(0x00FF00));
+    PFMsimd_i blue = pfmSimdAnd_I32(rgb24, pfmSimdSet1_I32(0x0000FF));
+
+    // Shift the values to obtain the 8-bit RGB components
+    red = pfmSimdShr_I32(red, 16);   // Shift red to get the 8-bit red component
+    green = pfmSimdShr_I32(green, 8); // Shift green to get the 8-bit green component
+    // Blue is already in place in the least significant 8 bits
+
+    // Create the alpha component with a value of 0xFF
+    PFMsimd_i alpha = pfmSimdSet1_I32(0xFF);
+
+    // Combine the RGB components and alpha into a single RGBA value
+    PFMsimd_i rgba32 = pfmSimdOr_I32(
+        pfmSimdOr_I32(
+            pfmSimdOr_I32(
+                pfmSimdShl_I32(red, 16),   // Red in the most significant 8 bits
+                pfmSimdShl_I32(green, 8) // Green in the next 8 bits
+            ),
+            blue // Blue in the next 8 bits
+        ),
+        pfmSimdShl_I32(alpha, 24) // Alpha in the least significant 8 bits
+    );
+
+    return rgba32;
 }
 
 static inline PFMsimd_i
 pfInternal_PixelGet_BGR_UBYTE_simd(const void* pixels, PFMsimd_i offsets)
 {
-    PFMsimd_i result = { 0 };
+    // Read the 24-bit BGR values from the buffer
+    PFMsimd_i bgr24 = pfmSimdGather_I32(pixels, pfmSimdMullo_I32(offsets, pfmSimdSet1_I32(3 * sizeof(PFubyte))), 1);
 
-    return result;
+    // Extract the BGR components using the appropriate masks
+    PFMsimd_i blue = pfmSimdAnd_I32(bgr24, pfmSimdSet1_I32(0xFF0000));
+    PFMsimd_i green = pfmSimdAnd_I32(bgr24, pfmSimdSet1_I32(0x00FF00));
+    PFMsimd_i red = pfmSimdAnd_I32(bgr24, pfmSimdSet1_I32(0x0000FF));
+
+    // Shift the values to obtain the 8-bit RGB components
+    blue = pfmSimdShr_I32(blue, 16);      // Shift blue to get the 8-bit blue component
+    green = pfmSimdShr_I32(green, 8);     // Shift green to get the 8-bit green component
+    // Red is already in place in the least significant 8 bits
+
+    // Create the alpha component with a value of 0xFF
+    PFMsimd_i alpha = pfmSimdSet1_I32(0xFF);
+
+    // Combine the RGB components and alpha into a single RGBA value
+    PFMsimd_i rgba32 = pfmSimdOr_I32(
+        pfmSimdOr_I32(
+            pfmSimdOr_I32(
+                pfmSimdShl_I32(red, 16),   // Red in the most significant 8 bits
+                pfmSimdShl_I32(green, 8)  // Green in the next 8 bits
+            ),
+            blue // Blue in the least significant 8 bits
+        ),
+        pfmSimdShl_I32(alpha, 24) // Alpha in the most significant 8 bits
+    );
+
+    return rgba32;
 }
 
 static inline PFMsimd_i
