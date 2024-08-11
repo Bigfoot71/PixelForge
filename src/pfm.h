@@ -20,7 +20,6 @@
 #ifndef PFM_H
 #define PFM_H
 
-#include <smmintrin.h>
 #include <stdint.h>
 #include <string.h>
 #include <math.h>

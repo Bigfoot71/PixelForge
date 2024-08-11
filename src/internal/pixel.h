@@ -962,7 +962,39 @@ pfInternal_PixelSet_Luminance_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i
 static inline void
 pfInternal_PixelSet_Luminance_Alpha_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
+    colors = pfInternal_SimdColorPackedGrayscale(colors);
 
+    PFMsimd_i luminance = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x000000FF));
+    PFMsimd_i alpha = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0xFF000000));
+    alpha = pfmSimdShr_I32(alpha, 16);
+
+    PFMsimd_i lumAlpha = pfmSimdOr_I32(luminance, alpha);
+
+#   define WRITE_LUMINANCE_ALPHA_PIXEL(index) \
+    { \
+        PFuint lumAlphaValue = pfmSimdExtract_I32(lumAlpha, index) & 0xFFFF; \
+        PFuint maskValue = pfmSimdExtract_I32(mask, index) & 0xFFFF; \
+        PFushort* targetPixel = (PFushort*)pixels + offset + index; \
+        *targetPixel = ((*targetPixel) & ~maskValue) | (lumAlphaValue & maskValue); \
+    }
+
+    // Écriture des pixels luminance + alpha modifiés dans le buffer
+    WRITE_LUMINANCE_ALPHA_PIXEL(0);
+    WRITE_LUMINANCE_ALPHA_PIXEL(1);
+
+#ifdef __SSE2__
+    WRITE_LUMINANCE_ALPHA_PIXEL(2);
+    WRITE_LUMINANCE_ALPHA_PIXEL(3);
+#endif // __SSE2__
+
+#ifdef __AVX2__
+    WRITE_LUMINANCE_ALPHA_PIXEL(4);
+    WRITE_LUMINANCE_ALPHA_PIXEL(5);
+    WRITE_LUMINANCE_ALPHA_PIXEL(6);
+    WRITE_LUMINANCE_ALPHA_PIXEL(7);
+#endif // __AVX2__
+
+#undef WRITE_LUMINANCE_ALPHA_PIXEL
 }
 
 static inline void
@@ -990,8 +1022,7 @@ pfInternal_PixelSet_RED_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i color
         PFuint redValue = pfmSimdExtract_I32(red, index) & 0xFF; \
         PFuint maskValue = pfmSimdExtract_I32(mask, index) & 0xFF; \
         PFubyte* targetPixel = (PFubyte*)pixels + offset + index; \
-        PFubyte currentPixelValue = *targetPixel; \
-        *targetPixel = (currentPixelValue & ~maskValue) | (redValue & maskValue); \
+        *targetPixel = ((*targetPixel) & ~maskValue) | (redValue & maskValue); \
     }
 
     WRITE_RED_PIXEL(0);
@@ -1023,8 +1054,7 @@ pfInternal_PixelSet_GREEN_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i col
         PFuint greenValue = pfmSimdExtract_I32(green, index) & 0xFF; \
         PFuint maskValue = pfmSimdExtract_I32(mask, index) & 0xFF; \
         PFubyte* targetPixel = (PFubyte*)pixels + offset + index; \
-        PFubyte currentPixelValue = *targetPixel; \
-        *targetPixel = (PFubyte)((greenValue & maskValue) | (currentPixelValue & ~maskValue)); \
+        *targetPixel = (PFubyte)((greenValue & maskValue) | ((*targetPixel) & ~maskValue)); \
     }
 
     WRITE_GREEN_PIXEL(0);
@@ -1056,8 +1086,7 @@ pfInternal_PixelSet_BLUE_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i colo
         PFuint blueValue = pfmSimdExtract_I32(blue, index) & 0xFF; \
         PFuint maskValue = pfmSimdExtract_I32(mask, index) & 0xFF; \
         PFubyte* targetPixel = (PFubyte*)pixels + offset + index; \
-        PFubyte currentPixelValue = *targetPixel; \
-        *targetPixel = (PFubyte)((blueValue & maskValue) | (currentPixelValue & ~maskValue)); \
+        *targetPixel = (PFubyte)((blueValue & maskValue) | ((*targetPixel) & ~maskValue)); \
     }
 
     WRITE_BLUE_PIXEL(0);
@@ -1089,8 +1118,7 @@ pfInternal_PixelSet_ALPHA_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i col
         PFuint alphaValue = pfmSimdExtract_I32(alpha, index) & 0xFF; \
         PFuint maskValue = pfmSimdExtract_I32(mask, index) & 0xFF; \
         PFubyte* targetPixel = (PFubyte*)pixels + offset + index; \
-        PFubyte currentPixelValue = *targetPixel; \
-        *targetPixel = (PFubyte)((alphaValue & maskValue) | (currentPixelValue & ~maskValue)); \
+        *targetPixel = (PFubyte)((alphaValue & maskValue) | ((*targetPixel) & ~maskValue)); \
     }
 
     WRITE_ALPHA_PIXEL(0);
