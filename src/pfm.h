@@ -25,6 +25,9 @@
 #include <string.h>
 #include <math.h>
 
+#define __STDC_WANT_IEC_60559_TYPES_EXT__   ///< To check if FC16 (_Float16) is supported
+#include <float.h>
+
 #if defined(__AVX2__)
 #   include <immintrin.h>
 #   define PF_SIMD_SIZE 8
@@ -101,6 +104,69 @@ typedef PFMsimd_f PFMsimd_vec4[4];
 typedef PFMsimd_f* aPFMsimd_vec2;
 typedef PFMsimd_f* aPFMsimd_vec3;
 typedef PFMsimd_f* aPFMsimd_vec4;
+
+/* Conversion Helpers */
+
+/**
+ * NOTE: Half/Float conversion code comes from Ogre (3D engine)
+ * SOURCE: https://github.com/OGRECave/ogre/blob/master/OgreMain/include/OgreBitwise.h
+ */
+
+PFM_API uint16_t
+pfmFloatToHalfI(uint32_t ui)
+{
+    int s = (ui >> 16) & 0x8000;
+    int em = ui & 0x7fffffff;
+
+    // bias exponent and round to nearest; 112 is relative exponent bias (127-15)
+    int h = (em - (112 << 23) + (1 << 12)) >> 13;
+
+    // underflow: flush to zero; 113 encodes exponent -14
+    h = (em < (113 << 23)) ? 0 : h;
+
+    // overflow: infinity; 143 encodes exponent 16
+    h = (em >= (143 << 23)) ? 0x7c00 : h;
+
+    // NaN; note that we convert all types of NaN to qNaN
+    h = (em > (255 << 23)) ? 0x7e00 : h;
+
+    return (uint16_t)(s | h);
+}
+
+PFM_API uint32_t
+pfmHalfToFloatI(uint16_t h)
+{
+    uint32_t s = (unsigned)(h & 0x8000) << 16;
+    int em = h & 0x7fff;
+
+    // bias exponent and pad mantissa with 0; 112 is relative exponent bias (127-15)
+    int r = (em + (112 << 10)) << 13;
+
+    // denormal: flush to zero
+    r = (em < (1 << 10)) ? 0 : r;
+
+    // infinity/NaN; note that we preserve NaN payload as a byproduct of unifying inf/nan cases
+    // 112 is an exponent bias fixup; since we already applied it once, applying it twice converts 31 to 255
+    r += (em >= (31 << 10)) ? (112 << 23) : 0;
+
+    return s | r;
+}
+
+PFM_API uint16_t
+pfmFloatToHalf(float i)
+{
+    union { float f; uint32_t i; } v;
+    v.f = i;
+    return pfmFloatToHalfI(v.i);
+}
+
+PFM_API float
+pfmHalfToFloat(uint16_t y)
+{
+    union { float f; uint32_t i; } v;
+    v.i = pfmHalfToFloatI(y);
+    return v.f;
+}
 
 /* 2D Vector function definitions */
 
@@ -2715,6 +2781,17 @@ pfmSimdLoad_F32(const void* p)
         *((int32_t*)&v + (index % 2))
 #endif
 
+#if defined(__AVX2__)
+#   define pfmSimdExtract_F32(v, index)  \
+        ((float*)&v)[index]
+#elif defined(__SSE2__)
+#   define pfmSimdExtract_F32(v, index)  \
+        _mm_extract_ps(v, index % 4)
+#else
+#   define pfmSimdExtract_F32(v, index)  \
+        *((float*)&v + (index % 2))
+#endif
+
 PFM_API int32_t
 pfmSimdExtractVarIdx_I32(PFMsimd_i x, int32_t index)
 {
@@ -2824,6 +2901,22 @@ pfmSimdShuffle_F32(PFMsimd_f v1, PFMsimd_f v2, int mask)
 #endif
 
 PFM_API PFMsimd_i
+pfmSimdConvert_U8_I32(PFMsimd_i x)
+{
+#if defined(__AVX2__)
+    return _mm256_cvtepu8_epi32(
+        _mm256_castsi256_si128(x));
+#elif defined(__SSE2__)
+    return _mm_cvtepu8_epi32(x);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = (int32_t)((uint8_t*)&x)[0];
+    ((int32_t*)&result)[1] = (int32_t)((uint8_t*)&x)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
 pfmSimdConvert_I8_I32(PFMsimd_i x)
 {
 #if defined(__AVX2__)
@@ -2833,8 +2926,8 @@ pfmSimdConvert_I8_I32(PFMsimd_i x)
     return _mm_cvtepi8_epi32(x);
 #else
     PFMsimd_i result;
-    ((int32_t*)&result)[0] = (int32_t)((float*)&x)[0];
-    ((int32_t*)&result)[1] = (int32_t)((float*)&x)[1];
+    ((int32_t*)&result)[0] = (int32_t)((int8_t*)&x)[0];
+    ((int32_t*)&result)[1] = (int32_t)((int8_t*)&x)[1];
     return result;
 #endif
 }
@@ -2870,61 +2963,94 @@ pfmSimdConvert_F32_I32(PFMsimd_f x)
 #endif
 }
 
-// TODO: Review the management of '_mm256_cvtph_ps' which receives a '__m128i' to return a 
-//       '__m256', and the same problem on the contrary with the macro using '_mm256_cvtps_ph'
-
-/*
 #if defined(__AVX2__)
-#   define pfmSimdConvert_F32_F16(x, imm)  \
-        _mm256_cvtps_ph(x, index)
-#elif defined(__SSE2__)
-#   define pfmSimdConvert_F32_F16(x, imm)  \
-        _mm_cvtps_ph(x, imm)
-#else
-PFM_API PFMsimd_f
+#   ifdef FLT16_MAX
+#       define pfmSimdConvert_F32_F16(x, imm)  \
+            _mm256_castsi128_si256( \
+                _mm256_cvtps_ph(x, imm))
+#   else
+PFM_API PFMsimd_i
 pfmSimdConvert_F32_F16(PFMsimd_f x, const int imm)
 {
-    // REVIEW: Incorrect behavior
-
     (void)imm;
-    PFMsimd_f result = 0;
-    for (int_fast8_t i = 0; i < 2; ++i)
-    {
-        const float in = ((float*)&x)[i];
-        const uint32_t b = (*(uint32_t*)&in)+0x00001000; // round-to-nearest-even: add last bit after truncated mantissa
-        const uint32_t e = (b&0x7F800000)>>23; // exponent
-        const uint32_t m = b&0x007FFFFF; // mantissa; in line below: 0x007FF000 = 0x00800000-0x00001000 = decimal indicator flag - initial rounding
-        ((uint16_t*)&result)[i] = (b&0x80000000)>>16 | (e>112)*((((e-112)<<10)&0x7C00)|m>>13) | ((e<113)&(e>101))*((((0x007FF000+m)>>(125-e))+1)>>1) | (e>143)*0x7FFF; // sign : normalized : denormalized : saturate
-    }
+    uint16_t m256i[16] = { 0 };
+    m256i[0] = pfmFloatToHalf(pfmSimdExtract_F32(x, 0));
+    m256i[1] = pfmFloatToHalf(pfmSimdExtract_F32(x, 1));
+    m256i[2] = pfmFloatToHalf(pfmSimdExtract_F32(x, 2));
+    m256i[3] = pfmFloatToHalf(pfmSimdExtract_F32(x, 3));
+    m256i[4] = pfmFloatToHalf(pfmSimdExtract_F32(x, 4));
+    m256i[5] = pfmFloatToHalf(pfmSimdExtract_F32(x, 5));
+    m256i[6] = pfmFloatToHalf(pfmSimdExtract_F32(x, 6));
+    m256i[7] = pfmFloatToHalf(pfmSimdExtract_F32(x, 7));
+    return *(__m256i*)m256i;
+}
+#   endif
+#elif defined(__SSE2__)
+#   ifdef FLT16_MAX
+#       define pfmSimdConvert_F32_F16(x, imm)  \
+            _mm_cvtps_ph(x, imm)
+#   else
+PFM_API PFMsimd_i
+pfmSimdConvert_F32_F16(PFMsimd_f x, const int imm)
+{
+    (void)imm;
+    uint16_t m128i[8] = { 0 };
+    m128i[0] = pfmFloatToHalf(pfmSimdExtract_F32(x, 0));
+    m128i[1] = pfmFloatToHalf(pfmSimdExtract_F32(x, 1));
+    m128i[2] = pfmFloatToHalf(pfmSimdExtract_F32(x, 2));
+    m128i[3] = pfmFloatToHalf(pfmSimdExtract_F32(x, 3));
+    return *(__m128i*)m128i;
+}
+#   endif
+#else
+PFM_API PFMsimd_i
+pfmSimdConvert_F32_F16(PFMsimd_f x, const int imm)
+{
+    (void)imm;
+    PFMsimd_i result;
+    ((uint16_t*)&result)[0] = pfmFloatToHalf(((float*)&x)[0]);
+    ((uint16_t*)&result)[1] = pfmFloatToHalf(((float*)&x)[1]);
     return result;
 }
 #endif
 
-PFM_API PFMsimd_i
-pfmSimdConvert_F16_F32(PFMsimd_f x)
+PFM_API PFMsimd_f
+pfmSimdConvert_F16_F32(PFMsimd_i x)
 {
 #if defined(__AVX2__)
-    return _mm256_cvtph_ps(x);
+#   ifdef FLT16_MAX
+        return _mm256_cvtph_ps(
+            _mm256_castsi256_si128(x));
+#   else
+        float m256[8];
+        m256[0] = pfmHalfToFloat(pfmSimdExtract_I16(x, 0));
+        m256[1] = pfmHalfToFloat(pfmSimdExtract_I16(x, 1));
+        m256[2] = pfmHalfToFloat(pfmSimdExtract_I16(x, 2));
+        m256[3] = pfmHalfToFloat(pfmSimdExtract_I16(x, 3));
+        m256[4] = pfmHalfToFloat(pfmSimdExtract_I16(x, 4));
+        m256[5] = pfmHalfToFloat(pfmSimdExtract_I16(x, 5));
+        m256[6] = pfmHalfToFloat(pfmSimdExtract_I16(x, 6));
+        m256[7] = pfmHalfToFloat(pfmSimdExtract_I16(x, 7));
+        return *(__m256*)m256;
+#   endif
 #elif defined(__SSE2__)
-    return _mm_cvtph_ps(x);
+#   ifdef FLT16_MAX
+        return _mm_cvtph_ps(x);
+#   else
+        float m128[4];
+        m128[0] = pfmHalfToFloat(pfmSimdExtract_I16(x, 0));
+        m128[0] = pfmHalfToFloat(pfmSimdExtract_I16(x, 1));
+        m128[0] = pfmHalfToFloat(pfmSimdExtract_I16(x, 2));
+        m128[0] = pfmHalfToFloat(pfmSimdExtract_I16(x, 3));
+        return *(__m128*)m128;
+#   endif
 #else
-    // REVIEW: Incorrect behavior
-
-    PFMsimd_f result = 0;
-    for (int_fast8_t i = 0; i < 2; ++i)
-    {
-        const uint16_t in = ((uint16_t*)&x)[i];
-        const uint32_t e = (in&0x7C00)>>10; // exponent
-        const uint32_t m = (in&0x03FF)<<13; // mantissa
-        const float fm = (float)m;
-        const uint32_t v = (*(uint32_t*)&fm)>>23; // evil log2 bit hack to count leading zeros in denormalized format
-        const uint32_t r = (in&0x8000)<<16 | (e!=0)*((e+112)<<23|m) | ((e==0)&(m!=0))*((v-37)<<23|((m<<(150-v))&0x007FE000)); // sign : normalized : denormalized
-        ((float*)&result)[i] = *(float*)&r;
-    }
+    PFMsimd_i result;
+    ((float*)&result)[0] = pfmHalfToFloat(((uint16_t*)&x)[0]);
+    ((float*)&result)[1] = pfmHalfToFloat(((uint16_t*)&x)[1]);
     return result;
 #endif
 }
-*/
 
 PFM_API PFMsimd_f
 pfmSimdConvert_I32_F32(PFMsimd_i x)
