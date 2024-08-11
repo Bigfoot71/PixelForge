@@ -931,29 +931,106 @@ pfInternal_GetPixelBytes(PFpixelformat format, PFdatatype type)
 
 
 
-/* Internal convert functions */
-
-#define pfmFloatToHalf_simd(x) pfmSimdConvert_F32_F16(x, _MM_FROUND_TO_NEAREST_INT)
-#define pfmHalfToFloat_simd(x) pfmSimdConvert_F16_F32(x)
-
 /* SET LUMINANCE */
 
 static inline void
 pfInternal_PixelSet_Luminance_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
+    colors = pfInternal_SimdColorPackedGrayscale(colors);
+    PFMsimd_i luminance = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x000000FF));
 
+#   define WRITE_LUMINANCE_PIXEL(index) \
+    { \
+        PFuint lumValue = pfmSimdExtract_I32(luminance, index) & 0xFFFF; \
+        PFuint maskValue = pfmSimdExtract_I32(mask, index) & 0xFFFF; \
+        PFubyte* targetPixel = (PFubyte*)pixels + offset + index; \
+        *targetPixel = ((*targetPixel) & ~maskValue) | (lumValue & maskValue); \
+    }
+
+    WRITE_LUMINANCE_PIXEL(0);
+    WRITE_LUMINANCE_PIXEL(1);
+
+#ifdef __SSE2__
+    WRITE_LUMINANCE_PIXEL(2);
+    WRITE_LUMINANCE_PIXEL(3);
+#endif // __SSE2__
+
+#ifdef __AVX2__
+    WRITE_LUMINANCE_PIXEL(4);
+    WRITE_LUMINANCE_PIXEL(5);
+    WRITE_LUMINANCE_PIXEL(6);
+    WRITE_LUMINANCE_PIXEL(7);
+#endif // __AVX2__
+
+#undef WRITE_LUMINANCE_PIXEL
 }
 
 static inline void
 pfInternal_PixelSet_Luminance_HALF_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
+    colors = pfInternal_SimdColorPackedGrayscale(colors);
+    PFMsimd_i luminance = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x000000FF));
 
+#   define WRITE_LUMINANCE_PIXEL(index) \
+    { \
+        PFuint lumValue = pfmSimdExtract_I32(luminance, index) & 0xFF; \
+        PFuint maskValue = pfmSimdExtract_I32(mask, index) & 0xFF; \
+        PFushort* targetPixel = (PFushort*)pixels + offset + index; \
+        PFubyte currentPixelValue = pfmHalfToFloat(*targetPixel)*255.0f; \
+        PFubyte finalColor = (currentPixelValue & ~maskValue) | (lumValue & maskValue); \
+        *targetPixel = pfmFloatToHalf((PFfloat)finalColor/255.0f); \
+    }
+
+    WRITE_LUMINANCE_PIXEL(0);
+    WRITE_LUMINANCE_PIXEL(1);
+
+#ifdef __SSE2__
+    WRITE_LUMINANCE_PIXEL(2);
+    WRITE_LUMINANCE_PIXEL(3);
+#endif // __SSE2__
+
+#ifdef __AVX2__
+    WRITE_LUMINANCE_PIXEL(4);
+    WRITE_LUMINANCE_PIXEL(5);
+    WRITE_LUMINANCE_PIXEL(6);
+    WRITE_LUMINANCE_PIXEL(7);
+#endif // __AVX2__
+
+#undef WRITE_LUMINANCE_PIXEL
 }
 
 static inline void
 pfInternal_PixelSet_Luminance_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
+    colors = pfInternal_SimdColorPackedGrayscale(colors);
+    PFMsimd_i luminance = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x000000FF));
 
+#   define WRITE_LUMINANCE_PIXEL(index) \
+    { \
+        PFuint lumValue = pfmSimdExtract_I32(luminance, index) & 0xFF; \
+        PFuint maskValue = pfmSimdExtract_I32(mask, index) & 0xFF; \
+        PFfloat* targetPixel = (PFfloat*)pixels + offset + index; \
+        PFubyte currentPixelValue = (*targetPixel)*255.0f; \
+        PFubyte finalColor = (currentPixelValue & ~maskValue) | (lumValue & maskValue); \
+        *targetPixel = (PFfloat)finalColor/255.0f; \
+    }
+
+    WRITE_LUMINANCE_PIXEL(0);
+    WRITE_LUMINANCE_PIXEL(1);
+
+#ifdef __SSE2__
+    WRITE_LUMINANCE_PIXEL(2);
+    WRITE_LUMINANCE_PIXEL(3);
+#endif // __SSE2__
+
+#ifdef __AVX2__
+    WRITE_LUMINANCE_PIXEL(4);
+    WRITE_LUMINANCE_PIXEL(5);
+    WRITE_LUMINANCE_PIXEL(6);
+    WRITE_LUMINANCE_PIXEL(7);
+#endif // __AVX2__
+
+#undef WRITE_LUMINANCE_PIXEL
 }
 
 
@@ -978,7 +1055,6 @@ pfInternal_PixelSet_Luminance_Alpha_UBYTE_simd(void* pixels, PFsizei offset, PFM
         *targetPixel = ((*targetPixel) & ~maskValue) | (lumAlphaValue & maskValue); \
     }
 
-    // Écriture des pixels luminance + alpha modifiés dans le buffer
     WRITE_LUMINANCE_ALPHA_PIXEL(0);
     WRITE_LUMINANCE_ALPHA_PIXEL(1);
 
@@ -1633,25 +1709,48 @@ pfInternal_PixelSet_BGRA_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i colo
 static inline PFMsimd_i
 pfInternal_PixelGet_Luminance_UBYTE_simd(const void* pixels, PFMsimd_i offsets)
 {
-    PFMsimd_i result = { 0 };
+    PFMsimd_i lum = pfmSimdGather_I32(pixels, offsets, sizeof(PFubyte));
 
-    return result;
+    lum = pfmSimdOr_I32(pfmSimdShr_I32(lum, 24), pfmSimdSet1_I32(0xFF000000));
+    PFMsimd_i lastByte = pfmSimdAnd_I32(lum, pfmSimdSet1_I32(0xFF));
+    lum = pfmSimdOr_I32(lum, pfmSimdShl_I32(lastByte, 16));
+    lum = pfmSimdOr_I32(lum, pfmSimdShl_I32(lastByte, 8));
+
+    return lum;
 }
 
 static inline PFMsimd_i
 pfInternal_PixelGet_Luminance_HALF_simd(const void* pixels, PFMsimd_i offsets)
 {
-    PFMsimd_i result = { 0 };
+    PFMsimd_i lum = pfmSimdGather_I32(pixels, offsets, sizeof(PFushort));
 
-    return result;
+    lum = pfmSimdConvert_F32_I32(pfmSimdMul_F32(
+        pfmSimdConvert_F16_F32(lum),
+        *(PFMsimd_f*)pfm_f32_255));
+
+    lum = pfmSimdOr_I32(pfmSimdShr_I32(lum, 24), pfmSimdSet1_I32(0xFF000000));
+    PFMsimd_i lastByte = pfmSimdAnd_I32(lum, pfmSimdSet1_I32(0xFF));
+    lum = pfmSimdOr_I32(lum, pfmSimdShl_I32(lastByte, 16));
+    lum = pfmSimdOr_I32(lum, pfmSimdShl_I32(lastByte, 8));
+
+    return lum;
 }
 
 static inline PFMsimd_i
 pfInternal_PixelGet_Luminance_FLOAT_simd(const void* pixels, PFMsimd_i offsets)
 {
-    PFMsimd_i result = { 0 };
+    PFMsimd_i lum = pfmSimdGather_I32(pixels, offsets, sizeof(PFfloat));
 
-    return result;
+    lum = pfmSimdConvert_F32_I32(
+        pfmSimdMul_F32(pfmSimdCast_I32_F32(lum),
+        *(PFMsimd_f*)pfm_f32_255));
+
+    lum = pfmSimdOr_I32(pfmSimdShr_I32(lum, 24), pfmSimdSet1_I32(0xFF000000));
+    PFMsimd_i lastByte = pfmSimdAnd_I32(lum, pfmSimdSet1_I32(0xFF));
+    lum = pfmSimdOr_I32(lum, pfmSimdShl_I32(lastByte, 16));
+    lum = pfmSimdOr_I32(lum, pfmSimdShl_I32(lastByte, 8));
+
+    return lum;
 }
 
 
