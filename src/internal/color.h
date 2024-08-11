@@ -218,32 +218,41 @@ pfInternal_SimdColorUnpackedFromVec(PFsimd_color out, PFMsimd_f* in, int vecSize
 static inline PFMsimd_i
 pfInternal_SimdColorPackedGrayscale(PFMsimd_i colors)
 {
-    const PFMsimd_i maskR = pfmSimdSet1_I32(0xFF000000);
-    const PFMsimd_i maskG = pfmSimdSet1_I32(0x00FF0000);
-    const PFMsimd_i maskB = pfmSimdSet1_I32(0x0000FF00);
+    // Masks to extract the R, G, B, and Alpha channels
+    const PFMsimd_i maskA = pfmSimdSet1_I32(0xFF000000);
 
-    PFMsimd_i r = pfmSimdAnd_I32(pfmSimdShr_I32(colors, 24), maskR);
-    PFMsimd_i g = pfmSimdAnd_I32(pfmSimdShr_I32(colors, 16), maskG);
-    PFMsimd_i b = pfmSimdAnd_I32(pfmSimdShr_I32(colors, 8), maskB);
+    // Extract the R, G, B channels
+    PFMsimd_i r = pfmSimdAnd_I32(pfmSimdShr_I32(colors, 16), pfmSimdSet1_I32(0xFF));
+    PFMsimd_i g = pfmSimdAnd_I32(pfmSimdShr_I32(colors, 8), pfmSimdSet1_I32(0xFF));
+    PFMsimd_i b = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0xFF));
 
-    PFMsimd_f rF = pfmSimdConvert_I32_F32(r);
-    PFMsimd_f gF = pfmSimdConvert_I32_F32(g);
-    PFMsimd_f bF = pfmSimdConvert_I32_F32(b);
+    // Integer coefficients approximating 0.299, 0.587, and 0.114 (multiplied by 256)
+    const PFMsimd_i coeffR = pfmSimdSet1_I32(77);   // 0.299 * 256 = 76.8
+    const PFMsimd_i coeffG = pfmSimdSet1_I32(150);  // 0.587 * 256 = 150.272
+    const PFMsimd_i coeffB = pfmSimdSet1_I32(29);   // 0.114 * 256 = 29.184
 
-    PFMsimd_f grayF = pfmSimdAdd_F32(pfmSimdAdd_F32(
-        pfmSimdMul_F32(rF, pfmSimdSet1_F32(0.299f)),
-        pfmSimdMul_F32(gF, pfmSimdSet1_F32(0.587f))),
-        pfmSimdMul_F32(bF, pfmSimdSet1_F32(0.114f)));
+    // Calculate the luminance using the integer coefficients
+    PFMsimd_i gray = pfmSimdAdd_I32(
+        pfmSimdAdd_I32(
+            pfmSimdMullo_I32(r, coeffR),
+            pfmSimdMullo_I32(g, coeffG)
+        ),
+        pfmSimdMullo_I32(b, coeffB)
+    );
 
-    PFMsimd_i gray = pfmSimdConvert_F32_I32(grayF);
-    PFMsimd_i grayRGB = pfmSimdOr_I32(pfmSimdOr_I32(
-        pfmSimdShl_I32(gray, 24),
-        pfmSimdShl_I32(gray, 16)),
-        pfmSimdShl_I32(gray, 8));
+    // Divide by 256 (equivalent to a right shift by 8 bits)
+    gray = pfmSimdShr_I32(gray, 8);
 
-    PFMsimd_i alpha = pfmSimdAnd_I32(
-        colors, pfmSimdSet1_I32(0x000000FF));
+    // Repeat the luminance in the R, G, B channels
+    PFMsimd_i grayRGB = pfmSimdOr_I32(
+        pfmSimdOr_I32(pfmSimdShl_I32(gray, 16), pfmSimdShl_I32(gray, 8)),
+        gray
+    );
 
+    // Extract the alpha from the original most significant 8 bits
+    PFMsimd_i alpha = pfmSimdAnd_I32(colors, maskA);
+
+    // Combine the luminance (repeated in RGB) with the original alpha
     return pfmSimdOr_I32(grayRGB, alpha);
 }
 
