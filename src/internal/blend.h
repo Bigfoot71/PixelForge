@@ -152,7 +152,6 @@ pfInternal_SimdBlendAdditive(PFsimd_color out, const PFsimd_color src, const PFs
 static inline void
 pfInternal_SimdBlendSubtractive(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
 {
-    const PFMsimd_i min = pfmSimdSetZero_I32();
     out[0] = pfmSimdMax_I32(pfmSimdAdd_I32(src[0], dst[0]), *(PFMsimd_i*)pfm_i32_0);
     out[1] = pfmSimdMax_I32(pfmSimdAdd_I32(src[1], dst[1]), *(PFMsimd_i*)pfm_i32_0);
     out[2] = pfmSimdMax_I32(pfmSimdAdd_I32(src[2], dst[2]), *(PFMsimd_i*)pfm_i32_0);
