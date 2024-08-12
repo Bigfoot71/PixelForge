@@ -203,7 +203,7 @@ pfInternal_PixelSet_ALPHA_FLOAT(void* pixels, PFsizei offset, PFcolor color)
 /* SET RGB/BGR */
 
 static inline void
-pfInternal_PixelSet_RGB_UBYTE_5_6_5(void* pixels, PFsizei offset, PFcolor color)
+pfInternal_PixelSet_RGB_USHORT_5_6_5(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate RGB_5_6_5 equivalent color
     PFMvec3 nCol = PF_COLOR_RGB_NORMALIZE(color);
@@ -216,7 +216,7 @@ pfInternal_PixelSet_RGB_UBYTE_5_6_5(void* pixels, PFsizei offset, PFcolor color)
 }
 
 static inline void
-pfInternal_PixelSet_BGR_UBYTE_5_6_5(void* pixels, PFsizei offset, PFcolor color)
+pfInternal_PixelSet_BGR_USHORT_5_6_5(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate RGB_5_6_5 equivalent color
     PFMvec3 nCol = PF_COLOR_BGR_NORMALIZE(color);
@@ -290,7 +290,7 @@ pfInternal_PixelSet_BGR_FLOAT(void* pixels, PFsizei offset, PFcolor color)
 /* SET RGBA/BGRA */
 
 static inline void
-pfInternal_PixelSet_RGBA_UBYTE_5_5_5_1(void* pixels, PFsizei offset, PFcolor color)
+pfInternal_PixelSet_RGBA_USHORT_5_5_5_1(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate RGBA_5_5_5_1 equivalent color
     PFMvec4 nCol = PF_COLOR_RGBA_NORMALIZE(color);
@@ -304,7 +304,7 @@ pfInternal_PixelSet_RGBA_UBYTE_5_5_5_1(void* pixels, PFsizei offset, PFcolor col
 }
 
 static inline void
-pfInternal_PixelSet_BGRA_UBYTE_5_5_5_1(void* pixels, PFsizei offset, PFcolor color)
+pfInternal_PixelSet_BGRA_USHORT_5_5_5_1(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate RGBA_5_5_5_1 equivalent color
     PFMvec4 nCol = PF_COLOR_BGRA_NORMALIZE(color);
@@ -318,7 +318,7 @@ pfInternal_PixelSet_BGRA_UBYTE_5_5_5_1(void* pixels, PFsizei offset, PFcolor col
 }
 
 static inline void
-pfInternal_PixelSet_RGBA_UBYTE_4_4_4_4(void* pixels, PFsizei offset, PFcolor color)
+pfInternal_PixelSet_RGBA_USHORT_4_4_4_4(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate RGBA_5_5_5_1 equivalent color
     PFMvec4 nCol = PF_COLOR_RGBA_NORMALIZE(color);
@@ -332,7 +332,7 @@ pfInternal_PixelSet_RGBA_UBYTE_4_4_4_4(void* pixels, PFsizei offset, PFcolor col
 }
 
 static inline void
-pfInternal_PixelSet_BGRA_UBYTE_4_4_4_4(void* pixels, PFsizei offset, PFcolor color)
+pfInternal_PixelSet_BGRA_USHORT_4_4_4_4(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate RGBA_5_5_5_1 equivalent color
     PFMvec4 nCol = PF_COLOR_BGRA_NORMALIZE(color);
@@ -545,7 +545,7 @@ pfInternal_PixelGet_ALPHA_FLOAT(const void* pixels, PFsizei offset)
 /* GET RGB/BGR */
 
 static inline PFcolor
-pfInternal_PixelGet_RGB_UBYTE_5_6_5(const void* pixels, PFsizei offset)
+pfInternal_PixelGet_RGB_USHORT_5_6_5(const void* pixels, PFsizei offset)
 {
     PFushort pixel = ((PFushort*)pixels)[offset];
 
@@ -558,7 +558,7 @@ pfInternal_PixelGet_RGB_UBYTE_5_6_5(const void* pixels, PFsizei offset)
 }
 
 static inline PFcolor
-pfInternal_PixelGet_BGR_UBYTE_5_6_5(const void* pixels, PFsizei offset)
+pfInternal_PixelGet_BGR_USHORT_5_6_5(const void* pixels, PFsizei offset)
 {
     PFushort pixel = ((PFushort*)pixels)[offset];
 
@@ -640,7 +640,7 @@ pfInternal_PixelGet_BGR_FLOAT(const void* pixels, PFsizei offset)
 /* GET RGBA/BGRA */
 
 static inline PFcolor
-pfInternal_PixelGet_RGBA_UBYTE_5_5_5_1(const void* pixels, PFsizei offset)
+pfInternal_PixelGet_RGBA_USHORT_5_5_5_1(const void* pixels, PFsizei offset)
 {
     PFushort pixel = ((PFushort*)pixels)[offset];
 
@@ -653,7 +653,7 @@ pfInternal_PixelGet_RGBA_UBYTE_5_5_5_1(const void* pixels, PFsizei offset)
 }
 
 static inline PFcolor
-pfInternal_PixelGet_BGRA_UBYTE_5_5_5_1(const void* pixels, PFsizei offset)
+pfInternal_PixelGet_BGRA_USHORT_5_5_5_1(const void* pixels, PFsizei offset)
 {
     PFushort pixel = ((PFushort*)pixels)[offset];
 
@@ -666,7 +666,7 @@ pfInternal_PixelGet_BGRA_UBYTE_5_5_5_1(const void* pixels, PFsizei offset)
 }
 
 static inline PFcolor
-pfInternal_PixelGet_RGBA_UBYTE_4_4_4_4(const void* pixels, PFsizei offset)
+pfInternal_PixelGet_RGBA_USHORT_4_4_4_4(const void* pixels, PFsizei offset)
 {
     PFushort pixel = ((PFushort*)pixels)[offset];
 
@@ -679,7 +679,7 @@ pfInternal_PixelGet_RGBA_UBYTE_4_4_4_4(const void* pixels, PFsizei offset)
 }
 
 static inline PFcolor
-pfInternal_PixelGet_BGRA_UBYTE_4_4_4_4(const void* pixels, PFsizei offset)
+pfInternal_PixelGet_BGRA_USHORT_4_4_4_4(const void* pixels, PFsizei offset)
 {
     PFushort pixel = ((PFushort*)pixels)[offset];
 
@@ -790,24 +790,24 @@ pfInternal_GetPixelGetterSetter(PFpixelgetter* getter, PFpixelsetter* setter, PF
         ENTRY(PF_LUMINANCE_ALPHA, PF_FLOAT, pfInternal_PixelGet_Luminance_Alpha_FLOAT),
 
         ENTRY(PF_RGB, PF_UNSIGNED_BYTE, pfInternal_PixelGet_RGB_UBYTE),
-        ENTRY(PF_RGB, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelGet_RGB_UBYTE_5_6_5),
+        ENTRY(PF_RGB, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelGet_RGB_USHORT_5_6_5),
         ENTRY(PF_RGB, PF_HALF_FLOAT, pfInternal_PixelGet_RGB_HALF),
         ENTRY(PF_RGB, PF_FLOAT, pfInternal_PixelGet_RGB_FLOAT),
 
         ENTRY(PF_RGBA, PF_UNSIGNED_BYTE, pfInternal_PixelGet_RGBA_UBYTE),
-        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelGet_RGBA_UBYTE_5_5_5_1),
-        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelGet_RGBA_UBYTE_4_4_4_4),
+        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelGet_RGBA_USHORT_5_5_5_1),
+        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelGet_RGBA_USHORT_4_4_4_4),
         ENTRY(PF_RGBA, PF_HALF_FLOAT, pfInternal_PixelGet_RGBA_HALF),
         ENTRY(PF_RGBA, PF_FLOAT, pfInternal_PixelGet_RGBA_FLOAT),
 
         ENTRY(PF_BGR, PF_UNSIGNED_BYTE, pfInternal_PixelGet_BGR_UBYTE),
-        ENTRY(PF_BGR, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelGet_BGR_UBYTE_5_6_5),
+        ENTRY(PF_BGR, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelGet_BGR_USHORT_5_6_5),
         ENTRY(PF_BGR, PF_HALF_FLOAT, pfInternal_PixelGet_BGR_HALF),
         ENTRY(PF_BGR, PF_FLOAT, pfInternal_PixelGet_BGR_FLOAT),
 
         ENTRY(PF_BGRA, PF_UNSIGNED_BYTE, pfInternal_PixelGet_BGRA_UBYTE),
-        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelGet_BGRA_UBYTE_5_5_5_1),
-        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelGet_BGRA_UBYTE_4_4_4_4),
+        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelGet_BGRA_USHORT_5_5_5_1),
+        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelGet_BGRA_USHORT_4_4_4_4),
         ENTRY(PF_BGRA, PF_HALF_FLOAT, pfInternal_PixelGet_BGRA_HALF),
         ENTRY(PF_BGRA, PF_FLOAT, pfInternal_PixelGet_BGRA_FLOAT),
     };
@@ -838,24 +838,24 @@ pfInternal_GetPixelGetterSetter(PFpixelgetter* getter, PFpixelsetter* setter, PF
         ENTRY(PF_LUMINANCE_ALPHA, PF_FLOAT, pfInternal_PixelSet_Luminance_Alpha_FLOAT),
 
         ENTRY(PF_RGB, PF_UNSIGNED_BYTE, pfInternal_PixelSet_RGB_UBYTE),
-        ENTRY(PF_RGB, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelSet_RGB_UBYTE_5_6_5),
+        ENTRY(PF_RGB, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelSet_RGB_USHORT_5_6_5),
         ENTRY(PF_RGB, PF_HALF_FLOAT, pfInternal_PixelSet_RGB_HALF),
         ENTRY(PF_RGB, PF_FLOAT, pfInternal_PixelSet_RGB_FLOAT),
 
         ENTRY(PF_RGBA, PF_UNSIGNED_BYTE, pfInternal_PixelSet_RGBA_UBYTE),
-        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelSet_RGBA_UBYTE_5_5_5_1),
-        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelSet_RGBA_UBYTE_4_4_4_4),
+        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelSet_RGBA_USHORT_5_5_5_1),
+        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelSet_RGBA_USHORT_4_4_4_4),
         ENTRY(PF_RGBA, PF_HALF_FLOAT, pfInternal_PixelSet_RGBA_HALF),
         ENTRY(PF_RGBA, PF_FLOAT, pfInternal_PixelSet_RGBA_FLOAT),
 
         ENTRY(PF_BGR, PF_UNSIGNED_BYTE, pfInternal_PixelSet_BGR_UBYTE),
-        ENTRY(PF_BGR, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelSet_BGR_UBYTE_5_6_5),
+        ENTRY(PF_BGR, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelSet_BGR_USHORT_5_6_5),
         ENTRY(PF_BGR, PF_HALF_FLOAT, pfInternal_PixelSet_BGR_HALF),
         ENTRY(PF_BGR, PF_FLOAT, pfInternal_PixelSet_BGR_FLOAT),
 
         ENTRY(PF_BGRA, PF_UNSIGNED_BYTE, pfInternal_PixelSet_BGRA_UBYTE),
-        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelSet_BGRA_UBYTE_5_5_5_1),
-        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelSet_BGRA_UBYTE_4_4_4_4),
+        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelSet_BGRA_USHORT_5_5_5_1),
+        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelSet_BGRA_USHORT_4_4_4_4),
         ENTRY(PF_BGRA, PF_HALF_FLOAT, pfInternal_PixelSet_BGRA_HALF),
         ENTRY(PF_BGRA, PF_FLOAT, pfInternal_PixelSet_BGRA_FLOAT),
     };
@@ -1489,7 +1489,7 @@ pfInternal_PixelSet_ALPHA_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i col
 /* SET RGB/BGR */
 
 static inline void
-pfInternal_PixelSet_RGB_UBYTE_5_6_5_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
+pfInternal_PixelSet_RGB_USHORT_5_6_5_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
     const PFMsimd_i scale5 = pfmSimdSet1_I32(31);       // To convert to 5 bits (2^5 - 1)
     const PFMsimd_i scale6 = pfmSimdSet1_I32(63);       // To convert to 6 bits (2^6 - 1)
@@ -1510,13 +1510,11 @@ pfInternal_PixelSet_RGB_UBYTE_5_6_5_simd(void* pixels, PFsizei offset, PFMsimd_i
         b5
     );
 
-    PFushort* pixelPtr = (PFushort*)pixels;
-
 #   define WRITE_RGB565_PIXEL(index) \
     { \
         uint32_t rgbValue = pfmSimdExtract_I32(rgb565, index); \
         uint32_t maskValue = pfmSimdExtract_I32(mask, index); \
-        PFushort* targetPixel = pixelPtr + offset + index; \
+        PFushort* targetPixel = (PFushort*)pixels + offset + index; \
         uint16_t currentPixelValue = *targetPixel; \
         *targetPixel = (uint16_t)((currentPixelValue & ~maskValue) | (rgbValue & maskValue)); \
     }
@@ -1540,7 +1538,7 @@ pfInternal_PixelSet_RGB_UBYTE_5_6_5_simd(void* pixels, PFsizei offset, PFMsimd_i
 }
 
 static inline void
-pfInternal_PixelSet_BGR_UBYTE_5_6_5_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
+pfInternal_PixelSet_BGR_USHORT_5_6_5_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
     const PFMsimd_i scale5 = pfmSimdSet1_I32(31);       // To convert to 5 bits (2^5 - 1)
     const PFMsimd_i scale6 = pfmSimdSet1_I32(63);       // To convert to 6 bits (2^6 - 1)
@@ -1561,13 +1559,11 @@ pfInternal_PixelSet_BGR_UBYTE_5_6_5_simd(void* pixels, PFsizei offset, PFMsimd_i
         r5
     );
 
-    PFushort* pixelPtr = (PFushort*)pixels;
-
 #   define WRITE_RGB565_PIXEL(index) \
     { \
         uint32_t rgbValue = pfmSimdExtract_I32(rgb565, index); \
         uint32_t maskValue = pfmSimdExtract_I32(mask, index); \
-        PFushort* targetPixel = pixelPtr + offset + index; \
+        PFushort* targetPixel = (PFushort*)pixels + offset + index; \
         uint16_t currentPixelValue = *targetPixel; \
         *targetPixel = (uint16_t)((currentPixelValue & ~maskValue) | (rgbValue & maskValue)); \
     }
@@ -1593,9 +1589,6 @@ pfInternal_PixelSet_BGR_UBYTE_5_6_5_simd(void* pixels, PFsizei offset, PFMsimd_i
 static inline void
 pfInternal_PixelSet_RGB_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
-    // Calculate the address in the buffer, taking into account the 24-bit RGB format
-    PFubyte* pixelPtr = (PFubyte*)pixels + 3 * offset;
-
     // Extract the RGB components from the RGBA colors (ignoring the alpha)
     PFMsimd_i red = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x00FF0000));
     PFMsimd_i green = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x0000FF00));
@@ -1618,7 +1611,7 @@ pfInternal_PixelSet_RGB_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i color
     { \
         PFuint pixelColor = pfmSimdExtract_I32(rgb24, index); \
         PFuint maskValue = pfmSimdExtract_I32(mask, index); \
-        PFubyte* targetPixel = pixelPtr + index * 3; \
+        PFubyte* targetPixel = (PFubyte*)pixels + 3 * (offset + index); \
         PFuint oldPixelColor = (targetPixel[0] << 16) | (targetPixel[1] << 8) | targetPixel[2]; \
         PFuint newPixelColor = (pixelColor & maskValue) | (oldPixelColor & ~maskValue); \
         targetPixel[0] = (newPixelColor >> 16) & 0xFF; \
@@ -1647,9 +1640,6 @@ pfInternal_PixelSet_RGB_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i color
 static inline void
 pfInternal_PixelSet_BGR_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
-    // Calculate the address in the buffer, taking into account the 24-bit BGR format
-    PFubyte* pixelPtr = (PFubyte*)pixels + 3 * offset;
-
     // Extract the BGR components from the RGBA colors (ignoring the alpha)
     PFMsimd_i blue = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x00FF0000));
     PFMsimd_i green = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0x0000FF00));
@@ -1672,7 +1662,7 @@ pfInternal_PixelSet_BGR_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i color
     { \
         PFuint pixelColor = pfmSimdExtract_I32(bgr24, index); \
         PFuint maskValue = pfmSimdExtract_I32(mask, index); \
-        PFubyte* targetPixel = pixelPtr + index * 3; \
+        PFubyte* targetPixel = (PFubyte*)pixels + 3 * (offset + index); \
         PFuint oldPixelColor = (targetPixel[0] << 16) | (targetPixel[1] << 8) | targetPixel[2]; \
         PFuint newPixelColor = (pixelColor & maskValue) | (oldPixelColor & ~maskValue); \
         targetPixel[0] = (newPixelColor >> 16) & 0xFF; \
@@ -1726,7 +1716,7 @@ pfInternal_PixelSet_BGR_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i color
 /* SET RGBA/BGRA */
 
 static inline void
-pfInternal_PixelSet_RGBA_UBYTE_5_5_5_1_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
+pfInternal_PixelSet_RGBA_USHORT_5_5_5_1_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
     const PFMsimd_i scale5 = pfmSimdSet1_I32(31);    // To convert to 5 bits (2^5 - 1)
     const PFMsimd_i scale1 = pfmSimdSet1_I32(1);     // To convert alpha to 1 bit
@@ -1779,7 +1769,7 @@ pfInternal_PixelSet_RGBA_UBYTE_5_5_5_1_simd(void* pixels, PFsizei offset, PFMsim
 }
 
 static inline void
-pfInternal_PixelSet_BGRA_UBYTE_5_5_5_1_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
+pfInternal_PixelSet_BGRA_USHORT_5_5_5_1_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
     const PFMsimd_i scale5 = pfmSimdSet1_I32(31);    // To convert to 5 bits (2^5 - 1)
     const PFMsimd_i scale1 = pfmSimdSet1_I32(1);     // To convert alpha to 1 bit
@@ -1832,7 +1822,7 @@ pfInternal_PixelSet_BGRA_UBYTE_5_5_5_1_simd(void* pixels, PFsizei offset, PFMsim
 }
 
 static inline void
-pfInternal_PixelSet_RGBA_UBYTE_4_4_4_4_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
+pfInternal_PixelSet_RGBA_USHORT_4_4_4_4_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
     const PFMsimd_i scale4 = pfmSimdSet1_I32(15);    // To convert to 4 bits (2^4 - 1)
 
@@ -1857,13 +1847,11 @@ pfInternal_PixelSet_RGBA_UBYTE_4_4_4_4_simd(void* pixels, PFsizei offset, PFMsim
         a4
     );
 
-    PFushort* pixelPtr = (PFushort*)pixels;
-
 #   define WRITE_RGBA4444_PIXEL(index) \
     { \
         uint32_t rgbaValue = pfmSimdExtract_I32(rgba4444, index); \
         uint32_t maskValue = pfmSimdExtract_I32(mask, index); \
-        PFushort* targetPixel = pixelPtr + offset + index; \
+        PFushort* targetPixel = (PFushort*)pixels + offset + index; \
         uint16_t currentPixelValue = *targetPixel; \
         *targetPixel = (uint16_t)((currentPixelValue & ~maskValue) | (rgbaValue & maskValue)); \
     }
@@ -1887,7 +1875,7 @@ pfInternal_PixelSet_RGBA_UBYTE_4_4_4_4_simd(void* pixels, PFsizei offset, PFMsim
 }
 
 static inline void
-pfInternal_PixelSet_BGRA_UBYTE_4_4_4_4_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
+pfInternal_PixelSet_BGRA_USHORT_4_4_4_4_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
     const PFMsimd_i scale4 = pfmSimdSet1_I32(15);    // To convert to 4 bits (2^4 - 1)
 
@@ -1912,13 +1900,11 @@ pfInternal_PixelSet_BGRA_UBYTE_4_4_4_4_simd(void* pixels, PFsizei offset, PFMsim
         a4
     );
 
-    PFushort* pixelPtr = (PFushort*)pixels;
-
 #   define WRITE_RGBA4444_PIXEL(index) \
     { \
         uint32_t rgbaValue = pfmSimdExtract_I32(rgba4444, index); \
         uint32_t maskValue = pfmSimdExtract_I32(mask, index); \
-        PFushort* targetPixel = pixelPtr + offset + index; \
+        PFushort* targetPixel = (PFushort*)pixels + offset + index; \
         uint16_t currentPixelValue = *targetPixel; \
         *targetPixel = (uint16_t)((currentPixelValue & ~maskValue) | (rgbaValue & maskValue)); \
     }
@@ -1976,13 +1962,88 @@ pfInternal_PixelSet_BGRA_HALF_simd(void* pixels, PFsizei offset, PFMsimd_i color
 static inline void
 pfInternal_PixelSet_RGBA_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
+    PFMsimd_f r = pfmSimdConvert_I32_F32(pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0xFF)));
+    PFMsimd_f g = pfmSimdConvert_I32_F32(pfmSimdAnd_I32(pfmSimdShr_I32(colors, 8), pfmSimdSet1_I32(0xFF)));
+    PFMsimd_f b = pfmSimdConvert_I32_F32(pfmSimdAnd_I32(pfmSimdShr_I32(colors, 16), pfmSimdSet1_I32(0xFF)));
+    PFMsimd_f a = pfmSimdConvert_I32_F32(pfmSimdAnd_I32(pfmSimdShr_I32(colors, 24), pfmSimdSet1_I32(0xFF)));
 
+    PFMsimd_f inv255 = pfmSimdSet1_F32(1.0f/255.0f);
+    r = pfmSimdMul_F32(r, inv255);
+    g = pfmSimdMul_F32(g, inv255);
+    b = pfmSimdMul_F32(b, inv255);
+    a = pfmSimdMul_F32(a, inv255);
+
+#   define WRITE_RGBA_FLOAT_PIXEL(index) \
+    { \
+        if (pfmSimdExtract_I32(mask, index) & 0xFFFFFFFF) { \
+            PFfloat* targetPixel = (PFfloat*)pixels + 4 * (offset + index); \
+            targetPixel[0] = pfmSimdExtract_F32(r, index); \
+            targetPixel[1] = pfmSimdExtract_F32(g, index); \
+            targetPixel[2] = pfmSimdExtract_F32(b, index); \
+            targetPixel[3] = pfmSimdExtract_F32(a, index); \
+        } \
+    }
+
+    WRITE_RGBA_FLOAT_PIXEL(0);
+    WRITE_RGBA_FLOAT_PIXEL(1);
+
+#ifdef __SSE2__
+    WRITE_RGBA_FLOAT_PIXEL(2);
+    WRITE_RGBA_FLOAT_PIXEL(3);
+#endif // __SSE2__
+
+#ifdef __AVX2__
+    WRITE_RGBA_FLOAT_PIXEL(4);
+    WRITE_RGBA_FLOAT_PIXEL(5);
+    WRITE_RGBA_FLOAT_PIXEL(6);
+    WRITE_RGBA_FLOAT_PIXEL(7);
+#endif // __AVX2__
+
+#undef WRITE_RGBA_FLOAT_PIXEL
 }
+
 
 static inline void
 pfInternal_PixelSet_BGRA_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
+    PFMsimd_f b = pfmSimdConvert_I32_F32(pfmSimdAnd_I32(pfmSimdShr_I32(colors, 16), pfmSimdSet1_I32(0xFF)));
+    PFMsimd_f g = pfmSimdConvert_I32_F32(pfmSimdAnd_I32(pfmSimdShr_I32(colors, 8), pfmSimdSet1_I32(0xFF)));
+    PFMsimd_f r = pfmSimdConvert_I32_F32(pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0xFF)));
+    PFMsimd_f a = pfmSimdConvert_I32_F32(pfmSimdAnd_I32(pfmSimdShr_I32(colors, 24), pfmSimdSet1_I32(0xFF)));
 
+    PFMsimd_f inv255 = pfmSimdSet1_F32(1.0f / 255.0f);
+    b = pfmSimdMul_F32(b, inv255);
+    g = pfmSimdMul_F32(g, inv255);
+    r = pfmSimdMul_F32(r, inv255);
+    a = pfmSimdMul_F32(a, inv255);
+
+#   define WRITE_RGBA_FLOAT_PIXEL(index) \
+    { \
+        if (pfmSimdExtract_I32(mask, index) & 0xFFFFFFFF) { \
+            PFfloat* targetPixel = (PFfloat*)pixels + 4 * (offset + index); \
+            targetPixel[0] = pfmSimdExtract_F32(b, index); \
+            targetPixel[1] = pfmSimdExtract_F32(g, index); \
+            targetPixel[2] = pfmSimdExtract_F32(r, index); \
+            targetPixel[3] = pfmSimdExtract_F32(a, index); \
+        } \
+    }
+
+    WRITE_RGBA_FLOAT_PIXEL(0);
+    WRITE_RGBA_FLOAT_PIXEL(1);
+
+#ifdef __SSE2__
+    WRITE_RGBA_FLOAT_PIXEL(2);
+    WRITE_RGBA_FLOAT_PIXEL(3);
+#endif // __SSE2__
+
+#ifdef __AVX2__
+    WRITE_RGBA_FLOAT_PIXEL(4);
+    WRITE_RGBA_FLOAT_PIXEL(5);
+    WRITE_RGBA_FLOAT_PIXEL(6);
+    WRITE_RGBA_FLOAT_PIXEL(7);
+#endif // __AVX2__
+
+#undef WRITE_RGBA_FLOAT_PIXEL
 }
 
 
@@ -2224,7 +2285,7 @@ pfInternal_PixelGet_ALPHA_FLOAT_simd(const void* pixels, PFMsimd_i offsets)
 /* GET RGB/BGR */
 
 static inline PFMsimd_i
-pfInternal_PixelGet_RGB_UBYTE_5_6_5_simd(const void* pixels, PFMsimd_i offsets)
+pfInternal_PixelGet_RGB_USHORT_5_6_5_simd(const void* pixels, PFMsimd_i offsets)
 {
     PFMsimd_i rgb565 = pfmSimdGather_I32(pixels, offsets, sizeof(PFushort));
 
@@ -2255,7 +2316,7 @@ pfInternal_PixelGet_RGB_UBYTE_5_6_5_simd(const void* pixels, PFMsimd_i offsets)
 }
 
 static inline PFMsimd_i
-pfInternal_PixelGet_BGR_UBYTE_5_6_5_simd(const void* pixels, PFMsimd_i offsets)
+pfInternal_PixelGet_BGR_USHORT_5_6_5_simd(const void* pixels, PFMsimd_i offsets)
 {
     PFMsimd_i bgr565 = pfmSimdGather_I32(pixels, offsets, sizeof(PFushort));
 
@@ -2390,7 +2451,7 @@ pfInternal_PixelGet_BGR_FLOAT_simd(const void* pixels, PFMsimd_i offsets)
 /* GET RGBA/BGRA */
 
 static inline PFMsimd_i
-pfInternal_PixelGet_RGBA_UBYTE_5_5_5_1_simd(const void* pixels, PFMsimd_i offsets)
+pfInternal_PixelGet_RGBA_USHORT_5_5_5_1_simd(const void* pixels, PFMsimd_i offsets)
 {
     PFMsimd_i gathered = pfmSimdGather_I32(pixels, offsets, sizeof(PFushort));
 
@@ -2414,7 +2475,7 @@ pfInternal_PixelGet_RGBA_UBYTE_5_5_5_1_simd(const void* pixels, PFMsimd_i offset
 }
 
 static inline PFMsimd_i
-pfInternal_PixelGet_BGRA_UBYTE_5_5_5_1_simd(const void* pixels, PFMsimd_i offsets)
+pfInternal_PixelGet_BGRA_USHORT_5_5_5_1_simd(const void* pixels, PFMsimd_i offsets)
 {
     PFMsimd_i gathered = pfmSimdGather_I32(pixels, offsets, sizeof(PFushort));
 
@@ -2438,7 +2499,7 @@ pfInternal_PixelGet_BGRA_UBYTE_5_5_5_1_simd(const void* pixels, PFMsimd_i offset
 }
 
 static inline PFMsimd_i
-pfInternal_PixelGet_RGBA_UBYTE_4_4_4_4_simd(const void* pixels, PFMsimd_i offsets)
+pfInternal_PixelGet_RGBA_USHORT_4_4_4_4_simd(const void* pixels, PFMsimd_i offsets)
 {
     PFMsimd_i gathered = pfmSimdGather_I32(pixels, offsets, sizeof(PFushort));
 
@@ -2462,7 +2523,7 @@ pfInternal_PixelGet_RGBA_UBYTE_4_4_4_4_simd(const void* pixels, PFMsimd_i offset
 }
 
 static inline PFMsimd_i
-pfInternal_PixelGet_BGRA_UBYTE_4_4_4_4_simd(const void* pixels, PFMsimd_i offsets)
+pfInternal_PixelGet_BGRA_USHORT_4_4_4_4_simd(const void* pixels, PFMsimd_i offsets)
 {
     PFMsimd_i gathered = pfmSimdGather_I32(pixels, offsets, sizeof(PFushort));
 
@@ -2517,17 +2578,61 @@ pfInternal_PixelGet_BGRA_HALF_simd(const void* pixels, PFMsimd_i offsets)
 static inline PFMsimd_i
 pfInternal_PixelGet_RGBA_FLOAT_simd(const void* pixels, PFMsimd_i offsets)
 {
-    PFMsimd_i result = { 0 };
+    const PFMsimd_i scaledOffset = pfmSimdMullo_I32(
+        offsets, pfmSimdSet1_I32(4));
 
-    return result;
+    PFMsimd_i r = pfmSimdGather_I32(pixels, scaledOffset, sizeof(PFfloat));
+    PFMsimd_i g = pfmSimdGather_I32(pixels, pfmSimdAdd_I32(scaledOffset, pfmSimdSet1_I32(1)), sizeof(PFfloat));
+    PFMsimd_i b = pfmSimdGather_I32(pixels, pfmSimdAdd_I32(scaledOffset, pfmSimdSet1_I32(2)), sizeof(PFfloat));
+    PFMsimd_i a = pfmSimdGather_I32(pixels, pfmSimdAdd_I32(scaledOffset, pfmSimdSet1_I32(3)), sizeof(PFfloat));
+
+    r = pfmSimdConvert_F32_I32(pfmSimdMul_F32(pfmSimdCast_I32_F32(r), pfmSimdSet1_F32(255.0f)));
+    g = pfmSimdConvert_F32_I32(pfmSimdMul_F32(pfmSimdCast_I32_F32(g), pfmSimdSet1_F32(255.0f)));
+    b = pfmSimdConvert_F32_I32(pfmSimdMul_F32(pfmSimdCast_I32_F32(b), pfmSimdSet1_F32(255.0f)));
+    a = pfmSimdConvert_F32_I32(pfmSimdMul_F32(pfmSimdCast_I32_F32(a), pfmSimdSet1_F32(255.0f)));
+
+    PFMsimd_i rgba = pfmSimdOr_I32(
+        pfmSimdOr_I32(
+            pfmSimdShl_I32(a, 24),
+            pfmSimdShl_I32(b, 16)
+        ),
+        pfmSimdOr_I32(
+            pfmSimdShl_I32(g, 8),
+            r
+        )
+    );
+
+    return rgba;
 }
 
 static inline PFMsimd_i
 pfInternal_PixelGet_BGRA_FLOAT_simd(const void* pixels, PFMsimd_i offsets)
 {
-    PFMsimd_i result = { 0 };
+    const PFMsimd_i scaledOffset = pfmSimdMullo_I32(
+        offsets, pfmSimdSet1_I32(4));
 
-    return result;
+    PFMsimd_i b = pfmSimdGather_I32(pixels, scaledOffset, sizeof(PFfloat));
+    PFMsimd_i g = pfmSimdGather_I32(pixels, pfmSimdAdd_I32(scaledOffset, pfmSimdSet1_I32(1)), sizeof(PFfloat));
+    PFMsimd_i r = pfmSimdGather_I32(pixels, pfmSimdAdd_I32(scaledOffset, pfmSimdSet1_I32(2)), sizeof(PFfloat));
+    PFMsimd_i a = pfmSimdGather_I32(pixels, pfmSimdAdd_I32(scaledOffset, pfmSimdSet1_I32(3)), sizeof(PFfloat));
+
+    r = pfmSimdConvert_F32_I32(pfmSimdMul_F32(pfmSimdCast_I32_F32(r), pfmSimdSet1_F32(255.0f)));
+    g = pfmSimdConvert_F32_I32(pfmSimdMul_F32(pfmSimdCast_I32_F32(g), pfmSimdSet1_F32(255.0f)));
+    b = pfmSimdConvert_F32_I32(pfmSimdMul_F32(pfmSimdCast_I32_F32(b), pfmSimdSet1_F32(255.0f)));
+    a = pfmSimdConvert_F32_I32(pfmSimdMul_F32(pfmSimdCast_I32_F32(a), pfmSimdSet1_F32(255.0f)));
+
+    PFMsimd_i bgra = pfmSimdOr_I32(
+        pfmSimdOr_I32(
+            pfmSimdShl_I32(a, 24),
+            pfmSimdShl_I32(r, 16)
+        ),
+        pfmSimdOr_I32(
+            pfmSimdShl_I32(g, 8),
+            b
+        )
+    );
+
+    return bgra;
 }
 
 /* Internal helper functions */
@@ -2563,24 +2668,24 @@ pfInternal_GetPixelGetterSetter_simd(PFpixelgetter_simd* getter, PFpixelsetter_s
         ENTRY(PF_LUMINANCE_ALPHA, PF_FLOAT, pfInternal_PixelGet_Luminance_Alpha_FLOAT_simd),
 
         ENTRY(PF_RGB, PF_UNSIGNED_BYTE, pfInternal_PixelGet_RGB_UBYTE_simd),
-        ENTRY(PF_RGB, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelGet_RGB_UBYTE_5_6_5_simd),
+        ENTRY(PF_RGB, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelGet_RGB_USHORT_5_6_5_simd),
         ENTRY(PF_RGB, PF_HALF_FLOAT, pfInternal_PixelGet_RGB_HALF_simd),
         ENTRY(PF_RGB, PF_FLOAT, pfInternal_PixelGet_RGB_FLOAT_simd),
 
         ENTRY(PF_RGBA, PF_UNSIGNED_BYTE, pfInternal_PixelGet_RGBA_UBYTE_simd),
-        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelGet_RGBA_UBYTE_5_5_5_1_simd),
-        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelGet_RGBA_UBYTE_4_4_4_4_simd),
+        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelGet_RGBA_USHORT_5_5_5_1_simd),
+        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelGet_RGBA_USHORT_4_4_4_4_simd),
         ENTRY(PF_RGBA, PF_HALF_FLOAT, pfInternal_PixelGet_RGBA_HALF_simd),
         ENTRY(PF_RGBA, PF_FLOAT, pfInternal_PixelGet_RGBA_FLOAT_simd),
 
         ENTRY(PF_BGR, PF_UNSIGNED_BYTE, pfInternal_PixelGet_BGR_UBYTE_simd),
-        ENTRY(PF_BGR, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelGet_BGR_UBYTE_5_6_5_simd),
+        ENTRY(PF_BGR, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelGet_BGR_USHORT_5_6_5_simd),
         ENTRY(PF_BGR, PF_HALF_FLOAT, pfInternal_PixelGet_BGR_HALF_simd),
         ENTRY(PF_BGR, PF_FLOAT, pfInternal_PixelGet_BGR_FLOAT_simd),
 
         ENTRY(PF_BGRA, PF_UNSIGNED_BYTE, pfInternal_PixelGet_BGRA_UBYTE_simd),
-        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelGet_BGRA_UBYTE_5_5_5_1_simd),
-        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelGet_BGRA_UBYTE_4_4_4_4_simd),
+        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelGet_BGRA_USHORT_5_5_5_1_simd),
+        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelGet_BGRA_USHORT_4_4_4_4_simd),
         ENTRY(PF_BGRA, PF_HALF_FLOAT, pfInternal_PixelGet_BGRA_HALF_simd),
         ENTRY(PF_BGRA, PF_FLOAT, pfInternal_PixelGet_BGRA_FLOAT_simd),
     };
@@ -2611,24 +2716,24 @@ pfInternal_GetPixelGetterSetter_simd(PFpixelgetter_simd* getter, PFpixelsetter_s
         ENTRY(PF_LUMINANCE_ALPHA, PF_FLOAT, pfInternal_PixelSet_Luminance_Alpha_FLOAT_simd),
 
         ENTRY(PF_RGB, PF_UNSIGNED_BYTE, pfInternal_PixelSet_RGB_UBYTE_simd),
-        ENTRY(PF_RGB, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelSet_RGB_UBYTE_5_6_5_simd),
+        ENTRY(PF_RGB, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelSet_RGB_USHORT_5_6_5_simd),
         ENTRY(PF_RGB, PF_HALF_FLOAT, pfInternal_PixelSet_RGB_HALF_simd),
         ENTRY(PF_RGB, PF_FLOAT, pfInternal_PixelSet_RGB_FLOAT_simd),
 
         ENTRY(PF_RGBA, PF_UNSIGNED_BYTE, pfInternal_PixelSet_RGBA_UBYTE_simd),
-        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelSet_RGBA_UBYTE_5_5_5_1_simd),
-        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelSet_RGBA_UBYTE_4_4_4_4_simd),
+        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelSet_RGBA_USHORT_5_5_5_1_simd),
+        ENTRY(PF_RGBA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelSet_RGBA_USHORT_4_4_4_4_simd),
         ENTRY(PF_RGBA, PF_HALF_FLOAT, pfInternal_PixelSet_RGBA_HALF_simd),
         ENTRY(PF_RGBA, PF_FLOAT, pfInternal_PixelSet_RGBA_FLOAT_simd),
 
         ENTRY(PF_BGR, PF_UNSIGNED_BYTE, pfInternal_PixelSet_BGR_UBYTE_simd),
-        ENTRY(PF_BGR, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelSet_BGR_UBYTE_5_6_5_simd),
+        ENTRY(PF_BGR, PF_UNSIGNED_SHORT_5_6_5, pfInternal_PixelSet_BGR_USHORT_5_6_5_simd),
         ENTRY(PF_BGR, PF_HALF_FLOAT, pfInternal_PixelSet_BGR_HALF_simd),
         ENTRY(PF_BGR, PF_FLOAT, pfInternal_PixelSet_BGR_FLOAT_simd),
 
         ENTRY(PF_BGRA, PF_UNSIGNED_BYTE, pfInternal_PixelSet_BGRA_UBYTE_simd),
-        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelSet_BGRA_UBYTE_5_5_5_1_simd),
-        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelSet_BGRA_UBYTE_4_4_4_4_simd),
+        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_5_5_5_1, pfInternal_PixelSet_BGRA_USHORT_5_5_5_1_simd),
+        ENTRY(PF_BGRA, PF_UNSIGNED_SHORT_4_4_4_4, pfInternal_PixelSet_BGRA_USHORT_4_4_4_4_simd),
         ENTRY(PF_BGRA, PF_HALF_FLOAT, pfInternal_PixelSet_BGRA_HALF_simd),
         ENTRY(PF_BGRA, PF_FLOAT, pfInternal_PixelSet_BGRA_FLOAT_simd),
     };
