@@ -953,14 +953,14 @@ pfInternal_PixelSet_Luminance_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i
 #ifdef __SSE2__
     WRITE_LUMINANCE_PIXEL(2);
     WRITE_LUMINANCE_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_LUMINANCE_PIXEL(4);
     WRITE_LUMINANCE_PIXEL(5);
     WRITE_LUMINANCE_PIXEL(6);
     WRITE_LUMINANCE_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_LUMINANCE_PIXEL
 }
@@ -987,14 +987,14 @@ pfInternal_PixelSet_Luminance_HALF_simd(void* pixels, PFsizei offset, PFMsimd_i 
 #ifdef __SSE2__
     WRITE_LUMINANCE_PIXEL(2);
     WRITE_LUMINANCE_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_LUMINANCE_PIXEL(4);
     WRITE_LUMINANCE_PIXEL(5);
     WRITE_LUMINANCE_PIXEL(6);
     WRITE_LUMINANCE_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_LUMINANCE_PIXEL
 }
@@ -1021,14 +1021,14 @@ pfInternal_PixelSet_Luminance_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i
 #ifdef __SSE2__
     WRITE_LUMINANCE_PIXEL(2);
     WRITE_LUMINANCE_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_LUMINANCE_PIXEL(4);
     WRITE_LUMINANCE_PIXEL(5);
     WRITE_LUMINANCE_PIXEL(6);
     WRITE_LUMINANCE_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_LUMINANCE_PIXEL
 }
@@ -1061,14 +1061,14 @@ pfInternal_PixelSet_Luminance_Alpha_UBYTE_simd(void* pixels, PFsizei offset, PFM
 #ifdef __SSE2__
     WRITE_LUMINANCE_ALPHA_PIXEL(2);
     WRITE_LUMINANCE_ALPHA_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_LUMINANCE_ALPHA_PIXEL(4);
     WRITE_LUMINANCE_ALPHA_PIXEL(5);
     WRITE_LUMINANCE_ALPHA_PIXEL(6);
     WRITE_LUMINANCE_ALPHA_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_LUMINANCE_ALPHA_PIXEL
 }
@@ -1107,14 +1107,14 @@ pfInternal_PixelSet_RED_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i color
 #ifdef __SSE2__
     WRITE_RED_PIXEL(2);
     WRITE_RED_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_RED_PIXEL(4);
     WRITE_RED_PIXEL(5);
     WRITE_RED_PIXEL(6);
     WRITE_RED_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_RED_PIXEL
 }
@@ -1139,14 +1139,14 @@ pfInternal_PixelSet_GREEN_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i col
 #ifdef __SSE2__
     WRITE_GREEN_PIXEL(2);
     WRITE_GREEN_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_GREEN_PIXEL(4);
     WRITE_GREEN_PIXEL(5);
     WRITE_GREEN_PIXEL(6);
     WRITE_GREEN_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_GREEN_PIXEL
 }
@@ -1171,14 +1171,14 @@ pfInternal_PixelSet_BLUE_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i colo
 #ifdef __SSE2__
     WRITE_BLUE_PIXEL(2);
     WRITE_BLUE_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_BLUE_PIXEL(4);
     WRITE_BLUE_PIXEL(5);
     WRITE_BLUE_PIXEL(6);
     WRITE_BLUE_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_BLUE_PIXEL
 }
@@ -1203,14 +1203,14 @@ pfInternal_PixelSet_ALPHA_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i col
 #ifdef __SSE2__
     WRITE_ALPHA_PIXEL(2);
     WRITE_ALPHA_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_ALPHA_PIXEL(4);
     WRITE_ALPHA_PIXEL(5);
     WRITE_ALPHA_PIXEL(6);
     WRITE_ALPHA_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_ALPHA_PIXEL
 }
@@ -1236,14 +1236,14 @@ pfInternal_PixelSet_RED_HALF_simd(void* pixels, PFsizei offset, PFMsimd_i colors
 #ifdef __SSE2__
     WRITE_RED_PIXEL(2);
     WRITE_RED_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_RED_PIXEL(4);
     WRITE_RED_PIXEL(5);
     WRITE_RED_PIXEL(6);
     WRITE_RED_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_RED_PIXEL
 }
@@ -1270,14 +1270,14 @@ pfInternal_PixelSet_GREEN_HALF_simd(void* pixels, PFsizei offset, PFMsimd_i colo
 #ifdef __SSE2__
     WRITE_GREEN_PIXEL(2);
     WRITE_GREEN_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_GREEN_PIXEL(4);
     WRITE_GREEN_PIXEL(5);
     WRITE_GREEN_PIXEL(6);
     WRITE_GREEN_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_GREEN_PIXEL
 }
@@ -1304,14 +1304,14 @@ pfInternal_PixelSet_BLUE_HALF_simd(void* pixels, PFsizei offset, PFMsimd_i color
 #ifdef __SSE2__
     WRITE_BLUE_PIXEL(2);
     WRITE_BLUE_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_BLUE_PIXEL(4);
     WRITE_BLUE_PIXEL(5);
     WRITE_BLUE_PIXEL(6);
     WRITE_BLUE_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_BLUE_PIXEL
 }
@@ -1338,14 +1338,14 @@ pfInternal_PixelSet_ALPHA_HALF_simd(void* pixels, PFsizei offset, PFMsimd_i colo
 #ifdef __SSE2__
     WRITE_ALPHA_PIXEL(2);
     WRITE_ALPHA_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_ALPHA_PIXEL(4);
     WRITE_ALPHA_PIXEL(5);
     WRITE_ALPHA_PIXEL(6);
     WRITE_ALPHA_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_ALPHA_PIXEL
 }
@@ -1371,14 +1371,14 @@ pfInternal_PixelSet_RED_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i color
 #ifdef __SSE2__
     WRITE_RED_PIXEL(2);
     WRITE_RED_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_RED_PIXEL(4);
     WRITE_RED_PIXEL(5);
     WRITE_RED_PIXEL(6);
     WRITE_RED_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_RED_PIXEL
 }
@@ -1405,14 +1405,14 @@ pfInternal_PixelSet_GREEN_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i col
 #ifdef __SSE2__
     WRITE_GREEN_PIXEL(2);
     WRITE_GREEN_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_GREEN_PIXEL(4);
     WRITE_GREEN_PIXEL(5);
     WRITE_GREEN_PIXEL(6);
     WRITE_GREEN_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_GREEN_PIXEL
 }
@@ -1439,14 +1439,14 @@ pfInternal_PixelSet_BLUE_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i colo
 #ifdef __SSE2__
     WRITE_BLUE_PIXEL(2);
     WRITE_BLUE_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_BLUE_PIXEL(4);
     WRITE_BLUE_PIXEL(5);
     WRITE_BLUE_PIXEL(6);
     WRITE_BLUE_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_BLUE_PIXEL
 }
@@ -1473,14 +1473,14 @@ pfInternal_PixelSet_ALPHA_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i col
 #ifdef __SSE2__
     WRITE_ALPHA_PIXEL(2);
     WRITE_ALPHA_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_ALPHA_PIXEL(4);
     WRITE_ALPHA_PIXEL(5);
     WRITE_ALPHA_PIXEL(6);
     WRITE_ALPHA_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_ALPHA_PIXEL
 }
@@ -1491,13 +1491,103 @@ pfInternal_PixelSet_ALPHA_FLOAT_simd(void* pixels, PFsizei offset, PFMsimd_i col
 static inline void
 pfInternal_PixelSet_RGB_UBYTE_5_6_5_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
+    const PFMsimd_i scale5 = pfmSimdSet1_I32(31);       // To convert to 5 bits (2^5 - 1)
+    const PFMsimd_i scale6 = pfmSimdSet1_I32(63);       // To convert to 6 bits (2^6 - 1)
 
+    PFMsimd_i r = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0xFF));
+    PFMsimd_i g = pfmSimdAnd_I32(pfmSimdShr_I32(colors, 8), pfmSimdSet1_I32(0xFF));
+    PFMsimd_i b = pfmSimdAnd_I32(pfmSimdShr_I32(colors, 16), pfmSimdSet1_I32(0xFF));
+
+    PFMsimd_i r5 = pfmSimdShr_I32(pfmSimdMullo_I32(r, scale5), 8);
+    PFMsimd_i g6 = pfmSimdShr_I32(pfmSimdMullo_I32(g, scale6), 8);
+    PFMsimd_i b5 = pfmSimdShr_I32(pfmSimdMullo_I32(b, scale5), 8);
+
+    PFMsimd_i rgb565 = pfmSimdOr_I32(
+        pfmSimdOr_I32(
+            pfmSimdShl_I32(r5, 11),
+            pfmSimdShl_I32(g6, 5)
+        ),
+        b5
+    );
+
+    PFushort* pixelPtr = (PFushort*)pixels;
+
+#   define WRITE_RGB565_PIXEL(index) \
+    { \
+        uint32_t rgbValue = pfmSimdExtract_I32(rgb565, index); \
+        uint32_t maskValue = pfmSimdExtract_I32(mask, index); \
+        PFushort* targetPixel = pixelPtr + offset + index; \
+        uint16_t currentPixelValue = *targetPixel; \
+        *targetPixel = (uint16_t)((currentPixelValue & ~maskValue) | (rgbValue & maskValue)); \
+    }
+
+    WRITE_RGB565_PIXEL(0);
+    WRITE_RGB565_PIXEL(1);
+
+#ifdef __SSE2__
+    WRITE_RGB565_PIXEL(2);
+    WRITE_RGB565_PIXEL(3);
+#endif //__SSE2__
+
+#ifdef __AVX2__
+    WRITE_RGB565_PIXEL(4);
+    WRITE_RGB565_PIXEL(5);
+    WRITE_RGB565_PIXEL(6);
+    WRITE_RGB565_PIXEL(7);
+#endif //__AVX2__
+
+#undef WRITE_RGB565_PIXEL
 }
 
 static inline void
 pfInternal_PixelSet_BGR_UBYTE_5_6_5_simd(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask)
 {
+    const PFMsimd_i scale5 = pfmSimdSet1_I32(31);       // To convert to 5 bits (2^5 - 1)
+    const PFMsimd_i scale6 = pfmSimdSet1_I32(63);       // To convert to 6 bits (2^6 - 1)
 
+    PFMsimd_i b = pfmSimdAnd_I32(pfmSimdShr_I32(colors, 16), pfmSimdSet1_I32(0xFF));
+    PFMsimd_i g = pfmSimdAnd_I32(pfmSimdShr_I32(colors, 8), pfmSimdSet1_I32(0xFF));
+    PFMsimd_i r = pfmSimdAnd_I32(colors, pfmSimdSet1_I32(0xFF));
+
+    PFMsimd_i b5 = pfmSimdShr_I32(pfmSimdMullo_I32(b, scale5), 8);
+    PFMsimd_i g6 = pfmSimdShr_I32(pfmSimdMullo_I32(g, scale6), 8);
+    PFMsimd_i r5 = pfmSimdShr_I32(pfmSimdMullo_I32(r, scale5), 8);
+
+    PFMsimd_i rgb565 = pfmSimdOr_I32(
+        pfmSimdOr_I32(
+            pfmSimdShl_I32(b5, 11),
+            pfmSimdShl_I32(g6, 5)
+        ),
+        r5
+    );
+
+    PFushort* pixelPtr = (PFushort*)pixels;
+
+#   define WRITE_RGB565_PIXEL(index) \
+    { \
+        uint32_t rgbValue = pfmSimdExtract_I32(rgb565, index); \
+        uint32_t maskValue = pfmSimdExtract_I32(mask, index); \
+        PFushort* targetPixel = pixelPtr + offset + index; \
+        uint16_t currentPixelValue = *targetPixel; \
+        *targetPixel = (uint16_t)((currentPixelValue & ~maskValue) | (rgbValue & maskValue)); \
+    }
+
+    WRITE_RGB565_PIXEL(0);
+    WRITE_RGB565_PIXEL(1);
+
+#ifdef __SSE2__
+    WRITE_RGB565_PIXEL(2);
+    WRITE_RGB565_PIXEL(3);
+#endif //__SSE2__
+
+#ifdef __AVX2__
+    WRITE_RGB565_PIXEL(4);
+    WRITE_RGB565_PIXEL(5);
+    WRITE_RGB565_PIXEL(6);
+    WRITE_RGB565_PIXEL(7);
+#endif //__AVX2__
+
+#undef WRITE_RGB565_PIXEL
 }
 
 static inline void
@@ -1542,14 +1632,14 @@ pfInternal_PixelSet_RGB_UBYTE_simd(void* pixels, PFsizei offset, PFMsimd_i color
 #ifdef __SSE2__
     WRITE_RGB_PIXEL(2);
     WRITE_RGB_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_RGB_PIXEL(4);
     WRITE_RGB_PIXEL(5);
     WRITE_RGB_PIXEL(6);
     WRITE_RGB_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_RGB_PIXEL
 }
@@ -1676,14 +1766,14 @@ pfInternal_PixelSet_RGBA_UBYTE_5_5_5_1_simd(void* pixels, PFsizei offset, PFMsim
 #ifdef __SSE2__
     WRITE_RGBA5551_PIXEL(2);
     WRITE_RGBA5551_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_RGBA5551_PIXEL(4);
     WRITE_RGBA5551_PIXEL(5);
     WRITE_RGBA5551_PIXEL(6);
     WRITE_RGBA5551_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_RGBA5551_PIXEL
 }
@@ -1729,14 +1819,14 @@ pfInternal_PixelSet_BGRA_UBYTE_5_5_5_1_simd(void* pixels, PFsizei offset, PFMsim
 #ifdef __SSE2__
     WRITE_RGBA5551_PIXEL(2);
     WRITE_RGBA5551_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_RGBA5551_PIXEL(4);
     WRITE_RGBA5551_PIXEL(5);
     WRITE_RGBA5551_PIXEL(6);
     WRITE_RGBA5551_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_RGBA5551_PIXEL
 }
@@ -1784,14 +1874,14 @@ pfInternal_PixelSet_RGBA_UBYTE_4_4_4_4_simd(void* pixels, PFsizei offset, PFMsim
 #ifdef __SSE2__
     WRITE_RGBA4444_PIXEL(2);
     WRITE_RGBA4444_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_RGBA4444_PIXEL(4);
     WRITE_RGBA4444_PIXEL(5);
     WRITE_RGBA4444_PIXEL(6);
     WRITE_RGBA4444_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_RGBA4444_PIXEL
 }
@@ -1839,14 +1929,14 @@ pfInternal_PixelSet_BGRA_UBYTE_4_4_4_4_simd(void* pixels, PFsizei offset, PFMsim
 #ifdef __SSE2__
     WRITE_RGBA4444_PIXEL(2);
     WRITE_RGBA4444_PIXEL(3);
-#endif // __SSE2__
+#endif //__SSE2__
 
 #ifdef __AVX2__
     WRITE_RGBA4444_PIXEL(4);
     WRITE_RGBA4444_PIXEL(5);
     WRITE_RGBA4444_PIXEL(6);
     WRITE_RGBA4444_PIXEL(7);
-#endif // __AVX2__
+#endif //__AVX2__
 
 #undef WRITE_RGBA4444_PIXEL
 }
@@ -2136,17 +2226,63 @@ pfInternal_PixelGet_ALPHA_FLOAT_simd(const void* pixels, PFMsimd_i offsets)
 static inline PFMsimd_i
 pfInternal_PixelGet_RGB_UBYTE_5_6_5_simd(const void* pixels, PFMsimd_i offsets)
 {
-    PFMsimd_i result = { 0 };
+    PFMsimd_i rgb565 = pfmSimdGather_I32(pixels, offsets, sizeof(PFushort));
 
-    return result;
+    const PFMsimd_i maskR = pfmSimdSet1_I32(0xF800);
+    const PFMsimd_i maskG = pfmSimdSet1_I32(0x07E0);
+    const PFMsimd_i maskB = pfmSimdSet1_I32(0x001F);
+
+    PFMsimd_i r = pfmSimdAnd_I32(rgb565, maskR);
+    r = pfmSimdShr_I32(r, 11);
+    r = pfmSimdShl_I32(r, 3);
+
+    PFMsimd_i g = pfmSimdAnd_I32(rgb565, maskG);
+    g = pfmSimdShr_I32(g, 5);
+    g = pfmSimdShl_I32(g, 2);
+
+    PFMsimd_i b = pfmSimdAnd_I32(rgb565, maskB);
+    b = pfmSimdShl_I32(b, 3);
+
+    PFMsimd_i a = pfmSimdSet1_I32(0xFF000000);
+
+    PFMsimd_i rgba = pfmSimdOr_I32(
+        pfmSimdOr_I32(
+            pfmSimdOr_I32(pfmSimdShl_I32(r, 16), pfmSimdShl_I32(g, 8)),
+            b),
+        a);
+
+    return rgba;
 }
 
 static inline PFMsimd_i
 pfInternal_PixelGet_BGR_UBYTE_5_6_5_simd(const void* pixels, PFMsimd_i offsets)
 {
-    PFMsimd_i result = { 0 };
+    PFMsimd_i bgr565 = pfmSimdGather_I32(pixels, offsets, sizeof(PFushort));
 
-    return result;
+    const PFMsimd_i maskB = pfmSimdSet1_I32(0xF800);
+    const PFMsimd_i maskG = pfmSimdSet1_I32(0x07E0);
+    const PFMsimd_i maskR = pfmSimdSet1_I32(0x001F);
+
+    PFMsimd_i b = pfmSimdAnd_I32(bgr565, maskB);
+    b = pfmSimdShl_I32(b, 8 - 11);
+
+    PFMsimd_i g = pfmSimdAnd_I32(bgr565, maskG);
+    g = pfmSimdShl_I32(g, 8 - 5);
+    g = pfmSimdShr_I32(g, 5);
+
+    PFMsimd_i r = pfmSimdAnd_I32(bgr565, maskR);
+    r = pfmSimdShl_I32(r, 8 - 0);
+    r = pfmSimdShr_I32(r, 11);
+
+    PFMsimd_i a = pfmSimdSet1_I32(0xFF000000);
+
+    PFMsimd_i rgba = pfmSimdOr_I32(
+        pfmSimdOr_I32(
+            pfmSimdOr_I32(b, pfmSimdShl_I32(g, 8)),
+            pfmSimdShl_I32(r, 16)),
+        a);
+
+    return rgba;
 }
 
 static inline PFMsimd_i

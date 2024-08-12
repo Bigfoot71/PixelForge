@@ -3458,6 +3458,36 @@ pfmSimdAnd_F32(PFMsimd_f x, PFMsimd_f y)
 }
 
 PFM_API PFMsimd_i
+pfmSimdAndNot_I32(PFMsimd_i x, PFMsimd_i y)
+{
+#if defined(__AVX2__)
+    return _mm256_andnot_si256(x, y);
+#elif defined(__SSE2__)
+    return _mm_andnot_si128(x, y);
+#else
+    PFMsimd_i result;
+    ((int32_t*)&result)[0] = ((int32_t*)&x)[0] & ((int32_t*)&y)[0];
+    ((int32_t*)&result)[1] = ((int32_t*)&x)[1] & ((int32_t*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_f
+pfmSimdAndNot_F32(PFMsimd_f x, PFMsimd_f y)
+{
+#if defined(__AVX2__)
+    return _mm256_andnot_ps(x, y);
+#elif defined(__SSE2__)
+    return _mm_andnot_ps(x, y);
+#else
+    PFMsimd_f result;
+    ((int32_t*)&result)[0] = ((int32_t*)&x)[0] & ((int32_t*)&y)[0];
+    ((int32_t*)&result)[1] = ((int32_t*)&x)[1] & ((int32_t*)&y)[1];
+    return result;
+#endif
+}
+
+PFM_API PFMsimd_i
 pfmSimdOr_I32(PFMsimd_i x, PFMsimd_i y)
 {
 #if defined(__AVX2__)
