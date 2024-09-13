@@ -68,10 +68,10 @@ pfiColorBaryFlat(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFf
 
 #if PF_SIMD_SUPPORT
 
-typedef PFsimdvi PFsimd_color[4];
+typedef PFsimdvi PFcolor_simd[4];
 
 static inline void
-pfiColorLoadUnpacked_simd(PFsimd_color dst, PFcolor src)
+pfiColorLoadUnpacked_simd(PFcolor_simd dst, PFcolor src)
 {
     for (int_fast8_t i = 0; i < 4; ++i) {
         dst[i] = pfiSimdSet1_I32(((PFubyte*)&src)[i]);
@@ -79,7 +79,7 @@ pfiColorLoadUnpacked_simd(PFsimd_color dst, PFcolor src)
 }
 
 static inline void
-pfiColorUnpack_simd(PFsimd_color out, const PFsimdvi packed)
+pfiColorUnpack_simd(PFcolor_simd out, const PFsimdvi packed)
 {
     out[0] = pfiSimdAnd_I32(packed, *(PFsimdvi*)GC_simd_i32_255);
     out[1] = pfiSimdAnd_I32(pfiSimdShr_I32(packed, 8), *(PFsimdvi*)GC_simd_i32_255);
@@ -88,7 +88,7 @@ pfiColorUnpack_simd(PFsimd_color out, const PFsimdvi packed)
 }
 
 static inline PFsimdvi
-pfiColorPack_simd(const PFsimd_color unpacked)
+pfiColorPack_simd(const PFcolor_simd unpacked)
 {
     // Combine into a single vector PFsimdvi
     return pfiSimdOr_I32(
@@ -101,7 +101,7 @@ pfiColorPack_simd(const PFsimd_color unpacked)
 }
 
 static inline void
-pfiColorLerpSmooth_simd(PFsimd_color out, const PFsimd_color a, const PFsimd_color b, PFsimdvf t)
+pfiColorLerpSmooth_simd(PFcolor_simd out, const PFcolor_simd a, const PFcolor_simd b, PFsimdvf t)
 {
     PFsimdvi uT = pfiSimdConvert_F32_I32(pfiSimdMul_F32(t, *(PFsimdvf*)GC_simd_f32_255));
     out[0] = pfiSimdAdd_I32(a[0], pfiSimdShr_I32(pfiSimdMullo_I32(uT, pfiSimdSub_I32(b[0], a[0])), 8));
@@ -111,7 +111,7 @@ pfiColorLerpSmooth_simd(PFsimd_color out, const PFsimd_color a, const PFsimd_col
 }
 
 static inline void
-pfiColorLerpFlat_simd(PFsimd_color out, const PFsimd_color a, const PFsimd_color b, PFsimdvf t)
+pfiColorLerpFlat_simd(PFcolor_simd out, const PFcolor_simd a, const PFcolor_simd b, PFsimdvf t)
 {
     PFsimdvi mask = pfiSimdCast_F32_I32(
         pfiSimdCmpLT_F32(t, *(PFsimdvf*)GC_simd_f32_0p5));
@@ -123,10 +123,10 @@ pfiColorLerpFlat_simd(PFsimd_color out, const PFsimd_color a, const PFsimd_color
 }
 
 static inline void
-pfiColorBarySmooth_simd(PFsimd_color out,
-                                const PFsimd_color c1,
-                                const PFsimd_color c2,
-                                const PFsimd_color c3,
+pfiColorBarySmooth_simd(PFcolor_simd out,
+                                const PFcolor_simd c1,
+                                const PFcolor_simd c2,
+                                const PFcolor_simd c3,
                                 PFsimdvf w1,
                                 PFsimdvf w2,
                                 PFsimdvf w3)
@@ -150,10 +150,10 @@ pfiColorBarySmooth_simd(PFsimd_color out,
 }
 
 static inline void
-pfiColorBaryFlat_simd(PFsimd_color out,
-                             const PFsimd_color c1,
-                             const PFsimd_color c2,
-                             const PFsimd_color c3,
+pfiColorBaryFlat_simd(PFcolor_simd out,
+                             const PFcolor_simd c1,
+                             const PFcolor_simd c2,
+                             const PFcolor_simd c3,
                              PFsimdvf w1,
                              PFsimdvf w2,
                              PFsimdvf w3)
@@ -191,7 +191,7 @@ pfiColorSisdToVec_simd(PFsimdvf* out, PFcolor in, int vecSize)
 }
 
 static inline void
-pfiColorUnpackedToVec_simd(PFsimdvf* out, PFsimd_color in, int vecSize)
+pfiColorUnpackedToVec_simd(PFsimdvf* out, PFcolor_simd in, int vecSize)
 {
     for (int i = 0; i < vecSize; ++i) {
         out[i] = pfiSimdDiv_F32(
@@ -201,7 +201,7 @@ pfiColorUnpackedToVec_simd(PFsimdvf* out, PFsimd_color in, int vecSize)
 }
 
 static inline void
-pfiColorUnpackedFromVec_simd(PFsimd_color out, PFsimdvf* in, int vecSize)
+pfiColorUnpackedFromVec_simd(PFcolor_simd out, PFsimdvf* in, int vecSize)
 {
     out[0] = *(PFsimdvi*)GC_simd_i32_0;
     out[1] = *(PFsimdvi*)GC_simd_i32_0;

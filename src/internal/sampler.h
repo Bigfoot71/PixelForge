@@ -320,17 +320,17 @@ pfiTexture2DSampler_BILINEAR_REPEAT_simd(const struct PFtex* tex, const PFsimdv2
     fy = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[1], pfiSimdSet1_F32(tex->h)), pfiSimdConvert_I32_F32(y0));
 
     // Get the colors of the four pixels
-    PFsimd_color c00; pfiColorUnpack_simd(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
-    PFsimd_color c10; pfiColorUnpack_simd(c10, tex->getterSimd(tex->pixels, y0 * tex->w + x1));
-    PFsimd_color c01; pfiColorUnpack_simd(c01, tex->getterSimd(tex->pixels, y1 * tex->w + x0));
-    PFsimd_color c11; pfiColorUnpack_simd(c11, tex->getterSimd(tex->pixels, y1 * tex->w + x1));
+    PFcolor_simd c00; pfiColorUnpack_simd(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
+    PFcolor_simd c10; pfiColorUnpack_simd(c10, tex->getterSimd(tex->pixels, y0 * tex->w + x1));
+    PFcolor_simd c01; pfiColorUnpack_simd(c01, tex->getterSimd(tex->pixels, y1 * tex->w + x0));
+    PFcolor_simd c11; pfiColorUnpack_simd(c11, tex->getterSimd(tex->pixels, y1 * tex->w + x1));
 
     // Interpolate colors horizontally
-    PFsimd_color c0; pfiColorLerpSmooth_simd(c0, c00, c10, fx);
-    PFsimd_color c1; pfiColorLerpSmooth_simd(c1, c01, c11, fx);
+    PFcolor_simd c0; pfiColorLerpSmooth_simd(c0, c00, c10, fx);
+    PFcolor_simd c1; pfiColorLerpSmooth_simd(c1, c01, c11, fx);
 
     // Interpolate colors vertically
-    PFsimd_color c; pfiColorLerpSmooth_simd(c, c0, c1, fy);
+    PFcolor_simd c; pfiColorLerpSmooth_simd(c, c0, c1, fy);
 
     return pfiColorPack_simd(c);
 }
@@ -355,17 +355,17 @@ pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT_simd(const struct PFtex* tex, const
     fy = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[1], pfiSimdSet1_F32(tex->h)), pfiSimdConvert_I32_F32(y0));
 
     // Get the colors of the four pixels
-    PFsimd_color c00; pfiColorUnpack_simd(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
-    PFsimd_color c10; pfiColorUnpack_simd(c10, tex->getterSimd(tex->pixels, y0 * tex->w + x1));
-    PFsimd_color c01; pfiColorUnpack_simd(c01, tex->getterSimd(tex->pixels, y1 * tex->w + x0));
-    PFsimd_color c11; pfiColorUnpack_simd(c11, tex->getterSimd(tex->pixels, y1 * tex->w + x1));
+    PFcolor_simd c00; pfiColorUnpack_simd(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
+    PFcolor_simd c10; pfiColorUnpack_simd(c10, tex->getterSimd(tex->pixels, y0 * tex->w + x1));
+    PFcolor_simd c01; pfiColorUnpack_simd(c01, tex->getterSimd(tex->pixels, y1 * tex->w + x0));
+    PFcolor_simd c11; pfiColorUnpack_simd(c11, tex->getterSimd(tex->pixels, y1 * tex->w + x1));
 
     // Interpolate colors horizontally
-    PFsimd_color c0; pfiColorLerpSmooth_simd(c0, c00, c10, fx);
-    PFsimd_color c1; pfiColorLerpSmooth_simd(c1, c01, c11, fx);
+    PFcolor_simd c0; pfiColorLerpSmooth_simd(c0, c00, c10, fx);
+    PFcolor_simd c1; pfiColorLerpSmooth_simd(c1, c01, c11, fx);
 
     // Interpolate colors vertically
-    PFsimd_color c; pfiColorLerpSmooth_simd(c, c0, c1, fy);
+    PFcolor_simd c; pfiColorLerpSmooth_simd(c, c0, c1, fy);
 
     return pfiColorPack_simd(c);
 }
@@ -390,17 +390,17 @@ pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE_simd(const struct PFtex* tex, const P
     fy = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[1], pfiSimdSet1_F32(tex->h)), pfiSimdConvert_I32_F32(y0));
 
     // Get the colors of the four pixels
-    PFsimd_color c00; pfiColorUnpack_simd(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
-    PFsimd_color c10; pfiColorUnpack_simd(c10, tex->getterSimd(tex->pixels, y0 * tex->w + x1));
-    PFsimd_color c01; pfiColorUnpack_simd(c01, tex->getterSimd(tex->pixels, y1 * tex->w + x0));
-    PFsimd_color c11; pfiColorUnpack_simd(c11, tex->getterSimd(tex->pixels, y1 * tex->w + x1));
+    PFcolor_simd c00; pfiColorUnpack_simd(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
+    PFcolor_simd c10; pfiColorUnpack_simd(c10, tex->getterSimd(tex->pixels, y0 * tex->w + x1));
+    PFcolor_simd c01; pfiColorUnpack_simd(c01, tex->getterSimd(tex->pixels, y1 * tex->w + x0));
+    PFcolor_simd c11; pfiColorUnpack_simd(c11, tex->getterSimd(tex->pixels, y1 * tex->w + x1));
 
     // Interpolate colors horizontally
-    PFsimd_color c0; pfiColorLerpSmooth_simd(c0, c00, c10, fx);
-    PFsimd_color c1; pfiColorLerpSmooth_simd(c1, c01, c11, fx);
+    PFcolor_simd c0; pfiColorLerpSmooth_simd(c0, c00, c10, fx);
+    PFcolor_simd c1; pfiColorLerpSmooth_simd(c1, c01, c11, fx);
 
     // Interpolate colors vertically
-    PFsimd_color c; pfiColorLerpSmooth_simd(c, c0, c1, fy);
+    PFcolor_simd c; pfiColorLerpSmooth_simd(c, c0, c1, fy);
 
     return pfiColorPack_simd(c);
 }

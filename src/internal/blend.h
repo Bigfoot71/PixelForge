@@ -135,7 +135,7 @@ static const PFblendfunc GC_blendFuncs[8] = {
 #if PF_SIMD_SUPPORT
 
 static inline void
-pfiBlendAverage_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+pfiBlendAverage_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
 {
     out[0] = pfiSimdShr_I32(pfiSimdAdd_I32(src[0], dst[0]), 1);
     out[1] = pfiSimdShr_I32(pfiSimdAdd_I32(src[1], dst[1]), 1);
@@ -144,7 +144,7 @@ pfiBlendAverage_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_colo
 }
 
 static inline void
-pfiBlendAlpha_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+pfiBlendAlpha_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
 {
     PFsimdvi alpha = pfiSimdAdd_I32(src[3], *(PFsimdvi*)GC_simd_i32_1);
     PFsimdvi invAlpha = pfiSimdSub_I32(*(PFsimdvi*)GC_simd_i32_256, alpha);
@@ -155,7 +155,7 @@ pfiBlendAlpha_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_color 
 }
 
 static inline void
-pfiBlendAdditive_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+pfiBlendAdditive_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
 {
     out[0] = pfiSimdMin_I32(pfiSimdAdd_I32(src[0], dst[0]), *(PFsimdvi*)GC_simd_i32_255);
     out[1] = pfiSimdMin_I32(pfiSimdAdd_I32(src[1], dst[1]), *(PFsimdvi*)GC_simd_i32_255);
@@ -164,7 +164,7 @@ pfiBlendAdditive_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_col
 }
 
 static inline void
-pfiBlendSubtractive_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+pfiBlendSubtractive_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
 {
     out[0] = pfiSimdMax_I32(pfiSimdAdd_I32(src[0], dst[0]), *(PFsimdvi*)GC_simd_i32_0);
     out[1] = pfiSimdMax_I32(pfiSimdAdd_I32(src[1], dst[1]), *(PFsimdvi*)GC_simd_i32_0);
@@ -173,7 +173,7 @@ pfiBlendSubtractive_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_
 }
 
 static inline void
-pfiBlendMultiplicative_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+pfiBlendMultiplicative_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
 {
     out[0] = pfiSimdShr_I32(pfiSimdMullo_I32(src[0], dst[0]), 8);
     out[1] = pfiSimdShr_I32(pfiSimdMullo_I32(src[1], dst[1]), 8);
@@ -182,7 +182,7 @@ pfiBlendMultiplicative_simd(PFsimd_color out, const PFsimd_color src, const PFsi
 }
 
 static inline void
-pfiBlendScreen_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+pfiBlendScreen_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
 {
     PFsimdvi inv_src_r = pfiSimdSub_I32(*(PFsimdvi*)GC_simd_i32_255, src[0]);
     PFsimdvi inv_src_g = pfiSimdSub_I32(*(PFsimdvi*)GC_simd_i32_255, src[1]);
@@ -196,7 +196,7 @@ pfiBlendScreen_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_color
 }
 
 static inline void
-pfiBlendLighten_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+pfiBlendLighten_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
 {
     out[0] = pfiSimdMax_I32(src[0], dst[0]);
     out[1] = pfiSimdMax_I32(src[1], dst[1]);
@@ -205,7 +205,7 @@ pfiBlendLighten_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_colo
 }
 
 static inline void
-pfiBlendDarken_simd(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst)
+pfiBlendDarken_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
 {
     out[0] = pfiSimdMin_I32(src[0], dst[0]);
     out[1] = pfiSimdMin_I32(src[1], dst[1]);

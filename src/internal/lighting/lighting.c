@@ -138,7 +138,7 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
     return (PFcolor) { R, G, B, diffuse.a };
 }
 
-void pfiSimdLightingProcess(PFsimd_color fragments, const PFlight* activeLights,
+void pfiSimdLightingProcess(PFcolor_simd fragments, const PFlight* activeLights,
                                     const PFmaterial* material,
                                     const PFsimdv3f viewPos,
                                     const PFsimdv3f fragPos,

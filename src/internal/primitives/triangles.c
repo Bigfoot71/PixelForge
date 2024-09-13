@@ -50,7 +50,7 @@ pfTextureSampleNearestWrapSimd(const PFtexture texture, const PFsimdv2f texcoord
 typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFfloat);
 #else //PF_TRIANGLE_RASTER_BARYCENTRIC
 typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFcolor, PFfloat, PFfloat, PFfloat);
-typedef void (*InterpolateColorSimdFunc)(PFsimd_color, const PFsimd_color, const PFsimd_color, const PFsimd_color, PFsimdvf, PFsimdvf, PFsimdvf);
+typedef void (*InterpolateColorSimdFunc)(PFcolor_simd, const PFcolor_simd, const PFcolor_simd, const PFcolor_simd, PFsimdvf, PFsimdvf, PFsimdvf);
 #endif //PF_RASTER_MODE
 
 /* Internal helper function declarations */
@@ -382,7 +382,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     PFsimdvf wInvSumV = pfiSimdSet1_F32(1.0f/(w1Row + w2Row + w3Row));
 
     // Load vertices data into SIMD registers
-    PFsimd_color c1V, c2V, c3V;
+    PFcolor_simd c1V, c2V, c3V;
     pfiColorLoadUnpacked_simd(c1V, v1->color);
     pfiColorLoadUnpacked_simd(c2V, v2->color);
     pfiColorLoadUnpacked_simd(c3V, v3->color);
@@ -524,7 +524,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     /* Processing macro definitions */
 
 #   define GET_FRAG() \
-        PFsimd_color fragments; \
+        PFcolor_simd fragments; \
         interpolateColor(fragments, c1V, c2V, c3V, w1NormV, w2NormV, w3NormV);
 
 #   define TEXTURING() \
@@ -534,7 +534,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             pfiVec2BaryInterpR_simd(texcoords, tc1V, tc2V, tc3V, w1NormV, w2NormV, w3NormV); \
             if (is3D) pfiVec2Scale_simd(texcoords, texcoords, zV); /* Perspective correct */ \
             pfiVec2Blend_simd(texcoords, zeroV2, texcoords, pfiSimdCast_I32_F32(mask)); \
-            PFsimd_color texels; pfiColorUnpack_simd(texels, texSampler(texSrc, texcoords)); \
+            PFcolor_simd texels; pfiColorUnpack_simd(texels, texSampler(texSrc, texcoords)); \
             pfiBlendMultiplicative_simd(fragments, texels, fragments); \
         }
 
@@ -548,7 +548,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
 #   define SET_FRAG() \
         if (blendFunction) { \
-            PFsimd_color dstCol; \
+            PFcolor_simd dstCol; \
             pfiColorUnpack_simd(dstCol, fbGetter(pbDst, \
                 pfiSimdAdd_I32(pfiSimdSet1_I32(yOffset + x), pixOffsetV))); \
             blendFunction(fragments, fragments, dstCol); \

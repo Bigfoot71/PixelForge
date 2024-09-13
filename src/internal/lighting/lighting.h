@@ -26,7 +26,7 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
                                    PFcolor diffuse, const PFMvec3 viewPos,
                                    const PFMvec3 fragPos, const PFMvec3 N);
 
-void pfiSimdLightingProcess(PFsimd_color fragments, const PFlight* activeLights,
+void pfiSimdLightingProcess(PFcolor_simd fragments, const PFlight* activeLights,
                                     const PFmaterial* material,
                                     const PFsimdv3f viewPos,
                                     const PFsimdv3f fragPos,

@@ -60,7 +60,7 @@ typedef PFcolor (*PFblendfunc)(PFcolor src, PFcolor dst);
  * @return void This function does not return a value; instead, it writes the blended results directly
  *               to the `out` array.
  */
-typedef void (*PFblendfunc_simd)(PFsimd_color out, const PFsimd_color src, const PFsimd_color dst);
+typedef void (*PFblendfunc_simd)(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst);
 
 /**
  * @brief Function pointer type for depth testing.
