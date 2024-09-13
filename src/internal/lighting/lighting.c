@@ -146,7 +146,7 @@ void pfiSimdLightingProcess(PFsimd_color fragments, const PFlight* activeLights,
 {
     // Load and normalize material colors
     PFsimdv3f colDiffuse, colAmbient, colSpecular, colEmission;
-    pfiColorUnpackToVec_simd(colDiffuse, fragments, 3);
+    pfiColorUnpackedToVec_simd(colDiffuse, fragments, 3);
     pfiColorSisdToVec_simd(colAmbient, material->ambient, 3);
     pfiColorSisdToVec_simd(colSpecular, material->specular, 3);
     pfiColorSisdToVec_simd(colEmission, material->emission, 3);
@@ -250,5 +250,5 @@ void pfiSimdLightingProcess(PFsimd_color fragments, const PFlight* activeLights,
     }
 
     // Store the result
-    pfiColorUnpackFromVec_simd(fragments, lightContribution, 3);
+    pfiColorUnpackedFromVec_simd(fragments, lightContribution, 3);
 }

@@ -191,7 +191,7 @@ pfiColorSisdToVec_simd(PFsimdvf* out, PFcolor in, int vecSize)
 }
 
 static inline void
-pfiColorUnpackToVec_simd(PFsimdvf* out, PFsimd_color in, int vecSize)
+pfiColorUnpackedToVec_simd(PFsimdvf* out, PFsimd_color in, int vecSize)
 {
     for (int i = 0; i < vecSize; ++i) {
         out[i] = pfiSimdDiv_F32(
@@ -201,7 +201,7 @@ pfiColorUnpackToVec_simd(PFsimdvf* out, PFsimd_color in, int vecSize)
 }
 
 static inline void
-pfiColorUnpackFromVec_simd(PFsimd_color out, PFsimdvf* in, int vecSize)
+pfiColorUnpackedFromVec_simd(PFsimd_color out, PFsimdvf* in, int vecSize)
 {
     out[0] = *(PFsimdvi*)GC_simd_i32_0;
     out[1] = *(PFsimdvi*)GC_simd_i32_0;
@@ -215,7 +215,7 @@ pfiColorUnpackFromVec_simd(PFsimd_color out, PFsimdvf* in, int vecSize)
 }
 
 static inline PFsimdvi
-pfiColorPackGrayscale_simd(PFsimdvi colors)
+pfiColorPackedGrayscale_simd(PFsimdvi colors)
 {
     // Masks to extract the R, G, B, and Alpha channels
     const PFsimdvi maskA = pfiSimdSet1_I32(0xFF000000);
