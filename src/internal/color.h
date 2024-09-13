@@ -184,9 +184,9 @@ static inline void
 pfiColorSisdToVec_simd(PFsimdvf* out, PFcolor in, int vecSize)
 {
     for (int i = 0; i < vecSize; ++i) {
-        out[i] = pfiSimdDiv_F32(
+        out[i] = pfiSimdMul_F32(
             pfiSimdSet1_F32(((PFubyte*)&in)[i]),
-            *(PFsimdvf*)GC_simd_f32_255);
+            *(PFsimdvf*)GC_simd_f32_inv255);
     }
 }
 
@@ -194,9 +194,9 @@ static inline void
 pfiColorUnpackedToVec_simd(PFsimdvf* out, PFcolor_simd in, int vecSize)
 {
     for (int i = 0; i < vecSize; ++i) {
-        out[i] = pfiSimdDiv_F32(
+        out[i] = pfiSimdMul_F32(
             pfiSimdConvert_I32_F32(in[i]),
-            *(PFsimdvf*)GC_simd_f32_255);
+            *(PFsimdvf*)GC_simd_f32_inv255);
     }
 }
 
