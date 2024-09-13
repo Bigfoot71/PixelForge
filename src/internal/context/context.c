@@ -22,7 +22,7 @@
 
 /* Internal vertex processing function definitions */
 
-void pfInternal_HomogeneousToScreen(PFvertex* v)
+void pfiHomogeneousToScreen(PFvertex* v)
 {
     // NOTE: We add 0.5 to the screen coordinates to round them to the nearest integer
     // when they are converted to integer coordinates. This adjustment was added because
@@ -33,88 +33,70 @@ void pfInternal_HomogeneousToScreen(PFvertex* v)
     // an error in the polygon clipping functions. Nonetheless, this solution has been
     // functioning without issue up to this point.
 
-    v->screen[0] = (currentCtx->vpPos[0] + (v->homogeneous[0] + 1.0f) * 0.5f * currentCtx->vpDim[0]) + 0.5f;
-    v->screen[1] = (currentCtx->vpPos[1] + (1.0f - v->homogeneous[1]) * 0.5f * currentCtx->vpDim[1]) + 0.5f;
+    v->screen[0] = (G_currentCtx->vpPos[0] + (v->homogeneous[0] + 1.0f) * 0.5f * G_currentCtx->vpDim[0]) + 0.5f;
+    v->screen[1] = (G_currentCtx->vpPos[1] + (1.0f - v->homogeneous[1]) * 0.5f * G_currentCtx->vpDim[1]) + 0.5f;
 }
 
 /* Internal processing and rasterization function definitions */
 
-void pfInternal_ProcessAndRasterize(void)
+void pfiProcessAndRasterize(void)
 {
-    switch (currentCtx->currentDrawMode)
-    {
+    switch (G_currentCtx->currentDrawMode) {
         case PF_POINTS:
-            pfInternal_ProcessRasterize_POINT();
+            pfiProcessRasterize_POINT();
             break;
-
         case PF_LINES:
-            pfInternal_ProcessRasterize_LINE();
+            pfiProcessRasterize_LINE();
             break;
-
-        case PF_TRIANGLES:
-        {
+        case PF_TRIANGLES: {
             // Get faces to render
             // NOTE: Here we invert cullFace, because PF_FRONT = 0,
             //       !PF_FRONT = PF_BACK, and vice versa.
-            PFface faceToRender = (currentCtx->state & PF_CULL_FACE)
-                ? (!currentCtx->cullFace) : PF_FRONT_AND_BACK;
+            PFface faceToRender = (G_currentCtx->state & PF_CULL_FACE)
+                ? (!G_currentCtx->cullFace) : PF_FRONT_AND_BACK;
 
-            if (faceToRender == PF_FRONT_AND_BACK)
-            {
-                for (PFint iFace = 0; iFace < 2; iFace++)
-                {
-                    switch (currentCtx->polygonMode[iFace])
-                    {
+            if (faceToRender == PF_FRONT_AND_BACK) {
+                for (PFint iFace = 0; iFace < 2; iFace++) {
+                    switch (G_currentCtx->polygonMode[iFace]) {
                         case PF_POINT:
-                            pfInternal_ProcessRasterize_POLY_POINTS(3);
+                            pfiProcessRasterize_POLY_POINTS(3);
                             break;
-
                         case PF_LINE:
-                            pfInternal_ProcessRasterize_POLY_LINES(3);
+                            pfiProcessRasterize_POLY_LINES(3);
                             break;
-
                         case PF_FILL:
-                            pfInternal_ProcessRasterize_TRIANGLE(iFace);
+                            pfiProcessRasterize_TRIANGLE(iFace);
                             break;
                     }
                 }
-            }
-            else
-            {
-                switch (currentCtx->polygonMode[faceToRender])
-                {
+            } else {
+                switch (G_currentCtx->polygonMode[faceToRender]) {
                     case PF_POINT:
-                        pfInternal_ProcessRasterize_POLY_POINTS(3);
+                        pfiProcessRasterize_POLY_POINTS(3);
                         break;
-
                     case PF_LINE:
-                        pfInternal_ProcessRasterize_POLY_LINES(3);
+                        pfiProcessRasterize_POLY_LINES(3);
                         break;
-
                     case PF_FILL:
-                        pfInternal_ProcessRasterize_TRIANGLE(faceToRender);
+                        pfiProcessRasterize_TRIANGLE(faceToRender);
                         break;
                 }
             }
         }
         break;
 
-        case PF_TRIANGLE_FAN:
-        {
+        case PF_TRIANGLE_FAN: {
             // Get faces to render
             // NOTE: Here we invert cullFace, because PF_FRONT = 0,
             //       !PF_FRONT = PF_BACK, and vice versa.
-            PFface faceToRender = (currentCtx->state & PF_CULL_FACE)
-                ? (!currentCtx->cullFace) : PF_FRONT_AND_BACK;
+            PFface faceToRender = (G_currentCtx->state & PF_CULL_FACE)
+                ? (!G_currentCtx->cullFace) : PF_FRONT_AND_BACK;
 
-            if (faceToRender == PF_FRONT_AND_BACK)
-            {
-                pfInternal_ProcessRasterize_TRIANGLE_FAN(PF_FRONT, 2);
-                pfInternal_ProcessRasterize_TRIANGLE_FAN(PF_BACK, 2);
-            }
-            else
-            {
-                pfInternal_ProcessRasterize_TRIANGLE_FAN(faceToRender, 2);
+            if (faceToRender == PF_FRONT_AND_BACK) {
+                pfiProcessRasterize_TRIANGLE_FAN(PF_FRONT, 2);
+                pfiProcessRasterize_TRIANGLE_FAN(PF_BACK, 2);
+            } else {
+                pfiProcessRasterize_TRIANGLE_FAN(faceToRender, 2);
             }
         }
         break;
@@ -124,17 +106,14 @@ void pfInternal_ProcessAndRasterize(void)
             // Get faces to render
             // NOTE: Here we invert cullFace, because PF_FRONT = 0,
             //       !PF_FRONT = PF_BACK, and vice versa.
-            PFface faceToRender = (currentCtx->state & PF_CULL_FACE)
-                ? (!currentCtx->cullFace) : PF_FRONT_AND_BACK;
+            PFface faceToRender = (G_currentCtx->state & PF_CULL_FACE)
+                ? (!G_currentCtx->cullFace) : PF_FRONT_AND_BACK;
 
-            if (faceToRender == PF_FRONT_AND_BACK)
-            {
-                pfInternal_ProcessRasterize_TRIANGLE_STRIP(PF_FRONT, 2);
-                pfInternal_ProcessRasterize_TRIANGLE_STRIP(PF_BACK, 2);
-            }
-            else
-            {
-                pfInternal_ProcessRasterize_TRIANGLE_STRIP(faceToRender, 2);
+            if (faceToRender == PF_FRONT_AND_BACK) {
+                pfiProcessRasterize_TRIANGLE_STRIP(PF_FRONT, 2);
+                pfiProcessRasterize_TRIANGLE_STRIP(PF_BACK, 2);
+            } else {
+                pfiProcessRasterize_TRIANGLE_STRIP(faceToRender, 2);
             }
         }
         break;
@@ -144,85 +123,67 @@ void pfInternal_ProcessAndRasterize(void)
             // Get faces to render
             // NOTE: Here we invert cullFace, because PF_FRONT = 0,
             //       !PF_FRONT = PF_BACK, and vice versa.
-            PFface faceToRender = (currentCtx->state & PF_CULL_FACE)
-                ? (!currentCtx->cullFace) : PF_FRONT_AND_BACK;
+            PFface faceToRender = (G_currentCtx->state & PF_CULL_FACE)
+                ? (!G_currentCtx->cullFace) : PF_FRONT_AND_BACK;
 
-            if (faceToRender == PF_FRONT_AND_BACK)
-            {
-                for (PFint iFace = 0; iFace < 2; iFace++)
-                {
-                    switch (currentCtx->polygonMode[iFace])
-                    {
+            if (faceToRender == PF_FRONT_AND_BACK) {
+                for (PFint iFace = 0; iFace < 2; iFace++) {
+                    switch (G_currentCtx->polygonMode[iFace]) {
                         case PF_POINT:
-                            pfInternal_ProcessRasterize_POLY_POINTS(4);
+                            pfiProcessRasterize_POLY_POINTS(4);
                             break;
-
                         case PF_LINE:
-                            pfInternal_ProcessRasterize_POLY_LINES(4);
+                            pfiProcessRasterize_POLY_LINES(4);
                             break;
-
                         case PF_FILL:
-                            pfInternal_ProcessRasterize_TRIANGLE_FAN(iFace, 2);
+                            pfiProcessRasterize_TRIANGLE_FAN(iFace, 2);
                             break;
                     }
                 }
-            }
-            else
-            {
-                switch (currentCtx->polygonMode[faceToRender])
-                {
+            } else {
+                switch (G_currentCtx->polygonMode[faceToRender]) {
                     case PF_POINT:
-                        pfInternal_ProcessRasterize_POLY_POINTS(4);
+                        pfiProcessRasterize_POLY_POINTS(4);
                         break;
-
                     case PF_LINE:
-                        pfInternal_ProcessRasterize_POLY_LINES(4);
+                        pfiProcessRasterize_POLY_LINES(4);
                         break;
-
                     case PF_FILL:
-                        pfInternal_ProcessRasterize_TRIANGLE_FAN(faceToRender, 2);
+                        pfiProcessRasterize_TRIANGLE_FAN(faceToRender, 2);
                         break;
                 }
             }
         }
         break;
 
-        case PF_QUAD_FAN:
-        {
+        case PF_QUAD_FAN: {
             // Get faces to render
             // NOTE: Here we invert cullFace, because PF_FRONT = 0,
             //       !PF_FRONT = PF_BACK, and vice versa.
-            PFface faceToRender = (currentCtx->state & PF_CULL_FACE)
-                ? (!currentCtx->cullFace) : PF_FRONT_AND_BACK;
+            PFface faceToRender = (G_currentCtx->state & PF_CULL_FACE)
+                ? (!G_currentCtx->cullFace) : PF_FRONT_AND_BACK;
 
-            if (faceToRender == PF_FRONT_AND_BACK)
-            {
-                pfInternal_ProcessRasterize_TRIANGLE_FAN(PF_FRONT, 4);
-                pfInternal_ProcessRasterize_TRIANGLE_FAN(PF_BACK, 4);
-            }
-            else
-            {
-                pfInternal_ProcessRasterize_TRIANGLE_FAN(faceToRender, 4);
+            if (faceToRender == PF_FRONT_AND_BACK) {
+                pfiProcessRasterize_TRIANGLE_FAN(PF_FRONT, 4);
+                pfiProcessRasterize_TRIANGLE_FAN(PF_BACK, 4);
+            } else {
+                pfiProcessRasterize_TRIANGLE_FAN(faceToRender, 4);
             }
         }
         break;
 
-        case PF_QUAD_STRIP:
-        {
+        case PF_QUAD_STRIP: {
             // Get faces to render
             // NOTE: Here we invert cullFace, because PF_FRONT = 0,
             //       !PF_FRONT = PF_BACK, and vice versa.
-            PFface faceToRender = (currentCtx->state & PF_CULL_FACE)
-                ? (!currentCtx->cullFace) : PF_FRONT_AND_BACK;
+            PFface faceToRender = (G_currentCtx->state & PF_CULL_FACE)
+                ? (!G_currentCtx->cullFace) : PF_FRONT_AND_BACK;
 
-            if (faceToRender == PF_FRONT_AND_BACK)
-            {
-                pfInternal_ProcessRasterize_TRIANGLE_STRIP(PF_FRONT, 4);
-                pfInternal_ProcessRasterize_TRIANGLE_STRIP(PF_BACK, 4);
-            }
-            else
-            {
-                pfInternal_ProcessRasterize_TRIANGLE_STRIP(faceToRender, 4);
+            if (faceToRender == PF_FRONT_AND_BACK) {
+                pfiProcessRasterize_TRIANGLE_STRIP(PF_FRONT, 4);
+                pfiProcessRasterize_TRIANGLE_STRIP(PF_BACK, 4);
+            } else {
+                pfiProcessRasterize_TRIANGLE_STRIP(faceToRender, 4);
             }
         }
         break;

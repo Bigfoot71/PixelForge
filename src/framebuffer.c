@@ -31,34 +31,29 @@ PFframebuffer pfGenFramebuffer(PFsizei width, PFsizei height, PFpixelformat form
     PFframebuffer framebuffer = (PFframebuffer) { 0 };
     PFsizei size = width*height;
 
-    void* pixels = PF_CALLOC(size, pfInternal_GetPixelBytes(format, type));
+    void* pixels = PF_CALLOC(size, pfiGetPixelBytes(format, type));
     if (!pixels) return framebuffer;
 
     PFtexture texture = pfGenTexture(pixels, width, height, format, type);
 
-    if (texture == NULL)
-    {
-        if (currentCtx)
-        {
-            currentCtx->errCode = PF_INVALID_ENUM;
+    if (texture == NULL) {
+        if (G_currentCtx) {
+            G_currentCtx->errCode = PF_INVALID_ENUM;
         }
         return framebuffer;
     }
 
     PFfloat *zbuffer = (PFfloat*)PF_MALLOC(size*sizeof(PFfloat));
 
-    if (!zbuffer)
-    {
-        if (currentCtx)
-        {
-            currentCtx->errCode = PF_ERROR_OUT_OF_MEMORY;
+    if (!zbuffer) {
+        if (G_currentCtx) {
+            G_currentCtx->errCode = PF_ERROR_OUT_OF_MEMORY;
         }
         pfDeleteTexture(&texture, true);
         return framebuffer;
     }
 
-    for (PFsizei i = 0; i < size; i++)
-    {
+    for (PFsizei i = 0; i < size; i++) {
         zbuffer[i] = FLT_MAX;
     }
 
@@ -70,16 +65,12 @@ PFframebuffer pfGenFramebuffer(PFsizei width, PFsizei height, PFpixelformat form
 
 void pfDeleteFramebuffer(PFframebuffer* framebuffer)
 {
-    if (framebuffer)
-    {
+    if (framebuffer) {
         pfDeleteTexture(&framebuffer->texture, true);
-
-        if (framebuffer->zbuffer)
-        {
+        if (framebuffer->zbuffer) {
             PF_FREE(framebuffer->zbuffer);
             framebuffer->zbuffer = NULL;
         }
-
         *framebuffer = (PFframebuffer) { 0 };
     }
 }
@@ -88,8 +79,7 @@ PFboolean pfIsValidFramebuffer(PFframebuffer* framebuffer)
 {
     struct PFtex* tex = framebuffer->texture;
     PFboolean result = PF_FALSE;
-    if (tex)
-    {
+    if (tex) {
         result = framebuffer->zbuffer && tex->w > 0 && tex->h > 0
             && pfIsValidTexture(framebuffer->texture);
     }
@@ -105,8 +95,7 @@ void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color, PFfloat depth
 #       pragma omp parallel for \
             if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
 #   endif
-    for (PFsizei i = 0; i < size; i++)
-    {
+    for (PFsizei i = 0; i < size; i++) {
         tex->setter(tex->pixels, i, color);
         framebuffer->zbuffer[i] = depth;
     }
@@ -126,22 +115,18 @@ PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x, PFsiz
 
 void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color, PFdepthmode depthMode)
 {
-    if (!pfInternal_IsDepthModeValid(depthMode))
-    {
-        if (currentCtx) currentCtx->errCode = PF_INVALID_ENUM;
+    if (!pfiIsDepthModeValid(depthMode)) {
+        if (G_currentCtx) G_currentCtx->errCode = PF_INVALID_ENUM;
         return;
     }
 
-    PFdepthfunc depthFunc;
-    pfInternal_GetDepthFuncs(depthMode, &depthFunc, NULL);
-
+    PFdepthfunc depthFunc = GC_depthTestFuncs[depthMode];
     struct PFtex* tex = framebuffer->texture;
     PFsizei offset = y*tex->w + x;
 
     PFfloat *zp = framebuffer->zbuffer + offset;
 
-    if (depthFunc(z, *zp))
-    {
+    if (depthFunc(z, *zp)) {
         tex->setter(tex->pixels, offset, color);
         *zp = z;
     }

@@ -24,6 +24,7 @@
 #include "../config.h"
 #include "../../pfm.h"
 #include "../color.h"
+#include "../simd.h"
 
 /*
     This file contains all the internal structures and functions
@@ -83,7 +84,7 @@ typedef PFboolean (*PFdepthfunc)(PFfloat src, PFfloat dst);
  * @param dst The destination depth value as a SIMD floating-point type.
  * @return A SIMD floating-point value representing the result of the depth test.
  */
-typedef PFMsimd_f (*PFdepthfunc_simd)(PFMsimd_f src, PFMsimd_f dst);
+typedef PFsimdvf (*PFdepthfunc_simd)(PFsimdvf src, PFsimdvf dst);
 
 /**
  * @brief Function pointer type for getting a pixel from a texture.
@@ -103,7 +104,7 @@ typedef PFcolor (*PFpixelgetter)(const void* pixels, PFsizei index);
  * @param offsets A SIMD register containing the indices of the pixels to retrieve.
  * @return A SIMD register containing the color values of the pixels at the specified indices.
  */
-typedef PFMsimd_i (*PFpixelgetter_simd)(const void* pixels, PFMsimd_i offsets);
+typedef PFsimdvi (*PFpixelgetter_simd)(const void* pixels, PFsimdvi offsets);
 
 /**
  * @brief Function pointer type for setting a pixel in a texture.
@@ -124,7 +125,7 @@ typedef void (*PFpixelsetter)(void* pixels, PFsizei index, PFcolor color);
  * @param colors A SIMD register containing the color values to set the pixels to.
  * @param mask A SIMD register used to mask which pixels should be set.
  */
-typedef void (*PFpixelsetter_simd)(void* pixels, PFsizei offset, PFMsimd_i colors, PFMsimd_i mask);
+typedef void (*PFpixelsetter_simd)(void* pixels, PFsizei offset, PFsimdvi colors, PFsimdvi mask);
 
 /**
  * @brief PFtex (texture) forward declaration
@@ -150,7 +151,7 @@ typedef PFcolor (*PFtexturesampler)(const struct PFtex* tex, PFfloat u, PFfloat 
  * @param texcoords A SIMD vector containing the texture coordinates.
  * @return The SIMD integer result sampled from the texture at the specified coordinates.
  */
-typedef PFMsimd_i (*PFtexturesampler_simd)(const struct PFtex* tex, const PFMsimd_vec2 texcoords);
+typedef PFsimdvi (*PFtexturesampler_simd)(const struct PFtex* tex, const PFsimdv2f texcoords);
 
 /**
  * @brief Structure representing a texture.
@@ -331,13 +332,13 @@ typedef struct {
 
 /* Current thread local-thread declaration */
 
-extern PF_CTX_DECL PFctx *currentCtx;
+extern PF_CTX_DECL PFctx *G_currentCtx;
 
 
 /* Internal context functions */
 
-void pfInternal_HomogeneousToScreen(PFvertex* v);
-void pfInternal_ProcessAndRasterize(void);
+void pfiHomogeneousToScreen(PFvertex* v);
+void pfiProcessAndRasterize(void);
 
 
 #endif //PF_INTERNAL_CONTEXT_H

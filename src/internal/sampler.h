@@ -22,8 +22,10 @@
 
 #include "./context/context.h"
 
+/* Texture2D Mapper Functions */
+
 static inline void
-pfInternal_Texture2DMap_REPEAT(const struct PFtex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
+pfiTexture2DMap_REPEAT(const struct PFtex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
 {
     // Wrap UVs (use to int cast to round toward zero)
     u = (u - (PFint)u);
@@ -43,7 +45,7 @@ pfInternal_Texture2DMap_REPEAT(const struct PFtex* tex, PFint* xOut, PFint* yOut
 }
 
 static inline void
-pfInternal_Texture2DMap_MIRRORED_REPEAT(const struct PFtex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
+pfiTexture2DMap_MIRRORED_REPEAT(const struct PFtex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
 {
     u = fmodf(fabsf(u), 2);
     v = fmodf(fabsf(v), 2);
@@ -56,7 +58,7 @@ pfInternal_Texture2DMap_MIRRORED_REPEAT(const struct PFtex* tex, PFint* xOut, PF
 }
 
 static inline void
-pfInternal_Texture2DMap_CLAMP_TO_EDGE(const struct PFtex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
+pfiTexture2DMap_CLAMP_TO_EDGE(const struct PFtex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
 {
     u = CLAMP(u, 0.0f, 1.0f);
     v = CLAMP(v, 0.0f, 1.0f);
@@ -65,365 +67,368 @@ pfInternal_Texture2DMap_CLAMP_TO_EDGE(const struct PFtex* tex, PFint* xOut, PFin
     *yOut = (PFint)(v*((PFint)tex->h - 1) + 0.5f);
 }
 
-static inline void
-pfInternal_SimdTexture2DMap_REPEAT(const struct PFtex* tex, PFMsimd_i* xOut, PFMsimd_i* yOut, const PFMsimd_vec2 texcoords)
+/* Texture2D Sampler Functions */
+
+static inline PFcolor
+pfiTexture2DSampler_NEAREST_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat v)
 {
-    PFMsimd_f u = texcoords[0];
-    PFMsimd_f v = texcoords[1];
+    PFint x, y;
+    pfiTexture2DMap_REPEAT(tex, &x, &y, u, v);
 
-    u = pfmSimdMul_F32(
-        pfmSimdSub_F32(u, pfmSimdRound_F32(u, _MM_FROUND_TO_ZERO)),
-        pfmSimdSet1_F32(tex->w - 1));
+    return tex->getter(tex->pixels, y*tex->w + x);
+}
 
-    v = pfmSimdMul_F32(
-        pfmSimdSub_F32(v, pfmSimdRound_F32(v, _MM_FROUND_TO_ZERO)),
-        pfmSimdSet1_F32(tex->h - 1));
+static inline PFcolor
+pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat v)
+{
+    PFint x, y;
+    pfiTexture2DMap_MIRRORED_REPEAT(tex, &x, &y, u, v);
 
-    *xOut = pfmSimdAbs_I32(pfmSimdConvert_F32_I32(u));
-    *yOut = pfmSimdAbs_I32(pfmSimdConvert_F32_I32(v));
+    return tex->getter(tex->pixels, y*tex->w + x);
+}
+
+static inline PFcolor
+pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE(const struct PFtex* tex, PFfloat u, PFfloat v)
+{
+    PFint x, y;
+    pfiTexture2DMap_CLAMP_TO_EDGE(tex, &x, &y, u, v);
+
+    return tex->getter(tex->pixels, y*tex->w + x);
+}
+
+static inline PFcolor
+pfiTexture2DSampler_BILINEAR_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat v)
+{
+    int x0, y0, x1, y1;
+    float fx, fy;
+
+    pfiTexture2DMap_REPEAT(tex, &x0, &y0, u, v);
+    pfiTexture2DMap_REPEAT(tex, &x1, &y1, u + tex->tx, v + tex->ty);
+
+    // Calculate fractions fx, fy
+    fx = u * tex->w - x0;
+    fy = v * tex->h - y0;
+
+    // Get the colors of the four pixels
+    PFcolor c00 = tex->getter(tex->pixels, y0 * tex->w + x0);
+    PFcolor c10 = tex->getter(tex->pixels, y0 * tex->w + x1);
+    PFcolor c01 = tex->getter(tex->pixels, y1 * tex->w + x0);
+    PFcolor c11 = tex->getter(tex->pixels, y1 * tex->w + x1);
+
+    // Interpolate colors horizontally
+    PFcolor c0 = pfiColorLerpSmooth(c00, c10, fx);
+    PFcolor c1 = pfiColorLerpSmooth(c01, c11, fx);
+
+    // Interpolate colors vertically
+    return pfiColorLerpSmooth(c0, c1, fy);
+}
+
+static inline PFcolor
+pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat v)
+{
+    int x0, y0, x1, y1;
+    float fx, fy;
+
+    pfiTexture2DMap_MIRRORED_REPEAT(tex, &x0, &y0, u, v);
+    pfiTexture2DMap_MIRRORED_REPEAT(tex, &x1, &y1, u + tex->tx, v + tex->ty);
+
+    // Calculate fractions fx, fy
+    fx = u * tex->w - x0;
+    fy = v * tex->h - y0;
+
+    // Get the colors of the four pixels
+    PFcolor c00 = tex->getter(tex->pixels, y0 * tex->w + x0);
+    PFcolor c10 = tex->getter(tex->pixels, y0 * tex->w + x1);
+    PFcolor c01 = tex->getter(tex->pixels, y1 * tex->w + x0);
+    PFcolor c11 = tex->getter(tex->pixels, y1 * tex->w + x1);
+
+    // Interpolate colors horizontally
+    PFcolor c0 = pfiColorLerpSmooth(c00, c10, fx);
+    PFcolor c1 = pfiColorLerpSmooth(c01, c11, fx);
+
+    // Interpolate colors vertically
+    return pfiColorLerpSmooth(c0, c1, fy);
+}
+
+static inline PFcolor
+pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE(const struct PFtex* tex, PFfloat u, PFfloat v)
+{
+    int x0, y0, x1, y1;
+    float fx, fy;
+
+    pfiTexture2DMap_CLAMP_TO_EDGE(tex, &x0, &y0, u, v);
+    pfiTexture2DMap_CLAMP_TO_EDGE(tex, &x1, &y1, u + tex->tx, v + tex->ty);
+
+    // Calculate fractions fx, fy
+    fx = u * tex->w - x0;
+    fy = v * tex->h - y0;
+
+    // Get the colors of the four pixels
+    PFcolor c00 = tex->getter(tex->pixels, y0 * tex->w + x0);
+    PFcolor c10 = tex->getter(tex->pixels, y0 * tex->w + x1);
+    PFcolor c01 = tex->getter(tex->pixels, y1 * tex->w + x0);
+    PFcolor c11 = tex->getter(tex->pixels, y1 * tex->w + x1);
+
+    // Interpolate colors horizontally
+    PFcolor c0 = pfiColorLerpSmooth(c00, c10, fx);
+    PFcolor c1 = pfiColorLerpSmooth(c01, c11, fx);
+
+    // Interpolate colors vertically
+    return pfiColorLerpSmooth(c0, c1, fy);
+}
+
+#define ENTRY(FILTER, WRAP, FUNC) [FILTER][WRAP] = FUNC
+static const PFtexturesampler GC_textureSamplers[2][3] = {
+
+    ENTRY(PF_NEAREST, PF_REPEAT, pfiTexture2DSampler_NEAREST_REPEAT),
+    ENTRY(PF_NEAREST, PF_MIRRORED_REPEAT, pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT),
+    ENTRY(PF_NEAREST, PF_CLAMP_TO_EDGE, pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE),
+
+    ENTRY(PF_BILINEAR, PF_REPEAT, pfiTexture2DSampler_BILINEAR_REPEAT),
+    ENTRY(PF_BILINEAR, PF_MIRRORED_REPEAT, pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT),
+    ENTRY(PF_BILINEAR, PF_CLAMP_TO_EDGE, pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE),
+
+};
+#undef ENTRY
+
+
+/* SIMD Implementation */
+
+#if PF_SIMD_SUPPORT
+
+/* SIMD - Texture2D Mapper Functions */
+
+static inline void
+pfiTexture2DMap_REPEAT_simd(const struct PFtex* tex, PFsimdvi* xOut, PFsimdvi* yOut, const PFsimdv2f texcoords)
+{
+    PFsimdvf u = texcoords[0];
+    PFsimdvf v = texcoords[1];
+
+    u = pfiSimdMul_F32(
+        pfiSimdSub_F32(u, pfiSimdRound_F32(u, _MM_FROUND_TO_ZERO)),
+        pfiSimdSet1_F32(tex->w - 1));
+
+    v = pfiSimdMul_F32(
+        pfiSimdSub_F32(v, pfiSimdRound_F32(v, _MM_FROUND_TO_ZERO)),
+        pfiSimdSet1_F32(tex->h - 1));
+
+    *xOut = pfiSimdAbs_I32(pfiSimdConvert_F32_I32(u));
+    *yOut = pfiSimdAbs_I32(pfiSimdConvert_F32_I32(v));
 }
 
 static inline void
-pfInternal_SimdTexture2DMap_MIRRORED_REPEAT(const struct PFtex* tex, PFMsimd_i* xOut, PFMsimd_i* yOut, const PFMsimd_vec2 texcoords)
+pfiTexture2DMap_MIRRORED_REPEAT_simd(const struct PFtex* tex, PFsimdvi* xOut, PFsimdvi* yOut, const PFsimdv2f texcoords)
 {
-    PFMsimd_f u = texcoords[0];
-    PFMsimd_f v = texcoords[1];
+    PFsimdvf u = texcoords[0];
+    PFsimdvf v = texcoords[1];
 
     // Repeating UV coordinates in the interval [0..2]
-    u = pfmSimdMod_F32(pfmSimdAbs_F32(u), *(PFMsimd_f*)pfm_f32_2);
-    v = pfmSimdMod_F32(pfmSimdAbs_F32(v), *(PFMsimd_f*)pfm_f32_2);
+    u = pfiSimdMod_F32(pfiSimdAbs_F32(u), *(PFsimdvf*)GC_simd_f32_2);
+    v = pfiSimdMod_F32(pfiSimdAbs_F32(v), *(PFsimdvf*)GC_simd_f32_2);
 
     // Reflection to get the interval [0..1] if necessary
-    PFMsimd_f uMirror = pfmSimdSub_F32(*(PFMsimd_f*)pfm_f32_1, pfmSimdSub_F32(u, *(PFMsimd_f*)pfm_f32_1));
-    PFMsimd_f vMirror = pfmSimdSub_F32(*(PFMsimd_f*)pfm_f32_1, pfmSimdSub_F32(v, *(PFMsimd_f*)pfm_f32_1));
+    PFsimdvf uMirror = pfiSimdSub_F32(*(PFsimdvf*)GC_simd_f32_1, pfiSimdSub_F32(u, *(PFsimdvf*)GC_simd_f32_1));
+    PFsimdvf vMirror = pfiSimdSub_F32(*(PFsimdvf*)GC_simd_f32_1, pfiSimdSub_F32(v, *(PFsimdvf*)GC_simd_f32_1));
 
-    u = pfmSimdBlendV_F32(u, uMirror, pfmSimdCmpGT_F32(u, *(PFMsimd_f*)pfm_f32_1));
-    v = pfmSimdBlendV_F32(v, vMirror, pfmSimdCmpGT_F32(v, *(PFMsimd_f*)pfm_f32_1));
+    u = pfiSimdBlendV_F32(u, uMirror, pfiSimdCmpGT_F32(u, *(PFsimdvf*)GC_simd_f32_1));
+    v = pfiSimdBlendV_F32(v, vMirror, pfiSimdCmpGT_F32(v, *(PFsimdvf*)GC_simd_f32_1));
 
     // Conversion des coordonnées UV en indices de pixels
-    u = pfmSimdMul_F32(u, pfmSimdSet1_F32((float)(tex->w - 1)));
-    v = pfmSimdMul_F32(v, pfmSimdSet1_F32((float)(tex->h - 1)));
+    u = pfiSimdMul_F32(u, pfiSimdSet1_F32((float)(tex->w - 1)));
+    v = pfiSimdMul_F32(v, pfiSimdSet1_F32((float)(tex->h - 1)));
 
-    *xOut = pfmSimdConvert_F32_I32(pfmSimdAdd_F32(u, *(PFMsimd_f*)pfm_f32_0p5));
-    *yOut = pfmSimdConvert_F32_I32(pfmSimdAdd_F32(v, *(PFMsimd_f*)pfm_f32_0p5));
+    *xOut = pfiSimdConvert_F32_I32(pfiSimdAdd_F32(u, *(PFsimdvf*)GC_simd_f32_0p5));
+    *yOut = pfiSimdConvert_F32_I32(pfiSimdAdd_F32(v, *(PFsimdvf*)GC_simd_f32_0p5));
 }
 
 static inline void
-pfInternal_SimdTexture2DMap_CLAMP_TO_EDGE(const struct PFtex* tex, PFMsimd_i* xOut, PFMsimd_i* yOut, const PFMsimd_vec2 texcoords)
+pfiTexture2DMap_CLAMP_TO_EDGE_simd(const struct PFtex* tex, PFsimdvi* xOut, PFsimdvi* yOut, const PFsimdv2f texcoords)
 {
-    PFMsimd_f u = texcoords[0];
-    PFMsimd_f v = texcoords[1];
+    PFsimdvf u = texcoords[0];
+    PFsimdvf v = texcoords[1];
 
     // Clamping des coordonnées UV
-    u = pfmSimdClamp_F32(u, *(PFMsimd_f*)pfm_f32_0, *(PFMsimd_f*)pfm_f32_1);
-    v = pfmSimdClamp_F32(v, *(PFMsimd_f*)pfm_f32_0, *(PFMsimd_f*)pfm_f32_1);
+    u = pfiSimdClamp_F32(u, *(PFsimdvf*)GC_simd_f32_0, *(PFsimdvf*)GC_simd_f32_1);
+    v = pfiSimdClamp_F32(v, *(PFsimdvf*)GC_simd_f32_0, *(PFsimdvf*)GC_simd_f32_1);
 
     // Conversion des coordonnées UV en indices de pixels
-    u = pfmSimdMul_F32(u, pfmSimdSet1_F32((float)(tex->w - 1)));
-    v = pfmSimdMul_F32(v, pfmSimdSet1_F32((float)(tex->h - 1)));
+    u = pfiSimdMul_F32(u, pfiSimdSet1_F32((float)(tex->w - 1)));
+    v = pfiSimdMul_F32(v, pfiSimdSet1_F32((float)(tex->h - 1)));
 
-    *xOut = pfmSimdConvert_F32_I32(pfmSimdAdd_F32(u, *(PFMsimd_f*)pfm_f32_0p5));
-    *yOut = pfmSimdConvert_F32_I32(pfmSimdAdd_F32(v, *(PFMsimd_f*)pfm_f32_0p5));
+    *xOut = pfiSimdConvert_F32_I32(pfiSimdAdd_F32(u, *(PFsimdvf*)GC_simd_f32_0p5));
+    *yOut = pfiSimdConvert_F32_I32(pfiSimdAdd_F32(v, *(PFsimdvf*)GC_simd_f32_0p5));
 }
 
-/* SISD Texture2D Sampler Functions */
+/* SIMD - Texture2D Sampler Functions */
 
-static inline PFcolor
-pfInternal_Texture2DSampler_NEAREST_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat v)
+static inline PFsimdvi
+pfiTexture2DSampler_NEAREST_REPEAT_simd(const struct PFtex* tex, const PFsimdv2f texcoords)
 {
-    PFint x, y;
-    pfInternal_Texture2DMap_REPEAT(tex, &x, &y, u, v);
-
-    return tex->getter(tex->pixels, y*tex->w + x);
-}
-
-static inline PFcolor
-pfInternal_Texture2DSampler_NEAREST_MIRRORED_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat v)
-{
-    PFint x, y;
-    pfInternal_Texture2DMap_MIRRORED_REPEAT(tex, &x, &y, u, v);
-
-    return tex->getter(tex->pixels, y*tex->w + x);
-}
-
-static inline PFcolor
-pfInternal_Texture2DSampler_NEAREST_CLAMP_TO_EDGE(const struct PFtex* tex, PFfloat u, PFfloat v)
-{
-    PFint x, y;
-    pfInternal_Texture2DMap_CLAMP_TO_EDGE(tex, &x, &y, u, v);
-
-    return tex->getter(tex->pixels, y*tex->w + x);
-}
-
-static inline PFcolor
-pfInternal_Texture2DSampler_BILINEAR_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat v)
-{
-    int x0, y0, x1, y1;
-    float fx, fy;
-
-    pfInternal_Texture2DMap_REPEAT(tex, &x0, &y0, u, v);
-    pfInternal_Texture2DMap_REPEAT(tex, &x1, &y1, u + tex->tx, v + tex->ty);
-
-    // Calculate fractions fx, fy
-    fx = u * tex->w - x0;
-    fy = v * tex->h - y0;
-
-    // Get the colors of the four pixels
-    PFcolor c00 = tex->getter(tex->pixels, y0 * tex->w + x0);
-    PFcolor c10 = tex->getter(tex->pixels, y0 * tex->w + x1);
-    PFcolor c01 = tex->getter(tex->pixels, y1 * tex->w + x0);
-    PFcolor c11 = tex->getter(tex->pixels, y1 * tex->w + x1);
-
-    // Interpolate colors horizontally
-    PFcolor c0 = pfInternal_ColorLerpSmooth(c00, c10, fx);
-    PFcolor c1 = pfInternal_ColorLerpSmooth(c01, c11, fx);
-
-    // Interpolate colors vertically
-    return pfInternal_ColorLerpSmooth(c0, c1, fy);
-}
-
-static inline PFcolor
-pfInternal_Texture2DSampler_BILINEAR_MIRRORED_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat v)
-{
-    int x0, y0, x1, y1;
-    float fx, fy;
-
-    pfInternal_Texture2DMap_MIRRORED_REPEAT(tex, &x0, &y0, u, v);
-    pfInternal_Texture2DMap_MIRRORED_REPEAT(tex, &x1, &y1, u + tex->tx, v + tex->ty);
-
-    // Calculate fractions fx, fy
-    fx = u * tex->w - x0;
-    fy = v * tex->h - y0;
-
-    // Get the colors of the four pixels
-    PFcolor c00 = tex->getter(tex->pixels, y0 * tex->w + x0);
-    PFcolor c10 = tex->getter(tex->pixels, y0 * tex->w + x1);
-    PFcolor c01 = tex->getter(tex->pixels, y1 * tex->w + x0);
-    PFcolor c11 = tex->getter(tex->pixels, y1 * tex->w + x1);
-
-    // Interpolate colors horizontally
-    PFcolor c0 = pfInternal_ColorLerpSmooth(c00, c10, fx);
-    PFcolor c1 = pfInternal_ColorLerpSmooth(c01, c11, fx);
-
-    // Interpolate colors vertically
-    return pfInternal_ColorLerpSmooth(c0, c1, fy);
-}
-
-static inline PFcolor
-pfInternal_Texture2DSampler_BILINEAR_CLAMP_TO_EDGE(const struct PFtex* tex, PFfloat u, PFfloat v)
-{
-    int x0, y0, x1, y1;
-    float fx, fy;
-
-    pfInternal_Texture2DMap_CLAMP_TO_EDGE(tex, &x0, &y0, u, v);
-    pfInternal_Texture2DMap_CLAMP_TO_EDGE(tex, &x1, &y1, u + tex->tx, v + tex->ty);
-
-    // Calculate fractions fx, fy
-    fx = u * tex->w - x0;
-    fy = v * tex->h - y0;
-
-    // Get the colors of the four pixels
-    PFcolor c00 = tex->getter(tex->pixels, y0 * tex->w + x0);
-    PFcolor c10 = tex->getter(tex->pixels, y0 * tex->w + x1);
-    PFcolor c01 = tex->getter(tex->pixels, y1 * tex->w + x0);
-    PFcolor c11 = tex->getter(tex->pixels, y1 * tex->w + x1);
-
-    // Interpolate colors horizontally
-    PFcolor c0 = pfInternal_ColorLerpSmooth(c00, c10, fx);
-    PFcolor c1 = pfInternal_ColorLerpSmooth(c01, c11, fx);
-
-    // Interpolate colors vertically
-    return pfInternal_ColorLerpSmooth(c0, c1, fy);
-}
-
-/* SISD Texture2D Sampler Functions */
-
-static inline PFMsimd_i
-pfInternal_SimdTexture2DSampler_NEAREST_REPEAT(const struct PFtex* tex, const PFMsimd_vec2 texcoords)
-{
-    PFMsimd_i x, y;
-    pfInternal_SimdTexture2DMap_REPEAT(
+    PFsimdvi x, y;
+    pfiTexture2DMap_REPEAT_simd(
         tex, &x, &y, texcoords);
 
-    PFMsimd_i offsets = pfmSimdAdd_I32(pfmSimdMullo_I32(
-        y, pfmSimdSet1_I32(tex->w)), x);
+    PFsimdvi offsets = pfiSimdAdd_I32(pfiSimdMullo_I32(
+        y, pfiSimdSet1_I32(tex->w)), x);
 
     return tex->getterSimd(tex->pixels, offsets);
 }
 
-static inline PFMsimd_i
-pfInternal_SimdTexture2DSampler_NEAREST_MIRRORED_REPEAT(const struct PFtex* tex, const PFMsimd_vec2 texcoords)
+static inline PFsimdvi
+pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT_simd(const struct PFtex* tex, const PFsimdv2f texcoords)
 {
-    PFMsimd_i x, y;
-    pfInternal_SimdTexture2DMap_MIRRORED_REPEAT(
+    PFsimdvi x, y;
+    pfiTexture2DMap_MIRRORED_REPEAT_simd(
         tex, &x, &y, texcoords);
 
-    PFMsimd_i offsets = pfmSimdAdd_I32(pfmSimdMullo_I32(
-        y, pfmSimdSet1_I32(tex->w)), x);
+    PFsimdvi offsets = pfiSimdAdd_I32(pfiSimdMullo_I32(
+        y, pfiSimdSet1_I32(tex->w)), x);
 
     return tex->getterSimd(tex->pixels, offsets);
 }
 
-static inline PFMsimd_i
-pfInternal_SimdTexture2DSampler_NEAREST_CLAMP_TO_EDGE(const struct PFtex* tex, const PFMsimd_vec2 texcoords)
+static inline PFsimdvi
+pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE_simd(const struct PFtex* tex, const PFsimdv2f texcoords)
 {
-    PFMsimd_i x, y;
-    pfInternal_SimdTexture2DMap_CLAMP_TO_EDGE(
+    PFsimdvi x, y;
+    pfiTexture2DMap_CLAMP_TO_EDGE_simd(
         tex, &x, &y, texcoords);
 
-    PFMsimd_i offsets = pfmSimdAdd_I32(pfmSimdMullo_I32(
-        y, pfmSimdSet1_I32(tex->w)), x);
+    PFsimdvi offsets = pfiSimdAdd_I32(pfiSimdMullo_I32(
+        y, pfiSimdSet1_I32(tex->w)), x);
 
     return tex->getterSimd(tex->pixels, offsets);
 }
 
-static inline PFMsimd_i
-pfInternal_SimdTexture2DSampler_BILINEAR_REPEAT(const struct PFtex* tex, const PFMsimd_vec2 texcoords)
+static inline PFsimdvi
+pfiTexture2DSampler_BILINEAR_REPEAT_simd(const struct PFtex* tex, const PFsimdv2f texcoords)
 {
-    PFMsimd_i x0, y0, x1, y1;
-    PFMsimd_f fx, fy;
+    PFsimdvi x0, y0, x1, y1;
+    PFsimdvf fx, fy;
 
-    PFMsimd_vec2 texelSize;
-    pfmSimdVec2Set(texelSize, tex->tx, tex->ty);
+    PFsimdv2f texelSize;
+    pfiVec2Set_simd(texelSize, tex->tx, tex->ty);
 
-    PFMsimd_vec2 texcoords2;
-    pfmSimdVec2AddR(texcoords2, texcoords, texelSize);
+    PFsimdv2f texcoords2;
+    pfiVec2AddR_simd(texcoords2, texcoords, texelSize);
 
-    pfInternal_SimdTexture2DMap_REPEAT(tex, &x0, &y0, texcoords);
-    pfInternal_SimdTexture2DMap_REPEAT(tex, &x1, &y1, texcoords2);
+    pfiTexture2DMap_REPEAT_simd(tex, &x0, &y0, texcoords);
+    pfiTexture2DMap_REPEAT_simd(tex, &x1, &y1, texcoords2);
 
     // Calculate fractions fx, fy
-    fx = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[0], pfmSimdSet1_F32(tex->w)), pfmSimdConvert_I32_F32(x0));
-    fy = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[1], pfmSimdSet1_F32(tex->h)), pfmSimdConvert_I32_F32(y0));
+    fx = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[0], pfiSimdSet1_F32(tex->w)), pfiSimdConvert_I32_F32(x0));
+    fy = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[1], pfiSimdSet1_F32(tex->h)), pfiSimdConvert_I32_F32(y0));
 
     // Get the colors of the four pixels
-    PFsimd_color c00; pfInternal_SimdColorUnpack(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
-    PFsimd_color c10; pfInternal_SimdColorUnpack(c10, tex->getterSimd(tex->pixels, y0 * tex->w + x1));
-    PFsimd_color c01; pfInternal_SimdColorUnpack(c01, tex->getterSimd(tex->pixels, y1 * tex->w + x0));
-    PFsimd_color c11; pfInternal_SimdColorUnpack(c11, tex->getterSimd(tex->pixels, y1 * tex->w + x1));
+    PFsimd_color c00; pfiColorUnpack_simd(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
+    PFsimd_color c10; pfiColorUnpack_simd(c10, tex->getterSimd(tex->pixels, y0 * tex->w + x1));
+    PFsimd_color c01; pfiColorUnpack_simd(c01, tex->getterSimd(tex->pixels, y1 * tex->w + x0));
+    PFsimd_color c11; pfiColorUnpack_simd(c11, tex->getterSimd(tex->pixels, y1 * tex->w + x1));
 
     // Interpolate colors horizontally
-    PFsimd_color c0; pfInternal_SimdColorLerpSmooth(c0, c00, c10, fx);
-    PFsimd_color c1; pfInternal_SimdColorLerpSmooth(c1, c01, c11, fx);
+    PFsimd_color c0; pfiColorLerpSmooth_simd(c0, c00, c10, fx);
+    PFsimd_color c1; pfiColorLerpSmooth_simd(c1, c01, c11, fx);
 
     // Interpolate colors vertically
-    PFsimd_color c; pfInternal_SimdColorLerpSmooth(c, c0, c1, fy);
+    PFsimd_color c; pfiColorLerpSmooth_simd(c, c0, c1, fy);
 
-    return pfInternal_SimdColorPack(c);
+    return pfiColorPack_simd(c);
 }
 
-static inline PFMsimd_i
-pfInternal_SimdTexture2DSampler_BILINEAR_MIRRORED_REPEAT(const struct PFtex* tex, const PFMsimd_vec2 texcoords)
+static inline PFsimdvi
+pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT_simd(const struct PFtex* tex, const PFsimdv2f texcoords)
 {
-    PFMsimd_i x0, y0, x1, y1;
-    PFMsimd_f fx, fy;
+    PFsimdvi x0, y0, x1, y1;
+    PFsimdvf fx, fy;
 
-    PFMsimd_vec2 texelSize;
-    pfmSimdVec2Set(texelSize, tex->tx, tex->ty);
+    PFsimdv2f texelSize;
+    pfiVec2Set_simd(texelSize, tex->tx, tex->ty);
 
-    PFMsimd_vec2 texcoords2;
-    pfmSimdVec2AddR(texcoords2, texcoords, texelSize);
+    PFsimdv2f texcoords2;
+    pfiVec2AddR_simd(texcoords2, texcoords, texelSize);
 
-    pfInternal_SimdTexture2DMap_MIRRORED_REPEAT(tex, &x0, &y0, texcoords);
-    pfInternal_SimdTexture2DMap_MIRRORED_REPEAT(tex, &x1, &y1, texcoords2);
+    pfiTexture2DMap_MIRRORED_REPEAT_simd(tex, &x0, &y0, texcoords);
+    pfiTexture2DMap_MIRRORED_REPEAT_simd(tex, &x1, &y1, texcoords2);
 
     // Calculate fractions fx, fy
-    fx = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[0], pfmSimdSet1_F32(tex->w)), pfmSimdConvert_I32_F32(x0));
-    fy = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[1], pfmSimdSet1_F32(tex->h)), pfmSimdConvert_I32_F32(y0));
+    fx = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[0], pfiSimdSet1_F32(tex->w)), pfiSimdConvert_I32_F32(x0));
+    fy = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[1], pfiSimdSet1_F32(tex->h)), pfiSimdConvert_I32_F32(y0));
 
     // Get the colors of the four pixels
-    PFsimd_color c00; pfInternal_SimdColorUnpack(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
-    PFsimd_color c10; pfInternal_SimdColorUnpack(c10, tex->getterSimd(tex->pixels, y0 * tex->w + x1));
-    PFsimd_color c01; pfInternal_SimdColorUnpack(c01, tex->getterSimd(tex->pixels, y1 * tex->w + x0));
-    PFsimd_color c11; pfInternal_SimdColorUnpack(c11, tex->getterSimd(tex->pixels, y1 * tex->w + x1));
+    PFsimd_color c00; pfiColorUnpack_simd(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
+    PFsimd_color c10; pfiColorUnpack_simd(c10, tex->getterSimd(tex->pixels, y0 * tex->w + x1));
+    PFsimd_color c01; pfiColorUnpack_simd(c01, tex->getterSimd(tex->pixels, y1 * tex->w + x0));
+    PFsimd_color c11; pfiColorUnpack_simd(c11, tex->getterSimd(tex->pixels, y1 * tex->w + x1));
 
     // Interpolate colors horizontally
-    PFsimd_color c0; pfInternal_SimdColorLerpSmooth(c0, c00, c10, fx);
-    PFsimd_color c1; pfInternal_SimdColorLerpSmooth(c1, c01, c11, fx);
+    PFsimd_color c0; pfiColorLerpSmooth_simd(c0, c00, c10, fx);
+    PFsimd_color c1; pfiColorLerpSmooth_simd(c1, c01, c11, fx);
 
     // Interpolate colors vertically
-    PFsimd_color c; pfInternal_SimdColorLerpSmooth(c, c0, c1, fy);
+    PFsimd_color c; pfiColorLerpSmooth_simd(c, c0, c1, fy);
 
-    return pfInternal_SimdColorPack(c);
+    return pfiColorPack_simd(c);
 }
 
-static inline PFMsimd_i
-pfInternal_SimdTexture2DSampler_BILINEAR_CLAMP_TO_EDGE(const struct PFtex* tex, const PFMsimd_vec2 texcoords)
+static inline PFsimdvi
+pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE_simd(const struct PFtex* tex, const PFsimdv2f texcoords)
 {
-    PFMsimd_i x0, y0, x1, y1;
-    PFMsimd_f fx, fy;
+    PFsimdvi x0, y0, x1, y1;
+    PFsimdvf fx, fy;
 
-    PFMsimd_vec2 texelSize;
-    pfmSimdVec2Set(texelSize, tex->tx, tex->ty);
+    PFsimdv2f texelSize;
+    pfiVec2Set_simd(texelSize, tex->tx, tex->ty);
 
-    PFMsimd_vec2 texcoords2;
-    pfmSimdVec2AddR(texcoords2, texcoords, texelSize);
+    PFsimdv2f texcoords2;
+    pfiVec2AddR_simd(texcoords2, texcoords, texelSize);
 
-    pfInternal_SimdTexture2DMap_CLAMP_TO_EDGE(tex, &x0, &y0, texcoords);
-    pfInternal_SimdTexture2DMap_CLAMP_TO_EDGE(tex, &x1, &y1, texcoords2);
+    pfiTexture2DMap_CLAMP_TO_EDGE_simd(tex, &x0, &y0, texcoords);
+    pfiTexture2DMap_CLAMP_TO_EDGE_simd(tex, &x1, &y1, texcoords2);
 
     // Calculate fractions fx, fy
-    fx = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[0], pfmSimdSet1_F32(tex->w)), pfmSimdConvert_I32_F32(x0));
-    fy = pfmSimdSub_F32(pfmSimdMul_F32(texcoords[1], pfmSimdSet1_F32(tex->h)), pfmSimdConvert_I32_F32(y0));
+    fx = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[0], pfiSimdSet1_F32(tex->w)), pfiSimdConvert_I32_F32(x0));
+    fy = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[1], pfiSimdSet1_F32(tex->h)), pfiSimdConvert_I32_F32(y0));
 
     // Get the colors of the four pixels
-    PFsimd_color c00; pfInternal_SimdColorUnpack(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
-    PFsimd_color c10; pfInternal_SimdColorUnpack(c10, tex->getterSimd(tex->pixels, y0 * tex->w + x1));
-    PFsimd_color c01; pfInternal_SimdColorUnpack(c01, tex->getterSimd(tex->pixels, y1 * tex->w + x0));
-    PFsimd_color c11; pfInternal_SimdColorUnpack(c11, tex->getterSimd(tex->pixels, y1 * tex->w + x1));
+    PFsimd_color c00; pfiColorUnpack_simd(c00, tex->getterSimd(tex->pixels, y0 * tex->w + x0));
+    PFsimd_color c10; pfiColorUnpack_simd(c10, tex->getterSimd(tex->pixels, y0 * tex->w + x1));
+    PFsimd_color c01; pfiColorUnpack_simd(c01, tex->getterSimd(tex->pixels, y1 * tex->w + x0));
+    PFsimd_color c11; pfiColorUnpack_simd(c11, tex->getterSimd(tex->pixels, y1 * tex->w + x1));
 
     // Interpolate colors horizontally
-    PFsimd_color c0; pfInternal_SimdColorLerpSmooth(c0, c00, c10, fx);
-    PFsimd_color c1; pfInternal_SimdColorLerpSmooth(c1, c01, c11, fx);
+    PFsimd_color c0; pfiColorLerpSmooth_simd(c0, c00, c10, fx);
+    PFsimd_color c1; pfiColorLerpSmooth_simd(c1, c01, c11, fx);
 
     // Interpolate colors vertically
-    PFsimd_color c; pfInternal_SimdColorLerpSmooth(c, c0, c1, fy);
+    PFsimd_color c; pfiColorLerpSmooth_simd(c, c0, c1, fy);
 
-    return pfInternal_SimdColorPack(c);
+    return pfiColorPack_simd(c);
 }
+
+#define ENTRY(FILTER, WRAP, FUNC) [FILTER][WRAP] = FUNC
+static const PFtexturesampler_simd GC_textureSamplers_simd[2][3] = {
+
+    ENTRY(PF_NEAREST, PF_REPEAT, pfiTexture2DSampler_NEAREST_REPEAT_simd),
+    ENTRY(PF_NEAREST, PF_MIRRORED_REPEAT, pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT_simd),
+    ENTRY(PF_NEAREST, PF_CLAMP_TO_EDGE, pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE_simd),
+
+    ENTRY(PF_BILINEAR, PF_REPEAT, pfiTexture2DSampler_BILINEAR_REPEAT_simd),
+    ENTRY(PF_BILINEAR, PF_MIRRORED_REPEAT, pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT_simd),
+    ENTRY(PF_BILINEAR, PF_CLAMP_TO_EDGE, pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE_simd),
+
+};
+#undef ENTRY
+
+#endif //PF_SIMD_SUPPORT
+
 
 /* Internal helper functions */
 
 static inline PFboolean
-pfInternal_IsTextureParameterValid(PFtexturewrap wrapMode, PFtexturefilter filterMode)
+pfiIsTextureParameterValid(PFtexturewrap wrapMode, PFtexturefilter filterMode)
 {
-    return wrapMode >= PF_NEAREST && wrapMode <= PF_BILINEAR
-        && filterMode >= PF_REPEAT && filterMode <= PF_CLAMP_TO_EDGE;
-}
-
-static inline void
-pfInternal_GetTexture2DSampler(PFtexturesampler* sampler, PFtexturesampler_simd* samplerSimd, PFtexturewrap wrapMode, PFtexturefilter filterMode)
-{
-#   define ENTRY(FILTER, WRAP, FUNC) [FILTER][WRAP] = FUNC
-
-    static const PFtexturesampler samplers[2][3] = {
-
-        ENTRY(PF_NEAREST, PF_REPEAT, pfInternal_Texture2DSampler_NEAREST_REPEAT),
-        ENTRY(PF_NEAREST, PF_MIRRORED_REPEAT, pfInternal_Texture2DSampler_NEAREST_MIRRORED_REPEAT),
-        ENTRY(PF_NEAREST, PF_CLAMP_TO_EDGE, pfInternal_Texture2DSampler_NEAREST_CLAMP_TO_EDGE),
-
-        ENTRY(PF_BILINEAR, PF_REPEAT, pfInternal_Texture2DSampler_BILINEAR_REPEAT),
-        ENTRY(PF_BILINEAR, PF_MIRRORED_REPEAT, pfInternal_Texture2DSampler_BILINEAR_MIRRORED_REPEAT),
-        ENTRY(PF_BILINEAR, PF_CLAMP_TO_EDGE, pfInternal_Texture2DSampler_BILINEAR_CLAMP_TO_EDGE),
-
-    };
-
-    static const PFtexturesampler_simd samplersSimd[2][3] = {
-
-        ENTRY(PF_NEAREST, PF_REPEAT, pfInternal_SimdTexture2DSampler_NEAREST_REPEAT),
-        ENTRY(PF_NEAREST, PF_MIRRORED_REPEAT, pfInternal_SimdTexture2DSampler_NEAREST_MIRRORED_REPEAT),
-        ENTRY(PF_NEAREST, PF_CLAMP_TO_EDGE, pfInternal_SimdTexture2DSampler_NEAREST_CLAMP_TO_EDGE),
-
-        ENTRY(PF_BILINEAR, PF_REPEAT, pfInternal_SimdTexture2DSampler_BILINEAR_REPEAT),
-        ENTRY(PF_BILINEAR, PF_MIRRORED_REPEAT, pfInternal_SimdTexture2DSampler_BILINEAR_MIRRORED_REPEAT),
-        ENTRY(PF_BILINEAR, PF_CLAMP_TO_EDGE, pfInternal_SimdTexture2DSampler_BILINEAR_CLAMP_TO_EDGE),
-
-    };
-
-    if (sampler) *sampler = samplers[filterMode][wrapMode];
-    if (samplerSimd) *samplerSimd = samplersSimd[filterMode][wrapMode];
-
-#   undef ENTRY
+    return (wrapMode >= PF_NEAREST && wrapMode <= PF_BILINEAR)
+        && (filterMode >= PF_REPEAT && filterMode <= PF_CLAMP_TO_EDGE);
 }
 
 #endif //PF_INTERNAL_SAMPLER_H

@@ -22,119 +22,116 @@
 
 #include "./context/context.h"
 #include "../pixelforge.h"
-#include "../pfm.h"
+#include "./simd.h"
 
 /* SISD Depth testing functions */
 
 static inline PFboolean
-pfInternal_DepthTest_EQ(PFfloat src, PFfloat dst)
+pfiDepthTest_EQ(PFfloat src, PFfloat dst)
 {
     return (src == dst);
 }
 
 static inline PFboolean
-pfInternal_DepthTest_NEQ(PFfloat src, PFfloat dst)
+pfiDepthTest_NEQ(PFfloat src, PFfloat dst)
 {
     return (src != dst);
 }
 
 static inline PFboolean
-pfInternal_DepthTest_LT(PFfloat src, PFfloat dst)
+pfiDepthTest_LT(PFfloat src, PFfloat dst)
 {
     return (src < dst);
 }
 
 static inline PFboolean
-pfInternal_DepthTest_LE(PFfloat src, PFfloat dst)
+pfiDepthTest_LE(PFfloat src, PFfloat dst)
 {
     return (src <= dst);
 }
 
 static inline PFboolean
-pfInternal_DepthTest_GT(PFfloat src, PFfloat dst)
+pfiDepthTest_GT(PFfloat src, PFfloat dst)
 {
     return (src > dst);
 }
 
 static inline PFboolean
-pfInternal_DepthTest_GE(PFfloat src, PFfloat dst)
+pfiDepthTest_GE(PFfloat src, PFfloat dst)
 {
     return (src >= dst);
 }
 
+#define ENTRY(MODE, FUNC) [MODE] = FUNC
+static const PFdepthfunc GC_depthTestFuncs[6] = {
+    ENTRY(PF_EQUAL, pfiDepthTest_EQ),
+    ENTRY(PF_NOTEQUAL, pfiDepthTest_NEQ),
+    ENTRY(PF_LESS, pfiDepthTest_LT),
+    ENTRY(PF_LEQUAL, pfiDepthTest_LE),
+    ENTRY(PF_GREATER, pfiDepthTest_GT),
+    ENTRY(PF_GEQUAL, pfiDepthTest_GE)
+};
+#undef ENTRY
+
 /* SIMD Depth testing functions */
 
-static inline PFMsimd_f
-pfInternal_SimdDepthTest_EQ(PFMsimd_f src, PFMsimd_f dst)
+#if PF_SIMD_SUPPORT
+
+static inline PFsimdvf
+pfiDepthTest_EQ_simd(PFsimdvf src, PFsimdvf dst)
 {
-    return pfmSimdCmpEQ_F32(src, dst);
+    return pfiSimdCmpEQ_F32(src, dst);
 }
 
-static inline PFMsimd_f
-pfInternal_SimdDepthTest_NEQ(PFMsimd_f src, PFMsimd_f dst)
+static inline PFsimdvf
+pfiDepthTest_NEQ_simd(PFsimdvf src, PFsimdvf dst)
 {
-    return pfmSimdCmpEQ_F32(src, dst);
+    return pfiSimdCmpEQ_F32(src, dst);
 }
 
-static inline PFMsimd_f
-pfInternal_SimdDepthTest_LT(PFMsimd_f src, PFMsimd_f dst)
+static inline PFsimdvf
+pfiDepthTest_LT_simd(PFsimdvf src, PFsimdvf dst)
 {
-    return pfmSimdCmpLT_F32(src, dst);
+    return pfiSimdCmpLT_F32(src, dst);
 }
 
-static inline PFMsimd_f
-pfInternal_SimdDepthTest_LE(PFMsimd_f src, PFMsimd_f dst)
+static inline PFsimdvf
+pfiDepthTest_LE_simd(PFsimdvf src, PFsimdvf dst)
 {
-    return pfmSimdCmpLE_F32(src, dst);
+    return pfiSimdCmpLE_F32(src, dst);
 }
 
-static inline PFMsimd_f
-pfInternal_SimdDepthTest_GT(PFMsimd_f src, PFMsimd_f dst)
+static inline PFsimdvf
+pfiDepthTest_GT_simd(PFsimdvf src, PFsimdvf dst)
 {
-    return pfmSimdCmpGT_F32(src, dst);
+    return pfiSimdCmpGT_F32(src, dst);
 }
 
-static inline PFMsimd_f
-pfInternal_SimdDepthTest_GE(PFMsimd_f src, PFMsimd_f dst)
+static inline PFsimdvf
+pfiDepthTest_GE_simd(PFsimdvf src, PFsimdvf dst)
 {
-    return pfmSimdCmpGE_F32(src, dst);
+    return pfiSimdCmpGE_F32(src, dst);
 }
 
-/* Get Depth Function */
+#define ENTRY(MODE, FUNC) [MODE] = FUNC
+static const PFdepthfunc_simd GC_depthTestFuncs_simd[6] = {
+    ENTRY(PF_EQUAL, pfiDepthTest_EQ_simd),
+    ENTRY(PF_NOTEQUAL, pfiDepthTest_NEQ_simd),
+    ENTRY(PF_LESS, pfiDepthTest_LT_simd),
+    ENTRY(PF_LEQUAL, pfiDepthTest_LE_simd),
+    ENTRY(PF_GREATER, pfiDepthTest_GT_simd),
+    ENTRY(PF_GEQUAL, pfiDepthTest_GE_simd)
+};
+#undef ENTRY
+
+#endif //PF_SIMD_SUPPORT
+
+/* Helper Functions */
 
 static inline PFboolean
-pfInternal_IsDepthModeValid(PFdepthmode mode)
+pfiIsDepthModeValid(PFdepthmode mode)
 {
     return (mode >= PF_EQUAL && mode <= PF_GEQUAL);
-}
-
-static inline void
-pfInternal_GetDepthFuncs(PFdepthmode mode, PFdepthfunc* depthTest, PFdepthfunc_simd* depthTestSimd)
-{
-#   define ENTRY(MODE, FUNC) [MODE] = FUNC
-
-    static const PFdepthfunc depthTests[6] = {
-        ENTRY(PF_EQUAL, pfInternal_DepthTest_EQ),
-        ENTRY(PF_NOTEQUAL, pfInternal_DepthTest_NEQ),
-        ENTRY(PF_LESS, pfInternal_DepthTest_LT),
-        ENTRY(PF_LEQUAL, pfInternal_DepthTest_LE),
-        ENTRY(PF_GREATER, pfInternal_DepthTest_GT),
-        ENTRY(PF_GEQUAL, pfInternal_DepthTest_GE)
-    };
-
-    static const PFdepthfunc_simd depthTestsSimd[6] = {
-        ENTRY(PF_EQUAL, pfInternal_SimdDepthTest_EQ),
-        ENTRY(PF_NOTEQUAL, pfInternal_SimdDepthTest_NEQ),
-        ENTRY(PF_LESS, pfInternal_SimdDepthTest_LT),
-        ENTRY(PF_LEQUAL, pfInternal_SimdDepthTest_LE),
-        ENTRY(PF_GREATER, pfInternal_SimdDepthTest_GT),
-        ENTRY(PF_GEQUAL, pfInternal_SimdDepthTest_GE)
-    };
-
-    if (depthTest) *depthTest = depthTests[mode];
-    if (depthTestSimd) *depthTestSimd = depthTestsSimd[mode];
-
-#   undef ENTRY
 }
 
 #endif //PF_INTERNAL_DEPTH_H

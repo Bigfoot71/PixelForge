@@ -22,20 +22,20 @@
 
 #include "context/context.h"
 
-static inline void pfInternal_SwapVertex(PFvertex* a, PFvertex* b)
+static inline void pfiSwapVertex(PFvertex* a, PFvertex* b)
 {
     PFvertex tmp = *a;
     *a = *b; *b = tmp;
 }
 
-static inline void pfInternal_SwapByte(PFubyte* a, PFubyte* b)
+static inline void pfiSwapByte(PFubyte* a, PFubyte* b)
 {
     *a ^= *b;
     *b ^= *a;
     *a ^= *b;
 }
 
-static inline PFvertex pfInternal_LerpVertex(const PFvertex* start, const PFvertex* end, PFfloat t)
+static inline PFvertex pfiLerpVertex(const PFvertex* start, const PFvertex* end, PFfloat t)
 {
     PFvertex result = { 0 };
 
@@ -47,8 +47,7 @@ static inline PFvertex pfInternal_LerpVertex(const PFvertex* start, const PFvert
 #   ifdef _OPENMP
 #       pragma omp simd
 #   endif
-    for (int_fast8_t i = 0; i < 4; i++)
-    {
+    for (int_fast8_t i = 0; i < 4; i++) {
         result.homogeneous[i] = start->homogeneous[i] + t*(end->homogeneous[i] - start->homogeneous[i]);
         result.position[i] = start->position[i] + t*(end->position[i] - start->position[i]);
         resultCol[i] = startCol[i] + (uT*((PFint)endCol[i] - startCol[i]))/255;

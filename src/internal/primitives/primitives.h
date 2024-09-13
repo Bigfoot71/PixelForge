@@ -22,14 +22,14 @@
 
 #include "../../pixelforge.h"
 
-void pfInternal_ProcessRasterize_POINT(void);
-void pfInternal_ProcessRasterize_POLY_POINTS(int_fast8_t vertexCount);
+void pfiProcessRasterize_POINT(void);
+void pfiProcessRasterize_POLY_POINTS(int_fast8_t vertexCount);
 
-void pfInternal_ProcessRasterize_LINE(void);
-void pfInternal_ProcessRasterize_POLY_LINES(int_fast8_t vertexCount);
+void pfiProcessRasterize_LINE(void);
+void pfiProcessRasterize_POLY_LINES(int_fast8_t vertexCount);
 
-void pfInternal_ProcessRasterize_TRIANGLE(PFface faceToRender);
-void pfInternal_ProcessRasterize_TRIANGLE_FAN(PFface faceToRender, int_fast8_t numTriangles);
-void pfInternal_ProcessRasterize_TRIANGLE_STRIP(PFface faceToRender, int_fast8_t numTriangles);
+void pfiProcessRasterize_TRIANGLE(PFface faceToRender);
+void pfiProcessRasterize_TRIANGLE_FAN(PFface faceToRender, int_fast8_t numTriangles);
+void pfiProcessRasterize_TRIANGLE_STRIP(PFface faceToRender, int_fast8_t numTriangles);
 
 #endif //PF_PRIMITIVES_H

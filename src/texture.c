@@ -37,28 +37,27 @@ PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelforma
     PFpixelgetter_simd getterSimd = NULL;
     PFpixelsetter_simd setterSimd = NULL;
 
-    pfInternal_GetPixelGetterSetter(&getter, &setter, format, type);
-    pfInternal_GetPixelGetterSetter_simd(&getterSimd, &setterSimd, format, type);
+    getter = GC_pixelGetters[format][type];
+    setter = GC_pixelSetters[format][type];
 
-    if (!getter || !setter)
-    {
-        if (currentCtx)
-        {
-            currentCtx->errCode = PF_INVALID_ENUM;
+#   if PF_SIMD_SUPPORT
+        getterSimd = GC_pixelGetters_simd[format][type];
+        setterSimd = GC_pixelSetters_simd[format][type];
+#   endif //PF_SIMD_SUPPORT
+
+    if (!getter || !setter) {
+        if (G_currentCtx) {
+            G_currentCtx->errCode = PF_INVALID_ENUM;
         }
-
         return texture;
     }
 
     texture = PF_MALLOC(sizeof(struct PFtex));
 
-    if (texture == NULL)
-    {
-        if (currentCtx)
-        {
-            currentCtx->errCode = PF_ERROR_OUT_OF_MEMORY;
+    if (texture == NULL) {
+        if (G_currentCtx) {
+            G_currentCtx->errCode = PF_ERROR_OUT_OF_MEMORY;
         }
-
         return texture;
     }
 
@@ -78,8 +77,8 @@ PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelforma
     texture->getterSimd = getterSimd;
     texture->setterSimd = setterSimd;
 
-    texture->sampler = pfInternal_Texture2DSampler_NEAREST_REPEAT;
-    texture->samplerSimd = pfInternal_SimdTexture2DSampler_NEAREST_REPEAT;
+    texture->sampler = pfiTexture2DSampler_NEAREST_REPEAT;
+    texture->samplerSimd = pfiTexture2DSampler_NEAREST_REPEAT_simd;
 
     return texture;
 }
@@ -87,10 +86,8 @@ PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelforma
 void pfDeleteTexture(PFtexture* texture, PFboolean freeBuffer)
 {
     struct PFtex* tex = *texture;
-    if (tex)
-    {
-        if (freeBuffer && tex->pixels)
-        {
+    if (tex) {
+        if (freeBuffer && tex->pixels) {
             PF_FREE(tex->pixels);
         }
         PF_FREE(tex);
@@ -102,8 +99,7 @@ PFboolean pfIsValidTexture(const PFtexture texture)
 {
     const struct PFtex* tex = texture;
     PFboolean result = PF_FALSE;
-    if (tex)
-    {
+    if (tex) {
         result = tex->pixels &&
                  tex->w > 0 && tex->h > 0 &&
                  tex->getter && tex->setter;
@@ -115,23 +111,23 @@ void pfTextureParameter(PFtexture texture, PFtexturewrap wrapMode, PFtexturefilt
 {
     struct PFtex* tex = texture;
 
-    if (!pfInternal_IsTextureParameterValid(wrapMode, filterMode))
-    {
-        if (currentCtx) currentCtx->errCode = PF_INVALID_ENUM;
+    if (!pfiIsTextureParameterValid(wrapMode, filterMode)) {
+        if (G_currentCtx) G_currentCtx->errCode = PF_INVALID_ENUM;
         return;
     }
 
-    pfInternal_GetTexture2DSampler(
-        &tex->sampler, &tex->samplerSimd,
-        wrapMode, filterMode);
+    tex->sampler = GC_textureSamplers[filterMode][wrapMode];
+
+#   if PF_SIMD_SUPPORT
+        tex->samplerSimd = GC_textureSamplers_simd[filterMode][wrapMode];
+#   endif //PF_SIMD_SUPPORT
 }
 
 void* pfGetTexturePixels(const PFtexture texture, PFsizei* width, PFsizei* height, PFpixelformat* format, PFdatatype* type)
 {
     const struct PFtex* tex = texture;
     void* pixels = NULL;
-    if (tex)
-    {
+    if (tex) {
         if (width) *width = tex->w;
         if (height) *height = tex->h;
         if (format) *format = tex->format;

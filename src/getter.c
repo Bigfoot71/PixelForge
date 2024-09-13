@@ -28,51 +28,51 @@ void pfGetBooleanv(PFenum pname, PFboolean* params)
         /* State context */
 
         case PF_TEXTURE_2D:
-            *params = currentCtx->state & PF_TEXTURE_2D;
+            *params = G_currentCtx->state & PF_TEXTURE_2D;
             break;
 
         case PF_FRAMEBUFFER:
-            *params = currentCtx->state & PF_FRAMEBUFFER;
+            *params = G_currentCtx->state & PF_FRAMEBUFFER;
             break;
 
         case PF_BLEND:
-            *params = currentCtx->state & PF_BLEND;
+            *params = G_currentCtx->state & PF_BLEND;
             break;
 
         case PF_DEPTH_TEST:
-            *params = currentCtx->state & PF_DEPTH_TEST;
+            *params = G_currentCtx->state & PF_DEPTH_TEST;
             break;
 
         case PF_CULL_FACE:
-            *params = currentCtx->state & PF_CULL_FACE;
+            *params = G_currentCtx->state & PF_CULL_FACE;
             break;
 
         case PF_NORMALIZE:
-            *params = currentCtx->state & PF_NORMALIZE;
+            *params = G_currentCtx->state & PF_NORMALIZE;
             break;
 
         case PF_LIGHTING:
-            *params = currentCtx->state & PF_LIGHTING;
+            *params = G_currentCtx->state & PF_LIGHTING;
             break;
 
         case PF_COLOR_MATERIAL:
-            *params = currentCtx->state & PF_COLOR_MATERIAL;
+            *params = G_currentCtx->state & PF_COLOR_MATERIAL;
             break;
 
         case PF_VERTEX_ARRAY:
-            *params = currentCtx->state & PF_VERTEX_ARRAY;
+            *params = G_currentCtx->state & PF_VERTEX_ARRAY;
             break;
 
         case PF_NORMAL_ARRAY:
-            *params = currentCtx->state & PF_NORMAL_ARRAY;
+            *params = G_currentCtx->state & PF_NORMAL_ARRAY;
             break;
 
         case PF_COLOR_ARRAY:
-            *params = currentCtx->state & PF_COLOR_ARRAY;
+            *params = G_currentCtx->state & PF_COLOR_ARRAY;
             break;
 
         case PF_TEXTURE_COORD_ARRAY:
-            *params = currentCtx->state & PF_TEXTURE_COORD_ARRAY;
+            *params = G_currentCtx->state & PF_TEXTURE_COORD_ARRAY;
             break;
 
         /* Other values */
@@ -107,7 +107,7 @@ void pfGetBooleanv(PFenum pname, PFboolean* params)
         /* Default */
 
         default:
-            currentCtx->errCode = PF_INVALID_ENUM;
+            G_currentCtx->errCode = PF_INVALID_ENUM;
             break;
     }
 }
@@ -117,41 +117,41 @@ void pfGetIntegerv(PFenum pname, PFint* params)
     switch (pname)
     {
         case PF_VIEWPORT:
-            params[0] = currentCtx->vpPos[0];
-            params[1] = currentCtx->vpPos[1];
-            params[2] = currentCtx->vpDim[0] + 1;
-            params[3] = currentCtx->vpDim[1] + 1;
+            params[0] = G_currentCtx->vpPos[0];
+            params[1] = G_currentCtx->vpPos[1];
+            params[2] = G_currentCtx->vpDim[0] + 1;
+            params[3] = G_currentCtx->vpDim[1] + 1;
             break;
 
         case PF_COLOR_CLEAR_VALUE:
-            params[0] = currentCtx->clearColor.r;
-            params[1] = currentCtx->clearColor.g;
-            params[2] = currentCtx->clearColor.b;
-            params[3] = currentCtx->clearColor.a;
+            params[0] = G_currentCtx->clearColor.r;
+            params[1] = G_currentCtx->clearColor.g;
+            params[2] = G_currentCtx->clearColor.b;
+            params[3] = G_currentCtx->clearColor.a;
             break;
 
         case PF_CULL_FACE_MODE:
-            *params = currentCtx->cullFace;
+            *params = G_currentCtx->cullFace;
             break;
 
         case PF_CURRENT_COLOR:
-            params[0] = currentCtx->currentColor.r;
-            params[1] = currentCtx->currentColor.g;
-            params[2] = currentCtx->currentColor.b;
-            params[3] = currentCtx->currentColor.a;
+            params[0] = G_currentCtx->currentColor.r;
+            params[1] = G_currentCtx->currentColor.g;
+            params[2] = G_currentCtx->currentColor.b;
+            params[3] = G_currentCtx->currentColor.a;
             break;
 
         //case PF_CURRENT_RASTER_COLOR:
         //  break;
 
         case PF_CURRENT_RASTER_POSITION:
-            params[0] = currentCtx->rasterPos[0];
-            params[1] = currentCtx->rasterPos[1];
+            params[0] = G_currentCtx->rasterPos[0];
+            params[1] = G_currentCtx->rasterPos[1];
             break;
 
         case PF_POLYGON_MODE:
-            params[0] = currentCtx->polygonMode[0];
-            params[1] = currentCtx->polygonMode[1];
+            params[0] = G_currentCtx->polygonMode[0];
+            params[1] = G_currentCtx->polygonMode[1];
             break;
 
         //case PF_POLYGON_SMOOTH_HINT:
@@ -167,7 +167,7 @@ void pfGetIntegerv(PFenum pname, PFint* params)
         //  break;
 
         case PF_MATRIX_MODE:
-            *params = currentCtx->currentMatrixMode;
+            *params = G_currentCtx->currentMatrixMode;
             break;
 
         case PF_MAX_PROJECTION_STACK_DEPTH:
@@ -183,7 +183,7 @@ void pfGetIntegerv(PFenum pname, PFint* params)
             break;
 
         case PF_SHADE_MODEL:
-            *params = currentCtx->shadingMode;
+            *params = G_currentCtx->shadingMode;
             break;
 
         case PF_MAX_LIGHTS:
@@ -191,51 +191,51 @@ void pfGetIntegerv(PFenum pname, PFint* params)
             break;
 
         case PF_VERTEX_ARRAY_SIZE:
-            *params = currentCtx->vertexAttribs.positions.size;
+            *params = G_currentCtx->vertexAttribs.positions.size;
             break;
 
         case PF_VERTEX_ARRAY_STRIDE:
-            *params = currentCtx->vertexAttribs.positions.stride;
+            *params = G_currentCtx->vertexAttribs.positions.stride;
             break;
 
         case PF_VERTEX_ARRAY_TYPE:
-            *params = currentCtx->vertexAttribs.positions.type;
+            *params = G_currentCtx->vertexAttribs.positions.type;
             break;
 
         case PF_NORMAL_ARRAY_STRIDE:
-            *params = currentCtx->vertexAttribs.normals.stride;
+            *params = G_currentCtx->vertexAttribs.normals.stride;
             break;
 
         case PF_NORMAL_ARRAY_TYPE:
-            *params = currentCtx->vertexAttribs.normals.type;
+            *params = G_currentCtx->vertexAttribs.normals.type;
             break;
 
         //case PF_TEXTURE_COORD_ARRAY_SIZE:
-        //    *params = currentCtx->vertexAttribs.texcoords.size;
+        //    *params = G_currentCtx->vertexAttribs.texcoords.size;
         //    break;
 
         case PF_TEXTURE_COORD_ARRAY_STRIDE:
-            *params = currentCtx->vertexAttribs.texcoords.stride;
+            *params = G_currentCtx->vertexAttribs.texcoords.stride;
             break;
 
         case PF_TEXTURE_COORD_ARRAY_TYPE:
-            *params = currentCtx->vertexAttribs.texcoords.type;
+            *params = G_currentCtx->vertexAttribs.texcoords.type;
             break;
 
         case PF_COLOR_ARRAY_SIZE:
-            *params = currentCtx->vertexAttribs.colors.size;
+            *params = G_currentCtx->vertexAttribs.colors.size;
             break;
 
         case PF_COLOR_ARRAY_STRIDE:
-            *params = currentCtx->vertexAttribs.colors.stride;
+            *params = G_currentCtx->vertexAttribs.colors.stride;
             break;
 
         case PF_COLOR_ARRAY_TYPE:
-            *params = currentCtx->vertexAttribs.colors.type;
+            *params = G_currentCtx->vertexAttribs.colors.type;
             break;
 
         default:
-            currentCtx->errCode = PF_INVALID_ENUM;
+            G_currentCtx->errCode = PF_INVALID_ENUM;
             break;
     }
 }
@@ -245,32 +245,32 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
     switch (pname)
     {
         case PF_COLOR_CLEAR_VALUE:
-            params[0] = currentCtx->clearColor.r*INV_255;
-            params[1] = currentCtx->clearColor.g*INV_255;
-            params[2] = currentCtx->clearColor.b*INV_255;
-            params[3] = currentCtx->clearColor.a*INV_255;
+            params[0] = G_currentCtx->clearColor.r*INV_255;
+            params[1] = G_currentCtx->clearColor.g*INV_255;
+            params[2] = G_currentCtx->clearColor.b*INV_255;
+            params[3] = G_currentCtx->clearColor.a*INV_255;
             break;
 
         case PF_DEPTH_CLEAR_VALUE:
-            *params = currentCtx->clearDepth;
+            *params = G_currentCtx->clearDepth;
             break;
 
         case PF_CURRENT_COLOR:
-            params[0] = currentCtx->currentColor.r*INV_255;
-            params[1] = currentCtx->currentColor.g*INV_255;
-            params[2] = currentCtx->currentColor.b*INV_255;
-            params[3] = currentCtx->currentColor.a*INV_255;
+            params[0] = G_currentCtx->currentColor.r*INV_255;
+            params[1] = G_currentCtx->currentColor.g*INV_255;
+            params[2] = G_currentCtx->currentColor.b*INV_255;
+            params[3] = G_currentCtx->currentColor.a*INV_255;
             break;
 
         case PF_CURRENT_NORMAL:
-            params[0] = currentCtx->currentNormal[0];
-            params[1] = currentCtx->currentNormal[1];
-            params[2] = currentCtx->currentNormal[2];
+            params[0] = G_currentCtx->currentNormal[0];
+            params[1] = G_currentCtx->currentNormal[1];
+            params[2] = G_currentCtx->currentNormal[2];
             break;
 
         case PF_CURRENT_TEXTURE_COORDS:
-            params[0] = currentCtx->currentTexcoord[0];
-            params[1] = currentCtx->currentTexcoord[1];
+            params[0] = G_currentCtx->currentTexcoord[0];
+            params[1] = G_currentCtx->currentTexcoord[1];
             break;
 
         //case PF_CURRENT_RASTER_COLOR:
@@ -280,8 +280,8 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
         //  break;
 
         case PF_CURRENT_RASTER_POSITION:
-            params[0] = currentCtx->rasterPos[0];
-            params[1] = currentCtx->rasterPos[1];
+            params[0] = G_currentCtx->rasterPos[0];
+            params[1] = G_currentCtx->rasterPos[1];
             break;
 
         //case PF_CURRENT_RASTER_TEXTURE_COORDS:
@@ -297,7 +297,7 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
         //  break;
 
         case PF_POINT_SIZE:
-            *params = currentCtx->pointSize;
+            *params = G_currentCtx->pointSize;
             break;
 
         //case PF_POINT_SIZE_GRANULARITY:
@@ -319,7 +319,7 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
         //  break;
 
         case PF_LINE_WIDTH:
-            *params = currentCtx->lineWidth;
+            *params = G_currentCtx->lineWidth;
             break;
 
         //case PF_LINE_WIDTH_GRANULARITY:
@@ -329,31 +329,31 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
         //  break;
 
         case PF_PROJECTION_MATRIX:
-            memcpy(params, currentCtx->matProjection, sizeof(PFMmat4));
+            memcpy(params, G_currentCtx->matProjection, sizeof(PFMmat4));
             break;
 
         case PF_MODELVIEW_MATRIX:
         {
             PFMmat4 modelview;
-            pfmMat4Mul(modelview, currentCtx->matModel, currentCtx->matView);
+            pfmMat4Mul(modelview, G_currentCtx->matModel, G_currentCtx->matView);
             memcpy(params, modelview, sizeof(PFMmat4));
         }
         break;
 
         case PF_TEXTURE_MATRIX:
-            memcpy(params, currentCtx->matTexture, sizeof(PFMmat4));
+            memcpy(params, G_currentCtx->matTexture, sizeof(PFMmat4));
             break;
 
         case PF_ZOOM_X:
-            *params = currentCtx->pixelZoom[0];
+            *params = G_currentCtx->pixelZoom[0];
             break;
 
         case PF_ZOOM_Y:
-            *params = currentCtx->pixelZoom[1];
+            *params = G_currentCtx->pixelZoom[1];
             break;
 
         default:
-            currentCtx->errCode = PF_INVALID_ENUM;
+            G_currentCtx->errCode = PF_INVALID_ENUM;
             break;
     }
 }
@@ -363,32 +363,32 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
     switch (pname)
     {
         case PF_COLOR_CLEAR_VALUE:
-            params[0] = currentCtx->clearColor.r*INV_255;
-            params[1] = currentCtx->clearColor.g*INV_255;
-            params[2] = currentCtx->clearColor.b*INV_255;
-            params[3] = currentCtx->clearColor.a*INV_255;
+            params[0] = G_currentCtx->clearColor.r*INV_255;
+            params[1] = G_currentCtx->clearColor.g*INV_255;
+            params[2] = G_currentCtx->clearColor.b*INV_255;
+            params[3] = G_currentCtx->clearColor.a*INV_255;
             break;
 
         case PF_DEPTH_CLEAR_VALUE:
-            *params = currentCtx->clearDepth;
+            *params = G_currentCtx->clearDepth;
             break;
 
         case PF_CURRENT_COLOR:
-            params[0] = currentCtx->currentColor.r*INV_255;
-            params[1] = currentCtx->currentColor.g*INV_255;
-            params[2] = currentCtx->currentColor.b*INV_255;
-            params[3] = currentCtx->currentColor.a*INV_255;
+            params[0] = G_currentCtx->currentColor.r*INV_255;
+            params[1] = G_currentCtx->currentColor.g*INV_255;
+            params[2] = G_currentCtx->currentColor.b*INV_255;
+            params[3] = G_currentCtx->currentColor.a*INV_255;
             break;
 
         case PF_CURRENT_NORMAL:
-            params[0] = currentCtx->currentNormal[0];
-            params[1] = currentCtx->currentNormal[1];
-            params[2] = currentCtx->currentNormal[2];
+            params[0] = G_currentCtx->currentNormal[0];
+            params[1] = G_currentCtx->currentNormal[1];
+            params[2] = G_currentCtx->currentNormal[2];
             break;
 
         case PF_CURRENT_TEXTURE_COORDS:
-            params[0] = currentCtx->currentTexcoord[0];
-            params[1] = currentCtx->currentTexcoord[1];
+            params[0] = G_currentCtx->currentTexcoord[0];
+            params[1] = G_currentCtx->currentTexcoord[1];
             break;
 
         //case PF_CURRENT_RASTER_COLOR:
@@ -398,8 +398,8 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
         //  break;
 
         case PF_CURRENT_RASTER_POSITION:
-            params[0] = currentCtx->rasterPos[0];
-            params[1] = currentCtx->rasterPos[1];
+            params[0] = G_currentCtx->rasterPos[0];
+            params[1] = G_currentCtx->rasterPos[1];
             break;
 
         //case PF_CURRENT_RASTER_TEXTURE_COORDS:
@@ -415,7 +415,7 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
         //  break;
 
         case PF_POINT_SIZE:
-            *params = currentCtx->pointSize;
+            *params = G_currentCtx->pointSize;
             break;
 
         //case PF_POINT_SIZE_GRANULARITY:
@@ -437,7 +437,7 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
         //  break;
 
         case PF_LINE_WIDTH:
-            *params = currentCtx->lineWidth;
+            *params = G_currentCtx->lineWidth;
             break;
 
         //case PF_LINE_WIDTH_GRANULARITY:
@@ -450,7 +450,7 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
         {
             for (int_fast8_t i = 0; i < 16; i++)
             {
-                params[i] = currentCtx->matProjection[i];
+                params[i] = G_currentCtx->matProjection[i];
             }
         }
         break;
@@ -458,7 +458,7 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
         case PF_MODELVIEW_MATRIX:
         {
             PFMmat4 modelview;
-            pfmMat4Mul(modelview, currentCtx->matModel, currentCtx->matView);
+            pfmMat4Mul(modelview, G_currentCtx->matModel, G_currentCtx->matView);
 
             for (int_fast8_t i = 0; i < 16; i++)
             {
@@ -471,21 +471,21 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
         {
             for (int_fast8_t i = 0; i < 16; i++)
             {
-                params[i] = currentCtx->matTexture[i];
+                params[i] = G_currentCtx->matTexture[i];
             }
         }
         break;
 
         case PF_ZOOM_X:
-            *params = currentCtx->pixelZoom[0];
+            *params = G_currentCtx->pixelZoom[0];
             break;
 
         case PF_ZOOM_Y:
-            *params = currentCtx->pixelZoom[1];
+            *params = G_currentCtx->pixelZoom[1];
             break;
 
         default:
-            currentCtx->errCode = PF_INVALID_ENUM;
+            G_currentCtx->errCode = PF_INVALID_ENUM;
             break;
     }
 }
@@ -495,27 +495,27 @@ void pfGetPointerv(PFenum pname, const void** params)
     switch (pname)
     {
         case PF_TEXTURE_2D:
-            *params = currentCtx->currentTexture;
+            *params = G_currentCtx->currentTexture;
             break;
 
         case PF_FRAMEBUFFER:
-            *params = currentCtx->bindedFramebuffer;
+            *params = G_currentCtx->bindedFramebuffer;
             break;
 
         case PF_BLEND_FUNC:
             // NOTE: Returns the address of the function pointer
             // internally and not the address of the function itself
-            *params = (const void*)&(currentCtx->blendFunction);
+            *params = (const void*)&(G_currentCtx->blendFunction);
             break;
 
         case PF_DEPTH_FUNC:
             // NOTE: Returns the address of the function pointer
             // internally and not the address of the function itself
-            *params = (const void*)&(currentCtx->depthFunction);
+            *params = (const void*)&(G_currentCtx->depthFunction);
             break;
 
         default:
-            currentCtx->errCode = PF_INVALID_ENUM;
+            G_currentCtx->errCode = PF_INVALID_ENUM;
             break;
     }
 }
