@@ -83,10 +83,11 @@ typedef PFsimdvf* PFsimdvf_ptr;
 #endif
 
 GC_SIMD_F32(epsilon, 1e-5f);
-GC_SIMD_F32(0  , 0.0f);
+GC_SIMD_F32(0, 0.0f);
 GC_SIMD_F32(0p5, 0.5f);
-GC_SIMD_F32(1  , 1.0f);
-GC_SIMD_F32(2  , 2.0f);
+GC_SIMD_F32(inv255, 1.0f/255.0f);
+GC_SIMD_F32(1, 1.0f);
+GC_SIMD_F32(2, 2.0f);
 GC_SIMD_F32(255, 255.0f);
 
 // the smallest non denormalized float number
