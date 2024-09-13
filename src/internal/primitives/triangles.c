@@ -80,8 +80,7 @@ static void Rasterize_Triangle(PFface faceToRender, PFboolean is3D,
 static void pfiProcessRasterize_TRIANGLE_IMPL(PFface faceToRender, PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES])
 {
 #ifndef NDEBUG
-    if (faceToRender == PF_FRONT_AND_BACK)
-    {
+    if (faceToRender == PF_FRONT_AND_BACK) {
         // WARNING: This should not be called with PF_FRONT_AND_BACK
         G_currentCtx->errCode = PF_DEBUG_INVALID_OPERATION;
         return;
@@ -95,39 +94,31 @@ static void pfiProcessRasterize_TRIANGLE_IMPL(PFface faceToRender, PFvertex proc
 
     // Performs certain operations that must be done before
     // processing the vertices in case of light management
-
-    if (lighting)
-    {
+    if (lighting) {
         // Transform normals
         // And multiply vertex color with diffuse color
-        for (int_fast8_t i = 0; i < processedCounter; i++)
-        {
+        for (int_fast8_t i = 0; i < processedCounter; i++) {
             pfmVec3Transform(processed[i].normal, processed[i].normal, G_currentCtx->matNormal);
             pfmVec3Normalize(processed[i].normal, processed[i].normal); // REVIEW: Only with PF_NORMALIZE state??
-
             processed[i].color = pfiBlendMultiplicative(processed[i].color,
                 G_currentCtx->faceMaterial[faceToRender].diffuse);
         }
     }
 
     // Process vertices
-
     PFboolean is3D = Process_ProjectAndClipTriangle(processed, &processedCounter);
     if (processedCounter < 3) return;
 
     // Rasterize filled triangles
-
     PFMvec3 viewPos = { 0 };
 
-    if (lighting)
-    {
+    if (lighting) {
         PFMmat4 invMatView;
         pfmMat4Invert(invMatView, G_currentCtx->matView);
         pfmVec3Copy(viewPos, invMatView + 12);
     }
 
-    for (int_fast8_t i = 0; i < processedCounter - 2; i++)
-    {
+    for (int_fast8_t i = 0; i < processedCounter - 2; i++) {
         Rasterize_Triangle(faceToRender, is3D, &processed[0], &processed[i + 1], &processed[i + 2], viewPos);
     }
 }
@@ -141,37 +132,29 @@ void pfiProcessRasterize_TRIANGLE(PFface faceToRender)
 
 void pfiProcessRasterize_TRIANGLE_FAN(PFface faceToRender, int_fast8_t numTriangles)
 {
-    for (int_fast8_t i = 0; i < numTriangles; i++)
-    {
+    for (int_fast8_t i = 0; i < numTriangles; i++) {
         PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES] = {
             G_currentCtx->vertexBuffer[0],
             G_currentCtx->vertexBuffer[i + 1],
             G_currentCtx->vertexBuffer[i + 2]
         };
-
         pfiProcessRasterize_TRIANGLE_IMPL(faceToRender, processed);
     }
 }
 
 void pfiProcessRasterize_TRIANGLE_STRIP(PFface faceToRender, int_fast8_t numTriangles)
 {
-    for (int_fast8_t i = 0; i < numTriangles; i++)
-    {
+    for (int_fast8_t i = 0; i < numTriangles; i++) {
         PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES];
-
-        if (i % 2 == 0)
-        {
+        if (i % 2 == 0) {
             processed[0] = G_currentCtx->vertexBuffer[i];
             processed[1] = G_currentCtx->vertexBuffer[i + 1];
             processed[2] = G_currentCtx->vertexBuffer[i + 2];
-        }
-        else
-        {
+        } else {
             processed[0] = G_currentCtx->vertexBuffer[i + 2];
             processed[1] = G_currentCtx->vertexBuffer[i + 1];
             processed[2] = G_currentCtx->vertexBuffer[i];
         }
-
         pfiProcessRasterize_TRIANGLE_IMPL(faceToRender, processed);
     }
 }
@@ -184,13 +167,10 @@ void pfiProcessRasterize_TRIANGLE_STRIP(PFface faceToRender, int_fast8_t numTria
 PFboolean Helper_FaceCanBeRendered(PFface faceToRender, PFfloat* area, const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 p3)
 {
     PFfloat signedArea = (p2[0] - p1[0])*(p3[1] - p1[1]) - (p3[0] - p1[0])*(p2[1] - p1[1]);
-
-    if ((faceToRender == PF_FRONT && signedArea < 0) || (faceToRender == PF_BACK && signedArea > 0))
-    {
+    if ((faceToRender == PF_FRONT && signedArea < 0) || (faceToRender == PF_BACK && signedArea > 0)) {
         *area = fabsf(signedArea)*0.5f;
         return PF_TRUE;
     }
-
     return PF_FALSE;
 }
 
@@ -218,21 +198,15 @@ PFboolean Process_ClipPolygonW(PFvertex* polygon, int_fast8_t* vertexCounter)
     const PFvertex *prevVt = &input[inputCounter-1];
     PFbyte prevDot = (prevVt->homogeneous[3] < PF_CLIP_EPSILON) ? -1 : 1;
 
-    for (int_fast8_t i = 0; i < inputCounter; i++)
-    {
+    for (int_fast8_t i = 0; i < inputCounter; i++) {
         PFbyte currDot = (input[i].homogeneous[3] < PF_CLIP_EPSILON) ? -1 : 1;
-
-        if (prevDot*currDot < 0)
-        {
+        if (prevDot*currDot < 0) {
             polygon[(*vertexCounter)++] = pfiLerpVertex(prevVt, &input[i], 
                 (PF_CLIP_EPSILON - prevVt->homogeneous[3]) / (input[i].homogeneous[3] - prevVt->homogeneous[3]));
         }
-
-        if (currDot > 0)
-        {
+        if (currDot > 0) {
             polygon[(*vertexCounter)++] = input[i];
         }
-
         prevDot = currDot;
         prevVt = &input[i];
     }
@@ -261,21 +235,15 @@ PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, int_fast8_t* vertexCounter)
         prevVt = &input[inputCounter-1];
         prevDot = (prevVt->homogeneous[iAxis] <= prevVt->homogeneous[3]) ? 1 : -1;
 
-        for (int_fast8_t i = 0; i < inputCounter; i++)
-        {
+        for (int_fast8_t i = 0; i < inputCounter; i++) {
             PFbyte currDot = (input[i].homogeneous[iAxis] <= input[i].homogeneous[3]) ? 1 : -1;
-
-            if (prevDot*currDot <= 0)
-            {
+            if (prevDot*currDot <= 0) {
                 polygon[(*vertexCounter)++] = pfiLerpVertex(prevVt, &input[i], (prevVt->homogeneous[3] - prevVt->homogeneous[iAxis]) /
                     ((prevVt->homogeneous[3] - prevVt->homogeneous[iAxis]) - (input[i].homogeneous[3] - input[i].homogeneous[iAxis])));
             }
-
-            if (currDot > 0)
-            {
+            if (currDot > 0) {
                 polygon[(*vertexCounter)++] = input[i];
             }
-
             prevDot = currDot;
             prevVt = &input[i];
         }
@@ -291,21 +259,15 @@ PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, int_fast8_t* vertexCounter)
         prevVt = &input[inputCounter-1];
         prevDot = (-prevVt->homogeneous[iAxis] <= prevVt->homogeneous[3]) ? 1 : -1;
 
-        for (int_fast8_t i = 0; i < inputCounter; i++)
-        {
+        for (int_fast8_t i = 0; i < inputCounter; i++) {
             PFbyte currDot = (-input[i].homogeneous[iAxis] <= input[i].homogeneous[3]) ? 1 : -1;
-
-            if (prevDot*currDot <= 0)
-            {
+            if (prevDot*currDot <= 0) {
                 polygon[(*vertexCounter)++] = pfiLerpVertex(prevVt, &input[i], (prevVt->homogeneous[3] + prevVt->homogeneous[iAxis]) /
                     ((prevVt->homogeneous[3] + prevVt->homogeneous[iAxis]) - (input[i].homogeneous[3] + input[i].homogeneous[iAxis])));
             }
-
-            if (currDot > 0)
-            {
+            if (currDot > 0) {
                 polygon[(*vertexCounter)++] = input[i];
             }
-
             prevDot = currDot;
             prevVt = &input[i];
         }
@@ -318,41 +280,31 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* polygon, int_fast8_t* vertexC
 {
     PFfloat weightSum = 0.0f;
 
-    for (int_fast8_t i = 0; i < *vertexCounter; i++)
-    {
+    for (int_fast8_t i = 0; i < *vertexCounter; i++) {
         PFvertex *v = polygon + i;
-
         memcpy(v->homogeneous, v->position, sizeof(PFMvec4));
         pfmVec4Transform(v->homogeneous, v->homogeneous, G_currentCtx->matMVP);
-
         weightSum += v->homogeneous[3];
     }
 
-    if (fabsf(weightSum - 3.0f) < PF_CLIP_EPSILON)
-    {
-        for (int_fast8_t i = 0; i < *vertexCounter; i++)
-        {
+    if (fabsf(weightSum - 3.0f) < PF_CLIP_EPSILON) {
+        for (int_fast8_t i = 0; i < *vertexCounter; i++) {
             pfiHomogeneousToScreen(&polygon[i]);
         }
-
         return PF_FALSE; // Is "2D"
     }
 
-    if (Process_ClipPolygonW(polygon, vertexCounter) && Process_ClipPolygonXYZ(polygon, vertexCounter))
-    {
-        for (int_fast8_t i = 0; i < *vertexCounter; i++)
-        {
+    if (Process_ClipPolygonW(polygon, vertexCounter) && Process_ClipPolygonXYZ(polygon, vertexCounter)) {
+        for (int_fast8_t i = 0; i < *vertexCounter; i++) {
             // Calculation of the reciprocal of Z for the perspective correct
             polygon[i].homogeneous[2] = 1.0f / polygon[i].homogeneous[2];
-
             // Division of texture coordinates by the Z axis (perspective correct)
             pfmVec2Scale(polygon[i].texcoord, polygon[i].texcoord, polygon[i].homogeneous[2]);
-
             // Division of XY coordinates by weight
             PFfloat invW = 1.0f / polygon[i].homogeneous[3];
             polygon[i].homogeneous[0] *= invW;
             polygon[i].homogeneous[1] *= invW;
-
+            // Transform to screen space
             pfiHomogeneousToScreen(&polygon[i]);
         }
     }
@@ -384,8 +336,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFfloat signedArea = (x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1);
 
         if ((faceToRender == PF_FRONT && signedArea >= 0)
-         || (faceToRender == PF_BACK  && signedArea <= 0))
-        {
+         || (faceToRender == PF_BACK  && signedArea <= 0)) {
             return;
         }
 
@@ -396,8 +347,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         xMax = (PFsizei)MAX(x1, MAX(x2, x3));
         yMax = (PFsizei)MAX(y1, MAX(y2, y3));
 
-        if (!is3D)
-        {
+        if (!is3D) {
             xMin = (PFsizei)CLAMP((PFint)xMin, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
             yMin = (PFsizei)CLAMP((PFint)yMin, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
             xMax = (PFsizei)CLAMP((PFint)xMax, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
@@ -410,8 +360,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         w2XStep = y1 - y3, w2YStep = x3 - x1;
         w3XStep = y2 - y1, w3YStep = x1 - x2;
 
-        if (faceToRender == PF_BACK)
-        {
+        if (faceToRender == PF_BACK) {
             w1XStep = -w1XStep, w1YStep = -w1YStep;
             w2XStep = -w2XStep, w2YStep = -w2YStep;
             w3XStep = -w3XStep, w3YStep = -w3YStep;
@@ -486,38 +435,34 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 #define PF_TRIANGLE_TRAVEL_SIMD(PIXEL_CODE)                                                 \
     _Pragma("omp parallel for schedule(dynamic, PF_OPENMP_TRIANGLE_ROW_PER_THREAD)          \
         if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)")                \
-    for (PFsizei y = yMin; y <= yMax; ++y)                                                  \
-    {                                                                                       \
+    for (PFsizei y = yMin; y <= yMax; ++y)  {                                               \
         size_t yOffset = y * widthDst;                                                      \
         PFint w1 = w1Row + (y - yMin)*w1YStep;                                              \
         PFint w2 = w2Row + (y - yMin)*w2YStep;                                              \
         PFint w3 = w3Row + (y - yMin)*w3YStep;                                              \
-        for (PFsizei x = xMin; x <= xMax; x += PF_SIMD_SIZE)                                \
-        {                                                                                   \
+        for (PFsizei x = xMin; x <= xMax; x += PF_SIMD_SIZE) {                              \
             /* Load the current barycentric coordinates into SIMD registers */              \
-            PFsimdvi w1V = pfiSimdAdd_I32(pfiSimdSet1_I32(w1), w1XStepV);                  \
-            PFsimdvi w2V = pfiSimdAdd_I32(pfiSimdSet1_I32(w2), w2XStepV);                  \
-            PFsimdvi w3V = pfiSimdAdd_I32(pfiSimdSet1_I32(w3), w3XStepV);                  \
+            PFsimdvi w1V = pfiSimdAdd_I32(pfiSimdSet1_I32(w1), w1XStepV);                   \
+            PFsimdvi w2V = pfiSimdAdd_I32(pfiSimdSet1_I32(w2), w2XStepV);                   \
+            PFsimdvi w3V = pfiSimdAdd_I32(pfiSimdSet1_I32(w3), w3XStepV);                   \
             /* Test if pixels are inside the triangle */                                    \
-            PFsimdvi mask = pfiSimdOr_I32(pfiSimdOr_I32(w1V, w2V), w3V);                   \
+            PFsimdvi mask = pfiSimdOr_I32(pfiSimdOr_I32(w1V, w2V), w3V);                    \
             mask = pfiSimdCmpGT_I32(mask, pfiSimdSetZero_I32());                            \
             /* Normalize weights */                                                         \
-            PFsimdvf w1NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w1V), wInvSumV);      \
-            PFsimdvf w2NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w2V), wInvSumV);      \
-            PFsimdvf w3NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w3V), wInvSumV);      \
+            PFsimdvf w1NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w1V), wInvSumV);       \
+            PFsimdvf w2NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w2V), wInvSumV);       \
+            PFsimdvf w3NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w3V), wInvSumV);       \
             /* Compute Z-Depth values */                                                    \
-            PFsimdvf zV;                                                                   \
-            {                                                                               \
-                PFsimdvf wZ1 = pfiSimdMul_F32(z1V, w1NormV);                               \
-                PFsimdvf wZ2 = pfiSimdMul_F32(z2V, w2NormV);                               \
-                PFsimdvf wZ3 = pfiSimdMul_F32(z3V, w3NormV);                               \
+            PFsimdvf zV; {                                                                  \
+                PFsimdvf wZ1 = pfiSimdMul_F32(z1V, w1NormV);                                \
+                PFsimdvf wZ2 = pfiSimdMul_F32(z2V, w2NormV);                                \
+                PFsimdvf wZ3 = pfiSimdMul_F32(z3V, w3NormV);                                \
                 zV = pfiSimdAdd_F32(pfiSimdAdd_F32(wZ1, wZ2), wZ3);                         \
                 zV = pfiSimdRCP_F32(zV);                                                    \
             }                                                                               \
             /* Depth Testing */                                                             \
-            PFsimdvf depths = pfiSimdLoad_F32(zbDst + yOffset + x);                        \
-            if (depthFunction)                                                              \
-            {                                                                               \
+            PFsimdvf depths = pfiSimdLoad_F32(zbDst + yOffset + x);                         \
+            if (depthFunction)  {                                                           \
                 mask = pfiSimdAnd_I32(mask, pfiSimdCast_F32_I32(                            \
                     depthFunction(zV, depths)));                                            \
             }                                                                               \
@@ -531,38 +476,34 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     }
 #else
 #define PF_TRIANGLE_TRAVEL_SIMD(PIXEL_CODE)                                                 \
-    for (PFsizei y = yMin; y <= yMax; ++y)                                                  \
-    {                                                                                       \
+    for (PFsizei y = yMin; y <= yMax; ++y) {                                                \
         size_t yOffset = y * widthDst;                                                      \
         int w1 = w1Row;                                                                     \
         int w2 = w2Row;                                                                     \
         int w3 = w3Row;                                                                     \
-        for (PFsizei x = xMin; x <= xMax; x += PF_SIMD_SIZE)                                \
-        {                                                                                   \
+        for (PFsizei x = xMin; x <= xMax; x += PF_SIMD_SIZE) {                              \
             /* Load the current barycentric coordinates into SIMD registers */              \
-            PFsimdvi w1V = pfiSimdAdd_I32(pfiSimdSet1_I32(w1), w1XStepV);                  \
-            PFsimdvi w2V = pfiSimdAdd_I32(pfiSimdSet1_I32(w2), w2XStepV);                  \
-            PFsimdvi w3V = pfiSimdAdd_I32(pfiSimdSet1_I32(w3), w3XStepV);                  \
+            PFsimdvi w1V = pfiSimdAdd_I32(pfiSimdSet1_I32(w1), w1XStepV);                   \
+            PFsimdvi w2V = pfiSimdAdd_I32(pfiSimdSet1_I32(w2), w2XStepV);                   \
+            PFsimdvi w3V = pfiSimdAdd_I32(pfiSimdSet1_I32(w3), w3XStepV);                   \
             /* Test if pixels are inside the triangle */                                    \
-            PFsimdvi mask = pfiSimdOr_I32(pfiSimdOr_I32(w1V, w2V), w3V);                   \
+            PFsimdvi mask = pfiSimdOr_I32(pfiSimdOr_I32(w1V, w2V), w3V);                    \
             mask = pfiSimdCmpGT_I32(mask, pfiSimdSetZero_I32());                            \
             /* Normalize weights */                                                         \
-            PFsimdvf w1NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w1V), wInvSumV);      \
-            PFsimdvf w2NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w2V), wInvSumV);      \
-            PFsimdvf w3NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w3V), wInvSumV);      \
+            PFsimdvf w1NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w1V), wInvSumV);       \
+            PFsimdvf w2NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w2V), wInvSumV);       \
+            PFsimdvf w3NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w3V), wInvSumV);       \
             /* Compute Z-Depth values */                                                    \
-            PFsimdvf zV;                                                                   \
-            {                                                                               \
-                PFsimdvf wZ1 = pfiSimdMul_F32(z1V, w1NormV);                               \
-                PFsimdvf wZ2 = pfiSimdMul_F32(z2V, w2NormV);                               \
-                PFsimdvf wZ3 = pfiSimdMul_F32(z3V, w3NormV);                               \
+            PFsimdvf zV; {                                                                  \
+                PFsimdvf wZ1 = pfiSimdMul_F32(z1V, w1NormV);                                \
+                PFsimdvf wZ2 = pfiSimdMul_F32(z2V, w2NormV);                                \
+                PFsimdvf wZ3 = pfiSimdMul_F32(z3V, w3NormV);                                \
                 zV = pfiSimdAdd_F32(pfiSimdAdd_F32(wZ1, wZ2), wZ3);                         \
                 zV = pfiSimdRCP_F32(zV);                                                    \
             }                                                                               \
             /* Depth Testing */                                                             \
-            PFsimdvf depths = pfiSimdLoad_F32(zbDst + yOffset + x);                        \
-            if (depthFunction)                                                              \
-            {                                                                               \
+            PFsimdvf depths = pfiSimdLoad_F32(zbDst + yOffset + x);                         \
+            if (depthFunction) {                                                            \
                 mask = pfiSimdAnd_I32(mask, pfiSimdCast_F32_I32(                            \
                     depthFunction(zV, depths)));                                            \
             }                                                                               \
@@ -617,33 +558,26 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Loop rasterization */
 
-    if (texSampler && lights)
-    {
+    if (texSampler && lights) {
         PF_TRIANGLE_TRAVEL_SIMD({
             GET_FRAG();
             TEXTURING();
             LIGHTING();
             SET_FRAG();
         })
-    }
-    else if (texSampler)
-    {
+    } else if (texSampler) {
         PF_TRIANGLE_TRAVEL_SIMD({
             GET_FRAG();
             TEXTURING();
             SET_FRAG();
         })
-    }
-    else if (lights)
-    {
+    } else if (lights) {
         PF_TRIANGLE_TRAVEL_SIMD({
             GET_FRAG();
             LIGHTING();
             SET_FRAG();
         })
-    }
-    else
-    {
+    } else {
         PF_TRIANGLE_TRAVEL_SIMD({
             GET_FRAG();
             SET_FRAG();
@@ -673,8 +607,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFfloat signedArea = (x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1);
 
         if ((faceToRender == PF_FRONT && signedArea >= 0)
-         || (faceToRender == PF_BACK  && signedArea <= 0))
-        {
+         || (faceToRender == PF_BACK  && signedArea <= 0)) {
             return;
         }
 
@@ -685,8 +618,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         xMax = (PFsizei)MAX(x1, MAX(x2, x3));
         yMax = (PFsizei)MAX(y1, MAX(y2, y3));
 
-        if (!is3D)
-        {
+        if (!is3D) {
             xMin = (PFsizei)CLAMP((PFint)xMin, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
             yMin = (PFsizei)CLAMP((PFint)yMin, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
             xMax = (PFsizei)CLAMP((PFint)xMax, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
@@ -699,8 +631,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         w2XStep = y1 - y3, w2YStep = x3 - x1;
         w3XStep = y2 - y1, w3YStep = x1 - x2;
 
-        if (faceToRender == PF_BACK)
-        {
+        if (faceToRender == PF_BACK) {
             w1XStep = -w1XStep, w1YStep = -w1YStep;
             w2XStep = -w2XStep, w2YStep = -w2YStep;
             w3XStep = -w3XStep, w3YStep = -w3YStep;
@@ -749,23 +680,19 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 #   define PF_TRIANGLE_TRAVEL(PIXEL_CODE)                                           \
     _Pragma("omp parallel for schedule(dynamic, PF_OPENMP_TRIANGLE_ROW_PER_THREAD)  \
         if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)")        \
-    for (PFsizei y = yMin; y <= yMax; y++)                                          \
-    {                                                                               \
+    for (PFsizei y = yMin; y <= yMax; y++) {                                        \
         const PFsizei yOffset = y*widthDst;                                         \
         PFint w1 = w1Row + (y - yMin)*w1YStep;                                      \
         PFint w2 = w2Row + (y - yMin)*w2YStep;                                      \
         PFint w3 = w3Row + (y - yMin)*w3YStep;                                      \
-        for (PFsizei x = xMin; x <= xMax; x++)                                      \
-        {                                                                           \
-            if ((w1 | w2 | w3) >= 0)                                                \
-            {                                                                       \
+        for (PFsizei x = xMin; x <= xMax; x++) {                                    \
+            if ((w1 | w2 | w3) >= 0) {                                              \
                 PFsizei xyOffset = yOffset + x;                                     \
                 PFfloat w1Norm = w1*wInvSum;                                        \
                 PFfloat w2Norm = w2*wInvSum;                                        \
                 PFfloat w3Norm = w3*wInvSum;                                        \
                 PFfloat z = 1.0f/(w1Norm*z1 + w2Norm*z2 + w3Norm*z3);               \
-                if (!depthFunction || depthFunction(z, zbDst[xyOffset]))            \
-                {                                                                   \
+                if (!depthFunction || depthFunction(z, zbDst[xyOffset])) {          \
                     PIXEL_CODE                                                      \
                 }                                                                   \
             }                                                                       \
@@ -806,33 +733,26 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Loop rasterization */
 
-    if (texSampler && lights)
-    {
+    if (texSampler && lights) {
         PF_TRIANGLE_TRAVEL({
             GET_FRAG();
             TEXTURING();
             LIGHTING();
             SET_FRAG();
         })
-    }
-    else if (texSampler)
-    {
+    } else if (texSampler) {
         PF_TRIANGLE_TRAVEL({
             GET_FRAG();
             TEXTURING();
             SET_FRAG();
         })
-    }
-    else if (lights)
-    {
+    } else if (lights) {
         PF_TRIANGLE_TRAVEL({
             GET_FRAG();
             LIGHTING();
             SET_FRAG();
         })
-    }
-    else
-    {
+    } else {
         PF_TRIANGLE_TRAVEL({
             GET_FRAG();
             SET_FRAG();
@@ -849,8 +769,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     /* Check if the face can be rendered, if not, skip */
 
     PFfloat area;
-    if (!Helper_FaceCanBeRendered(faceToRender, &area, v1->screen, v2->screen, v3->screen))
-    {
+    if (!Helper_FaceCanBeRendered(faceToRender, &area, v1->screen, v2->screen, v3->screen)) {
         return;
     }
 
@@ -903,8 +822,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     PFint yMin = y1;
     PFint yMax = y3;
 
-    if (!is3D)
-    {
+    if (!is3D) {
         yMin = CLAMP(yMin, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
         yMax = CLAMP(yMax, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
     }
@@ -919,8 +837,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Travel the triangle from top to bottom */
 
-    for (PFint y = yMin; y <= yMax; y++, yOffset += widthDst)
-    {
+    for (PFint y = yMin; y <= yMax; y++, yOffset += widthDst) {
         alpha += invTotalHeight;
         beta1 += invSegmentHeight21;
         beta2 += invSegmentHeight32;
@@ -933,51 +850,35 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFMvec3 pA, pB;
         PFMvec3 nA, nB;
 
-        if (y < y2) // First half
-        {
+        if (y < y2) { // First half
             xA = x1 + (x3 - x1)*alpha;
             xB = x1 + (x2 - x1)*beta1;
-
             zA = z1 + (z3 - z1)*alpha;
             zB = z1 + (z2 - z1)*beta1;
-
             cA = interpolateColor(c1, c3, alpha);
             cB = interpolateColor(c1, c2, beta1);
-
-            if (texSampler)
-            {
+            if (texSampler) {
                 pfmVec2LerpR(uvA, v1->texcoord, v3->texcoord, alpha);
                 pfmVec2LerpR(uvB, v1->texcoord, v2->texcoord, beta1);
             }
-
-            if (lights)
-            {
+            if (lights) {
                 pfmVec3LerpR(pA, v1->position, v3->position, alpha);
                 pfmVec3LerpR(pB, v1->position, v2->position, beta1);
                 pfmVec3LerpR(nA, v1->normal, v3->normal, alpha);
                 pfmVec3LerpR(nB, v1->normal, v2->normal, beta1);
             }
-
-        }
-        else // Second half
-        {
+        } else { // Second half
             xA = x1 + (x3 - x1)*alpha;
             xB = x2 + (x3 - x2)*beta2;
-
             zA = z1 + (z3 - z1)*alpha;
             zB = z2 + (z3 - z2)*beta2;
-
             cA = interpolateColor(c1, c3, alpha);
             cB = interpolateColor(c2, c3, beta2);
-
-            if (texSampler)
-            {
+            if (texSampler) {
                 pfmVec2LerpR(uvA, v1->texcoord, v3->texcoord, alpha);
                 pfmVec2LerpR(uvB, v2->texcoord, v3->texcoord, beta2);
             }
-
-            if (lights)
-            {
+            if (lights) {
                 pfmVec3LerpR(pA, v1->position, v3->position, alpha);
                 pfmVec3LerpR(pB, v2->position, v3->position, beta2);
                 pfmVec3LerpR(nA, v1->normal, v3->normal, alpha);
@@ -987,8 +888,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
         /* Swap endpoints if necessary to ensure xA <= xB */
 
-        if (xA > xB)
-        {
+        if (xA > xB) {
             PFint iTmp = xA; xA = xB; xB = iTmp;
             PFfloat fTmp = zA; zA = zB; zB = fTmp;
             PFcolor cTmp = cA; cA = cB; cB = cTmp;
@@ -1003,8 +903,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFint xMin = xA;
         PFint xMax = xB;
 
-        if (!is3D)
-        {
+        if (!is3D) {
             xMin = CLAMP(xMin, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
             xMax = CLAMP(xMax, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
         }
@@ -1018,24 +917,21 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
         /* Draw Horizontal Line */
 
-        for (PFint x = xMin; x <= xMax; x++, xyOffset++, gamma += xInvLen)
-        {
+        for (PFint x = xMin; x <= xMax; x++, xyOffset++, gamma += xInvLen) {
             /* Calculate current depth */
 
             PFfloat z = 1.0f/(zA + (zB - zA)*gamma);
 
             /* Perform depth test */
 
-            if (!depthFunction || depthFunction(z, zbDst[xyOffset]))
-            {
+            if (!depthFunction || depthFunction(z, zbDst[xyOffset])) {
                 /* Obtain fragment color */
 
                 PFcolor fragment = interpolateColor(cA, cB, gamma);
 
                 /* Blend with corresponding texture sample */
 
-                if (texSampler)
-                {
+                if (texSampler) {
                     PFMvec2 uv; pfmVec2LerpR(uv, uvA, uvB, gamma);
                     if (is3D) pfmVec2Scale(uv, uv, z); // Perspective correct
 
@@ -1045,8 +941,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
                 /* Compute lighting */
 
-                if (lights)
-                {
+                if (lights) {
                     PFMvec3 position; pfmVec3LerpR(position, pA, pB, gamma);
                     PFMvec3 normal; pfmVec3LerpR(normal, nA, nB, gamma);
 

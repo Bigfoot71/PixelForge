@@ -67,13 +67,10 @@ void pfiProcessRasterize_LINE(void)
     if (processedCounter != 2) return;
 
     // Rasterize line (review condition)
-    if (G_currentCtx->lineWidth > 1.5f)
-    {
+    if (G_currentCtx->lineWidth > 1.5f) {
         (G_currentCtx->state & PF_DEPTH_TEST ? Rasterize_Line_THICK_DEPTH
             : Rasterize_Line_THICK_NODEPTH)(&processed[0], &processed[1]);
-    }
-    else
-    {
+    } else {
         (G_currentCtx->state & PF_DEPTH_TEST ? Rasterize_Line_DEPTH
             : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
     }
@@ -81,8 +78,7 @@ void pfiProcessRasterize_LINE(void)
 
 void pfiProcessRasterize_POLY_LINES(int_fast8_t vertexCount)
 {
-    for (int_fast8_t i = 0; i < vertexCount; i++)
-    {
+    for (int_fast8_t i = 0; i < vertexCount; i++) {
         // Process vertices
         int_fast8_t processedCounter = 2;
 
@@ -95,13 +91,10 @@ void pfiProcessRasterize_POLY_LINES(int_fast8_t vertexCount)
         if (processedCounter != 2) return;
 
         // Rasterize line
-        if (G_currentCtx->lineWidth > 1.5f)
-        {
+        if (G_currentCtx->lineWidth > 1.5f) {
             (G_currentCtx->state & PF_DEPTH_TEST ? Rasterize_Line_THICK_DEPTH
                 : Rasterize_Line_THICK_NODEPTH)(&processed[0], &processed[1]);
-        }
-        else
-        {
+        } else {
             (G_currentCtx->state & PF_DEPTH_TEST ? Rasterize_Line_DEPTH
                 : Rasterize_Line_NODEPTH)(&processed[0], &processed[1]);
         }
@@ -123,8 +116,7 @@ PFubyte Helper_EncodeClip2D(const PFMvec2 screen, PFint xMin, PFint yMin, PFint 
 
 PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* t2)
 {
-    if (fabsf(p) < PF_CLIP_EPSILON)
-    {
+    if (fabsf(p) < PF_CLIP_EPSILON) {
         // Check if the line is entirely outside the window
         if (q < -PF_CLIP_EPSILON) return 0; // Completely outside
         return 1;                           // Completely inside or on the edges
@@ -132,13 +124,10 @@ PFboolean Helper_ClipCoord3D(PFfloat q, PFfloat p, PFfloat* t1, PFfloat* t2)
 
     const float r = q / p;
 
-    if (p < 0)
-    {
+    if (p < 0) {
         if (r > *t2) return 0;
         if (r > *t1) *t1 = r;
-    }
-    else
-    {
+    } else {
         if (r < *t1) return 0;
         if (r < *t2) *t2 = r;
     }
@@ -159,19 +148,16 @@ PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2)
     PFubyte code0, code1;
     PFfloat m = 0;
 
-    if (v1->screen[0] != v2->screen[0])
-    {
+    if (v1->screen[0] != v2->screen[0]) {
         m = (v2->screen[1] - v1->screen[1]) / (v2->screen[0] - v1->screen[0]);
     }
 
-    for (;;)
-    {
+    for (;;) {
         code0 = Helper_EncodeClip2D(v1->screen, xMin, yMin, xMax, yMax);
         code1 = Helper_EncodeClip2D(v2->screen, xMin, yMin, xMax, yMax);
 
         // Accepted if both endpoints lie within rectangle
-        if ((code0 | code1) == 0)
-        {
+        if ((code0 | code1) == 0) {
             accept = PF_TRUE;
             break;
         }
@@ -179,29 +165,21 @@ PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2)
         // Rejected if both endpoints are outside rectangle, in same region
         if (code0 & code1) break;
 
-        if (code0 == CLIP_INSIDE)
-        {
+        if (code0 == CLIP_INSIDE) {
             pfiSwapByte(&code0, &code1);
             pfiSwapVertex(v1, v2);
         }
 
-        if (code0 & CLIP_LEFT)
-        {
+        if (code0 & CLIP_LEFT) {
             v1->screen[1] += (G_currentCtx->vpMin[0] - v1->screen[0])*m;
             v1->screen[0] = G_currentCtx->vpMin[0];
-        }
-        else if (code0 & CLIP_RIGHT)
-        {
+        } else if (code0 & CLIP_RIGHT) {
             v1->screen[1] += (G_currentCtx->vpMax[0] - v1->screen[0])*m;
             v1->screen[0] = G_currentCtx->vpMax[0];
-        }
-        else if (code0 & CLIP_BOTTOM)
-        {
+        } else if (code0 & CLIP_BOTTOM) {
             if (m) v1->screen[0] += (G_currentCtx->vpMin[1] - v1->screen[1]) / m;
             v1->screen[1] = G_currentCtx->vpMin[1];
-        }
-        else if (code0 & CLIP_TOP)
-        {
+        } else if (code0 & CLIP_TOP) {
             if (m) v1->screen[0] += (G_currentCtx->vpMax[1] - v1->screen[1]) / m;
             v1->screen[1] = G_currentCtx->vpMax[1];
         }
@@ -226,15 +204,13 @@ PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2)
     if (!Helper_ClipCoord3D(v1->homogeneous[3] - v1->homogeneous[2], -delta[3] + delta[2], &t1, &t2)) return PF_FALSE;
     if (!Helper_ClipCoord3D(v1->homogeneous[3] + v1->homogeneous[2], -delta[3] - delta[2], &t1, &t2)) return PF_FALSE;
 
-    if (t2 < 1)
-    {
+    if (t2 < 1) {
         PFMvec4 d;
         pfmVec4ScaleR(d, delta, t2);
         pfmVec4AddR(v2->homogeneous, v1->homogeneous, d);
     }
 
-    if (t1 > 0)
-    {
+    if (t1 > 0) {
         PFMvec4 d;
         pfmVec4ScaleR(d, delta, t1);
         pfmVec4Add(v1->homogeneous, v1->homogeneous, d);
@@ -245,16 +221,14 @@ PFboolean Process_ClipLine3D(PFvertex* restrict v1, PFvertex* restrict v2)
 
 void Process_ProjectAndClipLine(PFvertex* line, int_fast8_t* vertexCounter)
 {
-    for (int_fast8_t i = 0; i < 2; i++)
-    {
+    for (int_fast8_t i = 0; i < 2; i++) {
         PFvertex *v = line + i;
 
         memcpy(v->homogeneous, v->position, sizeof(PFMvec4));
         pfmVec4Transform(v->homogeneous, v->homogeneous, G_currentCtx->matMVP);
     }
 
-    if (line[0].homogeneous[3] == 1.0f && line[1].homogeneous[3] == 1.0f)
-    {
+    if (line[0].homogeneous[3] == 1.0f && line[1].homogeneous[3] == 1.0f) {
         pfiHomogeneousToScreen(&line[0]);
         pfiHomogeneousToScreen(&line[1]);
 
@@ -263,17 +237,13 @@ void Process_ProjectAndClipLine(PFvertex* line, int_fast8_t* vertexCounter)
             *vertexCounter = 0;
             return;
         }
-    }
-    else
-    {
-        if (!Process_ClipLine3D(&line[0], &line[1]))
-        {
+    } else {
+        if (!Process_ClipLine3D(&line[0], &line[1])) {
             *vertexCounter = 0;
             return;
         }
 
-        for (int_fast8_t i = 0; i < 2; i++)
-        {
+        for (int_fast8_t i = 0; i < 2; i++) {
             // Division of XY coordinates by weight (perspective correct)
             PFfloat invW = 1.0f / line[i].homogeneous[3];
             line[i].homogeneous[0] *= invW;
@@ -317,8 +287,7 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
     PFint longLen = x2 - x1;
     PFboolean yLonger = 0;
 
-    if (abs(shortLen) > abs(longLen))
-    {
+    if (abs(shortLen) > abs(longLen)) {
         PFint tmp = shortLen;
         shortLen = longLen;
         longLen = tmp;
@@ -329,8 +298,7 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
     PFint endVal = longLen;
     PFint sgnInc = 1;
 
-    if (longLen < 0)
-    {
+    if (longLen < 0) {
         longLen = -longLen;
         sgnInc = -1;
     }
@@ -339,10 +307,8 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
         : (shortLen << 16) / longLen;
 
     PFint j = 0;
-    if (yLonger)
-    {	
-        for (PFint i = 0; i != endVal; i += sgnInc, j += decInc)
-        {
+    if (yLonger) {	
+        for (PFint i = 0; i != endVal; i += sgnInc, j += decInc) {
             PFfloat t = (PFfloat)i*invEndVal;
 
             PFint x = x1 + (j >> 16), y = y1 + i;
@@ -352,17 +318,16 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
             PFcolor finalColor = pfiColorLerpSmooth(c1, c2, t);
 
-            if (blendFunc) finalColor = blendFunc(
-                finalColor, getter(bufDst, pOffset));
+            if (blendFunc) {
+                finalColor = blendFunc(finalColor,
+                    getter(bufDst, pOffset));
+            }
 
             setter(bufDst, pOffset, finalColor);
             zbDst[pOffset] = z;
         }
-    }
-    else
-    {
-        for (PFint i = 0; i != endVal; i += sgnInc, j += decInc)
-        {
+    } else {
+        for (PFint i = 0; i != endVal; i += sgnInc, j += decInc) {
             PFfloat t = (PFfloat)i*invEndVal;
 
             PFint x = x1 + i, y = y1 + (j >> 16);
@@ -372,8 +337,10 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
             PFcolor finalColor = pfiColorLerpSmooth(c1, c2, t);
 
-            if (blendFunc) finalColor = blendFunc(
-                finalColor, getter(bufDst, pOffset));
+            if (blendFunc) {
+                finalColor = blendFunc(finalColor,
+                    getter(bufDst, pOffset));
+            }
 
             setter(bufDst, pOffset, finalColor);
             zbDst[pOffset] = z;
@@ -411,8 +378,7 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
     PFint longLen = x2 - x1;
     PFboolean yLonger = 0;
 
-    if (abs(shortLen) > abs(longLen))
-    {
+    if (abs(shortLen) > abs(longLen)) {
         PFint tmp = shortLen;
         shortLen = longLen;
         longLen = tmp;
@@ -423,8 +389,7 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
     PFint endVal = longLen;
     PFint sgnInc = 1;
 
-    if (longLen < 0)
-    {
+    if (longLen < 0) {
         longLen = -longLen;
         sgnInc = -1;
     }
@@ -433,23 +398,20 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
         : (shortLen << 16) / longLen;
 
     PFint j = 0;
-    if (yLonger)
-    {	
-        for (PFint i = 0; i != endVal; i += sgnInc, j += decInc)
-        {
+    if (yLonger) {	
+        for (PFint i = 0; i != endVal; i += sgnInc, j += decInc) {
             PFfloat t = (PFfloat)i*invEndVal;
 
             PFint x = x1 + (j >> 16), y = y1 + i;
             PFfloat z = z1 + t*(z2 - z1);
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
-            if (G_currentCtx->depthFunction(z, zbDst[pOffset]))
-            {
+            if (G_currentCtx->depthFunction(z, zbDst[pOffset])) {
                 PFcolor finalColor = pfiColorLerpSmooth(c1, c2, t);
-
-                if (blendFunc) finalColor = blendFunc(
-                    finalColor, getter(bufDst, pOffset));
-
+                if (blendFunc) {
+                    finalColor = blendFunc(finalColor,
+                        getter(bufDst, pOffset));
+                }
                 setter(bufDst, pOffset, finalColor);
                 zbDst[pOffset] = z;
             }
@@ -457,21 +419,19 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
     }
     else
     {
-        for (PFint i = 0; i != endVal; i += sgnInc, j += decInc)
-        {
+        for (PFint i = 0; i != endVal; i += sgnInc, j += decInc) {
             PFfloat t = (PFfloat)i*invEndVal;
 
             PFint x = x1 + i, y = y1 + (j >> 16);
             PFfloat z = z1 + t*(z2 - z1);
 
             PFsizei pOffset = (PFint)y*wDst + (PFint)x;
-            if (G_currentCtx->depthFunction(z, zbDst[pOffset]))
-            {
+            if (G_currentCtx->depthFunction(z, zbDst[pOffset])) {
                 PFcolor finalColor = pfiColorLerpSmooth(c1, c2, t);
-
-                if (blendFunc) finalColor = blendFunc(
-                    finalColor, getter(bufDst, pOffset));
-
+                if (blendFunc) {
+                    finalColor = blendFunc(finalColor,
+                        getter(bufDst, pOffset));
+                }
                 setter(bufDst, pOffset, finalColor);
                 zbDst[pOffset] = z;
             }
@@ -493,12 +453,10 @@ void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 
     Rasterize_Line_DEPTH(v1, v2);
 
-    if (dx != 0 && abs(dy / dx) < 1)
-    {
+    if (dx != 0 && abs(dy / dx) < 1) {
         PFint wy = (thickness - 1)*sqrtf(dx*dx + dy*dy) / (2*abs(dx));
 
-        for (PFint i = 1; i <= wy; i++)
-        {
+        for (PFint i = 1; i <= wy; i++) {
             tv1 = *v1, tv2 = *v2;
             tv1.screen[1] -= i;
             tv2.screen[1] -= i;
@@ -509,21 +467,16 @@ void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2)
             tv2.screen[1] += i;
             Rasterize_Line_NODEPTH(&tv1, &tv2);
         }
-    }
-    else if (dy != 0)
-    {
+    } else if (dy != 0) {
         PFint wx = (thickness - 1)*sqrtf(dx*dx + dy*dy) / (2*abs(dy));
 
-        for (PFint i = 1; i <= wx; i++)
-        {
+        for (PFint i = 1; i <= wx; i++) {
             tv1 = *v1, tv2 = *v2;
-            tv1.screen[0] -= i;
-            tv2.screen[0] -= i;
+            tv1.screen[0] -= i, tv2.screen[0] -= i;
             Rasterize_Line_NODEPTH(&tv1, &tv2);
 
             tv1 = *v1, tv2 = *v2;
-            tv1.screen[0] += i;
-            tv2.screen[0] += i;
+            tv1.screen[0] += i, tv2.screen[0] += i;
             Rasterize_Line_NODEPTH(&tv1, &tv2);
         }
     }
@@ -547,16 +500,13 @@ void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2)
     {
         PFint wy = (thickness - 1)*sqrtf(dx*dx + dy*dy) / (2*abs(dx));
 
-        for (PFint i = 1; i <= wy; i++)
-        {
+        for (PFint i = 1; i <= wy; i++) {
             tv1 = *v1, tv2 = *v2;
-            tv1.screen[1] -= i;
-            tv2.screen[1] -= i;
+            tv1.screen[1] -= i, tv2.screen[1] -= i;
             Rasterize_Line_DEPTH(&tv1, &tv2);
 
             tv1 = *v1, tv2 = *v2;
-            tv1.screen[1] += i;
-            tv2.screen[1] += i;
+            tv1.screen[1] += i, tv2.screen[1] += i;
             Rasterize_Line_DEPTH(&tv1, &tv2);
         }
     }
@@ -564,16 +514,13 @@ void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2)
     {
         PFint wx = (thickness - 1)*sqrtf(dx*dx + dy*dy) / (2*abs(dy));
 
-        for (PFint i = 1; i <= wx; i++)
-        {
+        for (PFint i = 1; i <= wx; i++) {
             tv1 = *v1, tv2 = *v2;
-            tv1.screen[0] -= i;
-            tv2.screen[0] -= i;
+            tv1.screen[0] -= i, tv2.screen[0] -= i;
             Rasterize_Line_DEPTH(&tv1, &tv2);
 
             tv1 = *v1, tv2 = *v2;
-            tv1.screen[0] += i;
-            tv2.screen[0] += i;
+            tv1.screen[0] += i, tv2.screen[0] += i;
             Rasterize_Line_DEPTH(&tv1, &tv2);
         }
     }
