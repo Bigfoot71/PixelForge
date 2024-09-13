@@ -221,9 +221,9 @@ pfiColorPackedGrayscale_simd(PFsimdvi colors)
     const PFsimdvi maskA = pfiSimdSet1_I32(0xFF000000);
 
     // Extract the R, G, B channels
-    PFsimdvi r = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 16), pfiSimdSet1_I32(0xFF));
-    PFsimdvi g = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 8), pfiSimdSet1_I32(0xFF));
-    PFsimdvi b = pfiSimdAnd_I32(colors, pfiSimdSet1_I32(0xFF));
+    PFsimdvi r = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 16), *(PFsimdvi*)GC_simd_i32_255);
+    PFsimdvi g = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 8), *(PFsimdvi*)GC_simd_i32_255);
+    PFsimdvi b = pfiSimdAnd_I32(colors, *(PFsimdvi*)GC_simd_i32_255);
 
     // Integer coefficients approximating 0.299, 0.587, and 0.114 (multiplied by 256)
     const PFsimdvi coeffR = pfiSimdSet1_I32(77);   // 0.299 * 256 = 76.8
