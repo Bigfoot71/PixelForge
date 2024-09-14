@@ -22,6 +22,7 @@
 #include "internal/pixel.h"
 #include "internal/blend.h"
 #include "internal/depth.h"
+#include "internal/simd.h"
 #include "pixelforge.h"
 #include "pfm.h"
 
@@ -681,47 +682,111 @@ void pfBindTexture(PFtexture texture)
 
 void pfClear(PFclearflag flag)
 {
+    // If no flag is set, return early (nothing to clear)
     if (!flag) return;
 
+    // Retrieve the current framebuffer and its associated texture
     PFframebuffer *framebuffer = G_currentCtx->currentFramebuffer;
-    struct PFtex *tex = G_currentCtx->currentFramebuffer->texture;
-    PFsizei size = tex->w*tex->h;
+    struct PFtex *tex = framebuffer->texture;
+    PFsizei size = tex->w * tex->h;
 
+#   if PF_SIMD_SUPPORT
+
+    // SIMD-aligned size calculation
+    PFsizei simdAlignedSize = size - (size % PF_SIMD_SIZE);
+
+    // If both color and depth buffers should be cleared
     if (flag & (PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT)) {
+        PFsizei pixelBytes = pfiGetPixelBytes(tex->format, tex->type);
+        tex->setterSimd(tex->pixels, 0, pfiSimdSet1_I32(*(PFuint*)&G_currentCtx->clearColor), *(PFsimdvi*)GC_simd_i32_0xffffffff);
+        pfiSimdStore_F32(framebuffer->zbuffer, pfiSimdSet1_F32(G_currentCtx->clearDepth));
+        PFubyte *pbuffer = (PFubyte*)tex->pixels;
         PFfloat *zbuffer = framebuffer->zbuffer;
-
-        PFpixelsetter setter = tex->setter;
-        PFcolor color = G_currentCtx->clearColor;
-        PFfloat depth = G_currentCtx->clearDepth;
-
 #       ifdef _OPENMP
 #           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
 #       endif //_OPENMP
-        for (PFsizei i = 0; i < size; i++) {
-            setter(tex->pixels, i, color);
-            zbuffer[i] = depth;
+        for (PFsizei i = PF_SIMD_SIZE; i < simdAlignedSize; i += PF_SIMD_SIZE) {
+            pfiSimdStore_I32(pbuffer + i * pixelBytes, *(PFsimdvi*)pbuffer);
+            pfiSimdStore_F32(zbuffer + i, *(PFsimdvf*)zbuffer);
         }
-    } else if (flag & PF_COLOR_BUFFER_BIT) {
-        PFpixelsetter setter = tex->setter;
-        PFcolor color = G_currentCtx->clearColor;
-
-#       ifdef _OPENMP
-#           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
-#       endif //_OPENMP
-        for (PFsizei i = 0; i < size; i++) {
-            setter(tex->pixels, i, color);
-        }
-    } else if (flag & PF_DEPTH_BUFFER_BIT) {
-        PFfloat *zbuffer = framebuffer->zbuffer;
-        PFfloat depth = G_currentCtx->clearDepth;
-
-#       ifdef _OPENMP
-#           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
-#       endif //_OPENMP
-        for (PFsizei i = 0; i < size; i++) {
-            zbuffer[i] = depth;
+        for (PFsizei i = simdAlignedSize; i < size; i++) {
+            memcpy(pbuffer + i * pixelBytes, pbuffer, pixelBytes);
+            zbuffer[i] = zbuffer[0];
         }
     }
+    // If only the color buffer should be cleared
+    else if (flag & PF_COLOR_BUFFER_BIT) {
+        PFsizei pixelBytes = pfiGetPixelBytes(tex->format, tex->type);
+        tex->setterSimd(tex->pixels, 0, pfiSimdSet1_I32(*(PFuint*)&G_currentCtx->clearColor), *(PFsimdvi*)GC_simd_i32_0xffffffff);
+        PFubyte *pbuffer = (PFubyte*)tex->pixels;
+#       ifdef _OPENMP
+#           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
+#       endif //_OPENMP
+        for (PFsizei i = PF_SIMD_SIZE; i < simdAlignedSize; i += PF_SIMD_SIZE) {
+            pfiSimdStore_I8(pbuffer + i * pixelBytes, *(PFsimdvi*)pbuffer);
+        }
+        for (PFsizei i = simdAlignedSize; i < size; i++) {
+            memcpy(pbuffer + i * pixelBytes, pbuffer, pixelBytes);
+        }
+    }
+    // If only the depth buffer should be cleared
+    else if (flag & PF_DEPTH_BUFFER_BIT) {
+        pfiSimdStore_F32(framebuffer->zbuffer, pfiSimdSet1_F32(G_currentCtx->clearDepth));
+        PFfloat *zbuffer = framebuffer->zbuffer;
+#       ifdef _OPENMP
+#          pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
+#       endif //_OPENMP
+        for (PFsizei i = PF_SIMD_SIZE; i < simdAlignedSize; i += PF_SIMD_SIZE) {
+            pfiSimdStore_F32(zbuffer + i, *(PFsimdvf*)zbuffer);
+        }
+        for (PFsizei i = simdAlignedSize; i < size; i++) {
+            zbuffer[i] = zbuffer[0];
+        }
+    }
+
+#else
+
+    // If both color and depth buffers should be cleared
+    if (flag & (PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT)) {
+        PFsizei pixelBytes = pfiGetPixelBytes(tex->format, tex->type);
+        tex->setter(tex->pixels, 0, G_currentCtx->clearColor);
+        framebuffer->zbuffer[0] = G_currentCtx->clearDepth;
+        PFubyte *pbuffer = (PFubyte*)tex->pixels;
+        PFfloat *zbuffer = framebuffer->zbuffer;
+        PFfloat zvalue = zbuffer[0];
+#       ifdef _OPENMP
+#           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
+#       endif //_OPENMP
+        for (PFsizei i = 1; i < size; i++) {
+            memcpy(pbuffer + i * pixelBytes, pbuffer, pixelBytes);
+            zbuffer[i] = zvalue;
+        }
+    }
+    // If only the color buffer should be cleared
+    else if (flag & PF_COLOR_BUFFER_BIT) {
+        void *pbuffer = tex->pixels;
+        PFsizei pixelBytes = pfiGetPixelBytes(tex->format, tex->type);
+        tex->setter(pbuffer, 0, G_currentCtx->clearColor);
+#       ifdef _OPENMP
+#           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
+#       endif //_OPENMP
+        for (PFsizei i = 0; i < size; i++) {
+            memcpy((PFubyte*)pbuffer + i * pixelBytes, pbuffer, pixelBytes);
+        }
+    }
+    // If only the depth buffer should be cleared
+    else if (flag & PF_DEPTH_BUFFER_BIT) {
+        PFfloat *zbuffer = framebuffer->zbuffer;
+        zbuffer[0] = G_currentCtx->clearDepth;
+#       ifdef _OPENMP
+#           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
+#       endif //_OPENMP
+        for (PFsizei i = 0; i < size; i++) {
+            memcpy(zbuffer + i, zbuffer, sizeof(PFfloat));
+        }
+    }
+
+#endif //PF_SIMD_SUPPORT
 }
 
 void pfClearDepth(PFfloat depth)
