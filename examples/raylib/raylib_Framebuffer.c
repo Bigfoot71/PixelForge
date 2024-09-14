@@ -56,19 +56,19 @@ int main(void)
         pfClear(PF_COLOR_BUFFER_BIT);
 
         // Rendering the framebuffer in the main buffer with a different scale
-        //pfPixelZoom(0.5f, 0.5f);
-        //pfRasterPos2f((SCREEN_WIDTH - 400) / 2.0f, (SCREEN_HEIGHT - 300) / 2.0f);
-        //{
-        //    PFpixelformat format;
-        //    PFdatatype type;
-//
-       //     const void* pixels = pfGetTexturePixels(fbTarget.texture, NULL, NULL, &format, &type);
-       //     pfDrawPixels(SCREEN_WIDTH, SCREEN_HEIGHT, format, type, pixels);
-       // }
+        pfPixelZoom(0.5f, 0.5f);
+        pfRasterPos2f((SCREEN_WIDTH - 400) / 2.0f, (SCREEN_HEIGHT - 300) / 2.0f);
+        {
+            PFpixelformat format;
+            PFdatatype type;
+
+            const void* pixels = pfGetTexturePixels(fbTarget.texture, NULL, NULL, &format, &type);
+            pfDrawPixels(SCREEN_WIDTH, SCREEN_HEIGHT, format, type, pixels);
+        }
 
         // NOTE: We can also render the framebuffer texture onto a quad directly.
-        pfColor3ub(255, 255, 255);
-        PF_DrawTexture(fbTarget.texture, (SCREEN_WIDTH - 400) / 2.0f, (SCREEN_HEIGHT - 300) / 2.0f, 400, 300);
+        //pfColor3ub(255, 255, 255);
+        //PF_DrawTexture(fbTarget.texture, (SCREEN_WIDTH - 400) / 2.0f, (SCREEN_HEIGHT - 300) / 2.0f, 400, 300);
 
         // Texture rendering via raylib
         BeginDrawing();
