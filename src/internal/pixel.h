@@ -2811,13 +2811,18 @@ pfiPixelGet_RGBA_USHORT_5_5_5_1_simd(const void* pixels, PFsimdvi offsets)
     PFsimdvi b8 = pfiSimdMullo_I32(b, pfiSimdSet1_I32(255 / 31));
     PFsimdvi a8 = pfiSimdMullo_I32(a, pfiSimdSet1_I32(255));
 
-    return pfiSimdOr_I32(
+    PFsimdvi rgba = pfiSimdOr_I32(
         pfiSimdOr_I32(
-            pfiSimdOr_I32(pfiSimdShl_I32(r8, 0), pfiSimdShl_I32(g8, 8)),
+            pfiSimdShl_I32(a8, 24),
             pfiSimdShl_I32(b8, 16)
         ),
-        pfiSimdShl_I32(a8, 24)
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(g8, 8),
+            r8
+        )
     );
+
+    return rgba;
 }
 
 static inline PFsimdvi
@@ -2835,13 +2840,18 @@ pfiPixelGet_BGRA_USHORT_5_5_5_1_simd(const void* pixels, PFsimdvi offsets)
     PFsimdvi r8 = pfiSimdMullo_I32(r, pfiSimdSet1_I32(255 / 31));
     PFsimdvi a8 = pfiSimdMullo_I32(a, pfiSimdSet1_I32(255));
 
-    return pfiSimdOr_I32(
+    PFsimdvi rgba = pfiSimdOr_I32(
         pfiSimdOr_I32(
-            pfiSimdOr_I32(pfiSimdShl_I32(r8, 0), pfiSimdShl_I32(g8, 8)),
+            pfiSimdShl_I32(a8, 24),
             pfiSimdShl_I32(b8, 16)
         ),
-        pfiSimdShl_I32(a8, 24)
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(g8, 8),
+            r8
+        )
     );
+
+    return rgba;
 }
 
 static inline PFsimdvi
