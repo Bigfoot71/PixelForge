@@ -66,6 +66,9 @@ endif()
 find_package(OpenMP)
 if (OPENMP_FOUND)
     target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_C)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+        target_compile_options(${PROJECT_NAME} PRIVATE /openmp:experimental)
+    endif()
 endif()
 
 # Installation if option is enabled
