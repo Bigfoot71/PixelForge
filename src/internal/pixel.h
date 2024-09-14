@@ -1010,7 +1010,39 @@ pfiPixelSet_Luminance_Alpha_UBYTE_simd(void* pixels, PFsizei offset, PFsimdvi co
 static inline void
 pfiPixelSet_Luminance_Alpha_HALF_simd(void* pixels, PFsizei offset, PFsimdvi colors, PFsimdvi mask)
 {
+    colors = pfiColorPackedGrayscale_simd(colors);
 
+    PFsimdvf lum = pfiSimdConvert_I32_F32(pfiSimdAnd_I32(colors, *(PFsimdvi*)GC_simd_i32_255));
+    PFsimdvf a = pfiSimdConvert_I32_F32(pfiSimdAnd_I32(pfiSimdShr_I32(colors, 24), *(PFsimdvi*)GC_simd_i32_255));
+
+    lum = pfiSimdMul_F32(lum, *(PFsimdvf*)GC_simd_f32_inv255);
+    a = pfiSimdMul_F32(a, *(PFsimdvf*)GC_simd_f32_inv255);
+
+#define WRITE_LUMINANCE_ALPHA_PIXEL(index) \
+    { \
+        uint16_t* targetPixel = (uint16_t*)pixels + 2 * (offset + index); \
+        if (pfiSimdExtract_I32(mask, index) != 0) { \
+            targetPixel[0] = pfmFloatToHalf(pfiSimdExtract_F32(lum, index)); \
+            targetPixel[1] = pfmFloatToHalf(pfiSimdExtract_F32(a, index)); \
+        } \
+    }
+
+    WRITE_LUMINANCE_ALPHA_PIXEL(0);
+    WRITE_LUMINANCE_ALPHA_PIXEL(1);
+
+#ifdef __SSE2__
+    WRITE_LUMINANCE_ALPHA_PIXEL(2);
+    WRITE_LUMINANCE_ALPHA_PIXEL(3);
+#endif //__SSE2__
+
+#ifdef __AVX2__
+    WRITE_LUMINANCE_ALPHA_PIXEL(4);
+    WRITE_LUMINANCE_ALPHA_PIXEL(5);
+    WRITE_LUMINANCE_ALPHA_PIXEL(6);
+    WRITE_LUMINANCE_ALPHA_PIXEL(7);
+#endif //__AVX2__
+
+#undef WRITE_LUMINANCE_ALPHA_PIXEL
 }
 
 static inline void
@@ -2289,9 +2321,30 @@ pfiPixelGet_Luminance_Alpha_UBYTE_simd(const void* pixels, PFsimdvi offsets)
 static inline PFsimdvi
 pfiPixelGet_Luminance_Alpha_HALF_simd(const void* pixels, PFsimdvi offsets)
 {
-    PFsimdvi result = { 0 };
+    // Calculate scaled offsets
+    PFsimdvi scaledOffset = pfiSimdMullo_I32(offsets, *(PFsimdvi*)GC_simd_i32_2);
 
-    return result;
+    // Read the half LumAlpha values from the buffer
+    PFsimdvf lum = pfiSimdConvert_F16_F32(pfiSimdGather_I32(pixels, scaledOffset, sizeof(uint16_t)));
+    PFsimdvf a = pfiSimdConvert_F16_F32(pfiSimdGather_I32(pixels, pfiSimdAdd_I32(scaledOffset, *(PFsimdvi*)GC_simd_i32_1), sizeof(uint16_t)));
+
+    // Convert half values to 8-bit integer values (0-255)
+    PFsimdvi lumi = pfiSimdConvert_F32_I32(pfiSimdMul_F32(lum, *(PFsimdvf*)GC_simd_f32_255));
+    PFsimdvi ai = pfiSimdConvert_F32_I32(pfiSimdMul_F32(a, *(PFsimdvf*)GC_simd_f32_255));
+
+    // Combine the LumAlpha components and alpha into a single RGBA value
+    PFsimdvi rgba = pfiSimdOr_I32(
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(ai, 24),
+            pfiSimdShl_I32(lumi, 16)
+        ),
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(lumi, 8),
+            lumi
+        )
+    );
+
+    return rgba;
 }
 
 static inline PFsimdvi
@@ -2300,7 +2353,7 @@ pfiPixelGet_Luminance_Alpha_FLOAT_simd(const void* pixels, PFsimdvi offsets)
     // Calculate scaled offsets
     PFsimdvi scaledOffset = pfiSimdMullo_I32(offsets, *(PFsimdvi*)GC_simd_i32_2);
 
-    // Read the float RGB values from the buffer
+    // Read the float LumAlpha values from the buffer
     PFsimdvf lum = pfiSimdCast_I32_F32(pfiSimdGather_I32(pixels, scaledOffset, sizeof(PFfloat)));
     PFsimdvf a = pfiSimdCast_I32_F32(pfiSimdGather_I32(pixels, pfiSimdAdd_I32(scaledOffset, *(PFsimdvi*)GC_simd_i32_1), sizeof(PFfloat)));
 
@@ -2308,7 +2361,7 @@ pfiPixelGet_Luminance_Alpha_FLOAT_simd(const void* pixels, PFsimdvi offsets)
     PFsimdvi lumi = pfiSimdConvert_F32_I32(pfiSimdMul_F32(lum, *(PFsimdvf*)GC_simd_f32_255));
     PFsimdvi ai = pfiSimdConvert_F32_I32(pfiSimdMul_F32(a, *(PFsimdvf*)GC_simd_f32_255));
 
-    // Combine the RGB components and alpha into a single RGBA value
+    // Combine the LumAlpha components and alpha into a single RGBA value
     PFsimdvi rgba = pfiSimdOr_I32(
         pfiSimdOr_I32(
             pfiSimdShl_I32(ai, 24),
