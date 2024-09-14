@@ -138,6 +138,8 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
     return (PFcolor) { R, G, B, diffuse.a };
 }
 
+#if PF_SIMD_SUPPORT
+
 void pfiSimdLightingProcess(PFcolor_simd fragments, const PFlight* activeLights,
                                     const PFmaterial* material,
                                     const PFsimdv3f viewPos,
@@ -252,3 +254,5 @@ void pfiSimdLightingProcess(PFcolor_simd fragments, const PFlight* activeLights,
     // Store the result
     pfiColorUnpackedFromVec_simd(fragments, lightContribution, 3);
 }
+
+#endif //PF_SIMD_SUPPORT

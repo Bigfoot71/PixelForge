@@ -24,13 +24,13 @@
 #include "../color.h"
 #include "../blend.h"
 
-#define PF_TRIANGLE_RASTER_BRAYCENTRIC_SIMD     1       ///< Can also use OpenMP (if available) in addition to SIMD support
+#define PF_TRIANGLE_RASTER_BARYCENTRIC_SIMD     1       ///< Can also use OpenMP (if available) in addition to SIMD support
 #define PF_TRIANGLE_RASTER_BARYCENTRIC_OMP      2       ///< Only uses OpenMP if SIMD support is not available
 #define PF_TRIANGLE_RASTER_SCANLINES            3       ///< Uses neither OpenMP nor SIMD support.
 
-#if PF_SIMD_SIZE > 1
+#if PF_SIMD_SUPPORT
 #   define PF_TRIANGLE_RASTER_MODE \
-        PF_TRIANGLE_RASTER_BRAYCENTRIC_SIMD
+        PF_TRIANGLE_RASTER_BARYCENTRIC_SIMD
 #elif defined(_OPENMP)
 #   define PF_TRIANGLE_RASTER_MODE \
         PF_TRIANGLE_RASTER_BARYCENTRIC_OMP
@@ -39,18 +39,14 @@
         PF_TRIANGLE_RASTER_SCANLINES
 #endif
 
-/* External Functions */
-
-extern PFsimdvi
-pfTextureSampleNearestWrapSimd(const PFtexture texture, const PFsimdv2f texcoords);
-
 /* Internal typedefs */
 
-#if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_SCANLINES
-typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFfloat);
-#else //PF_TRIANGLE_RASTER_BARYCENTRIC
-typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFcolor, PFfloat, PFfloat, PFfloat);
+#if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC_SIMD
 typedef void (*InterpolateColorSimdFunc)(PFcolor_simd, const PFcolor_simd, const PFcolor_simd, const PFcolor_simd, PFsimdvf, PFsimdvf, PFsimdvf);
+#elif PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC_OMP
+typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFcolor, PFfloat, PFfloat, PFfloat);
+#elif PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_SCANLINES
+typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFfloat);
 #endif //PF_RASTER_MODE
 
 /* Internal helper function declarations */
@@ -315,7 +311,7 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* polygon, int_fast8_t* vertexC
 
 /* Triangle rasterization functions */
 
-#if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BRAYCENTRIC_SIMD
+#if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC_SIMD
 
 void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
 {

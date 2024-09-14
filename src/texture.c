@@ -29,30 +29,14 @@
 
 PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type)
 {
-    struct PFtex *texture = NULL;
-
-    PFpixelgetter getter = NULL;
-    PFpixelsetter setter = NULL;
-
-    PFpixelgetter_simd getterSimd = NULL;
-    PFpixelsetter_simd setterSimd = NULL;
-
-    getter = GC_pixelGetters[format][type];
-    setter = GC_pixelSetters[format][type];
-
-#   if PF_SIMD_SUPPORT
-        getterSimd = GC_pixelGetters_simd[format][type];
-        setterSimd = GC_pixelSetters_simd[format][type];
-#   endif //PF_SIMD_SUPPORT
-
-    if (!getter || !setter) {
+    if (!pfiIsPixelFormatValid(format, type)) {
         if (G_currentCtx) {
             G_currentCtx->errCode = PF_INVALID_ENUM;
         }
-        return texture;
+        return NULL;
     }
 
-    texture = PF_MALLOC(sizeof(struct PFtex));
+    struct PFtex * texture = PF_MALLOC(sizeof(struct PFtex));
 
     if (texture == NULL) {
         if (G_currentCtx) {
@@ -71,14 +55,15 @@ PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelforma
     texture->tx = 1.0f/width;
     texture->ty = 1.0f/height;
 
-    texture->getter = getter;
-    texture->setter = setter;
-
-    texture->getterSimd = getterSimd;
-    texture->setterSimd = setterSimd;
-
+    texture->getter = GC_pixelGetters[format][type];
+    texture->setter = GC_pixelSetters[format][type];
     texture->sampler = pfiTexture2DSampler_NEAREST_REPEAT;
+
+#if PF_SIMD_SUPPORT
+    texture->getterSimd = GC_pixelGetters_simd[format][type];
+    texture->setterSimd = GC_pixelSetters_simd[format][type];
     texture->samplerSimd = pfiTexture2DSampler_NEAREST_REPEAT_simd;
+#endif //PF_SIMD_SUPPORT
 
     return texture;
 }

@@ -26,10 +26,12 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
                                    PFcolor diffuse, const PFMvec3 viewPos,
                                    const PFMvec3 fragPos, const PFMvec3 N);
 
+#if PF_SIMD_SUPPORT
 void pfiSimdLightingProcess(PFcolor_simd fragments, const PFlight* activeLights,
                                     const PFmaterial* material,
                                     const PFsimdv3f viewPos,
                                     const PFsimdv3f fragPos,
                                     const PFsimdv3f N);
+#endif //PF_SIMD_SUPPORT
 
 #endif //PF_INTERNAL_LIGHTING_H

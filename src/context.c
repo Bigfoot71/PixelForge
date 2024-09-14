@@ -152,14 +152,21 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
     /* Initialization of default rendering members */
 
     ctx->currentDrawMode = 0;
+
     ctx->blendFunction = pfiBlendAlpha;
-    ctx->blendSimdFunction = pfiBlendAlpha_simd;
     ctx->depthFunction = pfiDepthTest_LT;
+
+#if PF_SIMD_SUPPORT
     ctx->depthSimdFunction = pfiDepthTest_LT_simd;
+    ctx->blendSimdFunction = pfiBlendAlpha_simd;
+#endif //PF_SIMD_SUPPORT
+
     ctx->clearColor = (PFcolor) { 0 };
     ctx->clearDepth = FLT_MAX;
+
     ctx->pointSize = 1.0f;
     ctx->lineWidth = 1.0f;
+
     ctx->polygonMode[0] = PF_FILL;
     ctx->polygonMode[1] = PF_FILL;
 

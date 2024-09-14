@@ -177,20 +177,17 @@ pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE(const struct PFtex* tex, PFfloat u, P
     return pfiColorLerpSmooth(c0, c1, fy);
 }
 
-#define ENTRY(FILTER, WRAP, FUNC) [FILTER][WRAP] = FUNC
 static const PFtexturesampler GC_textureSamplers[2][3] = {
 
-    ENTRY(PF_NEAREST, PF_REPEAT, pfiTexture2DSampler_NEAREST_REPEAT),
-    ENTRY(PF_NEAREST, PF_MIRRORED_REPEAT, pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT),
-    ENTRY(PF_NEAREST, PF_CLAMP_TO_EDGE, pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE),
+    [PF_NEAREST][PF_REPEAT]             = pfiTexture2DSampler_NEAREST_REPEAT,
+    [PF_NEAREST][PF_MIRRORED_REPEAT]    = pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT,
+    [PF_NEAREST][PF_CLAMP_TO_EDGE]      = pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE,
 
-    ENTRY(PF_BILINEAR, PF_REPEAT, pfiTexture2DSampler_BILINEAR_REPEAT),
-    ENTRY(PF_BILINEAR, PF_MIRRORED_REPEAT, pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT),
-    ENTRY(PF_BILINEAR, PF_CLAMP_TO_EDGE, pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE),
+    [PF_BILINEAR][PF_REPEAT]            = pfiTexture2DSampler_BILINEAR_REPEAT,
+    [PF_BILINEAR][PF_MIRRORED_REPEAT]   = pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT,
+    [PF_BILINEAR][PF_CLAMP_TO_EDGE]     = pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE,
 
 };
-#undef ENTRY
-
 
 /* SIMD Implementation */
 
@@ -405,19 +402,17 @@ pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE_simd(const struct PFtex* tex, const P
     return pfiColorPack_simd(c);
 }
 
-#define ENTRY(FILTER, WRAP, FUNC) [FILTER][WRAP] = FUNC
 static const PFtexturesampler_simd GC_textureSamplers_simd[2][3] = {
 
-    ENTRY(PF_NEAREST, PF_REPEAT, pfiTexture2DSampler_NEAREST_REPEAT_simd),
-    ENTRY(PF_NEAREST, PF_MIRRORED_REPEAT, pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT_simd),
-    ENTRY(PF_NEAREST, PF_CLAMP_TO_EDGE, pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE_simd),
+    [PF_NEAREST][PF_REPEAT]             = pfiTexture2DSampler_NEAREST_REPEAT_simd,
+    [PF_NEAREST][PF_MIRRORED_REPEAT]    = pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT_simd,
+    [PF_NEAREST][PF_CLAMP_TO_EDGE]      = pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE_simd,
 
-    ENTRY(PF_BILINEAR, PF_REPEAT, pfiTexture2DSampler_BILINEAR_REPEAT_simd),
-    ENTRY(PF_BILINEAR, PF_MIRRORED_REPEAT, pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT_simd),
-    ENTRY(PF_BILINEAR, PF_CLAMP_TO_EDGE, pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE_simd),
+    [PF_BILINEAR][PF_REPEAT]            = pfiTexture2DSampler_BILINEAR_REPEAT_simd,
+    [PF_BILINEAR][PF_MIRRORED_REPEAT]   = pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT_simd,
+    [PF_BILINEAR][PF_CLAMP_TO_EDGE]     = pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE_simd,
 
 };
-#undef ENTRY
 
 #endif //PF_SIMD_SUPPORT
 

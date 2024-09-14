@@ -22,7 +22,6 @@
 
 #include "../pixelforge.h"
 #include "./simd.h"
-#include <stdint.h>
 
 /* SISD Implementation */
 
@@ -251,7 +250,6 @@ pfiColorPackedGrayscale_simd(PFsimdvi colors)
     // Combine the luminance (repeated in RGB) with the original alpha
     return pfiSimdOr_I32(grayRGB, alpha);
 }
-
 
 #endif //PF_SIMD_SUPPORT
 #endif //PF_INTERNAL_COLOR_H
