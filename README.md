@@ -6,22 +6,21 @@ PixelForge is a lightweight software rendering library written in standard C99, 
 
 ## Features
 
-- **OpenGL-Like API**: PixelForge offers an API reminiscent of OpenGL 1.X, facilitating easy adoption for those familiar with OpenGL.
-- **Multiple Contexts**: Allows creation of multiple rendering contexts for different purposes.
-- **Framebuffer Support**: Supports framebuffers, enabling rendering to various pixel buffers.
-- **Texture Rendering**: Supports rendering of textures using pixel buffers.
-- **Perspective Correction**: Applies perspective correction to texture coordinates during 3D rendering.
-- **Primitive Rendering**: Efficiently renders points, lines, triangles, quads, strips, and fans. Additionally, it allows for adjusting point size, line width, and polygon mode, enabling rendering of triangles and quads as lines or points.
-- **Pixel Formats**: Supports various commonly used pixel formats and allows users to provide their own getter/setter functions for each texture and framebuffer via function pointers.
-- **Blend Modes**: Offers several blend modes for color blending, such as addition, subtraction, multiplication, simple averaging, and alpha blending. Additionally, supports custom color blending functions via function pointer.
-- **Depth Testing**: Enables toggling depth testing for 3D rendering management. Several basic depth testing functions are provided, but it's also possible to supply custom functions via function pointers. Additionally, the clear depth value can be adjusted as needed.
-- **Material Support**: Rendering material support through `pfMaterialf` and `pfMaterialfv`, similar to OpenGL 1.
-- **Phong Lighting**: Rendering multiple lights using `pfLightfv`, with a default support for up to 8 lights, adjustable via a definition. The default supported lighting model is the **Blinn-Phong** model, but you can also activate the Phong model with perfect reflection using `PF_PHONG_REFLECTION`.
-- **Gouraud Lighting**: If you find the Phong model too slow, you have the option to enable Gouraud shading via a `PF_GOURAUD_SHADING` definition, making everyone happy!
-- **Face Culling**: Supports selection of face culling _(back face culling, front face culling, "no culling")_.
-- **Post-Processing**: PixelForge supports post-processing effects through a customizable function pointer. Users can provide a function that takes the position (x, y, z) and color of each pixel on the screen and returns the color to be applied to that pixel. This feature enables various effects such as fog, bloom, and color grading to be implemented easily.
-- **Double buffering**: In some cases, double buffering is necessary to avoid flickering during rendering, for example. You can define an auxiliary buffer and swap the buffers as needed.
-- **OpenMP Support**: Added support for OpenMP to parallelize triangle rasterization loops, with verification of the number of pixels to be rasterized _(adjustable)_ to activate this parallelization, significantly increasing rasterization performance for large triangles.
+- **OpenGL-Like API**: PixelForge offers an API similar to OpenGL 1.X, making it easy for those familiar with OpenGL to adopt.
+- **Multiple Contexts**: Enables the creation of multiple rendering contexts for various purposes.
+- **Framebuffer Support**: Supports framebuffers, allowing rendering to different pixel buffers.
+- **Texture Rendering**: Supports texture rendering with multiple wrapping modes and filtering options.
+- **Texture Filtering**: As mentioned above, it supports bilinear or nearest neighbor filtering by default.
+- **Blend Modes**: Supports various blend modes for color blending, allowing for effects like transparency and additive blending.
+- **Primitive Rendering**: Efficiently renders points, lines, triangles, quads, strips, and fans. Additionally, it allows adjusting point size, line width, and polygon mode, enabling rendering of triangles and quads as lines or points.
+- **Material Support**: Provides material rendering support via `pfMaterialf` and `pfMaterialfv`, similar to OpenGL 1.
+- **Phong Lighting**: Supports rendering multiple lights using `pfLightfv`, with a default support for up to 8 lights, adjustable via a definition. The default lighting model is **Blinn-Phong**, but you can activate the Phong model with perfect reflection using `PF_PHONG_REFLECTION`.
+- **Gouraud Shading**: If the Phong model is too slow, you can enable Gouraud shading via a `PF_GOURAUD_SHADING` definition, catering to different performance needs.
+- **Post-Processing**: PixelForge supports post-processing effects through a customizable function pointer. Users can provide a function that takes the position (x, y, z) and color of each pixel on the screen and returns the color to be applied to that pixel. This feature makes it easy to implement various effects like fog, bloom, and color grading.
+- **Double Buffering**: In scenarios where flickering during rendering needs to be avoided, double buffering can be used. You can define an auxiliary buffer and swap the buffers as necessary.
+- **SIMD Support**: Optional SIMD support for SSE2/SSE3/SSE4.x/AVX2 is available for triangle rasterization and some other features.
+- **OpenMP Support**: Optional OpenMP support is available, which can be used in conjunction with or independently of SIMD support. Definitions in `config.h` allow managing aspects of parallelization behavior.
+- **Multiple Rasterization Modes**: PixelForge supports triangle rasterization via barycentric test/interpolation, which is used by default when SIMD and/or OpenMP support is enabled. If neither is enabled, rendering is done via scanlines, just like in the old days!
 
 ## Usage
 

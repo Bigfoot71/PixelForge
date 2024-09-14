@@ -283,6 +283,26 @@ typedef enum {
 } PFdrawmode;
 
 typedef enum {
+    PF_BLEND_AVERAGE,
+    PF_BLEND_ALPHA,
+    PF_BLEND_ADD,
+    PF_BLEND_SUB,
+    PF_BLEND_MUL,
+    PF_BLEND_SCREEN,
+    PF_BLEND_LIGHTEN,
+    PF_BLEND_DARKEN
+} PFblendmode;
+
+typedef enum {
+    PF_EQUAL,
+    PF_NOTEQUAL,
+    PF_LESS,
+    PF_LEQUAL,
+    PF_GREATER,
+    PF_GEQUAL
+} PFdepthmode;
+
+typedef enum {
     PF_POINT,
     PF_LINE,
     PF_FILL
@@ -298,6 +318,17 @@ typedef enum {                  // NOTE 1: PF_FRONT and PF_BACK are used as indi
     PF_BACK             = 1,    // NOTE 3: Similarly, this can be done for PF_BACK to obtain PF_FRONT.
     PF_FRONT_AND_BACK
 } PFface;
+
+typedef enum {
+    PF_REPEAT,
+    PF_MIRRORED_REPEAT,
+    PF_CLAMP_TO_EDGE
+} PFtexturewrap;
+
+typedef enum {
+    PF_NEAREST,
+    PF_BILINEAR
+} PFtexturefilter;
 
 typedef enum {
     PF_LIGHT0 = 0,
@@ -352,8 +383,6 @@ typedef struct {
     PFubyte r, g, b, a;
 } PFcolor;
 
-typedef PFcolor (*PFblendfunc)(PFcolor, PFcolor);
-typedef PFboolean (*PFdepthfunc)(PFfloat, PFfloat);
 typedef PFcolor (*PFpostprocessfunc)(PFint, PFint, PFfloat, PFcolor);
 
 /* Texture definitions */
@@ -740,18 +769,18 @@ PF_API void pfCullFace(PFface face);
  *
  * @warning This function needs a context to be defined.
  *
- * @param func The blending function to use.
+ * @param mode The blending mode to use.
  */
-PF_API void pfBlendFunc(PFblendfunc func);
+PF_API void pfBlendFunc(PFblendmode mode);
 
 /**
  * @brief Specifies the depth testing function.
  *
  * @warning This function needs a context to be defined.
  *
- * @param func The depth testing function to use.
+ * @param mode The depth testing mode to use.
  */
-PF_API void pfDepthFunc(PFdepthfunc func);
+PF_API void pfDepthFunc(PFdepthmode mode);
 
 /**
  * @brief Binds the specified framebuffer for subsequent rendering operations.
@@ -1631,7 +1660,7 @@ PF_API PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x
  * @param color The color value of the pixel.
  * @param depthFunc The depth comparison function used for depth testing.
  */
-PF_API void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color, PFdepthfunc depthFunc);
+PF_API void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color, PFdepthmode depthMode);
 
 /**
  * @brief Sets the color and depth values of a pixel in the framebuffer.
@@ -1705,6 +1734,19 @@ PF_API void pfDeleteTexture(PFtexture* texture, PFboolean freeBuffer);
 PF_API PFboolean pfIsValidTexture(const PFtexture texture);
 
 /**
+ * @brief Sets the texture parameters for wrapping and filtering modes.
+ *
+ * This function defines the wrapping and filtering modes to be used when rendering the specified texture.
+ * The wrap mode determines how texture coordinates outside the range [0.0, 1.0] are handled, while the
+ * filter mode specifies how the texture is filtered when it is magnified or minified.
+ *
+ * @param texture The texture to set parameters for.
+ * @param wrapMode The wrapping mode to be used (e.g., repeat, clamp).
+ * @param filterMode The filtering mode to be used (e.g., nearest, linear).
+ */
+PF_API void pfTextureParameter(PFtexture texture, PFtexturewrap wrapMode, PFtexturefilter filterMode);
+
+/**
  * @brief Returns a pointer to the texels of the texture and retrieves texture details.
  *
  * This function provides direct access to the pixel data (texels) of the specified texture.
@@ -1719,99 +1761,6 @@ PF_API PFboolean pfIsValidTexture(const PFtexture texture);
  * @return Pointer to the texels of the texture.
  */
 PF_API void* pfGetTexturePixels(const PFtexture texture, PFsizei* width, PFsizei* height, PFpixelformat* format, PFdatatype* type);
-
-/**
- * @brief Sets the color value of a pixel in the texture.
- *
- * This function sets the color value of a specific pixel in the texture.
- * The pixel coordinates (x, y) and the color value are provided.
- *
- * @param texture Pointer to the texture object.
- * @param x The X coordinate of the pixel.
- * @param y The Y coordinate of the pixel.
- * @param color The color value of the pixel.
- */
-PF_API void pfSetTexturePixel(PFtexture texture, PFsizei x, PFsizei y, PFcolor color);
-
-/**
- * @brief Retrieves the color value of a pixel from the texture.
- *
- * This function retrieves the color value of a specific pixel from the texture.
- * The pixel coordinates (x, y) are provided.
- *
- * @param texture Pointer to the texture object.
- * @param x The X coordinate of the pixel.
- * @param y The Y coordinate of the pixel.
- * @return PFcolor The color value of the pixel.
- */
-PF_API PFcolor pfGetTexturePixel(const PFtexture texture, PFsizei x, PFsizei y);
-
-/**
- * @brief Sets the color value of a sampled texture coordinate.
- *
- * This function sets the color value of a specific texture coordinate (u, v) in the texture.
- * The texture coordinates (u, v) and the color value are provided.
- *
- * @note: To use this function correctly, textures must be power-of-two (POT).
- *        If you absolutely need support for non-POT textures, you can define
- *        `PF_SUPPORT_NO_POT_TEXTURE`. Just be aware that sample retrieval
- *        will be slower as it will perform two modulo operations per call
- *        instead of two bit-wise AND operations.
- *
- * @param texture Pointer to the texture object.
- * @param u The U coordinate of the texture.
- * @param v The V coordinate of the texture.
- * @param color The color value of the texture sample.
- */
-PF_API void pfSetTextureSample(PFtexture texture, PFfloat u, PFfloat v, PFcolor color);
-
-/**
- * @brief Retrieves the color value of a sampled texture coordinate.
- *
- * This function retrieves the color value of a specific texture coordinate (u, v) from the texture.
- * The texture coordinates (u, v) are provided.
- *
- * @note: To use this function correctly, textures must be power-of-two (POT).
- *        If you absolutely need support for non-POT textures, you can define
- *        `PF_SUPPORT_NO_POT_TEXTURE`. Just be aware that sample retrieval
- *        will be slower as it will perform two modulo operations per call
- *        instead of two bit-wise AND operations.
- *
- * @param texture Pointer to the texture object.
- * @param u The U coordinate of the texture.
- * @param v The V coordinate of the texture.
- * @return PFcolor The color value of the texture sample.
- */
-PF_API PFcolor pfGetTextureSample(const PFtexture texture, PFfloat u, PFfloat v);
-
-
-/*
- *  Blending functions
- *
- *  These functions are intended to be used with `pfBlendFunc` to define the blend mode.
- *  You can also define your own functions following the signature of `PFblendfunc`.
- */
-
-PF_API PFcolor pfBlend(PFcolor source, PFcolor destination);
-PF_API PFcolor pfBlendAlpha(PFcolor source, PFcolor destination);
-PF_API PFcolor pfBlendAdditive(PFcolor source, PFcolor destination);
-PF_API PFcolor pfBlendSubtractive(PFcolor source, PFcolor destination);
-PF_API PFcolor pfBlendMultiplicative(PFcolor source, PFcolor destination);
-
-/*
- *  Depth testing functions
- *
- *  These functions are intended to be used with `pfDepthFunc` to define the depth testing mode.
- *  You can also define your own functions following the signature of `PFdepthfunc`.
-*/
-
-PF_API PFboolean pfDepthLess(PFfloat source, PFfloat destination);
-PF_API PFboolean pfDepthEqual(PFfloat source, PFfloat destination);
-PF_API PFboolean pfDepthLequal(PFfloat source, PFfloat destination);
-PF_API PFboolean pfDepthGreater(PFfloat source, PFfloat destination);
-PF_API PFboolean pfDepthNotequal(PFfloat source, PFfloat destination);
-PF_API PFboolean pfDepthGequal(PFfloat source, PFfloat destination);
-
 
 #if defined(__cplusplus)
 }

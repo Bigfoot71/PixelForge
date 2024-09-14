@@ -19,9 +19,9 @@
 
 #include "./lighting.h"
 
-PFcolor pfInternal_ProcessLights(const PFlight* activeLights, const PFmaterial* material,
-                                 PFcolor diffuse, const PFMvec3 viewPos, const PFMvec3 fragPos,
-                                 const PFMvec3 fragNormal)
+PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* material,
+                                   PFcolor diffuse, const PFMvec3 viewPos,
+                                   const PFMvec3 fragPos, const PFMvec3 N)
 {
     // Final color
     // Calculate the emission component of the final color
@@ -36,8 +36,8 @@ PFcolor pfInternal_ProcessLights(const PFlight* activeLights, const PFmaterial* 
     PFubyte aB = (material->ambient.b*diffuse.b)/255;
 
     // Compute the view direction from fragment position
-    PFMvec3 viewDir;
-    pfmVec3DirectionR(viewDir, viewPos, fragPos);
+    PFMvec3 V;
+    pfmVec3DirectionR(V, viewPos, fragPos);
 
     // Specular properties
     // Retrieve material's shininess and specular color
@@ -45,41 +45,34 @@ PFcolor pfInternal_ProcessLights(const PFlight* activeLights, const PFmaterial* 
     PFcolor specular = material->specular;
 
     // Loop through active lights
-    for (const PFlight *light = activeLights; light != NULL; light = light->next)
-    {
+    for (const PFlight *light = activeLights; light != NULL; light = light->next) {
         // Declare the light contribution and initialize it to zero for now.
         PFubyte lR = 0, lG = 0, lB = 0;
 
         // Compute light direction
-        PFMvec3 lightDir;
-        pfmVec3SubR(lightDir, light->position, fragPos);
+        PFMvec3 L;
+        pfmVec3SubR(L, light->position, fragPos);
 
         // Compute distance from light to fragment position
         // And also normalize the light direction if necessary.
-        PFfloat lightToFragPosDistSq =
-            lightDir[0]*lightDir[0] +
-            lightDir[1]*lightDir[1] +
-            lightDir[2]*lightDir[2];
+        PFfloat lightToFragPosDistSq = L[0]*L[0] + L[1]*L[1] + L[2]*L[2];
 
         PFfloat lightToFragPosDist = 0;
-        if (lightToFragPosDistSq != 0.0f)
-        {
+        if (lightToFragPosDistSq != 0.0f) {
             lightToFragPosDist = sqrtf(lightToFragPosDistSq);
             PFfloat invMag = 1.0f/lightToFragPosDist;
-            for (int_fast8_t i = 0; i < 3; i++)
-            {
-                lightDir[i] *= invMag;
+            for (int_fast8_t i = 0; i < 3; i++) {
+                L[i] *= invMag;
             }
         }
 
         // Spotlight (soft edges)
         PFubyte intensity = 255;
-        if (light->innerCutOff < M_PI)
-        {
+        if (light->innerCutOff < M_PI) {
             PFMvec3 negLightDir;
             pfmVec3NegR(negLightDir, light->direction);
 
-            PFfloat theta = pfmVec3Dot(lightDir, negLightDir);
+            PFfloat theta = pfmVec3Dot(L, negLightDir);
             PFfloat epsilon = light->innerCutOff - light->outerCutOff;
             intensity = CLAMP((PFint)(255*(theta - light->outerCutOff)/epsilon), 0, 255);
 
@@ -89,8 +82,7 @@ PFcolor pfInternal_ProcessLights(const PFlight* activeLights, const PFmaterial* 
 
         // Attenuation
         PFubyte attenuation = 255;
-        if (light->attLinear || light->attQuadratic)
-        {
+        if (light->attLinear || light->attQuadratic) {
             attenuation = 255/(light->attConstant +
                 light->attLinear*lightToFragPosDist +
                 light->attQuadratic*lightToFragPosDistSq);
@@ -104,7 +96,7 @@ PFcolor pfInternal_ProcessLights(const PFlight* activeLights, const PFmaterial* 
 
         // Diffuse component
         // Calculate the diffuse reflection of the light
-        PFubyte diff = MAX((PFint)(255*pfmVec3Dot(fragNormal, lightDir)), 0);
+        PFubyte diff = MAX((PFint)(255*pfmVec3Dot(N, L)), 0);
         lR = MIN_255(lR + (diffuse.r*light->diffuse.r*diff)/(255*255));
         lG = MIN_255(lG + (diffuse.g*light->diffuse.g*diff)/(255*255));
         lB = MIN_255(lB + (diffuse.b*light->diffuse.b*diff)/(255*255));
@@ -113,15 +105,16 @@ PFcolor pfInternal_ProcessLights(const PFlight* activeLights, const PFmaterial* 
 #       ifndef PF_PHONG_REFLECTION
             // Blinn-Phong
             PFMvec3 halfWayDir;
-            pfmVec3AddR(halfWayDir, lightDir, viewDir);
+            pfmVec3AddR(halfWayDir, L, V);
             pfmVec3Normalize(halfWayDir, halfWayDir);
-            PFubyte spec = 255*powf(fmaxf(pfmVec3Dot(fragNormal, halfWayDir), 0.0f), shininess);
+            PFubyte spec = 255*powf(fmaxf(pfmVec3Dot(N, halfWayDir), 0.0f), shininess);
 #       else
             // Phong
-            PFMvec3 reflectDir, negLightDir;
-            pfmVec3NegR(negLightDir, lightDir);
-            pfmVec3ReflectR(reflectDir, negLightDir, fragNormal);
-            PFubyte spec = 255*powf(fmaxf(pfmVec3Dot(reflectDir, viewDir), 0.0f), shininess);
+            PFMvec3 reflectDir;
+            PFMvec3 negLightDir;
+            pfmVec3NegR(negLightDir, L);
+            pfmVec3ReflectR(reflectDir, negLightDir, N);
+            PFubyte spec = 255*powf(fmaxf(pfmVec3Dot(reflectDir, V), 0.0f), shininess);
 #       endif
 
         lR = MIN_255(lR + (specular.r*light->specular.r*spec)/(255*255));
@@ -144,3 +137,122 @@ PFcolor pfInternal_ProcessLights(const PFlight* activeLights, const PFmaterial* 
     // Return the final computed color
     return (PFcolor) { R, G, B, diffuse.a };
 }
+
+#if PF_SIMD_SUPPORT
+
+void pfiSimdLightingProcess(PFcolor_simd fragments, const PFlight* activeLights,
+                                    const PFmaterial* material,
+                                    const PFsimdv3f viewPos,
+                                    const PFsimdv3f fragPos,
+                                    const PFsimdv3f N)
+{
+    // Load and normalize material colors
+    PFsimdv3f colDiffuse, colAmbient, colSpecular, colEmission;
+    pfiColorUnpackedToVec_simd(colDiffuse, fragments, 3);
+    pfiColorSisdToVec_simd(colAmbient, material->ambient, 3);
+    pfiColorSisdToVec_simd(colSpecular, material->specular, 3);
+    pfiColorSisdToVec_simd(colEmission, material->emission, 3);
+
+    // Normalize ambient color by diffuse color
+    pfiVec3Mul_simd(colAmbient, colAmbient, colDiffuse);
+
+    // Compute the view direction from fragment position
+    PFsimdv3f V;
+    pfiVec3DirectionR_simd(V, viewPos, fragPos);
+
+    // Initialize light contribution
+    PFsimdv3f lightContribution;
+    pfiVec3Zero_simd(lightContribution);
+
+    // Process each light
+    for (const PFlight *light = activeLights; light != NULL; light = light->next) {
+        // Load light data
+        PFsimdv3f lightPos, lightDir;
+        pfiVec3Load_simd(lightPos, light->position);
+        pfiVec3Load_simd(lightDir, light->direction);
+
+        PFsimdv3f lightAmbient, lightDiffuse, lightSpecular;
+        pfiColorSisdToVec_simd(lightAmbient, light->ambient, 3);
+        pfiColorSisdToVec_simd(lightDiffuse, light->diffuse, 3);
+        pfiColorSisdToVec_simd(lightSpecular, light->specular, 3);
+
+        // Compute the light direction from fragment position
+        PFsimdv3f L;
+        pfiVec3DirectionR_simd(L, lightPos, fragPos);
+
+        // Ambient component
+        PFsimdv3f ambient;
+        pfiVec3MulR_simd(ambient, lightAmbient, colAmbient);
+
+        // Diffuse component
+        PFsimdv3f diffuse; {
+            PFsimdvf diff = pfiSimdMax_F32(pfiVec3Dot_simd(N, L), pfiSimdSetZero_F32());
+            pfiVec3ScaleR_simd(diffuse, lightDiffuse, diff);
+            pfiVec3Mul_simd(diffuse, diffuse, colDiffuse);
+        }
+
+        // Specular component
+        PFsimdv3f specular; {
+            PFsimdv3f negL;
+            pfiVec3NegR_simd(negL, L);
+
+#       ifndef PF_PHONG_REFLECTION
+            PFsimdv3f halfWayDir;
+            pfiVec3AddR_simd(halfWayDir, L, V);
+            pfiVec3Normalize_simd(halfWayDir, halfWayDir);
+            PFsimdvf spec = pfiSimdMax_F32(pfiVec3Dot_simd(N, halfWayDir), pfiSimdSetZero_F32());
+#       else
+            PFsimdv3f reflectDir;
+            pfiVec3ReflectR_simd(reflectDir, negL, N);
+            PFsimdvf spec = pfiSimdMax_F32(pfiVec3Dot_simd(V, reflectDir), pfiSimdSetZero_F32());
+#       endif
+
+            spec = pfiSimdPow_F32(spec, material->shininess);
+
+            pfiVec3ScaleR_simd(specular, lightSpecular, spec);
+            pfiVec3Mul_simd(specular, specular, colSpecular);
+        }
+
+        // Spotlight (soft edges)
+        if (light->innerCutOff < M_PI) {
+            PFsimdv3f negLightDir;
+            pfiVec3NegR_simd(negLightDir, lightDir);
+
+            PFsimdvf theta = pfiVec3Dot_simd(L, negLightDir);
+            PFsimdvf epsilon = pfiSimdSet1_F32(light->innerCutOff - light->outerCutOff);
+
+            PFsimdvf intensity = pfiSimdDiv_F32(pfiSimdSub_F32(theta, pfiSimdSet1_F32(light->outerCutOff)), epsilon);
+            intensity = pfiSimdClamp_F32(intensity, *(PFsimdvf*)GC_simd_f32_0, *(PFsimdvf*)GC_simd_f32_1);
+
+            pfiVec3Scale_simd(diffuse, diffuse, intensity);
+            pfiVec3Scale_simd(specular, specular, intensity);
+        }
+
+        // Attenuation
+        if (light->attLinear || light->attQuadratic) {
+            PFsimdvf distanceSq = pfiVec3DistanceSq_simd(lightPos, fragPos);
+            PFsimdvf distance = pfiSimdSqrt_F32(distanceSq);
+
+            PFsimdvf attConstant = pfiSimdSet1_F32(light->attConstant);
+            PFsimdvf attLinear = pfiSimdMul_F32(pfiSimdSet1_F32(light->attLinear), distance);
+            PFsimdvf attQuadratic = pfiSimdMul_F32(pfiSimdSet1_F32(light->attQuadratic), distanceSq);
+
+            PFsimdvf attenuation = pfiSimdRCP_F32(
+                pfiSimdAdd_F32(attConstant, pfiSimdAdd_F32(attLinear, attQuadratic)));
+
+            pfiVec3Scale_simd(ambient, ambient, attenuation);
+            pfiVec3Scale_simd(diffuse, diffuse, attenuation);
+            pfiVec3Scale_simd(specular, specular, attenuation);
+        }
+
+        // Adding light contribution
+        pfiVec3Add_simd(lightContribution, lightContribution, ambient);
+        pfiVec3Add_simd(lightContribution, lightContribution, diffuse);
+        pfiVec3Add_simd(lightContribution, lightContribution, specular);
+    }
+
+    // Store the result
+    pfiColorUnpackedFromVec_simd(fragments, lightContribution, 3);
+}
+
+#endif //PF_SIMD_SUPPORT

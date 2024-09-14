@@ -20,8 +20,6 @@
 #ifndef PF_CONFIG_H
 #define PF_CONFIG_H
 
-//#define PF_SCANLINES_RASTER_METHOD    // Performs triangle rasterization using scanline rather than barycentric method
-//#define PF_SUPPORT_NO_POT_TEXTURE     // Allows fetching samples from texcoords on non-power-of-two textures
 //#define PF_PHONG_REFLECTION           // Disable the Blinn-Phong reflection model for Phong
 //#define PF_GOURAUD_SHADING            // Enable vertex shading for lighting instead of per-fragment shading
 
@@ -63,6 +61,12 @@
 #   ifndef PF_OPENMP_RASTER_THRESHOLD_AREA
 #       define PF_OPENMP_RASTER_THRESHOLD_AREA 32*32
 #   endif //PF_OPENMP_RASTER_THRESHOLD_AREA
+
+// Number of lines processed per thread during the 
+// traversal of the triangle's bounding box.
+#   ifndef PF_OPENMP_TRIANGLE_ROW_PER_THREAD
+#       define PF_OPENMP_TRIANGLE_ROW_PER_THREAD 4
+#   endif //PF_OPENMP_TRIANGLE_ROW_PER_THREAD
 
 //  Buffer size threshold for parallelizing `pfClear` loops
 #   ifndef PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD
