@@ -217,13 +217,10 @@ pfiColorUnpackedFromVec_simd(PFcolor_simd out, PFsimdvf* in, int vecSize)
 static inline PFsimdvi
 pfiColorPackedGrayscale_simd(PFsimdvi colors)
 {
-    // Masks to extract the R, G, B, and Alpha channels
-    const PFsimdvi maskA = pfiSimdSet1_I32(0xFF000000);
-
     // Extract the R, G, B channels
-    PFsimdvi r = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 16), *(PFsimdvi*)GC_simd_i32_255);
+    PFsimdvi r = pfiSimdAnd_I32(colors, *(PFsimdvi*)GC_simd_i32_255);
     PFsimdvi g = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 8), *(PFsimdvi*)GC_simd_i32_255);
-    PFsimdvi b = pfiSimdAnd_I32(colors, *(PFsimdvi*)GC_simd_i32_255);
+    PFsimdvi b = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 16), *(PFsimdvi*)GC_simd_i32_255);
 
     // Integer coefficients approximating 0.299, 0.587, and 0.114 (multiplied by 256)
     const PFsimdvi coeffR = pfiSimdSet1_I32(77);   // 0.299 * 256 = 76.8
@@ -233,10 +230,10 @@ pfiColorPackedGrayscale_simd(PFsimdvi colors)
     // Calculate the luminance using the integer coefficients
     PFsimdvi gray = pfiSimdAdd_I32(
         pfiSimdAdd_I32(
-            pfiSimdMullo_I32(r, coeffR),
+            pfiSimdMullo_I32(b, coeffB),
             pfiSimdMullo_I32(g, coeffG)
         ),
-        pfiSimdMullo_I32(b, coeffB)
+        pfiSimdMullo_I32(r, coeffR)
     );
 
     // Divide by 256 (equivalent to a right shift by 8 bits)
@@ -248,12 +245,13 @@ pfiColorPackedGrayscale_simd(PFsimdvi colors)
         gray
     );
 
-    // Extract the alpha from the original most significant 8 bits
-    PFsimdvi alpha = pfiSimdAnd_I32(colors, maskA);
+    // Extract the alpha from the original color (bits 24-31) and keep it unchanged
+    PFsimdvi alpha = pfiSimdAnd_I32(colors, pfiSimdSet1_I32(0xFF000000));
 
     // Combine the luminance (repeated in RGB) with the original alpha
     return pfiSimdOr_I32(grayRGB, alpha);
 }
+
 
 #endif //PF_SIMD_SUPPORT
 #endif //PF_INTERNAL_COLOR_H
