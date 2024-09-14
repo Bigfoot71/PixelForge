@@ -2265,35 +2265,41 @@ pfiPixelGet_Luminance_UBYTE_simd(const void* pixels, PFsimdvi offsets)
 static inline PFsimdvi
 pfiPixelGet_Luminance_HALF_simd(const void* pixels, PFsimdvi offsets)
 {
-    PFsimdvi lum = pfiSimdGather_I32(pixels, offsets, sizeof(PFushort));
+    PFsimdvf lum = pfiSimdConvert_F16_F32(pfiSimdGather_I32(pixels, offsets, sizeof(uint16_t)));
+    PFsimdvi lumi = pfiSimdConvert_F32_I32(pfiSimdMul_F32(lum, *(PFsimdvf*)GC_simd_f32_255));
 
-    lum = pfiSimdConvert_F32_I32(pfiSimdMul_F32(
-        pfiSimdConvert_F16_F32(lum),
-        *(PFsimdvf*)GC_simd_f32_255));
+    PFsimdvi rgba = pfiSimdOr_I32(
+        pfiSimdOr_I32(
+            pfiSimdSet1_I32(0xFF000000),
+            pfiSimdShl_I32(lumi, 16)
+        ),
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(lumi, 8),
+            lumi
+        )
+    );
 
-    lum = pfiSimdOr_I32(pfiSimdShr_I32(lum, 24), pfiSimdSet1_I32(0xFF000000));
-    PFsimdvi lastByte = pfiSimdAnd_I32(lum, *(PFsimdvi*)GC_simd_i32_255);
-    lum = pfiSimdOr_I32(lum, pfiSimdShl_I32(lastByte, 16));
-    lum = pfiSimdOr_I32(lum, pfiSimdShl_I32(lastByte, 8));
-
-    return lum;
+    return rgba;
 }
 
 static inline PFsimdvi
 pfiPixelGet_Luminance_FLOAT_simd(const void* pixels, PFsimdvi offsets)
 {
-    PFsimdvi lum = pfiSimdGather_I32(pixels, offsets, sizeof(PFfloat));
+    PFsimdvf lum = pfiSimdCast_I32_F32(pfiSimdGather_I32(pixels, offsets, sizeof(PFfloat)));
+    PFsimdvi lumi = pfiSimdConvert_F32_I32(pfiSimdMul_F32(lum, *(PFsimdvf*)GC_simd_f32_255));
 
-    lum = pfiSimdConvert_F32_I32(
-        pfiSimdMul_F32(pfiSimdCast_I32_F32(lum),
-        *(PFsimdvf*)GC_simd_f32_255));
+    PFsimdvi rgba = pfiSimdOr_I32(
+        pfiSimdOr_I32(
+            pfiSimdSet1_I32(0xFF000000),
+            pfiSimdShl_I32(lumi, 16)
+        ),
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(lumi, 8),
+            lumi
+        )
+    );
 
-    lum = pfiSimdOr_I32(pfiSimdShr_I32(lum, 24), pfiSimdSet1_I32(0xFF000000));
-    PFsimdvi lastByte = pfiSimdAnd_I32(lum, *(PFsimdvi*)GC_simd_i32_255);
-    lum = pfiSimdOr_I32(lum, pfiSimdShl_I32(lastByte, 16));
-    lum = pfiSimdOr_I32(lum, pfiSimdShl_I32(lastByte, 8));
-
-    return lum;
+    return rgba;
 }
 
 
