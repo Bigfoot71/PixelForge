@@ -2016,13 +2016,85 @@ pfiPixelSet_BGRA_UBYTE_simd(void* pixels, PFsizei offset, PFsimdvi colors, PFsim
 static inline void
 pfiPixelSet_RGBA_HALF_simd(void* pixels, PFsizei offset, PFsimdvi colors, PFsimdvi mask)
 {
+    PFsimdvf r = pfiSimdConvert_I32_F32(pfiSimdAnd_I32(colors, *(PFsimdvi*)GC_simd_i32_255));
+    PFsimdvf g = pfiSimdConvert_I32_F32(pfiSimdAnd_I32(pfiSimdShr_I32(colors, 8), *(PFsimdvi*)GC_simd_i32_255));
+    PFsimdvf b = pfiSimdConvert_I32_F32(pfiSimdAnd_I32(pfiSimdShr_I32(colors, 16), *(PFsimdvi*)GC_simd_i32_255));
+    PFsimdvf a = pfiSimdConvert_I32_F32(pfiSimdAnd_I32(pfiSimdShr_I32(colors, 24), *(PFsimdvi*)GC_simd_i32_255));
 
+    r = pfiSimdMul_F32(r, *(PFsimdvf*)GC_simd_f32_inv255);
+    g = pfiSimdMul_F32(g, *(PFsimdvf*)GC_simd_f32_inv255);
+    b = pfiSimdMul_F32(b, *(PFsimdvf*)GC_simd_f32_inv255);
+    a = pfiSimdMul_F32(a, *(PFsimdvf*)GC_simd_f32_inv255);
+
+#   define WRITE_RGBA_FLOAT_PIXEL(index) \
+    { \
+        if (pfiSimdExtract_I32(mask, index) & 0xFFFFFFFF) { \
+            uint16_t* targetPixel = (uint16_t*)pixels + 4 * (offset + index); \
+            targetPixel[0] = pfmFloatToHalf(pfiSimdExtract_F32(r, index)); \
+            targetPixel[1] = pfmFloatToHalf(pfiSimdExtract_F32(g, index)); \
+            targetPixel[2] = pfmFloatToHalf(pfiSimdExtract_F32(b, index)); \
+            targetPixel[3] = pfmFloatToHalf(pfiSimdExtract_F32(a, index)); \
+        } \
+    }
+
+    WRITE_RGBA_FLOAT_PIXEL(0);
+    WRITE_RGBA_FLOAT_PIXEL(1);
+
+#ifdef __SSE2__
+    WRITE_RGBA_FLOAT_PIXEL(2);
+    WRITE_RGBA_FLOAT_PIXEL(3);
+#endif // __SSE2__
+
+#ifdef __AVX2__
+    WRITE_RGBA_FLOAT_PIXEL(4);
+    WRITE_RGBA_FLOAT_PIXEL(5);
+    WRITE_RGBA_FLOAT_PIXEL(6);
+    WRITE_RGBA_FLOAT_PIXEL(7);
+#endif // __AVX2__
+
+#undef WRITE_RGBA_FLOAT_PIXEL
 }
 
 static inline void
 pfiPixelSet_BGRA_HALF_simd(void* pixels, PFsizei offset, PFsimdvi colors, PFsimdvi mask)
 {
+    PFsimdvf b = pfiSimdConvert_I32_F32(pfiSimdAnd_I32(pfiSimdShr_I32(colors, 16), *(PFsimdvi*)GC_simd_i32_255));
+    PFsimdvf g = pfiSimdConvert_I32_F32(pfiSimdAnd_I32(pfiSimdShr_I32(colors, 8), *(PFsimdvi*)GC_simd_i32_255));
+    PFsimdvf r = pfiSimdConvert_I32_F32(pfiSimdAnd_I32(colors, *(PFsimdvi*)GC_simd_i32_255));
+    PFsimdvf a = pfiSimdConvert_I32_F32(pfiSimdAnd_I32(pfiSimdShr_I32(colors, 24), *(PFsimdvi*)GC_simd_i32_255));
 
+    b = pfiSimdMul_F32(b, *(PFsimdvf*)GC_simd_f32_inv255);
+    g = pfiSimdMul_F32(g, *(PFsimdvf*)GC_simd_f32_inv255);
+    r = pfiSimdMul_F32(r, *(PFsimdvf*)GC_simd_f32_inv255);
+    a = pfiSimdMul_F32(a, *(PFsimdvf*)GC_simd_f32_inv255);
+
+#   define WRITE_RGBA_FLOAT_PIXEL(index) \
+    { \
+        if (pfiSimdExtract_I32(mask, index) & 0xFFFFFFFF) { \
+            uint16_t* targetPixel = (uint16_t*)pixels + 4 * (offset + index); \
+            targetPixel[0] = pfmFloatToHalf(pfiSimdExtract_F32(b, index)); \
+            targetPixel[1] = pfmFloatToHalf(pfiSimdExtract_F32(g, index)); \
+            targetPixel[2] = pfmFloatToHalf(pfiSimdExtract_F32(r, index)); \
+            targetPixel[3] = pfmFloatToHalf(pfiSimdExtract_F32(a, index)); \
+        } \
+    }
+
+    WRITE_RGBA_FLOAT_PIXEL(0);
+    WRITE_RGBA_FLOAT_PIXEL(1);
+
+#ifdef __SSE2__
+    WRITE_RGBA_FLOAT_PIXEL(2);
+    WRITE_RGBA_FLOAT_PIXEL(3);
+#endif // __SSE2__
+
+#ifdef __AVX2__
+    WRITE_RGBA_FLOAT_PIXEL(4);
+    WRITE_RGBA_FLOAT_PIXEL(5);
+    WRITE_RGBA_FLOAT_PIXEL(6);
+    WRITE_RGBA_FLOAT_PIXEL(7);
+#endif // __AVX2__
+
+#undef WRITE_RGBA_FLOAT_PIXEL
 }
 
 static inline void
@@ -2718,17 +2790,61 @@ pfiPixelGet_BGRA_UBYTE_simd(const void* pixels, PFsimdvi offsets)
 static inline PFsimdvi
 pfiPixelGet_RGBA_HALF_simd(const void* pixels, PFsimdvi offsets)
 {
-    PFsimdvi result = { 0 };
+    const PFsimdvi scaledOffset = pfiSimdMullo_I32(
+        offsets, pfiSimdSet1_I32(4));
 
-    return result;
+    PFsimdvf r = pfiSimdConvert_F16_F32(pfiSimdGather_I32(pixels, scaledOffset, sizeof(uint16_t)));
+    PFsimdvf g = pfiSimdConvert_F16_F32(pfiSimdGather_I32(pixels, pfiSimdAdd_I32(scaledOffset, pfiSimdSet1_I32(1)), sizeof(uint16_t)));
+    PFsimdvf b = pfiSimdConvert_F16_F32(pfiSimdGather_I32(pixels, pfiSimdAdd_I32(scaledOffset, pfiSimdSet1_I32(2)), sizeof(uint16_t)));
+    PFsimdvf a = pfiSimdConvert_F16_F32(pfiSimdGather_I32(pixels, pfiSimdAdd_I32(scaledOffset, pfiSimdSet1_I32(3)), sizeof(uint16_t)));
+
+    PFsimdvi ri = pfiSimdConvert_F32_I32(pfiSimdMul_F32(r, *(PFsimdvf*)GC_simd_f32_255));
+    PFsimdvi gi = pfiSimdConvert_F32_I32(pfiSimdMul_F32(g, *(PFsimdvf*)GC_simd_f32_255));
+    PFsimdvi bi = pfiSimdConvert_F32_I32(pfiSimdMul_F32(b, *(PFsimdvf*)GC_simd_f32_255));
+    PFsimdvi ai = pfiSimdConvert_F32_I32(pfiSimdMul_F32(a, *(PFsimdvf*)GC_simd_f32_255));
+
+    PFsimdvi rgba = pfiSimdOr_I32(
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(ai, 24),
+            pfiSimdShl_I32(bi, 16)
+        ),
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(gi, 8),
+            ri
+        )
+    );
+
+    return rgba;
 }
 
 static inline PFsimdvi
 pfiPixelGet_BGRA_HALF_simd(const void* pixels, PFsimdvi offsets)
 {
-    PFsimdvi result = { 0 };
+    const PFsimdvi scaledOffset = pfiSimdMullo_I32(
+        offsets, pfiSimdSet1_I32(4));
 
-    return result;
+    PFsimdvf b = pfiSimdConvert_F16_F32(pfiSimdGather_I32(pixels, scaledOffset, sizeof(uint16_t)));
+    PFsimdvf g = pfiSimdConvert_F16_F32(pfiSimdGather_I32(pixels, pfiSimdAdd_I32(scaledOffset, pfiSimdSet1_I32(1)), sizeof(uint16_t)));
+    PFsimdvf r = pfiSimdConvert_F16_F32(pfiSimdGather_I32(pixels, pfiSimdAdd_I32(scaledOffset, pfiSimdSet1_I32(2)), sizeof(uint16_t)));
+    PFsimdvf a = pfiSimdConvert_F16_F32(pfiSimdGather_I32(pixels, pfiSimdAdd_I32(scaledOffset, pfiSimdSet1_I32(3)), sizeof(uint16_t)));
+
+    PFsimdvi bi = pfiSimdConvert_F32_I32(pfiSimdMul_F32(b, *(PFsimdvf*)GC_simd_f32_255));
+    PFsimdvi gi = pfiSimdConvert_F32_I32(pfiSimdMul_F32(g, *(PFsimdvf*)GC_simd_f32_255));
+    PFsimdvi ri = pfiSimdConvert_F32_I32(pfiSimdMul_F32(r, *(PFsimdvf*)GC_simd_f32_255));
+    PFsimdvi ai = pfiSimdConvert_F32_I32(pfiSimdMul_F32(a, *(PFsimdvf*)GC_simd_f32_255));
+
+    PFsimdvi bgra = pfiSimdOr_I32(
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(ai, 24),
+            pfiSimdShl_I32(bi, 16)
+        ),
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(gi, 8),
+            ri
+        )
+    );
+
+    return bgra;
 }
 
 static inline PFsimdvi
@@ -2772,19 +2888,19 @@ pfiPixelGet_BGRA_FLOAT_simd(const void* pixels, PFsimdvi offsets)
     PFsimdvi r = pfiSimdGather_I32(pixels, pfiSimdAdd_I32(scaledOffset, pfiSimdSet1_I32(2)), sizeof(PFfloat));
     PFsimdvi a = pfiSimdGather_I32(pixels, pfiSimdAdd_I32(scaledOffset, pfiSimdSet1_I32(3)), sizeof(PFfloat));
 
-    r = pfiSimdConvert_F32_I32(pfiSimdMul_F32(pfiSimdCast_I32_F32(r), *(PFsimdvf*)GC_simd_f32_255));
-    g = pfiSimdConvert_F32_I32(pfiSimdMul_F32(pfiSimdCast_I32_F32(g), *(PFsimdvf*)GC_simd_f32_255));
     b = pfiSimdConvert_F32_I32(pfiSimdMul_F32(pfiSimdCast_I32_F32(b), *(PFsimdvf*)GC_simd_f32_255));
+    g = pfiSimdConvert_F32_I32(pfiSimdMul_F32(pfiSimdCast_I32_F32(g), *(PFsimdvf*)GC_simd_f32_255));
+    r = pfiSimdConvert_F32_I32(pfiSimdMul_F32(pfiSimdCast_I32_F32(r), *(PFsimdvf*)GC_simd_f32_255));
     a = pfiSimdConvert_F32_I32(pfiSimdMul_F32(pfiSimdCast_I32_F32(a), *(PFsimdvf*)GC_simd_f32_255));
 
     PFsimdvi bgra = pfiSimdOr_I32(
         pfiSimdOr_I32(
             pfiSimdShl_I32(a, 24),
-            pfiSimdShl_I32(r, 16)
+            pfiSimdShl_I32(b, 16)
         ),
         pfiSimdOr_I32(
             pfiSimdShl_I32(g, 8),
-            b
+            r
         )
     );
 
