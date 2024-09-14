@@ -24,7 +24,11 @@ file(GLOB_RECURSE SRCS ${PF_ROOT_PATH}/src/*.c)
 file(GLOB HDRS ${PF_ROOT_PATH}/src/*.h)
 
 # Common compilation options
-add_compile_options(-Wall -Wextra -pedantic)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-Wall -Wextra -Wpedantic)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(/W4)
+endif()
 
 # Adding source files to the target based on the chosen option (shared or static)
 if(PF_BUILD_SHARED)
