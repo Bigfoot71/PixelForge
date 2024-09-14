@@ -705,16 +705,16 @@ void pfClear(PFclearflag flag)
     // If both color and depth buffers should be cleared
     if (flag & (PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT)) {
         PFsizei pixelBytes = pfiGetPixelBytes(tex->format, tex->type);
-        tex->setterSimd(tex->pixels, 0, pfiSimdSet1_I32(*(PFuint*)&G_currentCtx->clearColor), *(PFsimdvi*)GC_simd_i32_0xffffffff);
-        pfiSimdStore_F32(framebuffer->zbuffer, pfiSimdSet1_F32(G_currentCtx->clearDepth));
+        PFsimdvi vcolor = pfiSimdSet1_I32(*(PFuint*)&G_currentCtx->clearColor);
+        PFsimdvf vdepth = pfiSimdSet1_F32(G_currentCtx->clearDepth);
         PFubyte *pbuffer = (PFubyte*)tex->pixels;
         PFfloat *zbuffer = framebuffer->zbuffer;
 #       ifdef _OPENMP
 #           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
 #       endif //_OPENMP
         for (PFsizei i = PF_SIMD_SIZE; i < simdAlignedSize; i += PF_SIMD_SIZE) {
-            pfiSimdStore_I32(pbuffer + i * pixelBytes, *(PFsimdvi*)pbuffer);
-            pfiSimdStore_F32(zbuffer + i, *(PFsimdvf*)zbuffer);
+            tex->setterSimd(tex->pixels, i, vcolor, *(PFsimdvi*)GC_simd_i32_0xffffffff);
+            pfiSimdStore_F32(zbuffer + i, vdepth);
         }
         for (PFsizei i = simdAlignedSize; i < size; i++) {
             memcpy(pbuffer + i * pixelBytes, pbuffer, pixelBytes);
@@ -724,13 +724,13 @@ void pfClear(PFclearflag flag)
     // If only the color buffer should be cleared
     else if (flag & PF_COLOR_BUFFER_BIT) {
         PFsizei pixelBytes = pfiGetPixelBytes(tex->format, tex->type);
-        tex->setterSimd(tex->pixels, 0, pfiSimdSet1_I32(*(PFuint*)&G_currentCtx->clearColor), *(PFsimdvi*)GC_simd_i32_0xffffffff);
+        PFsimdvi vcolor = pfiSimdSet1_I32(*(PFuint*)&G_currentCtx->clearColor);
         PFubyte *pbuffer = (PFubyte*)tex->pixels;
 #       ifdef _OPENMP
 #           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
 #       endif //_OPENMP
         for (PFsizei i = PF_SIMD_SIZE; i < simdAlignedSize; i += PF_SIMD_SIZE) {
-            pfiSimdStore_I8(pbuffer + i * pixelBytes, *(PFsimdvi*)pbuffer);
+            tex->setterSimd(tex->pixels, i, vcolor, *(PFsimdvi*)GC_simd_i32_0xffffffff);
         }
         for (PFsizei i = simdAlignedSize; i < size; i++) {
             memcpy(pbuffer + i * pixelBytes, pbuffer, pixelBytes);
@@ -738,13 +738,13 @@ void pfClear(PFclearflag flag)
     }
     // If only the depth buffer should be cleared
     else if (flag & PF_DEPTH_BUFFER_BIT) {
-        pfiSimdStore_F32(framebuffer->zbuffer, pfiSimdSet1_F32(G_currentCtx->clearDepth));
+        PFsimdvf vdepth = pfiSimdSet1_F32(G_currentCtx->clearDepth);
         PFfloat *zbuffer = framebuffer->zbuffer;
 #       ifdef _OPENMP
 #          pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
 #       endif //_OPENMP
         for (PFsizei i = PF_SIMD_SIZE; i < simdAlignedSize; i += PF_SIMD_SIZE) {
-            pfiSimdStore_F32(zbuffer + i, *(PFsimdvf*)zbuffer);
+            pfiSimdStore_F32(zbuffer + i, vdepth);
         }
         for (PFsizei i = simdAlignedSize; i < size; i++) {
             zbuffer[i] = zbuffer[0];
