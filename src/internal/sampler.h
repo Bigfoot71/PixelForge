@@ -427,8 +427,8 @@ static const PFtexturesampler_simd GC_textureSamplers_simd[2][3] = {
 static inline PFboolean
 pfiIsTextureParameterValid(PFtexturewrap wrapMode, PFtexturefilter filterMode)
 {
-    return (wrapMode >= PF_NEAREST && wrapMode <= PF_BILINEAR)
-        && (filterMode >= PF_REPEAT && filterMode <= PF_CLAMP_TO_EDGE);
+    return (wrapMode >= PF_REPEAT && wrapMode <= PF_CLAMP_TO_EDGE)
+        && (filterMode >= PF_NEAREST && filterMode <= PF_BILINEAR);
 }
 
 #endif //PF_INTERNAL_SAMPLER_H

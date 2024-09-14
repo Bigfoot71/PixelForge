@@ -1849,7 +1849,6 @@ static inline void
 pfiPixelSet_RGBA_USHORT_5_5_5_1_simd(void* pixels, PFsizei offset, PFsimdvi colors, PFsimdvi mask)
 {
     const PFsimdvi scale5 = pfiSimdSet1_I32(31);    // To convert to 5 bits (2^5 - 1)
-    const PFsimdvi scale1 = *(PFsimdvi*)GC_simd_i32_1;     // To convert alpha to 1 bit
 
     PFsimdvi r = pfiSimdAnd_I32(colors, *(PFsimdvi*)GC_simd_i32_255);
     PFsimdvi g = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 8), *(PFsimdvi*)GC_simd_i32_255);
@@ -1902,7 +1901,6 @@ static inline void
 pfiPixelSet_BGRA_USHORT_5_5_5_1_simd(void* pixels, PFsizei offset, PFsimdvi colors, PFsimdvi mask)
 {
     const PFsimdvi scale5 = pfiSimdSet1_I32(31);    // To convert to 5 bits (2^5 - 1)
-    const PFsimdvi scale1 = *(PFsimdvi*)GC_simd_i32_1;     // To convert alpha to 1 bit
 
     PFsimdvi b = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 16), *(PFsimdvi*)GC_simd_i32_255);
     PFsimdvi g = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 8), *(PFsimdvi*)GC_simd_i32_255);
