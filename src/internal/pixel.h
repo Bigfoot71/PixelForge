@@ -2552,13 +2552,16 @@ pfiPixelGet_RGB_USHORT_5_6_5_simd(const void* pixels, PFsimdvi offsets)
     PFsimdvi b = pfiSimdAnd_I32(rgb565, maskB);
     b = pfiSimdShl_I32(b, 3);
 
-    PFsimdvi a = pfiSimdSet1_I32(0xFF000000);
-
     PFsimdvi rgba = pfiSimdOr_I32(
         pfiSimdOr_I32(
-            pfiSimdOr_I32(pfiSimdShl_I32(r, 16), pfiSimdShl_I32(g, 8)),
-            b),
-        a);
+            pfiSimdSet1_I32(0xFF000000),
+            pfiSimdShl_I32(b, 16)
+        ),
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(g, 8),
+            r
+        )
+    );
 
     return rgba;
 }
@@ -2566,30 +2569,33 @@ pfiPixelGet_RGB_USHORT_5_6_5_simd(const void* pixels, PFsimdvi offsets)
 static inline PFsimdvi
 pfiPixelGet_BGR_USHORT_5_6_5_simd(const void* pixels, PFsimdvi offsets)
 {
-    PFsimdvi bgr565 = pfiSimdGather_I32(pixels, offsets, sizeof(PFushort));
+    PFsimdvi rgb565 = pfiSimdGather_I32(pixels, offsets, sizeof(PFushort));
 
     const PFsimdvi maskB = pfiSimdSet1_I32(0xF800);
     const PFsimdvi maskG = pfiSimdSet1_I32(0x07E0);
     const PFsimdvi maskR = pfiSimdSet1_I32(0x001F);
 
-    PFsimdvi b = pfiSimdAnd_I32(bgr565, maskB);
-    b = pfiSimdShl_I32(b, 8 - 11);
+    PFsimdvi b = pfiSimdAnd_I32(rgb565, maskB);
+    b = pfiSimdShr_I32(b, 11);
+    b = pfiSimdShl_I32(b, 3);
 
-    PFsimdvi g = pfiSimdAnd_I32(bgr565, maskG);
-    g = pfiSimdShl_I32(g, 8 - 5);
+    PFsimdvi g = pfiSimdAnd_I32(rgb565, maskG);
     g = pfiSimdShr_I32(g, 5);
+    g = pfiSimdShl_I32(g, 2);
 
-    PFsimdvi r = pfiSimdAnd_I32(bgr565, maskR);
-    r = pfiSimdShl_I32(r, 8 - 0);
-    r = pfiSimdShr_I32(r, 11);
-
-    PFsimdvi a = pfiSimdSet1_I32(0xFF000000);
+    PFsimdvi r = pfiSimdAnd_I32(rgb565, maskR);
+    r = pfiSimdShl_I32(r, 3);
 
     PFsimdvi rgba = pfiSimdOr_I32(
         pfiSimdOr_I32(
-            pfiSimdOr_I32(b, pfiSimdShl_I32(g, 8)),
-            pfiSimdShl_I32(r, 16)),
-        a);
+            pfiSimdSet1_I32(0xFF000000),
+            pfiSimdShl_I32(b, 16)
+        ),
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(g, 8),
+            r
+        )
+    );
 
     return rgba;
 }
