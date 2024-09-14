@@ -445,6 +445,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             PFsimdvi mask = pfiSimdOr_I32(pfiSimdOr_I32(w1V, w2V), w3V);                    \
             mask = pfiSimdCmpGT_I32(mask, pfiSimdSetZero_I32());                            \
             /* Bounds check to ensure pixels' x-coords are within the xMax limit */         \
+            /* Used for "2D" rendering; 3D clipping removes these cases. */                 \
             mask = pfiSimdAnd_I32(mask, pfiSimdCmpLT_I32(                                   \
                 pfiSimdAdd_I32(pfiSimdSet1_I32(x), pixOffsetV), pfiSimdSet1_I32(xMax)));    \
             /* Normalize weights */                                                         \
@@ -489,6 +490,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
             PFsimdvi mask = pfiSimdOr_I32(pfiSimdOr_I32(w1V, w2V), w3V);                    \
             mask = pfiSimdCmpGT_I32(mask, pfiSimdSetZero_I32());                            \
             /* Bounds check to ensure pixels' x-coords are within the xMax limit */         \
+            /* Used for "2D" rendering; 3D clipping removes these cases. */                 \
             mask = pfiSimdAnd_I32(mask, pfiSimdCmpLT_I32(                                   \
                 pfiSimdAdd_I32(pfiSimdSet1_I32(x), pixOffsetV), pfiSimdSet1_I32(xMax)));    \
             /* Normalize weights */                                                         \
