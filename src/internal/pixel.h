@@ -2859,13 +2859,18 @@ pfiPixelGet_RGBA_USHORT_4_4_4_4_simd(const void* pixels, PFsimdvi offsets)
     PFsimdvi b8 = pfiSimdMullo_I32(b, pfiSimdSet1_I32(255 / 15));
     PFsimdvi a8 = pfiSimdMullo_I32(a, pfiSimdSet1_I32(255 / 15));
 
-    return pfiSimdOr_I32(
+    PFsimdvi rgba = pfiSimdOr_I32(
         pfiSimdOr_I32(
-            pfiSimdOr_I32(pfiSimdShl_I32(r8, 0), pfiSimdShl_I32(g8, 8)),
+            pfiSimdShl_I32(a8, 24),
             pfiSimdShl_I32(b8, 16)
         ),
-        pfiSimdShl_I32(a8, 24)
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(g8, 8),
+            r8
+        )
     );
+
+    return rgba;
 }
 
 static inline PFsimdvi
@@ -2873,9 +2878,9 @@ pfiPixelGet_BGRA_USHORT_4_4_4_4_simd(const void* pixels, PFsimdvi offsets)
 {
     PFsimdvi gathered = pfiSimdGather_I32(pixels, offsets, sizeof(PFushort));
 
-    PFsimdvi b = pfiSimdAnd_I32(pfiSimdShr_I32(gathered, 4), pfiSimdSet1_I32(0xF));
+    PFsimdvi b = pfiSimdAnd_I32(pfiSimdShr_I32(gathered, 12), pfiSimdSet1_I32(0xF));
     PFsimdvi g = pfiSimdAnd_I32(pfiSimdShr_I32(gathered, 8), pfiSimdSet1_I32(0xF));
-    PFsimdvi r = pfiSimdAnd_I32(pfiSimdShr_I32(gathered, 12), pfiSimdSet1_I32(0xF));
+    PFsimdvi r = pfiSimdAnd_I32(pfiSimdShr_I32(gathered, 4), pfiSimdSet1_I32(0xF));
     PFsimdvi a = pfiSimdAnd_I32(gathered, pfiSimdSet1_I32(0xF));
 
     PFsimdvi b8 = pfiSimdMullo_I32(b, pfiSimdSet1_I32(255 / 15));
@@ -2883,13 +2888,18 @@ pfiPixelGet_BGRA_USHORT_4_4_4_4_simd(const void* pixels, PFsimdvi offsets)
     PFsimdvi r8 = pfiSimdMullo_I32(r, pfiSimdSet1_I32(255 / 15));
     PFsimdvi a8 = pfiSimdMullo_I32(a, pfiSimdSet1_I32(255 / 15));
 
-    return pfiSimdOr_I32(
+    PFsimdvi rgba = pfiSimdOr_I32(
         pfiSimdOr_I32(
-            pfiSimdOr_I32(pfiSimdShl_I32(r8, 0), pfiSimdShl_I32(g8, 8)),
+            pfiSimdShl_I32(a8, 24),
             pfiSimdShl_I32(b8, 16)
         ),
-        pfiSimdShl_I32(a8, 24)
+        pfiSimdOr_I32(
+            pfiSimdShl_I32(g8, 8),
+            r8
+        )
     );
+
+    return rgba;
 }
 
 static inline PFsimdvi
