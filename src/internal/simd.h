@@ -932,13 +932,13 @@ pfiSimdConvert_F16_F32(PFsimdvi x)
 #   else
         float m256[8];
         m256[0] = pfmHalfToFloat(pfiSimdExtract_I16(x, 0));
-        m256[1] = pfmHalfToFloat(pfiSimdExtract_I16(x, 1));
-        m256[2] = pfmHalfToFloat(pfiSimdExtract_I16(x, 2));
-        m256[3] = pfmHalfToFloat(pfiSimdExtract_I16(x, 3));
-        m256[4] = pfmHalfToFloat(pfiSimdExtract_I16(x, 4));
-        m256[5] = pfmHalfToFloat(pfiSimdExtract_I16(x, 5));
-        m256[6] = pfmHalfToFloat(pfiSimdExtract_I16(x, 6));
-        m256[7] = pfmHalfToFloat(pfiSimdExtract_I16(x, 7));
+        m256[1] = pfmHalfToFloat(pfiSimdExtract_I16(x, 2));
+        m256[2] = pfmHalfToFloat(pfiSimdExtract_I16(x, 4));
+        m256[3] = pfmHalfToFloat(pfiSimdExtract_I16(x, 6));
+        m256[4] = pfmHalfToFloat(pfiSimdExtract_I16(x, 8));
+        m256[5] = pfmHalfToFloat(pfiSimdExtract_I16(x, 10));
+        m256[6] = pfmHalfToFloat(pfiSimdExtract_I16(x, 12));
+        m256[7] = pfmHalfToFloat(pfiSimdExtract_I16(x, 14));
         return *(__m256*)m256;
 #   endif
 #elif defined(__SSE2__)
