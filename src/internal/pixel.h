@@ -2607,65 +2607,57 @@ pfiPixelGet_RGB_UBYTE_simd(const void* pixels, PFsimdvi offsets)
     PFsimdvi rgb24 = pfiSimdGather_I32(pixels, pfiSimdMullo_I32(offsets, pfiSimdSet1_I32(3 * sizeof(PFubyte))), 1);
 
     // Extract the RGB components using the appropriate masks
-    PFsimdvi red = pfiSimdAnd_I32(rgb24, pfiSimdSet1_I32(0xFF0000));
-    PFsimdvi green = pfiSimdAnd_I32(rgb24, pfiSimdSet1_I32(0x00FF00));
-    PFsimdvi blue = pfiSimdAnd_I32(rgb24, pfiSimdSet1_I32(0x0000FF));
+    PFsimdvi r = pfiSimdAnd_I32(rgb24, pfiSimdSet1_I32(0xFF0000));
+    PFsimdvi g = pfiSimdAnd_I32(rgb24, pfiSimdSet1_I32(0x00FF00));
+    PFsimdvi b = pfiSimdAnd_I32(rgb24, pfiSimdSet1_I32(0x0000FF));
 
     // Shift the values to obtain the 8-bit RGB components
-    red = pfiSimdShr_I32(red, 16);   // Shift red to get the 8-bit red component
-    green = pfiSimdShr_I32(green, 8); // Shift green to get the 8-bit green component
-    // Blue is already in place in the least significant 8 bits
-
-    // Create the alpha component with a value of 0xFF
-    PFsimdvi alpha = *(PFsimdvi*)GC_simd_i32_255;
+    r = pfiSimdShr_I32(r, 16);  // Shift red to get the 8-bit red component
+    g = pfiSimdShr_I32(g, 8);   // Shift green to get the 8-bit green component
 
     // Combine the RGB components and alpha into a single RGBA value
-    PFsimdvi rgba32 = pfiSimdOr_I32(
+    PFsimdvi rgba = pfiSimdOr_I32(
         pfiSimdOr_I32(
             pfiSimdOr_I32(
-                pfiSimdShl_I32(red, 16),   // Red in the most significant 8 bits
-                pfiSimdShl_I32(green, 8) // Green in the next 8 bits
+                pfiSimdShl_I32(r, 16),
+                pfiSimdShl_I32(g, 8)
             ),
-            blue // Blue in the next 8 bits
+            b
         ),
-        pfiSimdShl_I32(alpha, 24) // Alpha in the least significant 8 bits
+        pfiSimdSet1_I32(0xFF000000)
     );
 
-    return rgba32;
+    return rgba;
 }
 
 static inline PFsimdvi
 pfiPixelGet_BGR_UBYTE_simd(const void* pixels, PFsimdvi offsets)
 {
-    // Read the 24-bit BGR values from the buffer
+    // Read the 24-bit BGR values from the buffer.
     PFsimdvi bgr24 = pfiSimdGather_I32(pixels, pfiSimdMullo_I32(offsets, pfiSimdSet1_I32(3 * sizeof(PFubyte))), 1);
 
     // Extract the BGR components using the appropriate masks
-    PFsimdvi blue = pfiSimdAnd_I32(bgr24, pfiSimdSet1_I32(0xFF0000));
-    PFsimdvi green = pfiSimdAnd_I32(bgr24, pfiSimdSet1_I32(0x00FF00));
-    PFsimdvi red = pfiSimdAnd_I32(bgr24, pfiSimdSet1_I32(0x0000FF));
+    PFsimdvi b = pfiSimdAnd_I32(bgr24, pfiSimdSet1_I32(0xFF0000));
+    PFsimdvi g = pfiSimdAnd_I32(bgr24, pfiSimdSet1_I32(0x00FF00));
+    PFsimdvi r = pfiSimdAnd_I32(bgr24, pfiSimdSet1_I32(0x0000FF));
 
-    // Shift the values to obtain the 8-bit RGB components
-    blue = pfiSimdShr_I32(blue, 16);      // Shift blue to get the 8-bit blue component
-    green = pfiSimdShr_I32(green, 8);     // Shift green to get the 8-bit green component
-    // Red is already in place in the least significant 8 bits
+    // Shift the values to obtain the 8-bit BGR components
+    b = pfiSimdShr_I32(b, 16);  // Shift blue to get the 8-bit blue component
+    g = pfiSimdShr_I32(g, 8);   // Shift green to get the 8-bit green component
 
-    // Create the alpha component with a value of 0xFF
-    PFsimdvi alpha = *(PFsimdvi*)GC_simd_i32_255;
-
-    // Combine the RGB components and alpha into a single RGBA value
-    PFsimdvi rgba32 = pfiSimdOr_I32(
+    // Combine the BGR components and alpha into a single RGBA value
+    PFsimdvi rgba = pfiSimdOr_I32(
         pfiSimdOr_I32(
             pfiSimdOr_I32(
-                pfiSimdShl_I32(red, 16),   // Red in the most significant 8 bits
-                pfiSimdShl_I32(green, 8)  // Green in the next 8 bits
+                pfiSimdShl_I32(r, 16),
+                pfiSimdShl_I32(g, 8)
             ),
-            blue // Blue in the least significant 8 bits
+            b
         ),
-        pfiSimdShl_I32(alpha, 24) // Alpha in the most significant 8 bits
+        pfiSimdSet1_I32(0xFF000000)
     );
 
-    return rgba32;
+    return rgba;
 }
 
 static inline PFsimdvi
