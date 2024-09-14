@@ -1907,6 +1907,13 @@ void pfRectfv(const PFfloat* v1, const PFfloat* v2)
 
 void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type, const void* pixels)
 {
+    // Check if width or height is 0, which is an invalid value
+    if (width == 0 || height == 0) {
+        G_currentCtx->errCode = PF_INVALID_VALUE;
+        return;
+    }
+
+    // Check if the pixel format and type are valid enums
     if (!pfiIsPixelFormatValid(format, type)) {
         G_currentCtx->errCode = PF_INVALID_ENUM;
         return;
@@ -1943,6 +1950,10 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PFdatatyp
     PFfloat invXLen = 1.0f/(PFfloat)(width*G_currentCtx->pixelZoom[0]);
     PFfloat invYLen = 1.0f/(PFfloat)(height*G_currentCtx->pixelZoom[1]);
 
+    // Calculate the dimensions minus 1 to scale the texture coordinates
+    PFsizei widthM1 = width - 1;
+    PFsizei heightM1 = height - 1;
+
     // Get current framebuffer and depth buffer
     struct PFtex *texDst = G_currentCtx->currentFramebuffer->texture;
     PFfloat *zBuffer = G_currentCtx->currentFramebuffer->zbuffer;
@@ -1961,7 +1972,7 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PFdatatyp
     for (PFint y = yMin; y <= yMax; y++) {
         // Calculate texture V coordinate based on screen Y coordinate
         PFfloat v = (PFfloat)(y - yScreen)*invYLen;
-        PFsizei ySrcOffset = (PFsizei)(v*height)*width; // Offset into source texture
+        PFsizei ySrcOffset = (PFsizei)(v*heightM1)*width; // Offset into source texture
 
         // Calculate destination offset for this scanline
         PFsizei yDstOffset = y*texDst->w;
@@ -1976,7 +1987,7 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PFdatatyp
                 PFfloat u = (PFfloat)(x - xScreen)*invXLen;
 
                 // Calculate offset into source texture for this pixel
-                PFsizei xySrcOffset = ySrcOffset + (PFsizei)(u*width);
+                PFsizei xySrcOffset = ySrcOffset + (PFsizei)(u*widthM1);
 
                 // Update depth buffer with new depth value
                 zBuffer[xyDstOffset] = zPos;
