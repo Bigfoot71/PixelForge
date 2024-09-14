@@ -947,9 +947,9 @@ pfiSimdConvert_F16_F32(PFsimdvi x)
 #   else
         float m128[4];
         m128[0] = pfmHalfToFloat(pfiSimdExtract_I16(x, 0));
-        m128[0] = pfmHalfToFloat(pfiSimdExtract_I16(x, 1));
         m128[0] = pfmHalfToFloat(pfiSimdExtract_I16(x, 2));
-        m128[0] = pfmHalfToFloat(pfiSimdExtract_I16(x, 3));
+        m128[0] = pfmHalfToFloat(pfiSimdExtract_I16(x, 4));
+        m128[0] = pfmHalfToFloat(pfiSimdExtract_I16(x, 6));
         return *(__m128*)m128;
 #   endif
 #endif
