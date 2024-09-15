@@ -528,7 +528,7 @@ void pfRotatef(PFfloat angle, PFfloat x, PFfloat y, PFfloat z)
     PFMvec3 axis = { x, y, z }; // TODO: review
 
     PFMmat4 rotation;
-    pfmMat4Rotate(rotation, axis, PFM_DEG2RAD(angle));
+    pfmMat4Rotate(rotation, axis, angle * PFM_DEG2RAD);
 
     // NOTE: We transpose matrix with multiplication order
     pfmMat4Mul(*G_currentCtx->currentMatrix, rotation, *G_currentCtx->currentMatrix);
@@ -888,14 +888,14 @@ void pfLightf(PFsizei light, PFenum param, PFfloat value)
     switch (param) {
         case PF_SPOT_INNER_CUTOFF:
             if ((value >= 0 && value <= 90) || value == 180) {
-                l->innerCutOff = cosf(PFM_DEG2RAD(value));
+                l->innerCutOff = cosf(value * PFM_DEG2RAD);
             } else {
                 G_currentCtx->errCode = PF_INVALID_VALUE;
             }
             break;
         case PF_SPOT_OUTER_CUTOFF:
             if ((value >= 0 && value <= 90) || value == 180) {
-                l->outerCutOff = cosf(PFM_DEG2RAD(value));
+                l->outerCutOff = cosf(value * PFM_DEG2RAD);
             } else {
                 G_currentCtx->errCode = PF_INVALID_VALUE;
             }
@@ -935,7 +935,7 @@ void pfLightfv(PFsizei light, PFenum param, const void* value)
         case PF_SPOT_INNER_CUTOFF: {
             PFfloat v = *(PFfloat*)value;
             if ((v >= 0 && v <= 90) || v == 180) {
-                l->innerCutOff = cosf(PFM_DEG2RAD(v));
+                l->innerCutOff = cosf(v * PFM_DEG2RAD);
             } else {
                 G_currentCtx->errCode = PF_INVALID_VALUE;
             }
@@ -944,7 +944,7 @@ void pfLightfv(PFsizei light, PFenum param, const void* value)
         case PF_SPOT_OUTER_CUTOFF: {
             PFfloat v = *(PFfloat*)value;
             if ((v >= 0 && v <= 90) || v == 180) {
-                l->outerCutOff = cosf(PFM_DEG2RAD(v));
+                l->outerCutOff = cosf(v * PFM_DEG2RAD);
             } else {
                 G_currentCtx->errCode = PF_INVALID_VALUE;
             }

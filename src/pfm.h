@@ -35,11 +35,11 @@
 #endif //PFM_PI
 
 #ifndef PFM_DEG2RAD
-#   define PFM_DEG2RAD(deg) ((deg) * PFM_PI / 180.0)
+#   define PFM_DEG2RAD (PFM_PI / 180.0)
 #endif //PFM_DEG2RAD
 
 #ifndef PFM_RAD2DEG
-#   define PFM_RAD2DEG(deg) ((deg) * 180.0 / PFM_PI)
+#   define PFM_RAD2DEG (180.0 / PFM_PI)
 #endif //PFM_RAD2DEG
 
 #ifndef PFM_FISR
