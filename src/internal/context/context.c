@@ -22,7 +22,7 @@
 
 /* Internal vertex processing function definitions */
 
-void pfiHomogeneousToScreen(PFvertex* v)
+void pfiHomogeneousToScreen(PFIvertex* v)
 {
     // NOTE: We add 0.5 to the screen coordinates to round them to the nearest integer
     // when they are converted to integer coordinates. This adjustment was added because

@@ -19,7 +19,7 @@
 
 #include "./lighting.h"
 
-PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* material,
+PFcolor pfiLightingProcess(const PFIlight* activeLights, const PFImaterial* material,
                                    PFcolor diffuse, const PFMvec3 viewPos,
                                    const PFMvec3 fragPos, const PFMvec3 N)
 {
@@ -45,7 +45,7 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
     PFcolor specular = material->specular;
 
     // Loop through active lights
-    for (const PFlight *light = activeLights; light != NULL; light = light->next) {
+    for (const PFIlight *light = activeLights; light != NULL; light = light->next) {
         // Declare the light contribution and initialize it to zero for now.
         PFubyte lR = 0, lG = 0, lB = 0;
 
@@ -143,8 +143,8 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
 
 #if PF_SIMD_SUPPORT
 
-void pfiSimdLightingProcess(PFcolor_simd fragments, const PFlight* activeLights,
-                                    const PFmaterial* material,
+void pfiSimdLightingProcess(PFcolor_simd fragments, const PFIlight* activeLights,
+                                    const PFImaterial* material,
                                     const PFsimdv3f viewPos,
                                     const PFsimdv3f fragPos,
                                     const PFsimdv3f N)
@@ -168,7 +168,7 @@ void pfiSimdLightingProcess(PFcolor_simd fragments, const PFlight* activeLights,
     pfiVec3Zero_simd(lightContribution);
 
     // Process each light
-    for (const PFlight *light = activeLights; light != NULL; light = light->next) {
+    for (const PFIlight *light = activeLights; light != NULL; light = light->next) {
         // Load light data
         PFsimdv3f lightPos, lightDir;
         pfiVec3Load_simd(lightPos, light->position);
@@ -189,7 +189,7 @@ void pfiSimdLightingProcess(PFcolor_simd fragments, const PFlight* activeLights,
 
         // Diffuse component
         PFsimdv3f diffuse; {
-            PFsimdvf diff = pfiSimdMax_F32(pfiVec3Dot_simd(N, L), pfiSimdSetZero_F32());
+            PFIsimdvf diff = pfiSimdMax_F32(pfiVec3Dot_simd(N, L), pfiSimdSetZero_F32());
             pfiVec3ScaleR_simd(diffuse, lightDiffuse, diff);
             pfiVec3Mul_simd(diffuse, diffuse, colDiffuse);
         }
@@ -203,11 +203,11 @@ void pfiSimdLightingProcess(PFcolor_simd fragments, const PFlight* activeLights,
             PFsimdv3f halfWayDir;
             pfiVec3AddR_simd(halfWayDir, L, V);
             pfiVec3Normalize_simd(halfWayDir, halfWayDir);
-            PFsimdvf spec = pfiSimdMax_F32(pfiVec3Dot_simd(N, halfWayDir), pfiSimdSetZero_F32());
+            PFIsimdvf spec = pfiSimdMax_F32(pfiVec3Dot_simd(N, halfWayDir), pfiSimdSetZero_F32());
 #       else
             PFsimdv3f reflectDir;
             pfiVec3ReflectR_simd(reflectDir, negL, N);
-            PFsimdvf spec = pfiSimdMax_F32(pfiVec3Dot_simd(V, reflectDir), pfiSimdSetZero_F32());
+            PFIsimdvf spec = pfiSimdMax_F32(pfiVec3Dot_simd(V, reflectDir), pfiSimdSetZero_F32());
 #       endif
 
             spec = pfiSimdPow_F32(spec, material->shininess);
@@ -221,11 +221,11 @@ void pfiSimdLightingProcess(PFcolor_simd fragments, const PFlight* activeLights,
             PFsimdv3f negLightDir;
             pfiVec3NegR_simd(negLightDir, lightDir);
 
-            PFsimdvf theta = pfiVec3Dot_simd(L, negLightDir);
-            PFsimdvf epsilon = pfiSimdSet1_F32(light->innerCutOff - light->outerCutOff);
+            PFIsimdvf theta = pfiVec3Dot_simd(L, negLightDir);
+            PFIsimdvf epsilon = pfiSimdSet1_F32(light->innerCutOff - light->outerCutOff);
 
-            PFsimdvf intensity = pfiSimdDiv_F32(pfiSimdSub_F32(theta, pfiSimdSet1_F32(light->outerCutOff)), epsilon);
-            intensity = pfiSimdClamp_F32(intensity, *(PFsimdvf*)GC_simd_f32_0, *(PFsimdvf*)GC_simd_f32_1);
+            PFIsimdvf intensity = pfiSimdDiv_F32(pfiSimdSub_F32(theta, pfiSimdSet1_F32(light->outerCutOff)), epsilon);
+            intensity = pfiSimdClamp_F32(intensity, *(PFIsimdvf*)GC_simd_f32_0, *(PFIsimdvf*)GC_simd_f32_1);
 
             pfiVec3Scale_simd(diffuse, diffuse, intensity);
             pfiVec3Scale_simd(specular, specular, intensity);
@@ -233,14 +233,14 @@ void pfiSimdLightingProcess(PFcolor_simd fragments, const PFlight* activeLights,
 
         // Attenuation
         if (light->attLinear || light->attQuadratic) {
-            PFsimdvf distanceSq = pfiVec3DistanceSq_simd(lightPos, fragPos);
-            PFsimdvf distance = pfiSimdSqrt_F32(distanceSq);
+            PFIsimdvf distanceSq = pfiVec3DistanceSq_simd(lightPos, fragPos);
+            PFIsimdvf distance = pfiSimdSqrt_F32(distanceSq);
 
-            PFsimdvf attConstant = pfiSimdSet1_F32(light->attConstant);
-            PFsimdvf attLinear = pfiSimdMul_F32(pfiSimdSet1_F32(light->attLinear), distance);
-            PFsimdvf attQuadratic = pfiSimdMul_F32(pfiSimdSet1_F32(light->attQuadratic), distanceSq);
+            PFIsimdvf attConstant = pfiSimdSet1_F32(light->attConstant);
+            PFIsimdvf attLinear = pfiSimdMul_F32(pfiSimdSet1_F32(light->attLinear), distance);
+            PFIsimdvf attQuadratic = pfiSimdMul_F32(pfiSimdSet1_F32(light->attQuadratic), distanceSq);
 
-            PFsimdvf attenuation = pfiSimdRCP_F32(
+            PFIsimdvf attenuation = pfiSimdRCP_F32(
                 pfiSimdAdd_F32(attConstant, pfiSimdAdd_F32(attLinear, attQuadratic)));
 
             pfiVec3Scale_simd(ambient, ambient, attenuation);

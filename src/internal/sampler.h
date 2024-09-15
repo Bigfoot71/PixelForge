@@ -25,7 +25,7 @@
 /* Texture2D Mapper Functions */
 
 static inline void
-pfiTexture2DMap_REPEAT(const struct PFtex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
+pfiTexture2DMap_REPEAT(const struct PFItex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
 {
     // Wrap UVs (use to int cast to round toward zero)
     u = (u - (PFint)u);
@@ -45,7 +45,7 @@ pfiTexture2DMap_REPEAT(const struct PFtex* tex, PFint* xOut, PFint* yOut, PFfloa
 }
 
 static inline void
-pfiTexture2DMap_MIRRORED_REPEAT(const struct PFtex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
+pfiTexture2DMap_MIRRORED_REPEAT(const struct PFItex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
 {
     u = fmodf(fabsf(u), 2);
     v = fmodf(fabsf(v), 2);
@@ -58,7 +58,7 @@ pfiTexture2DMap_MIRRORED_REPEAT(const struct PFtex* tex, PFint* xOut, PFint* yOu
 }
 
 static inline void
-pfiTexture2DMap_CLAMP_TO_EDGE(const struct PFtex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
+pfiTexture2DMap_CLAMP_TO_EDGE(const struct PFItex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
 {
     u = PF_CLAMP(u, 0.0f, 1.0f);
     v = PF_CLAMP(v, 0.0f, 1.0f);
@@ -70,7 +70,7 @@ pfiTexture2DMap_CLAMP_TO_EDGE(const struct PFtex* tex, PFint* xOut, PFint* yOut,
 /* Texture2D Sampler Functions */
 
 static inline PFcolor
-pfiTexture2DSampler_NEAREST_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat v)
+pfiTexture2DSampler_NEAREST_REPEAT(const struct PFItex* tex, PFfloat u, PFfloat v)
 {
     PFint x, y;
     pfiTexture2DMap_REPEAT(tex, &x, &y, u, v);
@@ -79,7 +79,7 @@ pfiTexture2DSampler_NEAREST_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat v
 }
 
 static inline PFcolor
-pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat v)
+pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT(const struct PFItex* tex, PFfloat u, PFfloat v)
 {
     PFint x, y;
     pfiTexture2DMap_MIRRORED_REPEAT(tex, &x, &y, u, v);
@@ -88,7 +88,7 @@ pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT(const struct PFtex* tex, PFfloat u, 
 }
 
 static inline PFcolor
-pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE(const struct PFtex* tex, PFfloat u, PFfloat v)
+pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE(const struct PFItex* tex, PFfloat u, PFfloat v)
 {
     PFint x, y;
     pfiTexture2DMap_CLAMP_TO_EDGE(tex, &x, &y, u, v);
@@ -97,7 +97,7 @@ pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE(const struct PFtex* tex, PFfloat u, PF
 }
 
 static inline PFcolor
-pfiTexture2DSampler_BILINEAR_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat v)
+pfiTexture2DSampler_BILINEAR_REPEAT(const struct PFItex* tex, PFfloat u, PFfloat v)
 {
     int x0, y0, x1, y1;
     float fx, fy;
@@ -124,7 +124,7 @@ pfiTexture2DSampler_BILINEAR_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat 
 }
 
 static inline PFcolor
-pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT(const struct PFtex* tex, PFfloat u, PFfloat v)
+pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT(const struct PFItex* tex, PFfloat u, PFfloat v)
 {
     int x0, y0, x1, y1;
     float fx, fy;
@@ -151,7 +151,7 @@ pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT(const struct PFtex* tex, PFfloat u,
 }
 
 static inline PFcolor
-pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE(const struct PFtex* tex, PFfloat u, PFfloat v)
+pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE(const struct PFItex* tex, PFfloat u, PFfloat v)
 {
     int x0, y0, x1, y1;
     float fx, fy;
@@ -177,7 +177,7 @@ pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE(const struct PFtex* tex, PFfloat u, P
     return pfiColorLerpSmooth(c0, c1, fy);
 }
 
-static const PFtexturesampler GC_textureSamplers[2][3] = {
+static const PFItexturesampler GC_textureSamplers[2][3] = {
 
     [PF_NEAREST][PF_REPEAT]             = pfiTexture2DSampler_NEAREST_REPEAT,
     [PF_NEAREST][PF_MIRRORED_REPEAT]    = pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT,
@@ -196,10 +196,10 @@ static const PFtexturesampler GC_textureSamplers[2][3] = {
 /* SIMD - Texture2D Mapper Functions */
 
 static inline void
-pfiTexture2DMap_REPEAT_simd(const struct PFtex* tex, PFsimdvi* xOut, PFsimdvi* yOut, const PFsimdv2f texcoords)
+pfiTexture2DMap_REPEAT_simd(const struct PFItex* tex, PFIsimdvi* xOut, PFIsimdvi* yOut, const PFsimdv2f texcoords)
 {
-    PFsimdvf u = texcoords[0];
-    PFsimdvf v = texcoords[1];
+    PFIsimdvf u = texcoords[0];
+    PFIsimdvf v = texcoords[1];
 
     u = pfiSimdMul_F32(
         pfiSimdSub_F32(u, pfiSimdRound_F32(u, _MM_FROUND_TO_ZERO)),
@@ -214,94 +214,94 @@ pfiTexture2DMap_REPEAT_simd(const struct PFtex* tex, PFsimdvi* xOut, PFsimdvi* y
 }
 
 static inline void
-pfiTexture2DMap_MIRRORED_REPEAT_simd(const struct PFtex* tex, PFsimdvi* xOut, PFsimdvi* yOut, const PFsimdv2f texcoords)
+pfiTexture2DMap_MIRRORED_REPEAT_simd(const struct PFItex* tex, PFIsimdvi* xOut, PFIsimdvi* yOut, const PFsimdv2f texcoords)
 {
-    PFsimdvf u = texcoords[0];
-    PFsimdvf v = texcoords[1];
+    PFIsimdvf u = texcoords[0];
+    PFIsimdvf v = texcoords[1];
 
     // Repeating UV coordinates in the interval [0..2]
-    u = pfiSimdMod_F32(pfiSimdAbs_F32(u), *(PFsimdvf*)GC_simd_f32_2);
-    v = pfiSimdMod_F32(pfiSimdAbs_F32(v), *(PFsimdvf*)GC_simd_f32_2);
+    u = pfiSimdMod_F32(pfiSimdAbs_F32(u), *(PFIsimdvf*)GC_simd_f32_2);
+    v = pfiSimdMod_F32(pfiSimdAbs_F32(v), *(PFIsimdvf*)GC_simd_f32_2);
 
     // Reflection to get the interval [0..1] if necessary
-    PFsimdvf uMirror = pfiSimdSub_F32(*(PFsimdvf*)GC_simd_f32_1, pfiSimdSub_F32(u, *(PFsimdvf*)GC_simd_f32_1));
-    PFsimdvf vMirror = pfiSimdSub_F32(*(PFsimdvf*)GC_simd_f32_1, pfiSimdSub_F32(v, *(PFsimdvf*)GC_simd_f32_1));
+    PFIsimdvf uMirror = pfiSimdSub_F32(*(PFIsimdvf*)GC_simd_f32_1, pfiSimdSub_F32(u, *(PFIsimdvf*)GC_simd_f32_1));
+    PFIsimdvf vMirror = pfiSimdSub_F32(*(PFIsimdvf*)GC_simd_f32_1, pfiSimdSub_F32(v, *(PFIsimdvf*)GC_simd_f32_1));
 
-    u = pfiSimdBlendV_F32(u, uMirror, pfiSimdCmpGT_F32(u, *(PFsimdvf*)GC_simd_f32_1));
-    v = pfiSimdBlendV_F32(v, vMirror, pfiSimdCmpGT_F32(v, *(PFsimdvf*)GC_simd_f32_1));
+    u = pfiSimdBlendV_F32(u, uMirror, pfiSimdCmpGT_F32(u, *(PFIsimdvf*)GC_simd_f32_1));
+    v = pfiSimdBlendV_F32(v, vMirror, pfiSimdCmpGT_F32(v, *(PFIsimdvf*)GC_simd_f32_1));
 
     // Conversion des coordonnées UV en indices de pixels
     u = pfiSimdMul_F32(u, pfiSimdSet1_F32((float)(tex->w - 1)));
     v = pfiSimdMul_F32(v, pfiSimdSet1_F32((float)(tex->h - 1)));
 
-    *xOut = pfiSimdConvert_F32_I32(pfiSimdAdd_F32(u, *(PFsimdvf*)GC_simd_f32_0p5));
-    *yOut = pfiSimdConvert_F32_I32(pfiSimdAdd_F32(v, *(PFsimdvf*)GC_simd_f32_0p5));
+    *xOut = pfiSimdConvert_F32_I32(pfiSimdAdd_F32(u, *(PFIsimdvf*)GC_simd_f32_0p5));
+    *yOut = pfiSimdConvert_F32_I32(pfiSimdAdd_F32(v, *(PFIsimdvf*)GC_simd_f32_0p5));
 }
 
 static inline void
-pfiTexture2DMap_CLAMP_TO_EDGE_simd(const struct PFtex* tex, PFsimdvi* xOut, PFsimdvi* yOut, const PFsimdv2f texcoords)
+pfiTexture2DMap_CLAMP_TO_EDGE_simd(const struct PFItex* tex, PFIsimdvi* xOut, PFIsimdvi* yOut, const PFsimdv2f texcoords)
 {
-    PFsimdvf u = texcoords[0];
-    PFsimdvf v = texcoords[1];
+    PFIsimdvf u = texcoords[0];
+    PFIsimdvf v = texcoords[1];
 
     // Clamping des coordonnées UV
-    u = pfiSimdClamp_F32(u, *(PFsimdvf*)GC_simd_f32_0, *(PFsimdvf*)GC_simd_f32_1);
-    v = pfiSimdClamp_F32(v, *(PFsimdvf*)GC_simd_f32_0, *(PFsimdvf*)GC_simd_f32_1);
+    u = pfiSimdClamp_F32(u, *(PFIsimdvf*)GC_simd_f32_0, *(PFIsimdvf*)GC_simd_f32_1);
+    v = pfiSimdClamp_F32(v, *(PFIsimdvf*)GC_simd_f32_0, *(PFIsimdvf*)GC_simd_f32_1);
 
     // Conversion des coordonnées UV en indices de pixels
     u = pfiSimdMul_F32(u, pfiSimdSet1_F32((float)(tex->w - 1)));
     v = pfiSimdMul_F32(v, pfiSimdSet1_F32((float)(tex->h - 1)));
 
-    *xOut = pfiSimdConvert_F32_I32(pfiSimdAdd_F32(u, *(PFsimdvf*)GC_simd_f32_0p5));
-    *yOut = pfiSimdConvert_F32_I32(pfiSimdAdd_F32(v, *(PFsimdvf*)GC_simd_f32_0p5));
+    *xOut = pfiSimdConvert_F32_I32(pfiSimdAdd_F32(u, *(PFIsimdvf*)GC_simd_f32_0p5));
+    *yOut = pfiSimdConvert_F32_I32(pfiSimdAdd_F32(v, *(PFIsimdvf*)GC_simd_f32_0p5));
 }
 
 /* SIMD - Texture2D Sampler Functions */
 
-static inline PFsimdvi
-pfiTexture2DSampler_NEAREST_REPEAT_simd(const struct PFtex* tex, const PFsimdv2f texcoords)
+static inline PFIsimdvi
+pfiTexture2DSampler_NEAREST_REPEAT_simd(const struct PFItex* tex, const PFsimdv2f texcoords)
 {
-    PFsimdvi x, y;
+    PFIsimdvi x, y;
     pfiTexture2DMap_REPEAT_simd(
         tex, &x, &y, texcoords);
 
-    PFsimdvi offsets = pfiSimdAdd_I32(pfiSimdMullo_I32(
+    PFIsimdvi offsets = pfiSimdAdd_I32(pfiSimdMullo_I32(
         y, pfiSimdSet1_I32(tex->w)), x);
 
     return tex->getterSimd(tex->pixels, offsets);
 }
 
-static inline PFsimdvi
-pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT_simd(const struct PFtex* tex, const PFsimdv2f texcoords)
+static inline PFIsimdvi
+pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT_simd(const struct PFItex* tex, const PFsimdv2f texcoords)
 {
-    PFsimdvi x, y;
+    PFIsimdvi x, y;
     pfiTexture2DMap_MIRRORED_REPEAT_simd(
         tex, &x, &y, texcoords);
 
-    PFsimdvi offsets = pfiSimdAdd_I32(pfiSimdMullo_I32(
+    PFIsimdvi offsets = pfiSimdAdd_I32(pfiSimdMullo_I32(
         y, pfiSimdSet1_I32(tex->w)), x);
 
     return tex->getterSimd(tex->pixels, offsets);
 }
 
-static inline PFsimdvi
-pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE_simd(const struct PFtex* tex, const PFsimdv2f texcoords)
+static inline PFIsimdvi
+pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE_simd(const struct PFItex* tex, const PFsimdv2f texcoords)
 {
-    PFsimdvi x, y;
+    PFIsimdvi x, y;
     pfiTexture2DMap_CLAMP_TO_EDGE_simd(
         tex, &x, &y, texcoords);
 
-    PFsimdvi offsets = pfiSimdAdd_I32(pfiSimdMullo_I32(
+    PFIsimdvi offsets = pfiSimdAdd_I32(pfiSimdMullo_I32(
         y, pfiSimdSet1_I32(tex->w)), x);
 
     return tex->getterSimd(tex->pixels, offsets);
 }
 
-static inline PFsimdvi
-pfiTexture2DSampler_BILINEAR_REPEAT_simd(const struct PFtex* tex, const PFsimdv2f texcoords)
+static inline PFIsimdvi
+pfiTexture2DSampler_BILINEAR_REPEAT_simd(const struct PFItex* tex, const PFsimdv2f texcoords)
 {
-    PFsimdvi x0, y0, x1, y1;
-    PFsimdvf fx, fy;
+    PFIsimdvi x0, y0, x1, y1;
+    PFIsimdvf fx, fy;
 
     PFsimdv2f texelSize;
     pfiVec2Set_simd(texelSize, tex->tx, tex->ty);
@@ -332,11 +332,11 @@ pfiTexture2DSampler_BILINEAR_REPEAT_simd(const struct PFtex* tex, const PFsimdv2
     return pfiColorPack_simd(c);
 }
 
-static inline PFsimdvi
-pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT_simd(const struct PFtex* tex, const PFsimdv2f texcoords)
+static inline PFIsimdvi
+pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT_simd(const struct PFItex* tex, const PFsimdv2f texcoords)
 {
-    PFsimdvi x0, y0, x1, y1;
-    PFsimdvf fx, fy;
+    PFIsimdvi x0, y0, x1, y1;
+    PFIsimdvf fx, fy;
 
     PFsimdv2f texelSize;
     pfiVec2Set_simd(texelSize, tex->tx, tex->ty);
@@ -367,11 +367,11 @@ pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT_simd(const struct PFtex* tex, const
     return pfiColorPack_simd(c);
 }
 
-static inline PFsimdvi
-pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE_simd(const struct PFtex* tex, const PFsimdv2f texcoords)
+static inline PFIsimdvi
+pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE_simd(const struct PFItex* tex, const PFsimdv2f texcoords)
 {
-    PFsimdvi x0, y0, x1, y1;
-    PFsimdvf fx, fy;
+    PFIsimdvi x0, y0, x1, y1;
+    PFIsimdvf fx, fy;
 
     PFsimdv2f texelSize;
     pfiVec2Set_simd(texelSize, tex->tx, tex->ty);
@@ -402,7 +402,7 @@ pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE_simd(const struct PFtex* tex, const P
     return pfiColorPack_simd(c);
 }
 
-static const PFtexturesampler_simd GC_textureSamplers_simd[2][3] = {
+static const PFItexturesampler_simd GC_textureSamplers_simd[2][3] = {
 
     [PF_NEAREST][PF_REPEAT]             = pfiTexture2DSampler_NEAREST_REPEAT_simd,
     [PF_NEAREST][PF_MIRRORED_REPEAT]    = pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT_simd,

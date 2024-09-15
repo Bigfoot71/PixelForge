@@ -34,7 +34,7 @@
 
 /* Current thread local-thread definition (declared in context.h) */
 
-PF_CTX_DECL PFctx *G_currentCtx = NULL;
+PF_CTX_DECL PFIctx *G_currentCtx = NULL;
 
 /* Some helper functions */
 
@@ -116,7 +116,7 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
 {
     /* Memory allocation for the context */
 
-    PFctx *ctx = (PFctx*)PF_MALLOC(sizeof(PFctx));
+    PFIctx *ctx = (PFIctx*)PF_MALLOC(sizeof(PFIctx));
     if (!ctx) return NULL;
 
     /* Initialization of the main framebuffer */
@@ -185,7 +185,7 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
     /* Initialization of lights */
 
     for (PFsizei i = 0; i < PF_MAX_LIGHT_STACK; i++) {
-        ctx->lights[i] = (PFlight) {
+        ctx->lights[i] = (PFIlight) {
             .position = { 0 },
             .direction = { 0 },
             .innerCutOff = (PFfloat)PFM_PI,
@@ -203,7 +203,7 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
 
     /* Initialization of fog properties */
 
-    ctx->fog = (PFfog) {
+    ctx->fog = (PFIfog) {
         .mode = PF_LINEAR,
         .density = 1.0f,
         .start = 0.0f,
@@ -213,7 +213,7 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
 
     /* Initialization of materials */
 
-    ctx->faceMaterial[0] = ctx->faceMaterial[1] = (PFmaterial) {
+    ctx->faceMaterial[0] = ctx->faceMaterial[1] = (PFImaterial) {
         .ambient = (PFcolor) { 255, 255, 255, 255 },
         .diffuse = (PFcolor) { 255, 255, 255, 255 },
         .specular = (PFcolor) { 255, 255, 255, 255 },
@@ -225,7 +225,7 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
 #endif
     };
 
-    ctx->materialColorFollowing = (PFmatcolfollowing) {
+    ctx->materialColorFollowing = (PFImatcolfollowing) {
         .face = PF_FRONT_AND_BACK,
         .mode = PF_AMBIENT_AND_DIFFUSE
     };
@@ -250,7 +250,7 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
 
     /* Initialization of vertex and texture attributes */
 
-    ctx->vertexAttribs = (PFvertexattribs) { 0 };
+    ctx->vertexAttribs = (PFIvertexattribs) { 0 };
     ctx->currentTexture = NULL;
 
     /* Initialization of the context state */
@@ -267,9 +267,9 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
 void pfDeleteContext(PFcontext ctx)
 {
     if (ctx) {
-        if (((PFctx*)ctx)->mainFramebuffer.zbuffer) {
-            PF_FREE(((PFctx*)ctx)->mainFramebuffer.zbuffer);
-            ((PFctx*)ctx)->mainFramebuffer = (PFframebuffer) { 0 };
+        if (((PFIctx*)ctx)->mainFramebuffer.zbuffer) {
+            PF_FREE(((PFIctx*)ctx)->mainFramebuffer.zbuffer);
+            ((PFIctx*)ctx)->mainFramebuffer = (PFframebuffer) { 0 };
         }
         PF_FREE(ctx);
     }
@@ -286,8 +286,8 @@ void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelf
 
     /* Store the old width and height of the main framebuffer */
 
-    PFsizei oldW = ((struct PFtex*)G_currentCtx->mainFramebuffer.texture)->w;
-    PFsizei oldH = ((struct PFtex*)G_currentCtx->mainFramebuffer.texture)->h;
+    PFsizei oldW = ((struct PFItex*)G_currentCtx->mainFramebuffer.texture)->w;
+    PFsizei oldH = ((struct PFItex*)G_currentCtx->mainFramebuffer.texture)->h;
 
     /* Check if the dimensions of the new buffer differ from the old one */
 
@@ -348,7 +348,7 @@ PF_API void pfSwapBuffers(void)
         return;
     }
 
-    struct PFtex* tex = G_currentCtx->currentFramebuffer->texture;
+    struct PFItex* tex = G_currentCtx->currentFramebuffer->texture;
 
     void *tmp = tex->pixels;
     tex->pixels = G_currentCtx->auxFramebuffer;
@@ -581,8 +581,8 @@ void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height)
     G_currentCtx->vpMin[0] = PF_MAX(x, 0);
     G_currentCtx->vpMin[1] = PF_MAX(y, 0);
 
-    G_currentCtx->vpMax[0] = PF_MIN(x + width, ((struct PFtex*)G_currentCtx->mainFramebuffer.texture)->w - 1);
-    G_currentCtx->vpMax[1] = PF_MIN(y + height, ((struct PFtex*)G_currentCtx->mainFramebuffer.texture)->h - 1);
+    G_currentCtx->vpMax[0] = PF_MIN(x + width, ((struct PFItex*)G_currentCtx->mainFramebuffer.texture)->w - 1);
+    G_currentCtx->vpMax[1] = PF_MIN(y + height, ((struct PFItex*)G_currentCtx->mainFramebuffer.texture)->h - 1);
 }
 
 void pfPolygonMode(PFface face, PFpolygonmode mode)
@@ -694,7 +694,7 @@ void pfClear(PFclearflag flag)
 
     // Retrieve the current framebuffer and its associated texture
     PFframebuffer *framebuffer = G_currentCtx->currentFramebuffer;
-    struct PFtex *tex = framebuffer->texture;
+    struct PFItex *tex = framebuffer->texture;
     PFsizei size = tex->w * tex->h;
 
 #   if PF_SIMD_SUPPORT
@@ -705,15 +705,15 @@ void pfClear(PFclearflag flag)
     // If both color and depth buffers should be cleared
     if (flag & (PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT)) {
         PFsizei pixelBytes = pfiGetPixelBytes(tex->format, tex->type);
-        PFsimdvi vcolor = pfiSimdSet1_I32(*(PFuint*)&G_currentCtx->clearColor);
-        PFsimdvf vdepth = pfiSimdSet1_F32(G_currentCtx->clearDepth);
+        PFIsimdvi vcolor = pfiSimdSet1_I32(*(PFuint*)&G_currentCtx->clearColor);
+        PFIsimdvf vdepth = pfiSimdSet1_F32(G_currentCtx->clearDepth);
         PFubyte *pbuffer = (PFubyte*)tex->pixels;
         PFfloat *zbuffer = framebuffer->zbuffer;
 #       ifdef _OPENMP
 #           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
 #       endif //_OPENMP
         for (PFsizei i = PF_SIMD_SIZE; i < simdAlignedSize; i += PF_SIMD_SIZE) {
-            tex->setterSimd(tex->pixels, i, vcolor, *(PFsimdvi*)GC_simd_i32_0xffffffff);
+            tex->setterSimd(tex->pixels, i, vcolor, *(PFIsimdvi*)GC_simd_i32_0xffffffff);
             pfiSimdStore_F32(zbuffer + i, vdepth);
         }
         for (PFsizei i = simdAlignedSize; i < size; i++) {
@@ -724,13 +724,13 @@ void pfClear(PFclearflag flag)
     // If only the color buffer should be cleared
     else if (flag & PF_COLOR_BUFFER_BIT) {
         PFsizei pixelBytes = pfiGetPixelBytes(tex->format, tex->type);
-        PFsimdvi vcolor = pfiSimdSet1_I32(*(PFuint*)&G_currentCtx->clearColor);
+        PFIsimdvi vcolor = pfiSimdSet1_I32(*(PFuint*)&G_currentCtx->clearColor);
         PFubyte *pbuffer = (PFubyte*)tex->pixels;
 #       ifdef _OPENMP
 #           pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
 #       endif //_OPENMP
         for (PFsizei i = PF_SIMD_SIZE; i < simdAlignedSize; i += PF_SIMD_SIZE) {
-            tex->setterSimd(tex->pixels, i, vcolor, *(PFsimdvi*)GC_simd_i32_0xffffffff);
+            tex->setterSimd(tex->pixels, i, vcolor, *(PFIsimdvi*)GC_simd_i32_0xffffffff);
         }
         for (PFsizei i = simdAlignedSize; i < size; i++) {
             memcpy(pbuffer + i * pixelBytes, pbuffer, pixelBytes);
@@ -738,7 +738,7 @@ void pfClear(PFclearflag flag)
     }
     // If only the depth buffer should be cleared
     else if (flag & PF_DEPTH_BUFFER_BIT) {
-        PFsimdvf vdepth = pfiSimdSet1_F32(G_currentCtx->clearDepth);
+        PFIsimdvf vdepth = pfiSimdSet1_F32(G_currentCtx->clearDepth);
         PFfloat *zbuffer = framebuffer->zbuffer;
 #       ifdef _OPENMP
 #          pragma omp parallel for if(size >= PF_OPENMP_CLEAR_BUFFER_SIZE_THRESHOLD)
@@ -816,8 +816,8 @@ void pfEnableLight(PFsizei light)
         return;
     }
 
-    PFlight *desiredLight = G_currentCtx->lights + light;   // Get the pointer to the desired light from the lights array.
-    PFlight **nodeLight = &G_currentCtx->activeLights;      // Get a pointer to the pointer pointing to the head of the active lights list.
+    PFIlight *desiredLight = G_currentCtx->lights + light;   // Get the pointer to the desired light from the lights array.
+    PFIlight **nodeLight = &G_currentCtx->activeLights;      // Get a pointer to the pointer pointing to the head of the active lights list.
 
     PFboolean enabled = PF_FALSE;                           // Flag to track if the light is not already enabled.
 
@@ -845,8 +845,8 @@ void pfDisableLight(PFsizei light)
         return;
     }
 
-    PFlight *desiredLight = G_currentCtx->lights + light;   // Get the pointer to the desired light from the lights array.
-    PFlight **nodeLight = &G_currentCtx->activeLights;      // Get a pointer to the pointer pointing to the head of the active lights list.
+    PFIlight *desiredLight = G_currentCtx->lights + light;   // Get the pointer to the desired light from the lights array.
+    PFIlight **nodeLight = &G_currentCtx->activeLights;      // Get a pointer to the pointer pointing to the head of the active lights list.
 
     while (*nodeLight != NULL) {                            // Iterate through the active lights list to find and remove the desired light.
         if (*nodeLight == desiredLight) {                   // If the current light in the list matches the desired light, remove it from the list.
@@ -867,9 +867,9 @@ PFboolean pfIsEnabledLight(PFsizei light)
         return PF_FALSE;
     }
 
-    PFlight *desiredLight = G_currentCtx->lights + light;
+    PFIlight *desiredLight = G_currentCtx->lights + light;
 
-    for (PFlight *l = G_currentCtx->activeLights; l != NULL; l = l->next) {
+    for (PFIlight *l = G_currentCtx->activeLights; l != NULL; l = l->next) {
         if (l == desiredLight) return PF_TRUE;
     }
 
@@ -883,7 +883,7 @@ void pfLightf(PFsizei light, PFenum param, PFfloat value)
         return;
     }
 
-    PFlight *l = &G_currentCtx->lights[light];
+    PFIlight *l = &G_currentCtx->lights[light];
 
     switch (param) {
         case PF_SPOT_INNER_CUTOFF:
@@ -923,7 +923,7 @@ void pfLightfv(PFsizei light, PFenum param, const void* value)
         return;
     }
 
-    PFlight *l = &G_currentCtx->lights[light];
+    PFIlight *l = &G_currentCtx->lights[light];
 
     switch (param) {
         case PF_POSITION:
@@ -992,8 +992,8 @@ void pfLightfv(PFsizei light, PFenum param, const void* value)
 
 void pfMaterialf(PFface face, PFenum param, PFfloat value)
 {
-    PFmaterial *material0 = NULL;
-    PFmaterial *material1 = NULL;
+    PFImaterial *material0 = NULL;
+    PFImaterial *material1 = NULL;
 
     switch (face) {
         case PF_FRONT:
@@ -1072,8 +1072,8 @@ void pfMaterialf(PFface face, PFenum param, PFfloat value)
 
 void pfMaterialfv(PFface face, PFenum param, const void *value)
 {
-    PFmaterial *material0 = NULL;
-    PFmaterial *material1 = NULL;
+    PFImaterial *material0 = NULL;
+    PFImaterial *material1 = NULL;
 
     switch (face) {
         case PF_FRONT:
@@ -1180,7 +1180,7 @@ void pfVertexPointer(PFint size, PFenum type, PFsizei stride, const void* pointe
         return;
     }
 
-    G_currentCtx->vertexAttribs.positions = (PFvertexattribbuffer) {
+    G_currentCtx->vertexAttribs.positions = (PFIvertexattribbuffer) {
         .buffer = pointer,
         .stride = stride,
         .size = size,
@@ -1195,7 +1195,7 @@ void pfNormalPointer(PFenum type, PFsizei stride, const void* pointer)
         return;
     }
 
-    G_currentCtx->vertexAttribs.normals = (PFvertexattribbuffer) {
+    G_currentCtx->vertexAttribs.normals = (PFIvertexattribbuffer) {
         .buffer = pointer,
         .stride = stride,
         .size = 3,
@@ -1210,7 +1210,7 @@ void pfTexCoordPointer(PFenum type, PFsizei stride, const void* pointer)
         return;
     }
 
-    G_currentCtx->vertexAttribs.texcoords = (PFvertexattribbuffer) {
+    G_currentCtx->vertexAttribs.texcoords = (PFIvertexattribbuffer) {
         .buffer = pointer,
         .stride = stride,
         .size = 2,
@@ -1230,7 +1230,7 @@ void pfColorPointer(PFint size, PFenum type, PFsizei stride, const void* pointer
         return;
     }
 
-    G_currentCtx->vertexAttribs.colors = (PFvertexattribbuffer) {
+    G_currentCtx->vertexAttribs.colors = (PFIvertexattribbuffer) {
         .buffer = pointer,
         .stride = stride,
         .size = size,
@@ -1250,10 +1250,10 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
         return;
     }
 
-    const PFvertexattribbuffer *positions = &G_currentCtx->vertexAttribs.positions;
-    const PFvertexattribbuffer *texcoords = &G_currentCtx->vertexAttribs.texcoords;
-    const PFvertexattribbuffer *normals = &G_currentCtx->vertexAttribs.normals;
-    const PFvertexattribbuffer *colors = &G_currentCtx->vertexAttribs.colors;
+    const PFIvertexattribbuffer *positions = &G_currentCtx->vertexAttribs.positions;
+    const PFIvertexattribbuffer *texcoords = &G_currentCtx->vertexAttribs.texcoords;
+    const PFIvertexattribbuffer *normals = &G_currentCtx->vertexAttribs.normals;
+    const PFIvertexattribbuffer *colors = &G_currentCtx->vertexAttribs.colors;
 
     PFboolean useTexCoordArray = G_currentCtx->state & PF_TEXTURE_COORD_ARRAY && texcoords->buffer;
     PFboolean useNormalArray = G_currentCtx->state & PF_NORMAL_ARRAY && normals->buffer;
@@ -1263,14 +1263,14 @@ void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void*
     PFsizei drawModeVertexCount = pfiGetDrawModeVertexCount(mode);
 
     for (PFsizei i = 0; i < drawModeVertexCount; i++) {
-        G_currentCtx->vertexBuffer[i] = (PFvertex) { 0 };
+        G_currentCtx->vertexBuffer[i] = (PFIvertex) { 0 };
         G_currentCtx->vertexBuffer[i].color = G_currentCtx->currentColor;
     }
 
     pfBegin(mode);
 
     for (PFsizei i = 0; i < count; i++) {
-        PFvertex *vertex = G_currentCtx->vertexBuffer + (G_currentCtx->vertexCounter++);
+        PFIvertex *vertex = G_currentCtx->vertexBuffer + (G_currentCtx->vertexCounter++);
 
         // Get vertex index
         const void *p = (const PFubyte*)indices + i*indicesTypeSize;
@@ -1421,10 +1421,10 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
         return;
     }
 
-    const PFvertexattribbuffer *positions = &G_currentCtx->vertexAttribs.positions;
-    const PFvertexattribbuffer *texcoords = &G_currentCtx->vertexAttribs.texcoords;
-    const PFvertexattribbuffer *normals = &G_currentCtx->vertexAttribs.normals;
-    const PFvertexattribbuffer *colors = &G_currentCtx->vertexAttribs.colors;
+    const PFIvertexattribbuffer *positions = &G_currentCtx->vertexAttribs.positions;
+    const PFIvertexattribbuffer *texcoords = &G_currentCtx->vertexAttribs.texcoords;
+    const PFIvertexattribbuffer *normals = &G_currentCtx->vertexAttribs.normals;
+    const PFIvertexattribbuffer *colors = &G_currentCtx->vertexAttribs.colors;
 
     PFboolean useTexCoordArray = G_currentCtx->state & PF_TEXTURE_COORD_ARRAY && texcoords->buffer;
     PFboolean useNormalArray = G_currentCtx->state & PF_NORMAL_ARRAY && normals->buffer;
@@ -1433,14 +1433,14 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
     PFsizei drawModeVertexCount = pfiGetDrawModeVertexCount(mode);
 
     for (PFsizei i = 0; i < drawModeVertexCount; i++) {
-        G_currentCtx->vertexBuffer[i] = (PFvertex) { 0 };
+        G_currentCtx->vertexBuffer[i] = (PFIvertex) { 0 };
         G_currentCtx->vertexBuffer[i].color = G_currentCtx->currentColor;
     }
 
     pfBegin(mode);
 
     for (PFsizei i = 0; i < count; i++) {
-        PFvertex *vertex = G_currentCtx->vertexBuffer + (G_currentCtx->vertexCounter++);
+        PFIvertex *vertex = G_currentCtx->vertexBuffer + (G_currentCtx->vertexCounter++);
 
         // Fill the vertex with given vertices data
         memset(&vertex->position, 0, sizeof(PFMvec3));
@@ -1657,7 +1657,7 @@ void pfVertex4f(PFfloat x, PFfloat y, PFfloat z, PFfloat w)
 void pfVertex4fv(const PFfloat* v)
 {
     // Get the pointer of the current vertex of the batch and pad it with zero
-    PFvertex *vertex = G_currentCtx->vertexBuffer + (G_currentCtx->vertexCounter++);
+    PFIvertex *vertex = G_currentCtx->vertexBuffer + (G_currentCtx->vertexCounter++);
 
     // Fill the vertex with given vertices data
     memcpy(vertex->position, v, sizeof(PFMvec4));
@@ -1676,8 +1676,8 @@ void pfVertex4fv(const PFfloat* v)
 //       when the `PF_COLOR_MATERIAL` state is enabled.
 static void pfiSetMaterialColor(PFcolor color)
 {
-    PFmaterial *m1 = &G_currentCtx->faceMaterial[PF_FRONT];
-    PFmaterial *m2 = &G_currentCtx->faceMaterial[PF_BACK];
+    PFImaterial *m1 = &G_currentCtx->faceMaterial[PF_FRONT];
+    PFImaterial *m2 = &G_currentCtx->faceMaterial[PF_BACK];
 
     if (G_currentCtx->materialColorFollowing.face == PF_FRONT) m2 = m1;
     else if (G_currentCtx->materialColorFollowing.face == PF_BACK) m1 = m2;
@@ -1949,7 +1949,7 @@ void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2)
     iY2 = PF_CLAMP(iY2, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
 
     // Retrieve framebuffer texture and current drawing color tint
-    struct PFtex *tex = G_currentCtx->currentFramebuffer->texture;
+    struct PFItex *tex = G_currentCtx->currentFramebuffer->texture;
     PFcolor color = G_currentCtx->currentColor;
 
     // Draw rectangle
@@ -1986,7 +1986,7 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PFdatatyp
     }
 
     // Retrieve the appropriate pixel getter function for the given buffer format
-    PFpixelgetter getPixelSrc = GC_pixelGetters[format][type];
+    PFIpixelgetter getPixelSrc = GC_pixelGetters[format][type];
     if (!getPixelSrc) {
         G_currentCtx->errCode = PF_INVALID_ENUM;
         return;
@@ -2021,14 +2021,14 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PFdatatyp
     PFsizei heightM1 = height - 1;
 
     // Get current framebuffer and depth buffer
-    struct PFtex *texDst = G_currentCtx->currentFramebuffer->texture;
+    struct PFItex *texDst = G_currentCtx->currentFramebuffer->texture;
     PFfloat *zBuffer = G_currentCtx->currentFramebuffer->zbuffer;
 
     // Check if depth test is enabled
     PFboolean noDepthTest = !(G_currentCtx->state & PF_DEPTH_TEST);
 
     // Get the color mixing function (if necessary)
-    PFblendfunc blendFunction = G_currentCtx->state & PF_BLEND ?
+    PFIblendfunc blendFunction = G_currentCtx->state & PF_BLEND ?
         G_currentCtx->blendFunction : NULL;
 
     // Loop through each pixel in the destination rectangle
@@ -2260,7 +2260,7 @@ void pfFogfv(PFfogparam pname, PFfloat* param)
 
 void pfFogProcess(void)
 {
-    struct PFtex* tex = G_currentCtx->currentFramebuffer->texture;
+    struct PFItex* tex = G_currentCtx->currentFramebuffer->texture;
 
     PFint width = tex->w;
     PFint height = tex->h;
@@ -2268,8 +2268,8 @@ void pfFogProcess(void)
     void *pixels = tex->pixels;
     const PFfloat *zBuffer = G_currentCtx->currentFramebuffer->zbuffer;
 
-    PFpixelgetter getter = tex->getter;
-    PFpixelsetter setter = tex->setter;
+    PFIpixelgetter getter = tex->getter;
+    PFIpixelsetter setter = tex->setter;
 
 #ifdef _OPENMP
 #   define BEGIN_FOG_LOOP() \
@@ -2340,7 +2340,7 @@ void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat
     }
 
     // Get the appropriate pixel setter function for the given format
-    PFpixelsetter dstPixelSetter = GC_pixelSetters[format][type];
+    PFIpixelsetter dstPixelSetter = GC_pixelSetters[format][type];
     if (!dstPixelSetter) {
         G_currentCtx->errCode = PF_INVALID_ENUM;
         return;
@@ -2348,8 +2348,8 @@ void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat
 
     /* Retrieve information about the source framebuffer */
 
-    const struct PFtex *texSrc = G_currentCtx->currentFramebuffer->texture;
-    PFpixelgetter srcPixelGetter = texSrc->getter;
+    const struct PFItex *texSrc = G_currentCtx->currentFramebuffer->texture;
+    PFIpixelgetter srcPixelGetter = texSrc->getter;
     const void *srcPixels = texSrc->pixels;
     PFsizei srcWidth = texSrc->w;
 
@@ -2382,7 +2382,7 @@ void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat
 
 void pfPostProcess(PFpostprocessfunc postProcessFunction)
 {
-    struct PFtex* tex = G_currentCtx->currentFramebuffer->texture;
+    struct PFItex* tex = G_currentCtx->currentFramebuffer->texture;
 
     PFint width = tex->w;
     PFint height = tex->h;
@@ -2390,8 +2390,8 @@ void pfPostProcess(PFpostprocessfunc postProcessFunction)
     void *pixels = tex->pixels;
     const PFfloat *zBuffer = G_currentCtx->currentFramebuffer->zbuffer;
 
-    PFpixelgetter getter = tex->getter;
-    PFpixelsetter setter = tex->setter;
+    PFIpixelgetter getter = tex->getter;
+    PFIpixelsetter setter = tex->setter;
 
 #ifdef _OPENMP
 #   define BEGIN_POSTPROCESS_LOOP() \

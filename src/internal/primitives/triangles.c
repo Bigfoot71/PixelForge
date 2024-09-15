@@ -42,7 +42,7 @@
 /* Internal typedefs */
 
 #if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC_SIMD
-typedef void (*InterpolateColorSimdFunc)(PFcolor_simd, const PFcolor_simd, const PFcolor_simd, const PFcolor_simd, PFsimdvf, PFsimdvf, PFsimdvf);
+typedef void (*InterpolateColorSimdFunc)(PFcolor_simd, const PFcolor_simd, const PFcolor_simd, const PFcolor_simd, PFIsimdvf, PFIsimdvf, PFIsimdvf);
 #elif PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC_OMP
 typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFcolor, PFfloat, PFfloat, PFfloat);
 #elif PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_SCANLINES
@@ -53,19 +53,19 @@ typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFfloat);
 
 #if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_SCANLINES
 static PFboolean Helper_FaceCanBeRendered(PFface faceToRender, PFfloat* area, const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 p3);
-static void Helper_SortVertices(const PFvertex** v1, const PFvertex** v2, const PFvertex** v3);
+static void Helper_SortVertices(const PFIvertex** v1, const PFIvertex** v2, const PFIvertex** v3);
 #endif //PF_TRIANGLE_RASTER_SCANLINES
 
 /* Internal triangle processing functions declarations */
 
-static PFboolean Process_ClipPolygonW(PFvertex* polygon, int_fast8_t* vertexCounter);
-static PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, int_fast8_t* vertexCounter);
-static PFboolean Process_ProjectAndClipTriangle(PFvertex* polygon, int_fast8_t* vertexCounter);
+static PFboolean Process_ClipPolygonW(PFIvertex* polygon, int_fast8_t* vertexCounter);
+static PFboolean Process_ClipPolygonXYZ(PFIvertex* polygon, int_fast8_t* vertexCounter);
+static PFboolean Process_ProjectAndClipTriangle(PFIvertex* polygon, int_fast8_t* vertexCounter);
 
 /* Internal triangle rasterizer function declarations */
 
 static void Rasterize_Triangle(PFface faceToRender, PFboolean is3D,
-                               const PFvertex* v1, const PFvertex* v2, const PFvertex* v3,
+                               const PFIvertex* v1, const PFIvertex* v2, const PFIvertex* v3,
                                const PFMvec3 viewPos);
 
 
@@ -73,7 +73,7 @@ static void Rasterize_Triangle(PFface faceToRender, PFboolean is3D,
 
 // NOTE: An array of vertices with a total size equal to 'PF_MAX_CLIPPED_POLYGON_VERTICES' must be provided as a parameter
 //       with only the first three vertices defined; the extra space is used in case the triangle needs to be clipped.
-static void pfiProcessRasterize_TRIANGLE_IMPL(PFface faceToRender, PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES])
+static void pfiProcessRasterize_TRIANGLE_IMPL(PFface faceToRender, PFIvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES])
 {
 #ifndef NDEBUG
     if (faceToRender == PF_FRONT_AND_BACK) {
@@ -121,15 +121,15 @@ static void pfiProcessRasterize_TRIANGLE_IMPL(PFface faceToRender, PFvertex proc
 
 void pfiProcessRasterize_TRIANGLE(PFface faceToRender)
 {
-    PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES];
-    memcpy(processed, G_currentCtx->vertexBuffer, 3 * sizeof(PFvertex));
+    PFIvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES];
+    memcpy(processed, G_currentCtx->vertexBuffer, 3 * sizeof(PFIvertex));
     pfiProcessRasterize_TRIANGLE_IMPL(faceToRender, processed);
 }
 
 void pfiProcessRasterize_TRIANGLE_FAN(PFface faceToRender, int_fast8_t numTriangles)
 {
     for (int_fast8_t i = 0; i < numTriangles; i++) {
-        PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES] = {
+        PFIvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES] = {
             G_currentCtx->vertexBuffer[0],
             G_currentCtx->vertexBuffer[i + 1],
             G_currentCtx->vertexBuffer[i + 2]
@@ -141,7 +141,7 @@ void pfiProcessRasterize_TRIANGLE_FAN(PFface faceToRender, int_fast8_t numTriang
 void pfiProcessRasterize_TRIANGLE_STRIP(PFface faceToRender, int_fast8_t numTriangles)
 {
     for (int_fast8_t i = 0; i < numTriangles; i++) {
-        PFvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES];
+        PFIvertex processed[PF_MAX_CLIPPED_POLYGON_VERTICES];
         if (i % 2 == 0) {
             processed[0] = G_currentCtx->vertexBuffer[i];
             processed[1] = G_currentCtx->vertexBuffer[i + 1];
@@ -170,10 +170,10 @@ PFboolean Helper_FaceCanBeRendered(PFface faceToRender, PFfloat* area, const PFM
     return PF_FALSE;
 }
 
-void Helper_SortVertices(const PFvertex** v1, const PFvertex** v2, const PFvertex** v3)
+void Helper_SortVertices(const PFIvertex** v1, const PFIvertex** v2, const PFIvertex** v3)
 {
     // Sort vertices in ascending order of y coordinates
-    const PFvertex* vTmp;
+    const PFIvertex* vTmp;
     if ((*v2)->screen[1] < (*v1)->screen[1]) { vTmp = *v1; *v1 = *v2; *v2 = vTmp; }
     if ((*v3)->screen[1] < (*v1)->screen[1]) { vTmp = *v1; *v1 = *v3; *v3 = vTmp; }
     if ((*v3)->screen[1] < (*v2)->screen[1]) { vTmp = *v2; *v2 = *v3; *v3 = vTmp; }
@@ -183,15 +183,15 @@ void Helper_SortVertices(const PFvertex** v1, const PFvertex** v2, const PFverte
 
 /* Internal triangle processing functions definitions */
 
-PFboolean Process_ClipPolygonW(PFvertex* polygon, int_fast8_t* vertexCounter)
+PFboolean Process_ClipPolygonW(PFIvertex* polygon, int_fast8_t* vertexCounter)
 {
-    PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
-    memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
+    PFIvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
+    memcpy(input, polygon, (*vertexCounter)*sizeof(PFIvertex));
 
     int_fast8_t inputCounter = *vertexCounter;
     *vertexCounter = 0;
 
-    const PFvertex *prevVt = &input[inputCounter-1];
+    const PFIvertex *prevVt = &input[inputCounter-1];
     PFbyte prevDot = (prevVt->homogeneous[3] < PF_CLIP_EPSILON) ? -1 : 1;
 
     for (int_fast8_t i = 0; i < inputCounter; i++) {
@@ -210,21 +210,21 @@ PFboolean Process_ClipPolygonW(PFvertex* polygon, int_fast8_t* vertexCounter)
     return *vertexCounter > 0;
 }
 
-PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, int_fast8_t* vertexCounter)
+PFboolean Process_ClipPolygonXYZ(PFIvertex* polygon, int_fast8_t* vertexCounter)
 {
     for (int_fast8_t iAxis = 0; iAxis < 3; iAxis++)
     {
         if (*vertexCounter == 0) return PF_FALSE;
 
-        PFvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
+        PFIvertex input[PF_MAX_CLIPPED_POLYGON_VERTICES];
         int_fast8_t inputCounter;
 
-        const PFvertex *prevVt;
+        const PFIvertex *prevVt;
         PFbyte prevDot;
 
         // Clip against first plane
 
-        memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
+        memcpy(input, polygon, (*vertexCounter)*sizeof(PFIvertex));
         inputCounter = *vertexCounter;
         *vertexCounter = 0;
 
@@ -248,7 +248,7 @@ PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, int_fast8_t* vertexCounter)
 
         // Clip against opposite plane
 
-        memcpy(input, polygon, (*vertexCounter)*sizeof(PFvertex));
+        memcpy(input, polygon, (*vertexCounter)*sizeof(PFIvertex));
         inputCounter = *vertexCounter;
         *vertexCounter = 0;
 
@@ -272,12 +272,12 @@ PFboolean Process_ClipPolygonXYZ(PFvertex* polygon, int_fast8_t* vertexCounter)
     return *vertexCounter > 0;
 }
 
-PFboolean Process_ProjectAndClipTriangle(PFvertex* polygon, int_fast8_t* vertexCounter)
+PFboolean Process_ProjectAndClipTriangle(PFIvertex* polygon, int_fast8_t* vertexCounter)
 {
     PFfloat weightSum = 0.0f;
 
     for (int_fast8_t i = 0; i < *vertexCounter; i++) {
-        PFvertex *v = polygon + i;
+        PFIvertex *v = polygon + i;
         memcpy(v->homogeneous, v->position, sizeof(PFMvec4));
         pfmVec4Transform(v->homogeneous, v->homogeneous, G_currentCtx->matMVP);
         weightSum += v->homogeneous[3];
@@ -313,7 +313,7 @@ PFboolean Process_ProjectAndClipTriangle(PFvertex* polygon, int_fast8_t* vertexC
 
 #if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC_SIMD
 
-void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
+void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1, const PFIvertex* v2, const PFIvertex* v3, const PFMvec3 viewPos)
 {
     PFsizei xMin, yMin, xMax, yMax;
     PFint w1Row, w2Row, w3Row;
@@ -368,14 +368,14 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     }
 
     // Vector constants
-    PFsimdvi pixOffsetV = pfiSimdSetR_I32(0, 1, 2, 3, 4, 5, 6, 7);
-    PFsimdvi w1XStepV = pfiSimdMullo_I32(pfiSimdSet1_I32(w1XStep), pixOffsetV);
-    PFsimdvi w2XStepV = pfiSimdMullo_I32(pfiSimdSet1_I32(w2XStep), pixOffsetV);
-    PFsimdvi w3XStepV = pfiSimdMullo_I32(pfiSimdSet1_I32(w3XStep), pixOffsetV);
+    PFIsimdvi pixOffsetV = pfiSimdSetR_I32(0, 1, 2, 3, 4, 5, 6, 7);
+    PFIsimdvi w1XStepV = pfiSimdMullo_I32(pfiSimdSet1_I32(w1XStep), pixOffsetV);
+    PFIsimdvi w2XStepV = pfiSimdMullo_I32(pfiSimdSet1_I32(w2XStep), pixOffsetV);
+    PFIsimdvi w3XStepV = pfiSimdMullo_I32(pfiSimdSet1_I32(w3XStep), pixOffsetV);
 
     // Calculate the reciprocal of the sum of the barycentric coordinates for normalization
     // NOTE: This sum remains constant throughout the triangle
-    PFsimdvf wInvSumV = pfiSimdSet1_F32(1.0f/(w1Row + w2Row + w3Row));
+    PFIsimdvf wInvSumV = pfiSimdSet1_F32(1.0f/(w1Row + w2Row + w3Row));
 
     // Load vertices data into SIMD registers
     PFcolor_simd c1V, c2V, c3V;
@@ -400,19 +400,19 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Get some contextual values */
 
-    struct PFtex *texDst = G_currentCtx->currentFramebuffer->texture;
-    struct PFtex *texSrc = G_currentCtx->currentTexture;
+    struct PFItex *texDst = G_currentCtx->currentFramebuffer->texture;
+    struct PFItex *texSrc = G_currentCtx->currentTexture;
 
     PFfloat *zbDst = G_currentCtx->currentFramebuffer->zbuffer;
 
-    PFpixelgetter_simd fbGetter = texDst->getterSimd;
-    PFpixelsetter_simd fbSetter = texDst->setterSimd;
+    PFIpixelgetter_simd fbGetter = texDst->getterSimd;
+    PFIpixelsetter_simd fbSetter = texDst->setterSimd;
     PFsizei widthDst = texDst->w;
     void *pbDst = texDst->pixels;
 
-    PFsimdvf z1V = pfiSimdSet1_F32(v1->homogeneous[2]);
-    PFsimdvf z2V = pfiSimdSet1_F32(v2->homogeneous[2]);
-    PFsimdvf z3V = pfiSimdSet1_F32(v3->homogeneous[2]);
+    PFIsimdvf z1V = pfiSimdSet1_F32(v1->homogeneous[2]);
+    PFIsimdvf z2V = pfiSimdSet1_F32(v2->homogeneous[2]);
+    PFIsimdvf z3V = pfiSimdSet1_F32(v3->homogeneous[2]);
 
     PFsimdv3f viewPosV;
     pfiVec3Load_simd(viewPosV, viewPos);
@@ -420,10 +420,10 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     InterpolateColorSimdFunc interpolateColor = (G_currentCtx->shadingMode == PF_SMOOTH)
         ? pfiColorBarySmooth_simd : pfiColorBaryFlat_simd;
 
-    PFlight *lights = (G_currentCtx->state & PF_LIGHTING) ? G_currentCtx->activeLights : NULL;
-    PFblendfunc_simd blendFunction = (G_currentCtx->state & PF_BLEND) ? G_currentCtx->blendSimdFunction : NULL;
-    PFdepthfunc_simd depthFunction = (G_currentCtx->state & PF_DEPTH_TEST) ? G_currentCtx->depthSimdFunction : NULL;
-    PFtexturesampler_simd texSampler = ((G_currentCtx->state & PF_TEXTURE_2D) && texSrc) ? texSrc->samplerSimd : NULL;
+    PFIlight *lights = (G_currentCtx->state & PF_LIGHTING) ? G_currentCtx->activeLights : NULL;
+    PFIblendfunc_simd blendFunction = (G_currentCtx->state & PF_BLEND) ? G_currentCtx->blendSimdFunction : NULL;
+    PFIdepthfunc_simd depthFunction = (G_currentCtx->state & PF_DEPTH_TEST) ? G_currentCtx->depthSimdFunction : NULL;
+    PFItexturesampler_simd texSampler = ((G_currentCtx->state & PF_TEXTURE_2D) && texSrc) ? texSrc->samplerSimd : NULL;
 
     /* Loop macro definition */
 
@@ -438,30 +438,30 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFint w3 = w3Row + (y - yMin)*w3YStep;                                              \
         for (PFsizei x = xMin; x <= xMax; x += PF_SIMD_SIZE) {                              \
             /* Load the current barycentric coordinates into SIMD registers */              \
-            PFsimdvi w1V = pfiSimdAdd_I32(pfiSimdSet1_I32(w1), w1XStepV);                   \
-            PFsimdvi w2V = pfiSimdAdd_I32(pfiSimdSet1_I32(w2), w2XStepV);                   \
-            PFsimdvi w3V = pfiSimdAdd_I32(pfiSimdSet1_I32(w3), w3XStepV);                   \
+            PFIsimdvi w1V = pfiSimdAdd_I32(pfiSimdSet1_I32(w1), w1XStepV);                   \
+            PFIsimdvi w2V = pfiSimdAdd_I32(pfiSimdSet1_I32(w2), w2XStepV);                   \
+            PFIsimdvi w3V = pfiSimdAdd_I32(pfiSimdSet1_I32(w3), w3XStepV);                   \
             /* Test if pixels are inside the triangle */                                    \
-            PFsimdvi mask = pfiSimdOr_I32(pfiSimdOr_I32(w1V, w2V), w3V);                    \
+            PFIsimdvi mask = pfiSimdOr_I32(pfiSimdOr_I32(w1V, w2V), w3V);                    \
             mask = pfiSimdCmpGT_I32(mask, pfiSimdSetZero_I32());                            \
             /* Bounds check to ensure pixels' x-coords are within the xMax limit */         \
             /* Used for "2D" rendering; 3D clipping removes these cases. */                 \
             mask = pfiSimdAnd_I32(mask, pfiSimdCmpLT_I32(                                   \
                 pfiSimdAdd_I32(pfiSimdSet1_I32(x), pixOffsetV), pfiSimdSet1_I32(xMax)));    \
             /* Normalize weights */                                                         \
-            PFsimdvf w1NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w1V), wInvSumV);       \
-            PFsimdvf w2NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w2V), wInvSumV);       \
-            PFsimdvf w3NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w3V), wInvSumV);       \
+            PFIsimdvf w1NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w1V), wInvSumV);       \
+            PFIsimdvf w2NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w2V), wInvSumV);       \
+            PFIsimdvf w3NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w3V), wInvSumV);       \
             /* Compute Z-Depth values */                                                    \
-            PFsimdvf zV; {                                                                  \
-                PFsimdvf wZ1 = pfiSimdMul_F32(z1V, w1NormV);                                \
-                PFsimdvf wZ2 = pfiSimdMul_F32(z2V, w2NormV);                                \
-                PFsimdvf wZ3 = pfiSimdMul_F32(z3V, w3NormV);                                \
+            PFIsimdvf zV; {                                                                  \
+                PFIsimdvf wZ1 = pfiSimdMul_F32(z1V, w1NormV);                                \
+                PFIsimdvf wZ2 = pfiSimdMul_F32(z2V, w2NormV);                                \
+                PFIsimdvf wZ3 = pfiSimdMul_F32(z3V, w3NormV);                                \
                 zV = pfiSimdAdd_F32(pfiSimdAdd_F32(wZ1, wZ2), wZ3);                         \
                 zV = pfiSimdRCP_F32(zV);                                                    \
             }                                                                               \
             /* Depth Testing */                                                             \
-            PFsimdvf depths = pfiSimdLoad_F32(zbDst + yOffset + x);                         \
+            PFIsimdvf depths = pfiSimdLoad_F32(zbDst + yOffset + x);                         \
             if (depthFunction)  {                                                           \
                 mask = pfiSimdAnd_I32(mask, pfiSimdCast_F32_I32(                            \
                     depthFunction(zV, depths)));                                            \
@@ -483,30 +483,30 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         int w3 = w3Row;                                                                     \
         for (PFsizei x = xMin; x <= xMax; x += PF_SIMD_SIZE) {                              \
             /* Load the current barycentric coordinates into SIMD registers */              \
-            PFsimdvi w1V = pfiSimdAdd_I32(pfiSimdSet1_I32(w1), w1XStepV);                   \
-            PFsimdvi w2V = pfiSimdAdd_I32(pfiSimdSet1_I32(w2), w2XStepV);                   \
-            PFsimdvi w3V = pfiSimdAdd_I32(pfiSimdSet1_I32(w3), w3XStepV);                   \
+            PFIsimdvi w1V = pfiSimdAdd_I32(pfiSimdSet1_I32(w1), w1XStepV);                   \
+            PFIsimdvi w2V = pfiSimdAdd_I32(pfiSimdSet1_I32(w2), w2XStepV);                   \
+            PFIsimdvi w3V = pfiSimdAdd_I32(pfiSimdSet1_I32(w3), w3XStepV);                   \
             /* Test if pixels are inside the triangle */                                    \
-            PFsimdvi mask = pfiSimdOr_I32(pfiSimdOr_I32(w1V, w2V), w3V);                    \
+            PFIsimdvi mask = pfiSimdOr_I32(pfiSimdOr_I32(w1V, w2V), w3V);                    \
             mask = pfiSimdCmpGT_I32(mask, pfiSimdSetZero_I32());                            \
             /* Bounds check to ensure pixels' x-coords are within the xMax limit */         \
             /* Used for "2D" rendering; 3D clipping removes these cases. */                 \
             mask = pfiSimdAnd_I32(mask, pfiSimdCmpLT_I32(                                   \
                 pfiSimdAdd_I32(pfiSimdSet1_I32(x), pixOffsetV), pfiSimdSet1_I32(xMax)));    \
             /* Normalize weights */                                                         \
-            PFsimdvf w1NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w1V), wInvSumV);       \
-            PFsimdvf w2NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w2V), wInvSumV);       \
-            PFsimdvf w3NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w3V), wInvSumV);       \
+            PFIsimdvf w1NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w1V), wInvSumV);       \
+            PFIsimdvf w2NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w2V), wInvSumV);       \
+            PFIsimdvf w3NormV = pfiSimdMul_F32(pfiSimdConvert_I32_F32(w3V), wInvSumV);       \
             /* Compute Z-Depth values */                                                    \
-            PFsimdvf zV; {                                                                  \
-                PFsimdvf wZ1 = pfiSimdMul_F32(z1V, w1NormV);                                \
-                PFsimdvf wZ2 = pfiSimdMul_F32(z2V, w2NormV);                                \
-                PFsimdvf wZ3 = pfiSimdMul_F32(z3V, w3NormV);                                \
+            PFIsimdvf zV; {                                                                  \
+                PFIsimdvf wZ1 = pfiSimdMul_F32(z1V, w1NormV);                                \
+                PFIsimdvf wZ2 = pfiSimdMul_F32(z2V, w2NormV);                                \
+                PFIsimdvf wZ3 = pfiSimdMul_F32(z3V, w3NormV);                                \
                 zV = pfiSimdAdd_F32(pfiSimdAdd_F32(wZ1, wZ2), wZ3);                         \
                 zV = pfiSimdRCP_F32(zV);                                                    \
             }                                                                               \
             /* Depth Testing */                                                             \
-            PFsimdvf depths = pfiSimdLoad_F32(zbDst + yOffset + x);                         \
+            PFIsimdvf depths = pfiSimdLoad_F32(zbDst + yOffset + x);                         \
             if (depthFunction) {                                                            \
                 mask = pfiSimdAnd_I32(mask, pfiSimdCast_F32_I32(                            \
                     depthFunction(zV, depths)));                                            \
@@ -591,7 +591,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
 #elif PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC_OMP
 
-void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
+void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1, const PFIvertex* v2, const PFIvertex* v3, const PFMvec3 viewPos)
 {
     PFsizei xMin, yMin, xMax, yMax;
     PFint w1Row, w2Row, w3Row;
@@ -657,13 +657,13 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Get some contextual values */
 
-    struct PFtex *texDst = G_currentCtx->currentFramebuffer->texture;
-    struct PFtex *texSrc = G_currentCtx->currentTexture;
+    struct PFItex *texDst = G_currentCtx->currentFramebuffer->texture;
+    struct PFItex *texSrc = G_currentCtx->currentTexture;
 
     PFfloat *zbDst = G_currentCtx->currentFramebuffer->zbuffer;
 
-    PFpixelgetter getter = texDst->getter;
-    PFpixelsetter setter = texDst->setter;
+    PFIpixelgetter getter = texDst->getter;
+    PFIpixelsetter setter = texDst->setter;
     PFsizei widthDst = texDst->w;
     void *pbDst = texDst->pixels;
 
@@ -674,10 +674,10 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     InterpolateColorFunc interpolateColor = (G_currentCtx->shadingMode == PF_SMOOTH)
         ? pfiColorBarySmooth : pfiColorBaryFlat;
 
-    PFlight *lights = (G_currentCtx->state & PF_LIGHTING) ? G_currentCtx->activeLights : NULL;
-    PFblendfunc blendFunction = (G_currentCtx->state & PF_BLEND) ? G_currentCtx->blendFunction : NULL;
-    PFdepthfunc depthFunction = (G_currentCtx->state & PF_DEPTH_TEST) ? G_currentCtx->depthFunction : NULL;
-    PFtexturesampler texSampler = ((G_currentCtx->state & PF_TEXTURE_2D) && texSrc) ? texSrc->sampler : NULL;
+    PFIlight *lights = (G_currentCtx->state & PF_LIGHTING) ? G_currentCtx->activeLights : NULL;
+    PFIblendfunc blendFunction = (G_currentCtx->state & PF_BLEND) ? G_currentCtx->blendFunction : NULL;
+    PFIdepthfunc depthFunction = (G_currentCtx->state & PF_DEPTH_TEST) ? G_currentCtx->depthFunction : NULL;
+    PFItexturesampler texSampler = ((G_currentCtx->state & PF_TEXTURE_2D) && texSrc) ? texSrc->sampler : NULL;
 
     /* Loop macro definition */
 
@@ -768,7 +768,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
 // TODO: Performed the interpolations by increments
 // TODO: Find a maintainable way to reduce conditionality in loops
-void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1, const PFvertex* v2, const PFvertex* v3, const PFMvec3 viewPos)
+void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1, const PFIvertex* v2, const PFIvertex* v3, const PFMvec3 viewPos)
 {
     /* Check if the face can be rendered, if not, skip */
 
@@ -803,23 +803,23 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Get some contextual values */
 
-    struct PFtex *texDst = G_currentCtx->currentFramebuffer->texture;
-    struct PFtex *texSrc = G_currentCtx->currentTexture;
+    struct PFItex *texDst = G_currentCtx->currentFramebuffer->texture;
+    struct PFItex *texSrc = G_currentCtx->currentTexture;
 
     PFfloat *zbDst = G_currentCtx->currentFramebuffer->zbuffer;
 
-    PFpixelgetter getter = texDst->getter;
-    PFpixelsetter setter = texDst->setter;
+    PFIpixelgetter getter = texDst->getter;
+    PFIpixelsetter setter = texDst->setter;
     PFsizei widthDst = texDst->w;
     void *pbDst = texDst->pixels;
 
     InterpolateColorFunc interpolateColor = (G_currentCtx->shadingMode == PF_SMOOTH)
         ? pfiColorLerpSmooth : pfiColorLerpFlat;
 
-    PFlight *lights = (G_currentCtx->state & PF_LIGHTING) ? G_currentCtx->activeLights : NULL;
-    PFblendfunc blendFunction = (G_currentCtx->state & PF_BLEND) ? G_currentCtx->blendFunction : NULL;
-    PFdepthfunc depthFunction = (G_currentCtx->state & PF_DEPTH_TEST) ? G_currentCtx->depthFunction : NULL;
-    PFtexturesampler texSampler = ((G_currentCtx->state & PF_TEXTURE_2D) && texSrc) ? texSrc->sampler : NULL;
+    PFIlight *lights = (G_currentCtx->state & PF_LIGHTING) ? G_currentCtx->activeLights : NULL;
+    PFIblendfunc blendFunction = (G_currentCtx->state & PF_BLEND) ? G_currentCtx->blendFunction : NULL;
+    PFIdepthfunc depthFunction = (G_currentCtx->state & PF_DEPTH_TEST) ? G_currentCtx->depthFunction : NULL;
+    PFItexturesampler texSampler = ((G_currentCtx->state & PF_TEXTURE_2D) && texSrc) ? texSrc->sampler : NULL;
 
     /*  */
 

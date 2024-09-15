@@ -32,9 +32,9 @@
 */
 
 /**
- * @brief PFtex (texture) forward declaration
+ * @brief PFItex (texture) forward declaration
  */
-struct PFtex;
+struct PFItex;
 
 /**
  * @brief Defines a function pointer type for color blending functions.
@@ -47,7 +47,7 @@ struct PFtex;
  * 
  * @return The resulting blended color after applying the blending function to the source and destination colors.
  */
-typedef PFcolor (*PFblendfunc)(PFcolor src, PFcolor dst);
+typedef PFcolor (*PFIblendfunc)(PFcolor src, PFcolor dst);
 
 /**
  * @brief Function pointer type for depth testing.
@@ -59,7 +59,7 @@ typedef PFcolor (*PFblendfunc)(PFcolor src, PFcolor dst);
  * @param dst The destination depth value.
  * @return A boolean value indicating the result of the depth test.
  */
-typedef PFboolean (*PFdepthfunc)(PFfloat src, PFfloat dst);
+typedef PFboolean (*PFIdepthfunc)(PFfloat src, PFfloat dst);
 
 /**
  * @brief Function pointer type for getting a pixel from a texture.
@@ -68,7 +68,7 @@ typedef PFboolean (*PFdepthfunc)(PFfloat src, PFfloat dst);
  * @param index The index of the pixel to retrieve.
  * @return The color value of the pixel at the specified index.
  */
-typedef PFcolor (*PFpixelgetter)(const void* pixels, PFsizei index);
+typedef PFcolor (*PFIpixelgetter)(const void* pixels, PFsizei index);
 
 /**
  * @brief Function pointer type for setting a pixel in a texture.
@@ -77,7 +77,7 @@ typedef PFcolor (*PFpixelgetter)(const void* pixels, PFsizei index);
  * @param index The index of the pixel to set.
  * @param color The color value to set the pixel to.
  */
-typedef void (*PFpixelsetter)(void* pixels, PFsizei index, PFcolor color);
+typedef void (*PFIpixelsetter)(void* pixels, PFsizei index, PFcolor color);
 
 /**
  * @brief Texture sampler function pointer type.
@@ -88,7 +88,7 @@ typedef void (*PFpixelsetter)(void* pixels, PFsizei index, PFcolor color);
  * @param v The v coordinate for texture sampling.
  * @return The color sampled from the texture at the specified coordinates.
  */
-typedef PFcolor (*PFtexturesampler)(const struct PFtex* tex, PFfloat u, PFfloat v);
+typedef PFcolor (*PFItexturesampler)(const struct PFItex* tex, PFfloat u, PFfloat v);
 
 #if PF_SIMD_SUPPORT
 
@@ -108,7 +108,7 @@ typedef PFcolor (*PFtexturesampler)(const struct PFtex* tex, PFfloat u, PFfloat 
  * @return void This function does not return a value; instead, it writes the blended results directly
  *               to the `out` array.
  */
-typedef void (*PFblendfunc_simd)(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst);
+typedef void (*PFIblendfunc_simd)(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst);
 
 /**
  * @brief Function pointer type for SIMD depth testing.
@@ -120,7 +120,7 @@ typedef void (*PFblendfunc_simd)(PFcolor_simd out, const PFcolor_simd src, const
  * @param dst The destination depth value as a SIMD floating-point type.
  * @return A SIMD floating-point value representing the result of the depth test.
  */
-typedef PFsimdvf (*PFdepthfunc_simd)(PFsimdvf src, PFsimdvf dst);
+typedef PFIsimdvf (*PFIdepthfunc_simd)(PFIsimdvf src, PFIsimdvf dst);
 
 /**
  * @brief Function pointer type for getting multiple pixels from a texture using SIMD instructions.
@@ -131,7 +131,7 @@ typedef PFsimdvf (*PFdepthfunc_simd)(PFsimdvf src, PFsimdvf dst);
  * @param offsets A SIMD register containing the indices of the pixels to retrieve.
  * @return A SIMD register containing the color values of the pixels at the specified indices.
  */
-typedef PFsimdvi (*PFpixelgetter_simd)(const void* pixels, PFsimdvi offsets);
+typedef PFIsimdvi (*PFIpixelgetter_simd)(const void* pixels, PFIsimdvi offsets);
 
 /**
  * @brief Function pointer type for setting multiple pixels in a texture using SIMD instructions.
@@ -143,7 +143,7 @@ typedef PFsimdvi (*PFpixelgetter_simd)(const void* pixels, PFsimdvi offsets);
  * @param colors A SIMD register containing the color values to set the pixels to.
  * @param mask A SIMD register used to mask which pixels should be set.
  */
-typedef void (*PFpixelsetter_simd)(void* pixels, PFsizei offset, PFsimdvi colors, PFsimdvi mask);
+typedef void (*PFIpixelsetter_simd)(void* pixels, PFsizei offset, PFIsimdvi colors, PFIsimdvi mask);
 
 /**
  * @brief SIMD texture sampler function pointer type.
@@ -153,23 +153,23 @@ typedef void (*PFpixelsetter_simd)(void* pixels, PFsizei offset, PFsimdvi colors
  * @param texcoords A SIMD vector containing the texture coordinates.
  * @return The SIMD integer result sampled from the texture at the specified coordinates.
  */
-typedef PFsimdvi (*PFtexturesampler_simd)(const struct PFtex* tex, const PFsimdv2f texcoords);
+typedef PFIsimdvi (*PFItexturesampler_simd)(const struct PFItex* tex, const PFsimdv2f texcoords);
 
 #endif //PF_SIMD_SUPPORT
 
 /**
  * @brief Structure representing a texture.
  */
-struct PFtex {
+struct PFItex {
 
-    PFpixelgetter           getter;
-    PFpixelsetter           setter;
-    PFtexturesampler        sampler;
+    PFIpixelgetter           getter;
+    PFIpixelsetter           setter;
+    PFItexturesampler        sampler;
 
 #if PF_SIMD_SUPPORT
-    PFpixelgetter_simd      getterSimd;
-    PFpixelsetter_simd      setterSimd;
-    PFtexturesampler_simd   samplerSimd;
+    PFIpixelgetter_simd      getterSimd;
+    PFIpixelsetter_simd      setterSimd;
+    PFItexturesampler_simd   samplerSimd;
 #endif //PF_SIMD_SUPPORT
 
     void                    *pixels;
@@ -188,17 +188,17 @@ typedef struct {
     PFsizei     stride;                 ///< Byte stride between each vertex
     PFint       size;                   ///< Number of elements per vertex
     PFdatatype  type;                   ///< Data type stored by the buffer
-} PFvertexattribbuffer;
+} PFIvertexattribbuffer;
 
 /**
  * @brief Structure representing vertex attributes.
  */
 typedef struct {
-    PFvertexattribbuffer positions;     ///< Position attribute buffer
-    PFvertexattribbuffer normals;       ///< Normal attribute buffer
-    PFvertexattribbuffer colors;        ///< Color attribute buffer
-    PFvertexattribbuffer texcoords;     ///< Texture coordinates attribute buffer
-} PFvertexattribs;
+    PFIvertexattribbuffer positions;     ///< Position attribute buffer
+    PFIvertexattribbuffer normals;       ///< Normal attribute buffer
+    PFIvertexattribbuffer colors;        ///< Color attribute buffer
+    PFIvertexattribbuffer texcoords;     ///< Texture coordinates attribute buffer
+} PFIvertexattribs;
 
 /**
  * @brief Structure representing a vertex.
@@ -210,13 +210,13 @@ typedef struct {
     PFMvec3 normal;                     ///< Normal vector
     PFMvec2 texcoord;                   ///< Texture coordinates
     PFcolor color;                      ///< Color
-} PFvertex;
+} PFIvertex;
 
 /**
  * @brief Structure representing a light source.
  */
-typedef struct PFlight PFlight;
-struct PFlight {
+typedef struct PFIlight PFIlight;
+struct PFIlight {
     PFMvec3 position;                   ///< Position of the light source
     PFMvec3 direction;                  ///< Direction of the light source
     PFfloat innerCutOff;                ///< Inner cut off angle of the light cone
@@ -227,7 +227,7 @@ struct PFlight {
     PFcolor ambient;                    ///< Ambient color of the light
     PFcolor diffuse;                    ///< Diffuse color of the light
     PFcolor specular;                   ///< Specular color of the light
-    PFlight *next;                      ///< Pointer to the next light in a linked list
+    PFIlight *next;                      ///< Pointer to the next light in a linked list
 };
 
 /**
@@ -239,7 +239,7 @@ typedef struct {
     PFcolor specular;                   ///< Specular material color
     PFcolor emission;                   ///< Emissive material color
     PFfloat shininess;                  ///< Material shininess coefficient
-} PFmaterial;
+} PFImaterial;
 
 /**
  * @brief Structure representing material color following.
@@ -247,7 +247,7 @@ typedef struct {
 typedef struct {
     PFface face;                        ///< Face(s) whose material color must be followed
     PFenum mode;                        ///< Material color which must follow the current color (see 'pfColorMaterial')
-} PFmatcolfollowing;
+} PFImatcolfollowing;
 
 /**
  * @brief Structure representing fog properties.
@@ -258,7 +258,7 @@ typedef struct {
     PFfloat start;                     ///< Distance at which fog starts
     PFfloat end;                       ///< Distance at which fog ends
     PFcolor color;                     ///< Color of the fog
-} PFfog;
+} PFIfog;
 
 /**
  * @brief Structure representing the main rendering context of the library.
@@ -271,12 +271,12 @@ typedef struct {
     PFMmat4 *currentMatrix;                                 ///< Pointer to the current matrix
     void *auxFramebuffer;                                   ///< Auxiliary buffer for double buffering
 
-    PFblendfunc blendFunction;                              ///< SISD Blend function for color blending
-    PFdepthfunc depthFunction;                              ///< SISD Function for depth testing
+    PFIblendfunc blendFunction;                              ///< SISD Blend function for color blending
+    PFIdepthfunc depthFunction;                              ///< SISD Function for depth testing
 
 #if PF_SIMD_SUPPORT
-    PFblendfunc_simd blendSimdFunction;                     ///< SIMD Blend function for color blending
-    PFdepthfunc_simd depthSimdFunction;                     ///< SIMD Function for depth testing
+    PFIblendfunc_simd blendSimdFunction;                     ///< SIMD Blend function for color blending
+    PFIdepthfunc_simd depthSimdFunction;                     ///< SIMD Function for depth testing
 #endif //PF_SIMD_SUPPORT
 
     PFint vpPos[2];                                         ///< Represents the top-left corner of the viewport
@@ -284,8 +284,8 @@ typedef struct {
     PFint vpMin[2];                                         ///< Represents the minimum renderable point of the viewport (top-left)
     PFint vpMax[2];                                         ///< Represents the maximum renderable point of the viewport (bottom-right)
 
-    PFvertexattribs vertexAttribs;                          ///< Vertex attributes used by 'pfDrawArrays' or 'pfDrawElements' (e.g., normal, texture coordinates)
-    PFvertex vertexBuffer[6];                               ///< Buffer used for storing primitive vertices, used for processing and rendering
+    PFIvertexattribs vertexAttribs;                          ///< Vertex attributes used by 'pfDrawArrays' or 'pfDrawElements' (e.g., normal, texture coordinates)
+    PFIvertex vertexBuffer[6];                               ///< Buffer used for storing primitive vertices, used for processing and rendering
     PFsizei vertexCounter;                                  ///< Number of vertices in 'ctx.vertexBuffer'
 
     PFMvec3 currentNormal;                                  ///< Current normal assigned by 'pfNormal'                  - (Stored in 'ctx.vertexBuffer' after the call to 'pfVertex')
@@ -307,13 +307,13 @@ typedef struct {
     PFdrawmode currentDrawMode;                             ///< Current drawing mode (e.g., lines, triangles)
     PFpolygonmode polygonMode[2];                           ///< Polygon mode for faces [0: front] [1: back]
 
-    PFmaterial faceMaterial[2];                             ///< Material properties for faces [0: front] [1: back]
-    PFmatcolfollowing materialColorFollowing;               ///< Material color which must follow the current color (see 'pfColorMaterial')
+    PFImaterial faceMaterial[2];                             ///< Material properties for faces [0: front] [1: back]
+    PFImatcolfollowing materialColorFollowing;               ///< Material color which must follow the current color (see 'pfColorMaterial')
 
-    PFlight lights[PF_MAX_LIGHT_STACK];                     ///< Array of lights
-    PFlight *activeLights;                                  ///< Pointer to the currently active light in the list of lights (see PFlight->next)
+    PFIlight lights[PF_MAX_LIGHT_STACK];                     ///< Array of lights
+    PFIlight *activeLights;                                  ///< Pointer to the currently active light in the list of lights (see PFIlight->next)
 
-    PFfog fog;                                              ///< Fog properties (see PFfog)
+    PFIfog fog;                                              ///< Fog properties (see PFIfog)
 
     PFMmat4 matProjection;                                  ///< Projection matrix, user adjustable
     PFMmat4 matTexture;                                     ///< Texture matrix, user adjustable
@@ -339,17 +339,17 @@ typedef struct {
     PFerrcode errCode;                                      ///< Last error code
     PFuint state;                                           ///< Current context state
 
-} PFctx;
+} PFIctx;
 
 
 /* Current thread local-thread declaration */
 
-extern PF_CTX_DECL PFctx *G_currentCtx;
+extern PF_CTX_DECL PFIctx *G_currentCtx;
 
 
 /* Internal context functions */
 
-void pfiHomogeneousToScreen(PFvertex* v);
+void pfiHomogeneousToScreen(PFIvertex* v);
 void pfiProcessAndRasterize(void);
 
 
