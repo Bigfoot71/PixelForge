@@ -22,6 +22,7 @@
 
 #include "../../pixelforge.h"
 #include "../config.h"
+#include "../vector.h"
 #include "../../pfm.h"
 #include "../color.h"
 #include "../simd.h"
@@ -261,6 +262,64 @@ typedef struct {
 } PFIfog;
 
 /**
+ * @brief Internal structure representing a single render call within a render list.
+ *
+ * This structure holds all the information needed for a single rendering operation.
+ * It is used internally by the rendering engine to store the state and data associated
+ * with a specific rendering command. Each render call corresponds to a specific set of 
+ * vertices, textures, materials, and other attributes that define how an object is rendered.
+ *
+ * This structure is typically created when a render command is issued and is stored in a render list.
+ * The render list is then executed later to draw the objects as specified by these render calls.
+ */
+typedef struct {
+    PFImaterial faceMaterial[2];  ///< Materials for the front and back faces of the object
+    PFIvector   positions;        ///< Vertex positions for the render call
+    PFIvector   texcoords;        ///< Texture coordinates for each vertex
+    PFIvector   normals;          ///< Normal vectors for each vertex (used for lighting)
+    PFIvector   colors;           ///< Color values for each vertex (used for per-vertex coloring)
+    PFtexture   texture;          ///< Handle to the texture applied to this render call
+    PFdrawmode  drawMode;         ///< Drawing mode (defines how the vertices are interpreted)
+} PFIrendercall;
+
+/**
+ * @brief Internal representation of a render list.
+ *
+ * `PFIrenderlist` is a type alias for `PFIvector`, which represents a dynamic collection of `PFIrendercall` structures.
+ * This type is used internally to store a sequence of rendering commands (render calls).
+ *
+ * Each element of this vector corresponds to a single render call, which contains the necessary 
+ * information (such as vertex positions, normals, textures, etc.) to render a specific object or part of an object.
+ *
+ * Render lists are compiled by the user through the API (`pfNewList`, `pfEndList`, etc.), and then executed 
+ * later with `pfCallList`. The underlying `PFIvector` allows for efficient dynamic storage and retrieval of 
+ * these render commands.
+ */
+typedef PFIvector PFIrenderlist;
+
+/**
+ * @brief Structure for backing up the current rendering context state.
+ *
+ * This structure is used to save the state of the rendering context before 
+ * starting the recording of a render list with `pfNewList`. Once the list recording 
+ * is complete (`pfEndList`), the saved state can be restored to ensure the rendering 
+ * context returns to its previous configuration.
+ *
+ * Fields in this structure represent the current state of the materials, texture 
+ * coordinates, normals, vertex colors, and other settings at the time the context 
+ * is backed up. This allows the rendering system to preserve the exact state and 
+ * avoid any unintended side effects from recording a render list.
+ */
+typedef struct {
+    PFImaterial faceMaterial[2];   //< Materials for the front and back faces.
+    PFMvec2     currentTexcoord;   //< Current texture coordinate (2D vector).
+    PFMvec3     currentNormal;     //< Current normal vector (3D vector).
+    PFcolor     currentColor;      //< Current vertex color.
+    PFtexture   currentTexture;    //< Handle to the currently bound texture.
+    PFuint      state;             //< Bitfield representing the current state flags.
+} PFIctxbackup;
+
+/**
  * @brief Structure representing the main rendering context of the library.
  * TODO: Reorganize the context structure
  */
@@ -271,12 +330,12 @@ typedef struct {
     PFMmat4 *currentMatrix;                                 ///< Pointer to the current matrix
     void *auxFramebuffer;                                   ///< Auxiliary buffer for double buffering
 
-    PFIblendfunc blendFunction;                              ///< SISD Blend function for color blending
-    PFIdepthfunc depthFunction;                              ///< SISD Function for depth testing
+    PFIblendfunc blendFunction;                             ///< SISD Blend function for color blending
+    PFIdepthfunc depthFunction;                             ///< SISD Function for depth testing
 
 #if PF_SIMD_SUPPORT
-    PFIblendfunc_simd blendSimdFunction;                     ///< SIMD Blend function for color blending
-    PFIdepthfunc_simd depthSimdFunction;                     ///< SIMD Function for depth testing
+    PFIblendfunc_simd blendSimdFunction;                    ///< SIMD Blend function for color blending
+    PFIdepthfunc_simd depthSimdFunction;                    ///< SIMD Function for depth testing
 #endif //PF_SIMD_SUPPORT
 
     PFint vpPos[2];                                         ///< Represents the top-left corner of the viewport
@@ -284,8 +343,8 @@ typedef struct {
     PFint vpMin[2];                                         ///< Represents the minimum renderable point of the viewport (top-left)
     PFint vpMax[2];                                         ///< Represents the maximum renderable point of the viewport (bottom-right)
 
-    PFIvertexattribs vertexAttribs;                          ///< Vertex attributes used by 'pfDrawArrays' or 'pfDrawElements' (e.g., normal, texture coordinates)
-    PFIvertex vertexBuffer[6];                               ///< Buffer used for storing primitive vertices, used for processing and rendering
+    PFIvertexattribs vertexAttribs;                         ///< Vertex attributes used by 'pfDrawArrays' or 'pfDrawElements' (e.g., normal, texture coordinates)
+    PFIvertex vertexBuffer[6];                              ///< Buffer used for storing primitive vertices, used for processing and rendering
     PFsizei vertexCounter;                                  ///< Number of vertices in 'ctx.vertexBuffer'
 
     PFMvec3 currentNormal;                                  ///< Current normal assigned by 'pfNormal'                  - (Stored in 'ctx.vertexBuffer' after the call to 'pfVertex')
@@ -307,13 +366,16 @@ typedef struct {
     PFdrawmode currentDrawMode;                             ///< Current drawing mode (e.g., lines, triangles)
     PFpolygonmode polygonMode[2];                           ///< Polygon mode for faces [0: front] [1: back]
 
-    PFImaterial faceMaterial[2];                             ///< Material properties for faces [0: front] [1: back]
-    PFImatcolfollowing materialColorFollowing;               ///< Material color which must follow the current color (see 'pfColorMaterial')
+    PFImaterial faceMaterial[2];                            ///< Material properties for faces [0: front] [1: back]
+    PFImatcolfollowing materialColorFollowing;              ///< Material color which must follow the current color (see 'pfColorMaterial')
 
-    PFIlight lights[PF_MAX_LIGHT_STACK];                     ///< Array of lights
-    PFIlight *activeLights;                                  ///< Pointer to the currently active light in the list of lights (see PFIlight->next)
+    PFIlight lights[PF_MAX_LIGHT_STACK];                    ///< Array of lights
+    PFIlight *activeLights;                                 ///< Pointer to the currently active light in the list of lights (see PFIlight->next)
 
-    PFIfog fog;                                              ///< Fog properties (see PFIfog)
+    PFIfog fog;                                             ///< Fog properties (see PFIfog)
+
+    PFIrenderlist *currentRenderList;                       ///< Pointer to the render list where we are currently writing (NULL if no list is currently being written)
+    PFIctxbackup ctxBackup;                                 ///< Used to store some context data before writing in a render list, and restore these values ​​after writing
 
     PFMmat4 matProjection;                                  ///< Projection matrix, user adjustable
     PFMmat4 matTexture;                                     ///< Texture matrix, user adjustable
@@ -348,6 +410,9 @@ extern PF_CTX_DECL PFIctx *G_currentCtx;
 
 
 /* Internal context functions */
+
+void pfiMakeContextBackup(void);
+void pfiRestoreContext(void);
 
 void pfiHomogeneousToScreen(PFIvertex* v);
 void pfiProcessAndRasterize(void);

@@ -36,7 +36,7 @@
 
 PF_CTX_DECL PFIctx *G_currentCtx = NULL;
 
-/* Some helper functions */
+/* Some static helper functions */
 
 static void pfiResetVertexBufferForNextElement()
 {
@@ -116,15 +116,14 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
 {
     /* Memory allocation for the context */
 
-    PFIctx *ctx = (PFIctx*)PF_MALLOC(sizeof(PFIctx));
+    PFIctx *ctx = (PFIctx*)PF_CALLOC(sizeof(PFIctx), 1);
     if (!ctx) return NULL;
 
     /* Initialization of the main framebuffer */
 
-    ctx->mainFramebuffer = (PFframebuffer) { 0 };
-    ctx->mainFramebuffer.texture = pfGenTexture(targetBuffer, width, height, format, type);
+    const PFsizei bufferSize = width * height;
 
-    const PFsizei bufferSize = width*height;
+    ctx->mainFramebuffer.texture = pfGenTexture(targetBuffer, width, height, format, type);
     ctx->mainFramebuffer.zbuffer = (PFfloat*)PF_MALLOC(bufferSize * sizeof(PFfloat));
 
     if (!ctx->mainFramebuffer.zbuffer) {
@@ -157,11 +156,11 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
     ctx->depthFunction = pfiDepthTest_LT;
 
 #if PF_SIMD_SUPPORT
-    ctx->depthSimdFunction = pfiDepthTest_LT_simd;
     ctx->blendSimdFunction = pfiBlendAlpha_simd;
+    ctx->depthSimdFunction = pfiDepthTest_LT_simd;
 #endif //PF_SIMD_SUPPORT
 
-    ctx->clearColor = (PFcolor) { 0 };
+    ctx->clearColor = (PFcolor) { 0, 0, 0, 255 };
     ctx->clearDepth = FLT_MAX;
 
     ctx->pointSize = 1.0f;
@@ -172,15 +171,13 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
 
     /* Initialization of vertex attributes */
 
-    memset(ctx->currentNormal, 0, sizeof(PFMvec3));
-    memset(ctx->currentTexcoord, 0, sizeof(PFMvec2));
     ctx->currentColor = (PFcolor) { 255, 255, 255, 255 };
     ctx->vertexCounter = 0;
 
     /* Initialization of raster position */
 
-    memset(ctx->rasterPos, 0, sizeof(PFMvec4));
-    ctx->pixelZoom[0] = ctx->pixelZoom[1] = 1.0f;
+    pfmVec4Set(ctx->rasterPos, 0, 0, 0, 1);
+    pfmVec2Set(ctx->pixelZoom, 1, 1);
 
     /* Initialization of lights */
 
@@ -241,21 +238,8 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
     pfmMat4Identity(ctx->matModel);
     pfmMat4Identity(ctx->matView);
 
-    /* Initialization of matrix stack counters */
-
-    ctx->modelMatrixUsed = PF_FALSE;
-    ctx->stackProjectionCounter = 0;
-    ctx->stackModelviewCounter = 0;
-    ctx->stackTextureCounter = 0;
-
-    /* Initialization of vertex and texture attributes */
-
-    ctx->vertexAttribs = (PFIvertexattribs) { 0 };
-    ctx->currentTexture = NULL;
-
     /* Initialization of the context state */
 
-    ctx->state = 0x00;
     ctx->state |= PF_CULL_FACE;
     ctx->shadingMode = PF_SMOOTH;
     ctx->cullFace = PF_BACK;
@@ -1589,16 +1573,27 @@ void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count)
 
 void pfBegin(PFdrawmode mode)
 {
-    if (mode < PF_POINTS || mode > PF_QUAD_STRIP) {
-        G_currentCtx->errCode = PF_INVALID_ENUM;
-        return;
+    if (G_currentCtx->currentRenderList == NULL) {
+        if (mode < PF_POINTS || mode > PF_QUAD_STRIP) {
+            G_currentCtx->errCode = PF_INVALID_ENUM;
+            return;
+        }
+        pfiUpdateMatrices(!(mode == PF_POINTS || mode == PF_LINES));
+        G_currentCtx->currentDrawMode = mode;
+        G_currentCtx->vertexCounter = 0;
+    } else {
+        PFIrendercall call = {
+            .positions = pfiGenVector(8, sizeof(PFMvec4)),
+            .texcoords = pfiGenVector(8, sizeof(PFMvec2)),
+            .normals = pfiGenVector(8, sizeof(PFMvec3)),
+            .colors = pfiGenVector(8, sizeof(PFcolor)),
+            .faceMaterial[0] = G_currentCtx->faceMaterial[0],
+            .faceMaterial[1] = G_currentCtx->faceMaterial[1],
+            .texture = G_currentCtx->currentTexture,
+            .drawMode = mode,
+        };
+        pfiPushBackVector(G_currentCtx->currentRenderList, &call);
     }
-
-    pfiUpdateMatrices(
-        !(mode == PF_POINTS || mode == PF_LINES));
-
-    G_currentCtx->currentDrawMode = mode;
-    G_currentCtx->vertexCounter = 0;
 }
 
 void pfEnd(void)
@@ -1656,56 +1651,62 @@ void pfVertex4f(PFfloat x, PFfloat y, PFfloat z, PFfloat w)
 
 void pfVertex4fv(const PFfloat* v)
 {
-    // Get the pointer of the current vertex of the batch and pad it with zero
-    PFIvertex *vertex = G_currentCtx->vertexBuffer + (G_currentCtx->vertexCounter++);
+    if (G_currentCtx->currentRenderList == NULL) {
+        // Get the pointer of the current vertex of the batch and pad it with zero
+        PFIvertex *vertex = G_currentCtx->vertexBuffer + (G_currentCtx->vertexCounter++);
 
-    // Fill the vertex with given vertices data
-    memcpy(vertex->position, v, sizeof(PFMvec4));
-    memcpy(vertex->normal, G_currentCtx->currentNormal, sizeof(PFMvec3));
-    memcpy(vertex->texcoord, G_currentCtx->currentTexcoord, sizeof(PFMvec2));
-    memcpy(&vertex->color, &G_currentCtx->currentColor, sizeof(PFcolor));
+        // Fill the vertex with given vertices data
+        memcpy(vertex->position, v, sizeof(PFMvec4));
+        memcpy(vertex->normal, G_currentCtx->currentNormal, sizeof(PFMvec3));
+        memcpy(vertex->texcoord, G_currentCtx->currentTexcoord, sizeof(PFMvec2));
+        memcpy(&vertex->color, &G_currentCtx->currentColor, sizeof(PFcolor));
 
-    // If the number of vertices has reached that necessary for, we process the shape
-    if (G_currentCtx->vertexCounter == pfiGetDrawModeVertexCount(G_currentCtx->currentDrawMode)) {
-        pfiProcessAndRasterize();
-        pfiResetVertexBufferForNextElement();
+        // If the number of vertices has reached that necessary for, we process the shape
+        if (G_currentCtx->vertexCounter == pfiGetDrawModeVertexCount(G_currentCtx->currentDrawMode)) {
+            pfiProcessAndRasterize();
+            pfiResetVertexBufferForNextElement();
+        }
+    } else {
+        PFIrendercall *call = pfiAtVector(
+            G_currentCtx->currentRenderList,
+            G_currentCtx->currentRenderList->size - 1);
+
+        pfiPushBackVector(&call->positions, v);
+        pfiPushBackVector(&call->texcoords, G_currentCtx->currentTexcoord);
+        pfiPushBackVector(&call->normals, G_currentCtx->currentNormal);
+        pfiPushBackVector(&call->colors, &G_currentCtx->currentColor);
     }
 }
 
 // NOTE: Used by `pfColor` to assign material colors
 //       when the `PF_COLOR_MATERIAL` state is enabled.
-static void pfiSetMaterialColor(PFcolor color)
-{
-    PFImaterial *m1 = &G_currentCtx->faceMaterial[PF_FRONT];
-    PFImaterial *m2 = &G_currentCtx->faceMaterial[PF_BACK];
-
-    if (G_currentCtx->materialColorFollowing.face == PF_FRONT) m2 = m1;
-    else if (G_currentCtx->materialColorFollowing.face == PF_BACK) m1 = m2;
-
-    switch (G_currentCtx->materialColorFollowing.mode) {
-        case PF_AMBIENT_AND_DIFFUSE:
-            m1->ambient = m2->ambient = color;
-            m1->diffuse = m2->diffuse = color;
-            break;
-        case PF_AMBIENT:
-            m1->ambient = m2->ambient = color;
-            break;
-        case PF_DIFFUSE:
-            m1->diffuse = m2->diffuse = color;
-            break;
-        case PF_SPECULAR:
-            m1->specular = m2->specular = color;
-            break;
-        case PF_EMISSION:
-            m1->emission = m2->emission = color;
-            break;
-    }
-}
-
 static inline void pfiSetCurrentColor(PFcolor color)
 {
     if (G_currentCtx->state & PF_COLOR_MATERIAL) {
-        pfiSetMaterialColor(color);
+        PFImaterial *m1 = &G_currentCtx->faceMaterial[PF_FRONT];
+        PFImaterial *m2 = &G_currentCtx->faceMaterial[PF_BACK];
+
+        if (G_currentCtx->materialColorFollowing.face == PF_FRONT) m2 = m1;
+        else if (G_currentCtx->materialColorFollowing.face == PF_BACK) m1 = m2;
+
+        switch (G_currentCtx->materialColorFollowing.mode) {
+            case PF_AMBIENT_AND_DIFFUSE:
+                m1->ambient = m2->ambient = color;
+                m1->diffuse = m2->diffuse = color;
+                break;
+            case PF_AMBIENT:
+                m1->ambient = m2->ambient = color;
+                break;
+            case PF_DIFFUSE:
+                m1->diffuse = m2->diffuse = color;
+                break;
+            case PF_SPECULAR:
+                m1->specular = m2->specular = color;
+                break;
+            case PF_EMISSION:
+                m1->emission = m2->emission = color;
+                break;
+        }
     } else {
         G_currentCtx->currentColor = color;
     }
@@ -1887,15 +1888,17 @@ void pfNormal3f(PFfloat x, PFfloat y, PFfloat z)
     G_currentCtx->currentNormal[2] = z;
 
     if (G_currentCtx->state & PF_NORMALIZE) {
-        pfmVec3Normalize(
-            G_currentCtx->currentNormal,
-            G_currentCtx->currentNormal);
+        pfmVec3Normalize(G_currentCtx->currentNormal, G_currentCtx->currentNormal);
     }
 }
 
 void pfNormal3fv(const PFfloat* v)
 {
     memcpy(G_currentCtx->currentNormal, v, sizeof(PFMvec3));
+
+    if (G_currentCtx->state & PF_NORMALIZE) {
+        pfmVec3Normalize(G_currentCtx->currentNormal, G_currentCtx->currentNormal);
+    }
 }
 
 
