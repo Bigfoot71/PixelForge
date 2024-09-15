@@ -34,6 +34,10 @@
 #   define PFM_PI 3.14159265358979323846
 #endif //PFM_PI
 
+#ifndef PFM_TAU
+#   define PFM_TAU (2.0 * PFM_PI)
+#endif //PFM_PI
+
 #ifndef PFM_DEG2RAD
 #   define PFM_DEG2RAD (PFM_PI / 180.0)
 #endif //PFM_DEG2RAD
@@ -43,7 +47,7 @@
 #endif //PFM_RAD2DEG
 
 #ifndef PFM_FISR
-#   define rsqrtf(x) (1.0f/sqrtf(x))
+#   define rsqrtf(x) (1.0f / sqrtf(x))
 #else
 // NOTE: More useful on older platforms.
 // SEE: http://www.lomont.org/papers/2003/InvSqrt.pdf
@@ -141,6 +145,156 @@ pfmHalfToFloat(uint16_t y)
     union { float f; uint32_t i; } v;
     v.i = pfmHalfToFloatI(y);
     return v.f;
+}
+
+/* Scalar functions */
+
+PFM_API float
+pfmClamp(float x, float min, float max)
+{
+    return x < min ? min : (x > max ? max : x);
+}
+
+float
+pfmSaturate(float x)
+{
+    return x < 0.0f ? 0.0f : (x > 1.0f ? 1.0f : x);
+}
+
+PFM_API float
+pfmWrap(float value, float min, float max)
+{
+    float range = max - min;
+    return min + fmod(value - min, range);
+}
+
+PFM_API float
+pfmWrapAngle(float angle)
+{
+    float wrapped = fmod(angle, PFM_TAU);
+    if (wrapped < -PFM_PI) {
+        wrapped += PFM_TAU;
+    } else if (wrapped > PFM_PI) {
+        wrapped -= PFM_TAU;
+    }
+    return wrapped;
+}
+
+PFM_API float
+pfmNormalize(float value, float start, float end)
+{
+    return (value - start) / (end - start);
+}
+
+PFM_API float
+pfmRemap(float value, float input_start, float input_end, float output_start, float output_end)
+{
+    return (value - input_start) / (input_end - input_start) * (output_end - output_start) + output_start;
+}
+
+PFM_API float
+pfmFract(float x)
+{
+    return x - floorf(x);
+}
+
+PFM_API float
+pfmStep(float edge, float x)
+{
+    return (x < edge) ? 0.0 : 1.0;
+}
+
+PFM_API int
+pfmSign(int x)
+{
+    return (x > 0) - (x < 0);
+}
+
+PFM_API int
+pfmApprox(float a, float b, float epsilon)
+{
+    return fabsf(a - b) < epsilon;
+}
+
+PFM_API float
+pfmLerp(float a, float b, float t)
+{
+    return a + t * (b - a);
+}
+
+PFM_API float
+pfmLerpAngle(float a, float b, float t)
+{
+    float diff = pfmWrapAngle(b - a);
+    return a + diff * t;
+}
+
+PFM_API float
+pfmInverseLerp(float a, float b, float value)
+{
+    return (value - a) / (b - a);
+}
+
+PFM_API float
+pfmSmoothstep(float edge0, float edge1, float x)
+{
+    float t = (x - edge0) / (edge1 - edge0);
+    t = t < 0.0 ? 0.0 : (t > 1.0 ? 1.0 : t);
+    return t * t * t * (t * (t * 6 - 15) + 10);
+}
+
+PFM_API float
+pfmExpDecay(float initial, float decay_rate, float time)
+{
+    return initial * expf(-decay_rate * time);
+}
+
+PFM_API float
+pfmMoveTowards(float current, float target, float max_delta)
+{
+    float delta = target - current;
+    float distance = fabsf(delta);
+    if (distance <= max_delta) {
+        return target;
+    } else {
+        return current + (delta / distance) * max_delta;
+    }
+}
+
+PFM_API uint64_t
+pfmNextPOT(uint64_t x)
+{
+    if (x == 0) return 1;
+    x--;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    x |= x >> 32;
+    x++;
+    return x;
+}
+
+PFM_API uint64_t
+pfmPreviousPOT(uint64_t x)
+{
+    if (x == 0) return 0;
+    x |= x >> 1;
+    x |= x >> 2;
+    x |= x >> 4;
+    x |= x >> 8;
+    x |= x >> 16;
+    x |= x >> 32;
+    return x - (x >> 1);
+}
+
+PFM_API uint64_t
+pfmNearestPOT(uint64_t x)
+{
+    uint64_t next = pfmNextPOT(x);
+    uint64_t prev = pfmPreviousPOT(x);
+    return (x - prev < next - x) ? prev : next;
 }
 
 /* 2D Vector function definitions */
