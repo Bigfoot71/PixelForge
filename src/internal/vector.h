@@ -13,24 +13,6 @@ typedef struct {
     PFsizei elemSize;   // Size of an element (in bytes)
 } PFIvector;
 
-
-// NOTE: Undef at the end of the file
-#define NEXT_POT(x) \
-    ((x) == 0 ? 1 : ({ \
-        unsigned n = (x); \
-        if ((n & (n - 1)) == 0) n *= 2; \
-        else { \
-            n--; \
-            n |= n >> 1; \
-            n |= n >> 2; \
-            n |= n >> 4; \
-            n |= n >> 8; \
-            n |= n >> 16; \
-            n++; \
-        } \
-        n; \
-    }))
-
 static inline PFIvector
 pfiGenVector(PFsizei capacity, PFsizei elemSize)
 {
@@ -142,7 +124,7 @@ pfiClearVector(PFIvector* vec)
 static inline void
 pfiFillVector(PFIvector* vec, const void* data)
 {
-    const void *end = vec->data + vec->capacity * vec->elemSize;
+    const void *end = (PFubyte*)vec->data + vec->capacity * vec->elemSize;
     for (PFbyte *ptr = vec->data; (void*)ptr < end; ptr += vec->elemSize) {
         memcpy(ptr, data, vec->elemSize);
     }
@@ -159,7 +141,7 @@ pfiInsertToVector(PFIvector* vec, PFsizei index, const void* elements, PFsizei c
     PFsizei new_size = vec->size + count;
 
     if (new_size > vec->capacity) {
-        if (pfiResizeVector(vec, NEXT_POT(new_size)) != 0) {
+        if (pfiResizeVector(vec, pfiNextPot(new_size)) != 0) {
             return -2;
         }
     }
@@ -196,7 +178,7 @@ static inline PFint
 pfiPushBackVector(PFIvector* vec, const void *element)
 {
     if (vec->size >= vec->capacity) {
-        if (pfiResizeVector(vec, NEXT_POT(vec->capacity)) != 0) {
+        if (pfiResizeVector(vec, pfiNextPot(vec->capacity)) != 0) {
             return -1;
         }
     }
@@ -212,7 +194,7 @@ static inline PFint
 pfiPushFrontVector(PFIvector* vec, const void *element)
 {
     if (vec->size >= vec->capacity) {
-        if (pfiResizeVector(vec, NEXT_POT(vec->capacity)) != 0) {
+        if (pfiResizeVector(vec, pfiNextPot(vec->capacity)) != 0) {
             return -1;
         }
     }
@@ -240,7 +222,7 @@ pfiPushAtVector(PFIvector* vec, PFsizei index, const void* element)
     }
 
     if (vec->size >= vec->capacity) {
-        if (pfiResizeVector(vec, NEXT_POT(vec->capacity)) != 0) {
+        if (pfiResizeVector(vec, pfiNextPot(vec->capacity)) != 0) {
             return -2;
         }
     }
@@ -332,7 +314,5 @@ pfiAtVector(PFIvector* vec, PFsizei index)
     if (index >= vec->size) return NULL;
     return (PFbyte*)vec->data + index * vec->elemSize;
 }
-
-#undef NEXT_POT
 
 #endif //VEC_H
