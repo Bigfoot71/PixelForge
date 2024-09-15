@@ -1,10 +1,11 @@
+#include "pixelforge.h"
 #define PF_RAYLIB_COMMON_IMPL
 #include "raylib_common.h"
 
 #define SCREEN_WIDTH    600
 #define SCREEN_HEIGHT   600
 
-static void Gear_Draw(float innerRadius, float outerRadius, float width, int teeth, float toothDepth)
+static void Gear(float innerRadius, float outerRadius, float width, int teeth, float toothDepth)
 {
     int i;
     float r0, r1, r2;
@@ -120,26 +121,65 @@ static void Gear_Draw(float innerRadius, float outerRadius, float width, int tee
     pfEnd();
 }
 
-
 /* Program */
 
+static PFrenderlist gear1, gear2, gear3;
 static float viewRotX = 20.0f;
 static float viewRotY = 30.0f;
 static float viewRotZ = 0.0f;
 static float angle = 0.0f;
 
-void Gears_Init(void)
+static void InitScene(void)
 {
-    PFMvec3 pos = { 5.0f, 5.0f, 10.0f };
+	static PFfloat pos[4] = {5, 5, 10, 0.0};
 
-    pfLightfv(PF_LIGHT0, PF_POSITION, pos);
-    pfEnable(PF_CULL_FACE);
+	static PFfloat red[4] = {1.0, 0.0, 0.0, 0.0};
+	static PFfloat green[4] = {0.0, 1.0, 0.0, 0.0};
+	static PFfloat blue[4] = {0.0, 0.0, 1.0, 0.0};
+	static PFfloat white[4] = {1.0, 1.0, 1.0, 0.0};
+
+	static PFfloat shininess = 5;
+
     pfEnable(PF_LIGHTING);
-    pfEnableLight(PF_LIGHT0);
-    pfEnable(PF_DEPTH_TEST);
+	pfEnable(PF_CULL_FACE);
+	pfEnable(PF_DEPTH_TEST);
+
+	pfEnableLight(PF_LIGHT0);
+	pfLightfv(PF_LIGHT0, PF_POSITION, pos);
+	pfLightfv(PF_LIGHT0, PF_DIFFUSE, white);
+	// pfLightfv(PF_LIGHT0, PF_AMBIENT, white);
+	pfLightfv(PF_LIGHT0, PF_SPECULAR, white);
+
+	// Make the gears
+	gear1 = pfGenList();
+	pfNewList(gear1);
+	pfMaterialfv(PF_FRONT, PF_DIFFUSE, red);
+	pfMaterialfv(PF_FRONT, PF_SPECULAR, white);
+	pfMaterialfv(PF_FRONT, PF_SHININESS, &shininess);
+	pfColor3fv(red);
+	Gear(1.0, 4.0, 1.0, 20, 0.7); // The largest gear.
+	pfEndList();
+
+	gear2 = pfGenList();
+	pfNewList(gear2);
+	pfMaterialfv(PF_FRONT, PF_DIFFUSE, green);
+	pfMaterialfv(PF_FRONT, PF_SPECULAR, white);
+	pfColor3fv(green);
+	Gear(0.5, 2.0, 2.0, 10, 0.7); // The small gear with the smaller hole, to the right.
+	pfEndList();
+
+	gear3 = pfGenList();
+	pfNewList(gear3);
+	pfMaterialfv(PF_FRONT, PF_DIFFUSE, blue);
+	pfMaterialfv(PF_FRONT, PF_SPECULAR, white);
+	pfColor3fv(blue);
+	Gear(1.3, 2.0, 0.5, 10, 0.7); // The small gear above with the large hole.
+	pfEndList();
+
+	// pfEnable(PF_NORMALIZE);
 }
 
-void Gears_Reshape(int width, int height)
+void Reshape(int width, int height)
 {
     float aspectRatio = (float)height / width;
 
@@ -152,71 +192,63 @@ void Gears_Reshape(int width, int height)
     pfTranslatef(0.0f, 0.0f, -40.0f);
 }
 
-void Gears_Draw(void)
+void Draw(void)
 {
-    pfClear(PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT);
+	pfPushMatrix();
+	pfRotatef(viewRotX, 1.0, 0.0, 0.0);
+	pfRotatef(viewRotY, 0.0, 1.0, 0.0);
+	pfRotatef(viewRotZ, 0.0, 0.0, 1.0 );
 
-    pfEnable(PF_COLOR_MATERIAL);
-    pfColorMaterial(PF_FRONT_AND_BACK, PF_AMBIENT_AND_DIFFUSE);
+	pfPushMatrix();
+	pfTranslatef(-3.0, -2.0, 0.0);
+	pfRotatef(angle, 0.0, 0.0, 1.0);
+	pfCallList(gear1);
+	pfPopMatrix();
 
-    pfPushMatrix();
+	pfPushMatrix();
+	pfTranslatef(3.1, -2.0, 0.0);
+	pfRotatef(-2.0 * angle - 9.0, 0.0, 0.0, 1.0);
+	pfCallList(gear2);
+	pfPopMatrix();
 
-        pfRotatef(viewRotX, 1.0f, 0.0f, 0.0f);
-        pfRotatef(viewRotY, 0.0f, 1.0f, 0.0f);
-        pfRotatef(viewRotZ, 0.0f, 0.0f, 1.0f);
+	pfPushMatrix();
+	pfTranslatef(-3.1, 4.2, 0.0);
+	pfRotatef(-2.0 * angle - 25.0, 0.0, 0.0, 1.0);
+	pfCallList(gear3);
+	pfPopMatrix();
 
-        pfPushMatrix();
-            pfTranslatef(-3.0f, -2.0f, 0.0f);
-            pfRotatef(angle, 0.0f, 0.0f, 1.0f);
-            pfColor3ub(255, 0, 0);
-            Gear_Draw(1.0f, 4.0f, 1.0f, 20, 0.7f);
-        pfPopMatrix();
-
-        pfPushMatrix();
-            pfTranslatef(3.1f, -2.0f, 0.0f);
-            pfRotatef(-2.0f*angle-9.0f, 0.0f, 0.0f, 1.0f);
-            pfColor3ub(0, 255, 0);
-            Gear_Draw(0.5f, 2.0f, 2.0f, 10, 0.7f);
-        pfPopMatrix();
-
-        pfPushMatrix();
-            pfTranslatef(-3.1f, 4.2, 0.0f);
-            pfRotatef(-2.0f*angle-25.0f, 0.0f, 0.0f, 1.0f);
-            pfColor3ub(0, 0, 255);
-            Gear_Draw(1.3f, 2.0f, 0.5f, 10, 0.7f);
-        pfPopMatrix();
-
-    pfPopMatrix();
-
-    pfDisable(PF_COLOR_MATERIAL);
+	pfPopMatrix();
 }
 
 int main(void)
 {
     // Init raylib window and set target FPS
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "PixelForge - Gears");
-    SetTargetFPS(60);
 
     // Create a rendering buffer in RAM as well as in VRAM (see raylib_common.h)
     PF_TargetBuffer target = PF_LoadTargetBuffer(SCREEN_WIDTH, SCREEN_HEIGHT);
     PFcontext ctx = PF_InitFromTargetBuffer(target); // PixelForge context
 
     // Init and reshape
-    Gears_Init();
-    Gears_Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
+    InitScene();
+    Reshape(SCREEN_WIDTH, SCREEN_HEIGHT);
 
     while (!WindowShouldClose())
     {
-        if (IsKeyDown(KEY_UP)) viewRotX += 5.0f;
-        if (IsKeyDown(KEY_DOWN)) viewRotX -= 5.0f;
-        if (IsKeyDown(KEY_LEFT)) viewRotY += 5.0f;
-        if (IsKeyDown(KEY_RIGHT)) viewRotY -= 5.0f;
-        if (IsKeyDown(KEY_Z) && !IsKeyDown(KEY_LEFT_SHIFT)) viewRotZ += 5.0f;
-        if (IsKeyDown(KEY_Z) && IsKeyDown(KEY_LEFT_SHIFT)) viewRotZ -= 5.0f;
+        float dt = GetFrameTime();
 
-        // Update and draw
-        angle += 90 * GetFrameTime();
-        Gears_Draw();
+        // Update
+        angle += 90 * dt;
+        if (IsKeyDown(KEY_UP)) viewRotX += 180.0f * dt;
+        if (IsKeyDown(KEY_DOWN)) viewRotX -= 180.0f * dt;
+        if (IsKeyDown(KEY_LEFT)) viewRotY += 180.0f * dt;
+        if (IsKeyDown(KEY_RIGHT)) viewRotY -= 180.0f * dt;
+        if (IsKeyDown(KEY_A)) viewRotZ += 180.0f * dt;
+        if (IsKeyDown(KEY_D)) viewRotZ -= 180.0f * dt;
+
+        // Draw
+        pfClear(PF_COLOR_BUFFER_BIT | PF_DEPTH_BUFFER_BIT);
+        Draw();
 
         // Texture rendering via raylib
         BeginDrawing();
@@ -225,6 +257,11 @@ int main(void)
             DrawFPS(10, 10);
         EndDrawing();
     }
+
+    // Unload render lists
+    pfDeleteList(gear1);
+    pfDeleteList(gear2);
+    pfDeleteList(gear3);
 
     // Unload the PixelForge context and the target buffer
     pfDeleteContext(ctx);
