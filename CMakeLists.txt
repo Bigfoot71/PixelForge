@@ -63,12 +63,13 @@ else()
 endif()
 
 # Check for OpenMP support
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_C)
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-        target_compile_options(${PROJECT_NAME} PRIVATE /openmp:experimental)
+if (NOT "${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+    find_package(OpenMP)
+    if (OPENMP_FOUND)
+        target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_C)
     endif()
+else()
+    message(STATUS "OpenMP not used with MSVC")
 endif()
 
 # Installation if option is enabled
