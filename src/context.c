@@ -188,8 +188,8 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
         ctx->lights[i] = (PFlight) {
             .position = { 0 },
             .direction = { 0 },
-            .innerCutOff = (PFfloat)M_PI,
-            .outerCutOff = (PFfloat)M_PI,
+            .innerCutOff = (PFfloat)PFM_PI,
+            .outerCutOff = (PFfloat)PFM_PI,
             .attConstant = 1,
             .attLinear = 0,
             .attQuadratic = 0,
@@ -528,7 +528,7 @@ void pfRotatef(PFfloat angle, PFfloat x, PFfloat y, PFfloat z)
     PFMvec3 axis = { x, y, z }; // TODO: review
 
     PFMmat4 rotation;
-    pfmMat4Rotate(rotation, axis, DEG2RAD(angle));
+    pfmMat4Rotate(rotation, axis, PFM_DEG2RAD(angle));
 
     // NOTE: We transpose matrix with multiplication order
     pfmMat4Mul(*G_currentCtx->currentMatrix, rotation, *G_currentCtx->currentMatrix);
@@ -578,11 +578,11 @@ void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height)
     G_currentCtx->vpDim[0] = width - 1;
     G_currentCtx->vpDim[1] = height - 1;
 
-    G_currentCtx->vpMin[0] = MAX(x, 0);
-    G_currentCtx->vpMin[1] = MAX(y, 0);
+    G_currentCtx->vpMin[0] = PF_MAX(x, 0);
+    G_currentCtx->vpMin[1] = PF_MAX(y, 0);
 
-    G_currentCtx->vpMax[0] = MIN(x + width, ((struct PFtex*)G_currentCtx->mainFramebuffer.texture)->w - 1);
-    G_currentCtx->vpMax[1] = MIN(y + height, ((struct PFtex*)G_currentCtx->mainFramebuffer.texture)->h - 1);
+    G_currentCtx->vpMax[0] = PF_MIN(x + width, ((struct PFtex*)G_currentCtx->mainFramebuffer.texture)->w - 1);
+    G_currentCtx->vpMax[1] = PF_MIN(y + height, ((struct PFtex*)G_currentCtx->mainFramebuffer.texture)->h - 1);
 }
 
 void pfPolygonMode(PFface face, PFpolygonmode mode)
@@ -888,14 +888,14 @@ void pfLightf(PFsizei light, PFenum param, PFfloat value)
     switch (param) {
         case PF_SPOT_INNER_CUTOFF:
             if ((value >= 0 && value <= 90) || value == 180) {
-                l->innerCutOff = cosf(DEG2RAD(value));
+                l->innerCutOff = cosf(PFM_DEG2RAD(value));
             } else {
                 G_currentCtx->errCode = PF_INVALID_VALUE;
             }
             break;
         case PF_SPOT_OUTER_CUTOFF:
             if ((value >= 0 && value <= 90) || value == 180) {
-                l->outerCutOff = cosf(DEG2RAD(value));
+                l->outerCutOff = cosf(PFM_DEG2RAD(value));
             } else {
                 G_currentCtx->errCode = PF_INVALID_VALUE;
             }
@@ -935,7 +935,7 @@ void pfLightfv(PFsizei light, PFenum param, const void* value)
         case PF_SPOT_INNER_CUTOFF: {
             PFfloat v = *(PFfloat*)value;
             if ((v >= 0 && v <= 90) || v == 180) {
-                l->innerCutOff = cosf(DEG2RAD(v));
+                l->innerCutOff = cosf(PFM_DEG2RAD(v));
             } else {
                 G_currentCtx->errCode = PF_INVALID_VALUE;
             }
@@ -944,7 +944,7 @@ void pfLightfv(PFsizei light, PFenum param, const void* value)
         case PF_SPOT_OUTER_CUTOFF: {
             PFfloat v = *(PFfloat*)value;
             if ((v >= 0 && v <= 90) || v == 180) {
-                l->outerCutOff = cosf(DEG2RAD(v));
+                l->outerCutOff = cosf(PFM_DEG2RAD(v));
             } else {
                 G_currentCtx->errCode = PF_INVALID_VALUE;
             }
@@ -1943,10 +1943,10 @@ void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2)
     if (iY2 < iY1) iY1 ^= iY2, iY2 ^= iY1, iY1 ^= iY2;
 
     // Clamp screen coordinates to viewport boundaries
-    iX1 = CLAMP(iX1, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
-    iY1 = CLAMP(iY1, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
-    iX2 = CLAMP(iX2, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
-    iY2 = CLAMP(iY2, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
+    iX1 = PF_CLAMP(iX1, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
+    iY1 = PF_CLAMP(iY1, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
+    iX2 = PF_CLAMP(iX2, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
+    iY2 = PF_CLAMP(iY2, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
 
     // Retrieve framebuffer texture and current drawing color tint
     struct PFtex *tex = G_currentCtx->currentFramebuffer->texture;
@@ -2007,10 +2007,10 @@ void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PFdatatyp
     PFfloat zPos = rasterPos[2]; // Z position remains unchanged
 
     // Calculate the destination rectangle (clipped to viewport boundaries)
-    PFint xMin = CLAMP(xScreen, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
-    PFint yMin = CLAMP(yScreen, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
-    PFint xMax = CLAMP(xScreen + width*G_currentCtx->pixelZoom[0], G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
-    PFint yMax = CLAMP(yScreen + height*G_currentCtx->pixelZoom[1], G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
+    PFint xMin = PF_CLAMP(xScreen, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
+    PFint yMin = PF_CLAMP(yScreen, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
+    PFint xMax = PF_CLAMP(xScreen + width*G_currentCtx->pixelZoom[0], G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
+    PFint yMax = PF_CLAMP(yScreen + height*G_currentCtx->pixelZoom[1], G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
 
     // Calculate inverse lengths for texture sampling
     PFfloat invXLen = 1.0f/(PFfloat)(width*G_currentCtx->pixelZoom[0]);
@@ -2355,10 +2355,10 @@ void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat
 
     /* Calculate the minimum and maximum coordinates of the region to be read */
 
-    PFsizei xMin = CLAMP(x, 0, (PFint)texSrc->w - 1);
-    PFsizei yMin = CLAMP(y, 0, (PFint)texSrc->h - 1);
-    PFsizei xMax = CLAMP(x + (PFint)width, 0, (PFint)texSrc->w);
-    PFsizei yMax = CLAMP(y + (PFint)height, 0, (PFint)texSrc->h);
+    PFsizei xMin = PF_CLAMP(x, 0, (PFint)texSrc->w - 1);
+    PFsizei yMin = PF_CLAMP(y, 0, (PFint)texSrc->h - 1);
+    PFsizei xMax = PF_CLAMP(x + (PFint)width, 0, (PFint)texSrc->w);
+    PFsizei yMax = PF_CLAMP(y + (PFint)height, 0, (PFint)texSrc->h);
 
     /* Reads pixels from the framebuffer and copies them to the destination */
 

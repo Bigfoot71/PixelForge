@@ -79,7 +79,7 @@ void PF_DrawTexture(PFtexture texture, PFfloat x, PFfloat y, PFfloat width, PFfl
 
 void PF_DrawTextureEx(PFtexture texture, PFfloat x, PFfloat y, PFfloat width, PFfloat height, PFfloat ox, PFfloat oy, PFfloat angleDegrees)
 {
-    PFfloat angleRadians = DEG2RAD(angleDegrees);
+    PFfloat angleRadians = PFM_DEG2RAD(angleDegrees);
     PFfloat c = cos(angleRadians);
     PFfloat s = sin(angleRadians);
 
@@ -126,7 +126,7 @@ void PF_Begin3D(PFuint width, PFuint height, PFdouble fovy)
     pfLoadIdentity();
 
     PFdouble aspect = (PFdouble)width/(PFdouble)height;
-    PFdouble top = 0.01*tan(DEG2RAD(fovy*0.5));
+    PFdouble top = 0.01*tan(PFM_DEG2RAD(fovy*0.5));
     PFdouble right = top*aspect;
 
     pfFrustum(-right, right, -top, top, 0.01, 1000.0);

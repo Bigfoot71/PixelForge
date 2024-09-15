@@ -245,10 +245,10 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
     switch (pname)
     {
         case PF_COLOR_CLEAR_VALUE:
-            params[0] = G_currentCtx->clearColor.r*(PFfloat)INV_255;
-            params[1] = G_currentCtx->clearColor.g*(PFfloat)INV_255;
-            params[2] = G_currentCtx->clearColor.b*(PFfloat)INV_255;
-            params[3] = G_currentCtx->clearColor.a*(PFfloat)INV_255;
+            params[0] = G_currentCtx->clearColor.r*(PFfloat)PF_INV_255;
+            params[1] = G_currentCtx->clearColor.g*(PFfloat)PF_INV_255;
+            params[2] = G_currentCtx->clearColor.b*(PFfloat)PF_INV_255;
+            params[3] = G_currentCtx->clearColor.a*(PFfloat)PF_INV_255;
             break;
 
         case PF_DEPTH_CLEAR_VALUE:
@@ -256,10 +256,10 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
             break;
 
         case PF_CURRENT_COLOR:
-            params[0] = G_currentCtx->currentColor.r*(PFfloat)INV_255;
-            params[1] = G_currentCtx->currentColor.g*(PFfloat)INV_255;
-            params[2] = G_currentCtx->currentColor.b*(PFfloat)INV_255;
-            params[3] = G_currentCtx->currentColor.a*(PFfloat)INV_255;
+            params[0] = G_currentCtx->currentColor.r*(PFfloat)PF_INV_255;
+            params[1] = G_currentCtx->currentColor.g*(PFfloat)PF_INV_255;
+            params[2] = G_currentCtx->currentColor.b*(PFfloat)PF_INV_255;
+            params[3] = G_currentCtx->currentColor.a*(PFfloat)PF_INV_255;
             break;
 
         case PF_CURRENT_NORMAL:
@@ -363,10 +363,10 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
     switch (pname)
     {
         case PF_COLOR_CLEAR_VALUE:
-            params[0] = G_currentCtx->clearColor.r*INV_255;
-            params[1] = G_currentCtx->clearColor.g*INV_255;
-            params[2] = G_currentCtx->clearColor.b*INV_255;
-            params[3] = G_currentCtx->clearColor.a*INV_255;
+            params[0] = G_currentCtx->clearColor.r*PF_INV_255;
+            params[1] = G_currentCtx->clearColor.g*PF_INV_255;
+            params[2] = G_currentCtx->clearColor.b*PF_INV_255;
+            params[3] = G_currentCtx->clearColor.a*PF_INV_255;
             break;
 
         case PF_DEPTH_CLEAR_VALUE:
@@ -374,10 +374,10 @@ void pfGetDoublev(PFenum pname, PFdouble* params)
             break;
 
         case PF_CURRENT_COLOR:
-            params[0] = G_currentCtx->currentColor.r*INV_255;
-            params[1] = G_currentCtx->currentColor.g*INV_255;
-            params[2] = G_currentCtx->currentColor.b*INV_255;
-            params[3] = G_currentCtx->currentColor.a*INV_255;
+            params[0] = G_currentCtx->currentColor.r*PF_INV_255;
+            params[1] = G_currentCtx->currentColor.g*PF_INV_255;
+            params[2] = G_currentCtx->currentColor.b*PF_INV_255;
+            params[3] = G_currentCtx->currentColor.a*PF_INV_255;
             break;
 
         case PF_CURRENT_NORMAL:

@@ -89,32 +89,32 @@
 #   define PF_FREE(size) free(size)
 #endif //PF_FREE
 
-#ifndef INV_255
-#   define INV_255 (1.0 / 255)
-#endif //INV_255
+#ifndef PF_INV_255
+#   define PF_INV_255 (1.0 / 255)
+#endif //PF_INV_255
 
-#ifndef MIN_255
-#   define MIN_255(n) ( \
+#ifndef PF_MIN_255
+#   define PF_MIN_255(n) ( \
     (PFubyte)((PFint)(n) | ((255 - (PFint)(n)) >> 31)))
-#endif //MIN_255
+#endif //PF_MIN_255
 
-#ifndef MAX_0
-#   define MAX_0(n) (\
+#ifndef PF_MAX_0
+#   define PF_MAX_0(n) (\
     (PFubyte)((PFint)(n) & -((PFint)(n) >= 0)))
-#endif //MAX_0
+#endif //PF_MAX_0
 
-#ifndef MIN
-#   define MIN(a, b) ((a) < (b) ? (a) : (b))
-#endif //MIN
+#ifndef PF_MIN
+#   define PF_MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif //PF_MIN
 
-#ifndef MAX
-#   define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif //MAX
+#ifndef PF_MAX
+#   define PF_MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif //PF_MAX
 
-#ifndef CLAMP
-#   define CLAMP(x, min, max) ( \
+#ifndef PF_CLAMP
+#   define PF_CLAMP(x, min, max) ( \
     (x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
-#endif // CLAMP
+#endif // PF_CLAMP
 
 /* Types definitions */
 

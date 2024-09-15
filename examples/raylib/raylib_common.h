@@ -181,7 +181,7 @@ void PF_BeginMode3D(Camera3D camera)
     if (camera.projection == CAMERA_PERSPECTIVE)
     {
         // Setup perspective projection
-        double top = 0.01*tan(DEG2RAD(camera.fovy*0.5));
+        double top = 0.01*tan(PFM_DEG2RAD(camera.fovy*0.5));
         double right = top*aspect;
 
         pfFrustum(-right, right, -top, top, 0.01, 1000.0);
@@ -296,7 +296,7 @@ void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float r
     // Calculate transformation matrix from function parameters
     // Get transform matrix (rotation -> scale -> translation)
     Matrix matScale = MatrixScale(scale.x, scale.y, scale.z);
-    Matrix matRotation = MatrixRotate(rotationAxis, DEG2RAD(rotationAngle));
+    Matrix matRotation = MatrixRotate(rotationAxis, PFM_DEG2RAD(rotationAngle));
     Matrix matTranslation = MatrixTranslate(position.x, position.y, position.z);
 
     Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);

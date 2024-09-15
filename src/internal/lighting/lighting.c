@@ -68,13 +68,13 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
 
         // Spotlight (soft edges)
         PFubyte intensity = 255;
-        if (light->innerCutOff < M_PI) {
+        if (light->innerCutOff < PFM_PI) {
             PFMvec3 negLightDir;
             pfmVec3NegR(negLightDir, light->direction);
 
             PFfloat theta = pfmVec3Dot(L, negLightDir);
             PFfloat epsilon = light->innerCutOff - light->outerCutOff;
-            intensity = (PFubyte)CLAMP((PFint)(255*(theta - light->outerCutOff)/epsilon), 0, 255);
+            intensity = (PFubyte)PF_CLAMP((PFint)(255*(theta - light->outerCutOff)/epsilon), 0, 255);
 
             if (intensity == 0)
                 goto apply_light_contribution;
@@ -99,10 +99,10 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
 
         // Diffuse component
         // Calculate the diffuse reflection of the light
-        PFubyte diff = (PFubyte)MAX((PFint)(255*pfmVec3Dot(N, L)), 0);
-        lR = MIN_255(lR + (diffuse.r*light->diffuse.r*diff)/(255*255));
-        lG = MIN_255(lG + (diffuse.g*light->diffuse.g*diff)/(255*255));
-        lB = MIN_255(lB + (diffuse.b*light->diffuse.b*diff)/(255*255));
+        PFubyte diff = (PFubyte)PF_MAX((PFint)(255*pfmVec3Dot(N, L)), 0);
+        lR = PF_MIN_255(lR + (diffuse.r*light->diffuse.r*diff)/(255*255));
+        lG = PF_MIN_255(lG + (diffuse.g*light->diffuse.g*diff)/(255*255));
+        lB = PF_MIN_255(lB + (diffuse.b*light->diffuse.b*diff)/(255*255));
 
         // Specular component
 #       ifndef PF_PHONG_REFLECTION
@@ -120,9 +120,9 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
             PFubyte spec = 255*powf(fmaxf(pfmVec3Dot(reflectDir, V), 0.0f), shininess);
 #       endif
 
-        lR = MIN_255(lR + (specular.r*light->specular.r*spec)/(255*255));
-        lG = MIN_255(lG + (specular.g*light->specular.g*spec)/(255*255));
-        lB = MIN_255(lB + (specular.b*light->specular.b*spec)/(255*255));
+        lR = PF_MIN_255(lR + (specular.r*light->specular.r*spec)/(255*255));
+        lG = PF_MIN_255(lG + (specular.g*light->specular.g*spec)/(255*255));
+        lB = PF_MIN_255(lB + (specular.b*light->specular.b*spec)/(255*255));
 
         // Apply spotlight soft edges and distance attenuation
         lR = (lR*factor)/255;
@@ -132,9 +132,9 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
         // Add ambient contribution of the light
         // Then add the light's contribution to the final color
         apply_light_contribution:
-        R = MIN_255(R + lR + (aR*light->ambient.r)/255);
-        G = MIN_255(G + lG + (aG*light->ambient.g)/255);
-        B = MIN_255(B + lB + (aB*light->ambient.b)/255);
+        R = PF_MIN_255(R + lR + (aR*light->ambient.r)/255);
+        G = PF_MIN_255(G + lG + (aG*light->ambient.g)/255);
+        B = PF_MIN_255(B + lB + (aB*light->ambient.b)/255);
     }
 
     // Return the final computed color
@@ -217,7 +217,7 @@ void pfiSimdLightingProcess(PFcolor_simd fragments, const PFlight* activeLights,
         }
 
         // Spotlight (soft edges)
-        if (light->innerCutOff < M_PI) {
+        if (light->innerCutOff < PFM_PI) {
             PFsimdv3f negLightDir;
             pfiVec3NegR_simd(negLightDir, lightDir);
 

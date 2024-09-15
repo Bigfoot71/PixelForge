@@ -15,7 +15,7 @@ static void Gear_Draw(float innerRadius, float outerRadius, float width, int tee
     r1 = outerRadius - toothDepth/2.0f;
     r2 = outerRadius + toothDepth/2.0f;
 
-    da = 2.0f*M_PI / teeth / 4.0f;
+    da = 2.0f*PFM_PI / teeth / 4.0f;
 
     pfShadeModel(PF_FLAT);
 
@@ -25,7 +25,7 @@ static void Gear_Draw(float innerRadius, float outerRadius, float width, int tee
     pfBegin(PF_QUAD_STRIP);
         for (i = 0; i <= teeth; i++)
         {
-            angle = i * 2.0f*M_PI / teeth;
+            angle = i * 2.0f*PFM_PI / teeth;
             pfVertex3f(r0*cos(angle), r0*sin(angle), width*0.5f);
             pfVertex3f(r1*cos(angle), r1*sin(angle), width*0.5f);
             pfVertex3f(r0*cos(angle), r0*sin(angle), width*0.5f);
@@ -35,10 +35,10 @@ static void Gear_Draw(float innerRadius, float outerRadius, float width, int tee
 
     // Draw front sides of teeth
     pfBegin(PF_QUADS);
-        da = 2.0f*M_PI / teeth / 4.0f;
+        da = 2.0f*PFM_PI / teeth / 4.0f;
         for (i = 0; i < teeth; i++)
         {
-            angle = i * 2.0f*M_PI / teeth;
+            angle = i * 2.0f*PFM_PI / teeth;
 
             pfVertex3f(r1*cos(angle),      r1*sin(angle),      width*0.5f);
             pfVertex3f(r2*cos(angle+da),   r2*sin(angle+da),   width*0.5f);
@@ -53,7 +53,7 @@ static void Gear_Draw(float innerRadius, float outerRadius, float width, int tee
     pfBegin(PF_QUAD_STRIP);
         for (i = 0; i <= teeth; i++)
         {
-            angle = i * 2.0f*M_PI / teeth;
+            angle = i * 2.0f*PFM_PI / teeth;
             pfVertex3f(r1*cos(angle), r1*sin(angle), -width*0.5f);
             pfVertex3f(r0*cos(angle), r0*sin(angle), -width*0.5f);
             pfVertex3f(r1*cos(angle+3*da), r1*sin(angle+3*da), -width*0.5f);
@@ -63,10 +63,10 @@ static void Gear_Draw(float innerRadius, float outerRadius, float width, int tee
 
     // Draw back sides of teeth
     pfBegin(PF_QUADS);
-    da = 2.0f*M_PI / teeth / 4.0f;
+    da = 2.0f*PFM_PI / teeth / 4.0f;
         for (i = 0; i < teeth; i++)
         {
-            angle = i * 2.0f*M_PI / teeth;
+            angle = i * 2.0f*PFM_PI / teeth;
 
             pfVertex3f(r1*cos(angle+3*da), r1*sin(angle+3*da), -width*0.5f);
             pfVertex3f(r2*cos(angle+2*da), r2*sin(angle+2*da), -width*0.5f);
@@ -79,7 +79,7 @@ static void Gear_Draw(float innerRadius, float outerRadius, float width, int tee
     pfBegin(PF_QUAD_STRIP);
         for (i=0;i<teeth;i++)
         {
-            angle = i * 2.0f*M_PI / teeth;
+            angle = i * 2.0f*PFM_PI / teeth;
 
             pfVertex3f(r1*cos(angle),      r1*sin(angle),       width*0.5f);
             pfVertex3f(r1*cos(angle),      r1*sin(angle),      -width*0.5f);
@@ -112,7 +112,7 @@ static void Gear_Draw(float innerRadius, float outerRadius, float width, int tee
     pfBegin(PF_QUAD_STRIP);
         for (i = 0; i <= teeth; i++)
         {
-            angle = i * 2.0f*M_PI / teeth;
+            angle = i * 2.0f*PFM_PI / teeth;
             pfNormal3f(-cos(angle), -sin(angle), 0.0f);
             pfVertex3f(r0*cos(angle), r0*sin(angle), -width*0.5f);
             pfVertex3f(r0*cos(angle), r0*sin(angle), width*0.5f);

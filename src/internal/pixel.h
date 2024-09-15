@@ -37,39 +37,39 @@
 
 #define PF_COLOR_RGB_NORMALIZE(color)       \
     {                                       \
-        color.r*(PFfloat)INV_255,           \
-        color.g*(PFfloat)INV_255,           \
-        color.b*(PFfloat)INV_255            \
+        color.r*(PFfloat)PF_INV_255,           \
+        color.g*(PFfloat)PF_INV_255,           \
+        color.b*(PFfloat)PF_INV_255            \
     }
 
 #define PF_COLOR_BGR_NORMALIZE(color)       \
     {                                       \
-        color.b*(PFfloat)INV_255,           \
-        color.g*(PFfloat)INV_255,           \
-        color.r*(PFfloat)INV_255            \
+        color.b*(PFfloat)PF_INV_255,           \
+        color.g*(PFfloat)PF_INV_255,           \
+        color.r*(PFfloat)PF_INV_255            \
     }
 
 #define PF_COLOR_RGBA_NORMALIZE(color)      \
     {                                       \
-        color.r*(PFfloat)INV_255,           \
-        color.g*(PFfloat)INV_255,           \
-        color.b*(PFfloat)INV_255,           \
-        color.a*(PFfloat)INV_255            \
+        color.r*(PFfloat)PF_INV_255,           \
+        color.g*(PFfloat)PF_INV_255,           \
+        color.b*(PFfloat)PF_INV_255,           \
+        color.a*(PFfloat)PF_INV_255            \
     }
 
 #define PF_COLOR_BGRA_NORMALIZE(color)      \
     {                                       \
-        color.r*(PFfloat)INV_255,           \
-        color.g*(PFfloat)INV_255,           \
-        color.b*(PFfloat)INV_255,           \
-        color.a*(PFfloat)INV_255            \
+        color.r*(PFfloat)PF_INV_255,           \
+        color.g*(PFfloat)PF_INV_255,           \
+        color.b*(PFfloat)PF_INV_255,           \
+        color.a*(PFfloat)PF_INV_255            \
     }
 
 #define PF_COLOR_GARYSCALE(color)           \
     (                                       \
-        color.r*(PFfloat)INV_255*0.299f +   \
-        color.g*(PFfloat)INV_255*0.587f +   \
-        color.b*(PFfloat)INV_255*0.114f     \
+        color.r*(PFfloat)PF_INV_255*0.299f +   \
+        color.g*(PFfloat)PF_INV_255*0.587f +   \
+        color.b*(PFfloat)PF_INV_255*0.114f     \
     )
 
 /* SET LUMINANCE */
@@ -113,7 +113,7 @@ pfiPixelSet_Luminance_Alpha_HALF(void* pixels, PFsizei offset, PFcolor color)
     // NOTE: Calculate Grayscale equivalent color
     PFushort *pixel = (PFushort*)pixels + 2*offset;
     pixel[0] = pfmFloatToHalf(PF_COLOR_GARYSCALE(color));
-    pixel[1] = pfmFloatToHalf(color.a*(PFfloat)INV_255);
+    pixel[1] = pfmFloatToHalf(color.a*(PFfloat)PF_INV_255);
 }
 
 static inline void
@@ -122,7 +122,7 @@ pfiPixelSet_Luminance_Alpha_FLOAT(void* pixels, PFsizei offset, PFcolor color)
     // NOTE: Calculate Grayscale equivalent color
     PFfloat *pixel = (PFfloat*)pixels + 2*offset;
     pixel[0] = PF_COLOR_GARYSCALE(color);
-    pixel[1] = color.a*(PFfloat)INV_255;
+    pixel[1] = color.a*(PFfloat)PF_INV_255;
 }
 
 /* SET RED/GREEN/BLUE/ALPHA */
@@ -298,7 +298,7 @@ pfiPixelSet_RGBA_USHORT_5_5_5_1(void* pixels, PFsizei offset, PFcolor color)
     PFubyte r = (PFubyte)(roundf(nCol[0]*31.0f));
     PFubyte g = (PFubyte)(roundf(nCol[1]*31.0f));
     PFubyte b = (PFubyte)(roundf(nCol[2]*31.0f));
-    PFubyte a = (nCol[3] > ((PFfloat)PF_RGBA_5_5_5_1_ALPHA_THRESHOLD*INV_255)) ? 1 : 0;
+    PFubyte a = (nCol[3] > ((PFfloat)PF_RGBA_5_5_5_1_ALPHA_THRESHOLD*PF_INV_255)) ? 1 : 0;
 
     ((PFushort*)pixels)[offset] = (PFushort)r << 11 | (PFushort)g << 6 | (PFushort)b << 1 | (PFushort)a;
 }
@@ -312,7 +312,7 @@ pfiPixelSet_BGRA_USHORT_5_5_5_1(void* pixels, PFsizei offset, PFcolor color)
     PFubyte b = (PFubyte)(roundf(nCol[0]*31.0f));
     PFubyte g = (PFubyte)(roundf(nCol[1]*31.0f));
     PFubyte r = (PFubyte)(roundf(nCol[2]*31.0f));
-    PFubyte a = (nCol[3] > ((PFfloat)PF_RGBA_5_5_5_1_ALPHA_THRESHOLD*INV_255)) ? 1 : 0;
+    PFubyte a = (nCol[3] > ((PFfloat)PF_RGBA_5_5_5_1_ALPHA_THRESHOLD*PF_INV_255)) ? 1 : 0;
 
     ((PFushort*)pixels)[offset] = (PFushort)b << 11 | (PFushort)g << 6 | (PFushort)r << 1 | (PFushort)a;
 }

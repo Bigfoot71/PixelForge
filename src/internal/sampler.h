@@ -60,8 +60,8 @@ pfiTexture2DMap_MIRRORED_REPEAT(const struct PFtex* tex, PFint* xOut, PFint* yOu
 static inline void
 pfiTexture2DMap_CLAMP_TO_EDGE(const struct PFtex* tex, PFint* xOut, PFint* yOut, PFfloat u, PFfloat v)
 {
-    u = CLAMP(u, 0.0f, 1.0f);
-    v = CLAMP(v, 0.0f, 1.0f);
+    u = PF_CLAMP(u, 0.0f, 1.0f);
+    v = PF_CLAMP(v, 0.0f, 1.0f);
 
     *xOut = (PFint)(u*((PFint)tex->w - 1) + 0.5f);
     *yOut = (PFint)(v*((PFint)tex->h - 1) + 0.5f);

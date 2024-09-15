@@ -338,16 +338,16 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
         /* Calculate the 2D bounding box of the triangle */
 
-        xMin = (PFsizei)MIN(x1, MIN(x2, x3));
-        yMin = (PFsizei)MIN(y1, MIN(y2, y3));
-        xMax = (PFsizei)MAX(x1, MAX(x2, x3));
-        yMax = (PFsizei)MAX(y1, MAX(y2, y3));
+        xMin = (PFsizei)PF_MIN(x1, PF_MIN(x2, x3));
+        yMin = (PFsizei)PF_MIN(y1, PF_MIN(y2, y3));
+        xMax = (PFsizei)PF_MAX(x1, PF_MAX(x2, x3));
+        yMax = (PFsizei)PF_MAX(y1, PF_MAX(y2, y3));
 
         if (!is3D) {
-            xMin = (PFsizei)CLAMP((PFint)xMin, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
-            yMin = (PFsizei)CLAMP((PFint)yMin, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
-            xMax = (PFsizei)CLAMP((PFint)xMax, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
-            yMax = (PFsizei)CLAMP((PFint)yMax, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
+            xMin = (PFsizei)PF_CLAMP((PFint)xMin, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
+            yMin = (PFsizei)PF_CLAMP((PFint)yMin, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
+            xMax = (PFsizei)PF_CLAMP((PFint)xMax, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
+            yMax = (PFsizei)PF_CLAMP((PFint)yMax, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
         }
 
         /* Barycentric interpolation */
@@ -617,16 +617,16 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
         /* Calculate the 2D bounding box of the triangle */
 
-        xMin = (PFsizei)MIN(x1, MIN(x2, x3));
-        yMin = (PFsizei)MIN(y1, MIN(y2, y3));
-        xMax = (PFsizei)MAX(x1, MAX(x2, x3));
-        yMax = (PFsizei)MAX(y1, MAX(y2, y3));
+        xMin = (PFsizei)PF_MIN(x1, PF_MIN(x2, x3));
+        yMin = (PFsizei)PF_MIN(y1, PF_MIN(y2, y3));
+        xMax = (PFsizei)PF_MAX(x1, PF_MAX(x2, x3));
+        yMax = (PFsizei)PF_MAX(y1, PF_MAX(y2, y3));
 
         if (!is3D) {
-            xMin = (PFsizei)CLAMP((PFint)xMin, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
-            yMin = (PFsizei)CLAMP((PFint)yMin, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
-            xMax = (PFsizei)CLAMP((PFint)xMax, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
-            yMax = (PFsizei)CLAMP((PFint)yMax, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
+            xMin = (PFsizei)PF_CLAMP((PFint)xMin, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
+            yMin = (PFsizei)PF_CLAMP((PFint)yMin, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
+            xMax = (PFsizei)PF_CLAMP((PFint)xMax, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
+            yMax = (PFsizei)PF_CLAMP((PFint)yMax, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
         }
 
         /* Barycentric interpolation */
@@ -827,8 +827,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
     PFint yMax = y3;
 
     if (!is3D) {
-        yMin = CLAMP(yMin, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
-        yMax = CLAMP(yMax, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
+        yMin = PF_CLAMP(yMin, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
+        yMax = PF_CLAMP(yMax, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
     }
 
     PFsizei yOffset = yMin*widthDst;
@@ -908,8 +908,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFint xMax = xB;
 
         if (!is3D) {
-            xMin = CLAMP(xMin, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
-            xMax = CLAMP(xMax, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
+            xMin = PF_CLAMP(xMin, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
+            xMax = PF_CLAMP(xMax, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
         }
 
         PFsizei xyOffset = yOffset + xMin;

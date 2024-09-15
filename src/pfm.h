@@ -30,17 +30,17 @@
 #   define PFM_API static inline
 #endif //PFM_API
 
-#ifndef M_PI
-#   define M_PI 3.14159265358979323846
-#endif //M_PI
+#ifndef PFM_PI
+#   define PFM_PI 3.14159265358979323846
+#endif //PFM_PI
 
-#ifndef DEG2RAD
-#   define DEG2RAD(deg) ((deg) * M_PI / 180.0)
-#endif //DEG2RAD
+#ifndef PFM_DEG2RAD
+#   define PFM_DEG2RAD(deg) ((deg) * PFM_PI / 180.0)
+#endif //PFM_DEG2RAD
 
-#ifndef RAD2DEG
-#   define RAD2DEG(deg) ((deg) * 180.0 / M_PI)
-#endif //RAD2DEG
+#ifndef PFM_RAD2DEG
+#   define PFM_RAD2DEG(deg) ((deg) * 180.0 / PFM_PI)
+#endif //PFM_RAD2DEG
 
 #ifndef PFM_FISR
 #   define rsqrtf(x) (1.0f/sqrtf(x))

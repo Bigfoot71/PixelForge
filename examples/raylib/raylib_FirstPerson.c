@@ -120,8 +120,8 @@ bool WallCollision(Camera3D* camera, const Image* imMap)
     Vector2 pos2D = { .x = camera->position.x, .y = camera->position.z };
     Vector2 rdPos2D = { .x = round(pos2D.x), .y = round(pos2D.y) };
 
-    int xMax = MIN(rdPos2D.x + 1, imMap->width - 1);
-    int yMax = MIN(rdPos2D.y + 1, imMap->height - 1);
+    int xMax = PF_MIN(rdPos2D.x + 1, imMap->width - 1);
+    int yMax = PF_MIN(rdPos2D.y + 1, imMap->height - 1);
 
     Rectangle camRect = { .x = pos2D.x - 0.2f, .y = pos2D.y - 0.2f, .width = 0.4f, .height = 0.4f };
     Vector2 result_disp = { .x = 0, .y = 0 };
