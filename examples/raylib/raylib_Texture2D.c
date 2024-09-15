@@ -88,7 +88,7 @@ Arrow Arrow_Create()
 
 void Arrow_Update(Arrow* arrow)
 {
-    arrow->angle = RAD2DEG(-Vector2LineAngle(arrow->position, GetMousePosition())) + 90.0f;
+    arrow->angle = -Vector2LineAngle(arrow->position, GetMousePosition()) * PFM_RAD2DEG + 90.0f;
     float dist = Vector2Distance(arrow->position, GetMousePosition());
 
     if (dist > 32)

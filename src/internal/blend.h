@@ -55,10 +55,10 @@ static inline PFcolor
 pfiBlendAdditive(PFcolor src, PFcolor dst)
 {
     PFcolor result;
-    result.r = (PFubyte)MIN_255((PFint)(dst.r + src.r));
-    result.g = (PFubyte)MIN_255((PFint)(dst.g + src.g));
-    result.b = (PFubyte)MIN_255((PFint)(dst.b + src.b));
-    result.a = (PFubyte)MIN_255((PFint)(dst.a + src.a));
+    result.r = (PFubyte)PF_MIN_255((PFint)(dst.r + src.r));
+    result.g = (PFubyte)PF_MIN_255((PFint)(dst.g + src.g));
+    result.b = (PFubyte)PF_MIN_255((PFint)(dst.b + src.b));
+    result.a = (PFubyte)PF_MIN_255((PFint)(dst.a + src.a));
     return result;
 }
 
@@ -66,10 +66,10 @@ static inline PFcolor
 pfiBlendSubtractive(PFcolor src, PFcolor dst)
 {
     PFcolor result;
-    result.r = (PFubyte)MAX_0((PFint)(dst.r - src.r));
-    result.g = (PFubyte)MAX_0((PFint)(dst.g - src.g));
-    result.b = (PFubyte)MAX_0((PFint)(dst.b - src.b));
-    result.a = (PFubyte)MAX_0((PFint)(dst.a - src.a));
+    result.r = (PFubyte)PF_MAX_0((PFint)(dst.r - src.r));
+    result.g = (PFubyte)PF_MAX_0((PFint)(dst.g - src.g));
+    result.b = (PFubyte)PF_MAX_0((PFint)(dst.b - src.b));
+    result.a = (PFubyte)PF_MAX_0((PFint)(dst.a - src.a));
     return result;
 }
 
@@ -88,10 +88,10 @@ static inline PFcolor
 pfiBlendScreen(PFcolor src, PFcolor dst)
 {
     PFcolor result;
-    result.r = (PFubyte)MIN_255((PFint)((dst.r*(255 - src.r) >> 8) + src.r));
-    result.g = (PFubyte)MIN_255((PFint)((dst.g*(255 - src.g) >> 8) + src.g));
-    result.b = (PFubyte)MIN_255((PFint)((dst.b*(255 - src.b) >> 8) + src.b));
-    result.a = (PFubyte)MIN_255((PFint)((dst.a*(255 - src.a) >> 8) + src.a));
+    result.r = (PFubyte)PF_MIN_255((PFint)((dst.r*(255 - src.r) >> 8) + src.r));
+    result.g = (PFubyte)PF_MIN_255((PFint)((dst.g*(255 - src.g) >> 8) + src.g));
+    result.b = (PFubyte)PF_MIN_255((PFint)((dst.b*(255 - src.b) >> 8) + src.b));
+    result.a = (PFubyte)PF_MIN_255((PFint)((dst.a*(255 - src.a) >> 8) + src.a));
     return result;
 }
 
@@ -99,10 +99,10 @@ static inline PFcolor
 pfiBlendLighten(PFcolor src, PFcolor dst)
 {
     PFcolor result;
-    result.r = (PFubyte)(MAX(src.r, dst.r));
-    result.g = (PFubyte)(MAX(src.g, dst.g));
-    result.b = (PFubyte)(MAX(src.b, dst.b));
-    result.a = (PFubyte)(MAX(src.a, dst.a));
+    result.r = (PFubyte)(PF_MAX(src.r, dst.r));
+    result.g = (PFubyte)(PF_MAX(src.g, dst.g));
+    result.b = (PFubyte)(PF_MAX(src.b, dst.b));
+    result.a = (PFubyte)(PF_MAX(src.a, dst.a));
     return result;
 }
 
@@ -110,15 +110,15 @@ static inline PFcolor
 pfiBlendDarken(PFcolor src, PFcolor dst)
 {
     PFcolor result;
-    result.r = (PFubyte)(MIN(src.r, dst.r));
-    result.g = (PFubyte)(MIN(src.g, dst.g));
-    result.b = (PFubyte)(MIN(src.b, dst.b));
-    result.a = (PFubyte)(MIN(src.a, dst.a));
+    result.r = (PFubyte)(PF_MIN(src.r, dst.r));
+    result.g = (PFubyte)(PF_MIN(src.g, dst.g));
+    result.b = (PFubyte)(PF_MIN(src.b, dst.b));
+    result.a = (PFubyte)(PF_MIN(src.a, dst.a));
     return result;
 }
 
 #define ENTRY(MODE, FUNC) [MODE] = FUNC
-static const PFblendfunc GC_blendFuncs[8] = {
+static const PFIblendfunc GC_blendFuncs[8] = {
     ENTRY(PF_BLEND_AVERAGE, pfiBlendAverage),
     ENTRY(PF_BLEND_ALPHA, pfiBlendAlpha),
     ENTRY(PF_BLEND_ADD, pfiBlendAdditive),
@@ -146,30 +146,30 @@ pfiBlendAverage_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_sim
 static inline void
 pfiBlendAlpha_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
 {
-    PFsimdvi alpha = pfiSimdAdd_I32(src[3], *(PFsimdvi*)GC_simd_i32_1);
-    PFsimdvi invAlpha = pfiSimdSub_I32(*(PFsimdvi*)GC_simd_i32_256, alpha);
+    PFIsimdvi alpha = pfiSimdAdd_I32(src[3], *(PFIsimdvi*)GC_simd_i32_1);
+    PFIsimdvi invAlpha = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_256, alpha);
     out[0] = pfiSimdShr_I32(pfiSimdAdd_I32(pfiSimdMullo_I32(src[0], alpha), pfiSimdMullo_I32(dst[0], invAlpha)), 8);
     out[1] = pfiSimdShr_I32(pfiSimdAdd_I32(pfiSimdMullo_I32(src[1], alpha), pfiSimdMullo_I32(dst[1], invAlpha)), 8);
     out[2] = pfiSimdShr_I32(pfiSimdAdd_I32(pfiSimdMullo_I32(src[2], alpha), pfiSimdMullo_I32(dst[2], invAlpha)), 8);
-    out[3] = pfiSimdShr_I32(pfiSimdAdd_I32(pfiSimdMullo_I32(*(PFsimdvi*)GC_simd_i32_255, alpha), pfiSimdMullo_I32(dst[3], invAlpha)), 8);
+    out[3] = pfiSimdShr_I32(pfiSimdAdd_I32(pfiSimdMullo_I32(*(PFIsimdvi*)GC_simd_i32_255, alpha), pfiSimdMullo_I32(dst[3], invAlpha)), 8);
 }
 
 static inline void
 pfiBlendAdditive_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
 {
-    out[0] = pfiSimdMin_I32(pfiSimdAdd_I32(src[0], dst[0]), *(PFsimdvi*)GC_simd_i32_255);
-    out[1] = pfiSimdMin_I32(pfiSimdAdd_I32(src[1], dst[1]), *(PFsimdvi*)GC_simd_i32_255);
-    out[2] = pfiSimdMin_I32(pfiSimdAdd_I32(src[2], dst[2]), *(PFsimdvi*)GC_simd_i32_255);
-    out[3] = pfiSimdMin_I32(pfiSimdAdd_I32(src[3], dst[3]), *(PFsimdvi*)GC_simd_i32_255);
+    out[0] = pfiSimdMin_I32(pfiSimdAdd_I32(src[0], dst[0]), *(PFIsimdvi*)GC_simd_i32_255);
+    out[1] = pfiSimdMin_I32(pfiSimdAdd_I32(src[1], dst[1]), *(PFIsimdvi*)GC_simd_i32_255);
+    out[2] = pfiSimdMin_I32(pfiSimdAdd_I32(src[2], dst[2]), *(PFIsimdvi*)GC_simd_i32_255);
+    out[3] = pfiSimdMin_I32(pfiSimdAdd_I32(src[3], dst[3]), *(PFIsimdvi*)GC_simd_i32_255);
 }
 
 static inline void
 pfiBlendSubtractive_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
 {
-    out[0] = pfiSimdMax_I32(pfiSimdAdd_I32(src[0], dst[0]), *(PFsimdvi*)GC_simd_i32_0);
-    out[1] = pfiSimdMax_I32(pfiSimdAdd_I32(src[1], dst[1]), *(PFsimdvi*)GC_simd_i32_0);
-    out[2] = pfiSimdMax_I32(pfiSimdAdd_I32(src[2], dst[2]), *(PFsimdvi*)GC_simd_i32_0);
-    out[3] = pfiSimdMax_I32(pfiSimdAdd_I32(src[3], dst[3]), *(PFsimdvi*)GC_simd_i32_0);
+    out[0] = pfiSimdMax_I32(pfiSimdAdd_I32(src[0], dst[0]), *(PFIsimdvi*)GC_simd_i32_0);
+    out[1] = pfiSimdMax_I32(pfiSimdAdd_I32(src[1], dst[1]), *(PFIsimdvi*)GC_simd_i32_0);
+    out[2] = pfiSimdMax_I32(pfiSimdAdd_I32(src[2], dst[2]), *(PFIsimdvi*)GC_simd_i32_0);
+    out[3] = pfiSimdMax_I32(pfiSimdAdd_I32(src[3], dst[3]), *(PFIsimdvi*)GC_simd_i32_0);
 }
 
 static inline void
@@ -184,15 +184,15 @@ pfiBlendMultiplicative_simd(PFcolor_simd out, const PFcolor_simd src, const PFco
 static inline void
 pfiBlendScreen_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
 {
-    PFsimdvi inv_src_r = pfiSimdSub_I32(*(PFsimdvi*)GC_simd_i32_255, src[0]);
-    PFsimdvi inv_src_g = pfiSimdSub_I32(*(PFsimdvi*)GC_simd_i32_255, src[1]);
-    PFsimdvi inv_src_b = pfiSimdSub_I32(*(PFsimdvi*)GC_simd_i32_255, src[2]);
-    PFsimdvi inv_src_a = pfiSimdSub_I32(*(PFsimdvi*)GC_simd_i32_255, src[3]);
+    PFIsimdvi inv_src_r = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_255, src[0]);
+    PFIsimdvi inv_src_g = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_255, src[1]);
+    PFIsimdvi inv_src_b = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_255, src[2]);
+    PFIsimdvi inv_src_a = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_255, src[3]);
 
-    out[0] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dst[0], inv_src_r), 8), src[0]), *(PFsimdvi*)GC_simd_i32_255);
-    out[1] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dst[1], inv_src_g), 8), src[1]), *(PFsimdvi*)GC_simd_i32_255);
-    out[2] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dst[2], inv_src_b), 8), src[2]), *(PFsimdvi*)GC_simd_i32_255);
-    out[3] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dst[3], inv_src_a), 8), src[3]), *(PFsimdvi*)GC_simd_i32_255);
+    out[0] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dst[0], inv_src_r), 8), src[0]), *(PFIsimdvi*)GC_simd_i32_255);
+    out[1] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dst[1], inv_src_g), 8), src[1]), *(PFIsimdvi*)GC_simd_i32_255);
+    out[2] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dst[2], inv_src_b), 8), src[2]), *(PFIsimdvi*)GC_simd_i32_255);
+    out[3] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dst[3], inv_src_a), 8), src[3]), *(PFIsimdvi*)GC_simd_i32_255);
 }
 
 static inline void
@@ -214,7 +214,7 @@ pfiBlendDarken_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd
 }
 
 #define ENTRY(MODE, FUNC) [MODE] = FUNC
-static const PFblendfunc_simd GC_blendFuncs_simd[8] = {
+static const PFIblendfunc_simd GC_blendFuncs_simd[8] = {
     ENTRY(PF_BLEND_AVERAGE, pfiBlendAverage_simd),
     ENTRY(PF_BLEND_ALPHA, pfiBlendAlpha_simd),
     ENTRY(PF_BLEND_ADD, pfiBlendAdditive_simd),

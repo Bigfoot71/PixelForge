@@ -67,7 +67,7 @@ pfiColorBaryFlat(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFf
 
 #if PF_SIMD_SUPPORT
 
-typedef PFsimdvi PFcolor_simd[4];
+typedef PFIsimdvi PFcolor_simd[4];
 
 static inline void
 pfiColorLoadUnpacked_simd(PFcolor_simd dst, PFcolor src)
@@ -78,18 +78,18 @@ pfiColorLoadUnpacked_simd(PFcolor_simd dst, PFcolor src)
 }
 
 static inline void
-pfiColorUnpack_simd(PFcolor_simd out, const PFsimdvi packed)
+pfiColorUnpack_simd(PFcolor_simd out, const PFIsimdvi packed)
 {
-    out[0] = pfiSimdAnd_I32(packed, *(PFsimdvi*)GC_simd_i32_255);
-    out[1] = pfiSimdAnd_I32(pfiSimdShr_I32(packed, 8), *(PFsimdvi*)GC_simd_i32_255);
-    out[2] = pfiSimdAnd_I32(pfiSimdShr_I32(packed, 16), *(PFsimdvi*)GC_simd_i32_255);
-    out[3] = pfiSimdAnd_I32(pfiSimdShr_I32(packed, 24), *(PFsimdvi*)GC_simd_i32_255);
+    out[0] = pfiSimdAnd_I32(packed, *(PFIsimdvi*)GC_simd_i32_255);
+    out[1] = pfiSimdAnd_I32(pfiSimdShr_I32(packed, 8), *(PFIsimdvi*)GC_simd_i32_255);
+    out[2] = pfiSimdAnd_I32(pfiSimdShr_I32(packed, 16), *(PFIsimdvi*)GC_simd_i32_255);
+    out[3] = pfiSimdAnd_I32(pfiSimdShr_I32(packed, 24), *(PFIsimdvi*)GC_simd_i32_255);
 }
 
-static inline PFsimdvi
+static inline PFIsimdvi
 pfiColorPack_simd(const PFcolor_simd unpacked)
 {
-    // Combine into a single vector PFsimdvi
+    // Combine into a single vector PFIsimdvi
     return pfiSimdOr_I32(
         pfiSimdOr_I32(
             pfiSimdShl_I32(unpacked[3], 24), 
@@ -100,9 +100,9 @@ pfiColorPack_simd(const PFcolor_simd unpacked)
 }
 
 static inline void
-pfiColorLerpSmooth_simd(PFcolor_simd out, const PFcolor_simd a, const PFcolor_simd b, PFsimdvf t)
+pfiColorLerpSmooth_simd(PFcolor_simd out, const PFcolor_simd a, const PFcolor_simd b, PFIsimdvf t)
 {
-    PFsimdvi uT = pfiSimdConvert_F32_I32(pfiSimdMul_F32(t, *(PFsimdvf*)GC_simd_f32_255));
+    PFIsimdvi uT = pfiSimdConvert_F32_I32(pfiSimdMul_F32(t, *(PFIsimdvf*)GC_simd_f32_255));
     out[0] = pfiSimdAdd_I32(a[0], pfiSimdShr_I32(pfiSimdMullo_I32(uT, pfiSimdSub_I32(b[0], a[0])), 8));
     out[1] = pfiSimdAdd_I32(a[1], pfiSimdShr_I32(pfiSimdMullo_I32(uT, pfiSimdSub_I32(b[1], a[1])), 8));
     out[2] = pfiSimdAdd_I32(a[2], pfiSimdShr_I32(pfiSimdMullo_I32(uT, pfiSimdSub_I32(b[2], a[2])), 8));
@@ -110,10 +110,10 @@ pfiColorLerpSmooth_simd(PFcolor_simd out, const PFcolor_simd a, const PFcolor_si
 }
 
 static inline void
-pfiColorLerpFlat_simd(PFcolor_simd out, const PFcolor_simd a, const PFcolor_simd b, PFsimdvf t)
+pfiColorLerpFlat_simd(PFcolor_simd out, const PFcolor_simd a, const PFcolor_simd b, PFIsimdvf t)
 {
-    PFsimdvi mask = pfiSimdCast_F32_I32(
-        pfiSimdCmpLT_F32(t, *(PFsimdvf*)GC_simd_f32_0p5));
+    PFIsimdvi mask = pfiSimdCast_F32_I32(
+        pfiSimdCmpLT_F32(t, *(PFIsimdvf*)GC_simd_f32_0p5));
     
     out[0] = pfiSimdBlendV_I8(b[0], a[0], mask);
     out[1] = pfiSimdBlendV_I8(b[1], a[1], mask);
@@ -126,14 +126,14 @@ pfiColorBarySmooth_simd(PFcolor_simd out,
                                 const PFcolor_simd c1,
                                 const PFcolor_simd c2,
                                 const PFcolor_simd c3,
-                                PFsimdvf w1,
-                                PFsimdvf w2,
-                                PFsimdvf w3)
+                                PFIsimdvf w1,
+                                PFIsimdvf w2,
+                                PFIsimdvf w3)
 {
     // Multiply weights by 255 and convert them to integers
-    PFsimdvi uW1 = pfiSimdConvert_F32_I32(pfiSimdMul_F32(w1, *(PFsimdvf*)GC_simd_f32_255));
-    PFsimdvi uW2 = pfiSimdConvert_F32_I32(pfiSimdMul_F32(w2, *(PFsimdvf*)GC_simd_f32_255));
-    PFsimdvi uW3 = pfiSimdConvert_F32_I32(pfiSimdMul_F32(w3, *(PFsimdvf*)GC_simd_f32_255));
+    PFIsimdvi uW1 = pfiSimdConvert_F32_I32(pfiSimdMul_F32(w1, *(PFIsimdvf*)GC_simd_f32_255));
+    PFIsimdvi uW2 = pfiSimdConvert_F32_I32(pfiSimdMul_F32(w2, *(PFIsimdvf*)GC_simd_f32_255));
+    PFIsimdvi uW3 = pfiSimdConvert_F32_I32(pfiSimdMul_F32(w3, *(PFIsimdvf*)GC_simd_f32_255));
 
     // Perform multiplications and additions for each channel
     // Then approximate division by 255
@@ -144,7 +144,7 @@ pfiColorBarySmooth_simd(PFcolor_simd out,
                 pfiSimdMullo_I32(uW2, c2[i])),
                 pfiSimdMullo_I32(uW3, c3[i]));
         out[i] = pfiSimdShr_I32(
-            pfiSimdMullo_I32(out[i], *(PFsimdvi*)GC_simd_i32_257), 16);
+            pfiSimdMullo_I32(out[i], *(PFIsimdvi*)GC_simd_i32_257), 16);
     }
 }
 
@@ -153,17 +153,17 @@ pfiColorBaryFlat_simd(PFcolor_simd out,
                              const PFcolor_simd c1,
                              const PFcolor_simd c2,
                              const PFcolor_simd c3,
-                             PFsimdvf w1,
-                             PFsimdvf w2,
-                             PFsimdvf w3)
+                             PFIsimdvf w1,
+                             PFIsimdvf w2,
+                             PFIsimdvf w3)
 {
     // Compare the weights to find the index of the maximum weight
-    PFsimdvf maxWeight = pfiSimdMax_F32(w1, pfiSimdMax_F32(w2, w3));
+    PFIsimdvf maxWeight = pfiSimdMax_F32(w1, pfiSimdMax_F32(w2, w3));
     
     // Compare maxWeight to each weight to find which one is the max
-    PFsimdvi mask1 = pfiSimdCast_F32_I32(pfiSimdCmpEQ_F32(maxWeight, w1));
-    PFsimdvi mask2 = pfiSimdCast_F32_I32(pfiSimdCmpEQ_F32(maxWeight, w2));
-    PFsimdvi mask3 = pfiSimdCast_F32_I32(pfiSimdCmpEQ_F32(maxWeight, w3));
+    PFIsimdvi mask1 = pfiSimdCast_F32_I32(pfiSimdCmpEQ_F32(maxWeight, w1));
+    PFIsimdvi mask2 = pfiSimdCast_F32_I32(pfiSimdCmpEQ_F32(maxWeight, w2));
+    PFIsimdvi mask3 = pfiSimdCast_F32_I32(pfiSimdCmpEQ_F32(maxWeight, w3));
 
     // Use masks to select the corresponding color
     for (int_fast8_t i = 0; i < 4; ++i) {
@@ -180,54 +180,54 @@ pfiColorBaryFlat_simd(PFcolor_simd out,
 /* SIMD Conversion helpers */
 
 static inline void
-pfiColorSisdToVec_simd(PFsimdvf* out, PFcolor in, int vecSize)
+pfiColorSisdToVec_simd(PFIsimdvf* out, PFcolor in, int vecSize)
 {
     for (int i = 0; i < vecSize; ++i) {
         out[i] = pfiSimdMul_F32(
             pfiSimdSet1_F32(((PFubyte*)&in)[i]),
-            *(PFsimdvf*)GC_simd_f32_inv255);
+            *(PFIsimdvf*)GC_simd_f32_inv255);
     }
 }
 
 static inline void
-pfiColorUnpackedToVec_simd(PFsimdvf* out, PFcolor_simd in, int vecSize)
+pfiColorUnpackedToVec_simd(PFIsimdvf* out, PFcolor_simd in, int vecSize)
 {
     for (int i = 0; i < vecSize; ++i) {
         out[i] = pfiSimdMul_F32(
             pfiSimdConvert_I32_F32(in[i]),
-            *(PFsimdvf*)GC_simd_f32_inv255);
+            *(PFIsimdvf*)GC_simd_f32_inv255);
     }
 }
 
 static inline void
-pfiColorUnpackedFromVec_simd(PFcolor_simd out, PFsimdvf* in, int vecSize)
+pfiColorUnpackedFromVec_simd(PFcolor_simd out, PFIsimdvf* in, int vecSize)
 {
-    out[0] = *(PFsimdvi*)GC_simd_i32_0;
-    out[1] = *(PFsimdvi*)GC_simd_i32_0;
-    out[2] = *(PFsimdvi*)GC_simd_i32_0;
-    out[3] = *(PFsimdvi*)GC_simd_i32_255;
+    out[0] = *(PFIsimdvi*)GC_simd_i32_0;
+    out[1] = *(PFIsimdvi*)GC_simd_i32_0;
+    out[2] = *(PFIsimdvi*)GC_simd_i32_0;
+    out[3] = *(PFIsimdvi*)GC_simd_i32_255;
 
     for (int i = 0; i < vecSize; ++i) {
-        out[i] = pfiSimdConvert_F32_I32(pfiSimdMul_F32(in[i], *(PFsimdvf*)GC_simd_f32_255));
-        out[i] = pfiSimdClamp_I32(out[i], pfiSimdSetZero_I32(), *(PFsimdvi*)GC_simd_i32_255);
+        out[i] = pfiSimdConvert_F32_I32(pfiSimdMul_F32(in[i], *(PFIsimdvf*)GC_simd_f32_255));
+        out[i] = pfiSimdClamp_I32(out[i], pfiSimdSetZero_I32(), *(PFIsimdvi*)GC_simd_i32_255);
     }
 }
 
-static inline PFsimdvi
-pfiColorPackedGrayscale_simd(PFsimdvi colors)
+static inline PFIsimdvi
+pfiColorPackedGrayscale_simd(PFIsimdvi colors)
 {
     // Extract the R, G, B channels
-    PFsimdvi r = pfiSimdAnd_I32(colors, *(PFsimdvi*)GC_simd_i32_255);
-    PFsimdvi g = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 8), *(PFsimdvi*)GC_simd_i32_255);
-    PFsimdvi b = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 16), *(PFsimdvi*)GC_simd_i32_255);
+    PFIsimdvi r = pfiSimdAnd_I32(colors, *(PFIsimdvi*)GC_simd_i32_255);
+    PFIsimdvi g = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 8), *(PFIsimdvi*)GC_simd_i32_255);
+    PFIsimdvi b = pfiSimdAnd_I32(pfiSimdShr_I32(colors, 16), *(PFIsimdvi*)GC_simd_i32_255);
 
     // Integer coefficients approximating 0.299, 0.587, and 0.114 (multiplied by 256)
-    const PFsimdvi coeffR = pfiSimdSet1_I32(77);   // 0.299 * 256 = 76.8
-    const PFsimdvi coeffG = pfiSimdSet1_I32(150);  // 0.587 * 256 = 150.272
-    const PFsimdvi coeffB = pfiSimdSet1_I32(29);   // 0.114 * 256 = 29.184
+    const PFIsimdvi coeffR = pfiSimdSet1_I32(77);   // 0.299 * 256 = 76.8
+    const PFIsimdvi coeffG = pfiSimdSet1_I32(150);  // 0.587 * 256 = 150.272
+    const PFIsimdvi coeffB = pfiSimdSet1_I32(29);   // 0.114 * 256 = 29.184
 
     // Calculate the luminance using the integer coefficients
-    PFsimdvi gray = pfiSimdAdd_I32(
+    PFIsimdvi gray = pfiSimdAdd_I32(
         pfiSimdAdd_I32(
             pfiSimdMullo_I32(b, coeffB),
             pfiSimdMullo_I32(g, coeffG)
@@ -239,13 +239,13 @@ pfiColorPackedGrayscale_simd(PFsimdvi colors)
     gray = pfiSimdShr_I32(gray, 8);
 
     // Repeat the luminance in the R, G, B channels
-    PFsimdvi grayRGB = pfiSimdOr_I32(
+    PFIsimdvi grayRGB = pfiSimdOr_I32(
         pfiSimdOr_I32(pfiSimdShl_I32(gray, 16), pfiSimdShl_I32(gray, 8)),
         gray
     );
 
     // Extract the alpha from the original color (bits 24-31) and keep it unchanged
-    PFsimdvi alpha = pfiSimdAnd_I32(colors, pfiSimdSet1_I32(0xFF000000));
+    PFIsimdvi alpha = pfiSimdAnd_I32(colors, pfiSimdSet1_I32(0xFF000000));
 
     // Combine the luminance (repeated in RGB) with the original alpha
     return pfiSimdOr_I32(grayRGB, alpha);

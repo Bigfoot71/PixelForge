@@ -63,7 +63,7 @@ pfiDepthTest_GE(PFfloat src, PFfloat dst)
 }
 
 #define ENTRY(MODE, FUNC) [MODE] = FUNC
-static const PFdepthfunc GC_depthTestFuncs[6] = {
+static const PFIdepthfunc GC_depthTestFuncs[6] = {
     ENTRY(PF_EQUAL, pfiDepthTest_EQ),
     ENTRY(PF_NOTEQUAL, pfiDepthTest_NEQ),
     ENTRY(PF_LESS, pfiDepthTest_LT),
@@ -77,44 +77,44 @@ static const PFdepthfunc GC_depthTestFuncs[6] = {
 
 #if PF_SIMD_SUPPORT
 
-static inline PFsimdvf
-pfiDepthTest_EQ_simd(PFsimdvf src, PFsimdvf dst)
+static inline PFIsimdvf
+pfiDepthTest_EQ_simd(PFIsimdvf src, PFIsimdvf dst)
 {
     return pfiSimdCmpEQ_F32(src, dst);
 }
 
-static inline PFsimdvf
-pfiDepthTest_NEQ_simd(PFsimdvf src, PFsimdvf dst)
+static inline PFIsimdvf
+pfiDepthTest_NEQ_simd(PFIsimdvf src, PFIsimdvf dst)
 {
     return pfiSimdCmpEQ_F32(src, dst);
 }
 
-static inline PFsimdvf
-pfiDepthTest_LT_simd(PFsimdvf src, PFsimdvf dst)
+static inline PFIsimdvf
+pfiDepthTest_LT_simd(PFIsimdvf src, PFIsimdvf dst)
 {
     return pfiSimdCmpLT_F32(src, dst);
 }
 
-static inline PFsimdvf
-pfiDepthTest_LE_simd(PFsimdvf src, PFsimdvf dst)
+static inline PFIsimdvf
+pfiDepthTest_LE_simd(PFIsimdvf src, PFIsimdvf dst)
 {
     return pfiSimdCmpLE_F32(src, dst);
 }
 
-static inline PFsimdvf
-pfiDepthTest_GT_simd(PFsimdvf src, PFsimdvf dst)
+static inline PFIsimdvf
+pfiDepthTest_GT_simd(PFIsimdvf src, PFIsimdvf dst)
 {
     return pfiSimdCmpGT_F32(src, dst);
 }
 
-static inline PFsimdvf
-pfiDepthTest_GE_simd(PFsimdvf src, PFsimdvf dst)
+static inline PFIsimdvf
+pfiDepthTest_GE_simd(PFIsimdvf src, PFIsimdvf dst)
 {
     return pfiSimdCmpGE_F32(src, dst);
 }
 
 #define ENTRY(MODE, FUNC) [MODE] = FUNC
-static const PFdepthfunc_simd GC_depthTestFuncs_simd[6] = {
+static const PFIdepthfunc_simd GC_depthTestFuncs_simd[6] = {
     ENTRY(PF_EQUAL, pfiDepthTest_EQ_simd),
     ENTRY(PF_NOTEQUAL, pfiDepthTest_NEQ_simd),
     ENTRY(PF_LESS, pfiDepthTest_LT_simd),

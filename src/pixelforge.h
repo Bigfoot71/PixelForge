@@ -89,32 +89,32 @@
 #   define PF_FREE(size) free(size)
 #endif //PF_FREE
 
-#ifndef INV_255
-#   define INV_255 (1.0 / 255)
-#endif //INV_255
+#ifndef PF_INV_255
+#   define PF_INV_255 (1.0 / 255)
+#endif //PF_INV_255
 
-#ifndef MIN_255
-#   define MIN_255(n) ( \
+#ifndef PF_MIN_255
+#   define PF_MIN_255(n) ( \
     (PFubyte)((PFint)(n) | ((255 - (PFint)(n)) >> 31)))
-#endif //MIN_255
+#endif //PF_MIN_255
 
-#ifndef MAX_0
-#   define MAX_0(n) (\
+#ifndef PF_MAX_0
+#   define PF_MAX_0(n) (\
     (PFubyte)((PFint)(n) & -((PFint)(n) >= 0)))
-#endif //MAX_0
+#endif //PF_MAX_0
 
-#ifndef MIN
-#   define MIN(a, b) ((a) < (b) ? (a) : (b))
-#endif //MIN
+#ifndef PF_MIN
+#   define PF_MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif //PF_MIN
 
-#ifndef MAX
-#   define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif //MAX
+#ifndef PF_MAX
+#   define PF_MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif //PF_MAX
 
-#ifndef CLAMP
-#   define CLAMP(x, min, max) ( \
+#ifndef PF_CLAMP
+#   define PF_CLAMP(x, min, max) ( \
     (x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
-#endif // CLAMP
+#endif // PF_CLAMP
 
 /* Types definitions */
 
@@ -413,6 +413,10 @@ typedef enum {
 } PFpixelformat;
 
 typedef void* PFtexture;
+
+/* Rendering List defintiions */
+
+typedef void* PFrenderlist; 
 
 /* Framebuffer defintions */
 
@@ -1579,6 +1583,128 @@ PF_API void pfPostProcess(PFpostprocessfunc postProcessFunction);
 /*
  *  From here the shifted functions are not dependent on the current context defined by `pfMakeCurrent`
  */
+
+
+/* Render List functions */
+
+/**
+ * @brief Generates a new render list object.
+ *
+ * This function creates a new render list that can be used to store rendering commands 
+ * (such as geometry, state changes, etc.). It returns a handle (of type `PFrenderlist`) 
+ * which can later be used to modify or execute the render list.
+ *
+ * Render lists are useful for optimizing rendering in environments where many objects 
+ * share the same rendering configuration or geometry, as the commands can be pre-compiled 
+ * and reused multiple times.
+ *
+ * @return PFrenderlist - A handle to the newly created render list. 
+ *         If the generation fails, an invalid or null handle might be returned.
+ *
+ * Example usage:
+ * @code
+ * PFrenderlist myList = pfGenList();
+ * if (myList != NULL) {
+ *     // Valid render list, proceed with populating it
+ * }
+ * @endcode
+ */
+PF_API PFrenderlist pfGenList(void);
+
+/**
+ * @brief Deletes an existing render list and frees associated resources.
+ *
+ * This function deletes a previously generated render list and frees all memory 
+ * or resources associated with it. After calling `pfDeleteList`, the render list handle 
+ * becomes invalid and should not be used in further operations.
+ *
+ * The function accepts a pointer to the `PFrenderlist`, so it can nullify the 
+ * handle to prevent accidental use after deletion.
+ *
+ * @param renderList Pointer to the `PFrenderlist` handle to be deleted.
+ *                   If the pointer is NULL or the list has already been deleted, 
+ *                   the function should handle this gracefully.
+ *
+ * Example usage:
+ * @code
+ * PFrenderlist myList = pfGenList();
+ * // Populate and use the render list...
+ * pfDeleteList(&myList);
+ * // myList is now invalid and should not be used
+ * @endcode
+ */
+PF_API void pfDeleteList(PFrenderlist* renderList);
+
+/**
+ * @brief Starts recording commands into a render list.
+ *
+ * This function begins the process of recording rendering commands into the specified 
+ * render list. All subsequent rendering and state-changing commands will be stored 
+ * into the render list until `pfEndList` is called.
+ *
+ * The render list must be a valid handle created by `pfGenList`. Only one render list 
+ * can be actively recorded at a time; attempting to start a new list while another 
+ * is being recorded will result in undefined behavior.
+ *
+ * @param renderList The handle of the render list to begin recording commands into.
+ *
+ * Example usage:
+ * @code
+ * PFrenderlist myList = pfGenList();
+ * pfNewList(myList);
+ * // Add rendering commands here...
+ * pfEndList();
+ * @endcode
+ */
+PF_API void pfNewList(PFrenderlist renderList);
+
+/**
+ * @brief Ends the recording of commands into the current render list.
+ *
+ * This function signals the end of the command recording phase for the current render list 
+ * that was started with `pfNewList`. Once `pfEndList` is called, the render list is "sealed," 
+ * meaning that no more commands can be added until a new list is started with `pfNewList`.
+ *
+ * After calling `pfEndList`, the recorded commands can be executed by calling `pfCallList`.
+ * If no render list is currently being recorded, calling this function will result in 
+ * undefined behavior or an error, depending on the implementation.
+ *
+ * Example usage:
+ * @code
+ * pfNewList(myList);
+ * // Add commands here...
+ * pfEndList();  // Finalize the list
+ * @endcode
+ */
+PF_API void pfEndList(void);
+
+/**
+ * @brief Executes the commands stored in a render list.
+ *
+ * This function executes all the rendering commands stored in the specified render list. 
+ * This may include geometry drawing, state changes, and other operations that were recorded 
+ * between `pfNewList` and `pfEndList`.
+ *
+ * Calling a render list can improve performance by avoiding the need to reissue the same 
+ * commands repeatedly, especially for static geometry or complex state setups.
+ *
+ * The render list must be finalized (i.e., `pfEndList` must have been called) before 
+ * it can be executed. Calling `pfCallList` on an unfinalized or invalid render list 
+ * will result in undefined behavior or an error, depending on the implementation.
+ *
+ * @param renderList The handle of the render list to be executed.
+ *
+ * Example usage:
+ * @code
+ * PFrenderlist myList = pfGenList();
+ * pfNewList(myList);
+ * // Record commands...
+ * pfEndList();
+ * // Execute the recorded commands
+ * pfCallList(myList);
+ * @endcode
+ */
+PF_API void pfCallList(const PFrenderlist renderList);
 
 
 /* Framebuffer functions */

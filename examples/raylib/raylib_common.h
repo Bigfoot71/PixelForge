@@ -175,14 +175,14 @@ void PF_BeginMode3D(Camera3D camera)
     pfPushMatrix();                 // Save previous matrix, which contains the settings for the 2d ortho projection
     pfLoadIdentity();               // Reset current matrix (projection)
 
-    float aspect = (float)GetScreenWidth()/(float)GetScreenHeight();
+    PFfloat aspect = (float)GetScreenWidth() / (float)GetScreenHeight();
 
     // NOTE: zNear and zFar values are important when computing depth buffer values
     if (camera.projection == CAMERA_PERSPECTIVE)
     {
         // Setup perspective projection
-        double top = 0.01*tan(DEG2RAD(camera.fovy*0.5));
-        double right = top*aspect;
+        PFfloat top = 0.01f * tan(camera.fovy * 0.5f * PFM_DEG2RAD);
+        PFfloat right = top * aspect;
 
         pfFrustum(-right, right, -top, top, 0.01, 1000.0);
     }
@@ -296,7 +296,7 @@ void PF_DrawModelEx(Model model, Vector3 position, Vector3 rotationAxis, float r
     // Calculate transformation matrix from function parameters
     // Get transform matrix (rotation -> scale -> translation)
     Matrix matScale = MatrixScale(scale.x, scale.y, scale.z);
-    Matrix matRotation = MatrixRotate(rotationAxis, DEG2RAD(rotationAngle));
+    Matrix matRotation = MatrixRotate(rotationAxis, rotationAngle * PFM_DEG2RAD);
     Matrix matTranslation = MatrixTranslate(position.x, position.y, position.z);
 
     Matrix matTransform = MatrixMultiply(MatrixMultiply(matScale, matRotation), matTranslation);

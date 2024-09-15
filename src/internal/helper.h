@@ -22,9 +22,9 @@
 
 #include "context/context.h"
 
-static inline void pfiSwapVertex(PFvertex* a, PFvertex* b)
+static inline void pfiSwapVertex(PFIvertex* a, PFIvertex* b)
 {
-    PFvertex tmp = *a;
+    PFIvertex tmp = *a;
     *a = *b; *b = tmp;
 }
 
@@ -35,9 +35,9 @@ static inline void pfiSwapByte(PFubyte* a, PFubyte* b)
     *a ^= *b;
 }
 
-static inline PFvertex pfiLerpVertex(const PFvertex* start, const PFvertex* end, PFfloat t)
+static inline PFIvertex pfiLerpVertex(const PFIvertex* start, const PFIvertex* end, PFfloat t)
 {
-    PFvertex result = { 0 };
+    PFIvertex result = { 0 };
 
     const PFubyte *startCol = (const PFubyte*)(&start->color);
     const PFubyte *endCol = (const PFubyte*)(&end->color);

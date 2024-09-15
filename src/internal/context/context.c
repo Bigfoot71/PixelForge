@@ -20,9 +20,33 @@
 #include "./context.h"
 #include "../primitives/primitives.h"
 
+/* Backup context functions */
+
+void pfiMakeContextBackup(void)
+{
+    PFIctxbackup *bck = &G_currentCtx->ctxBackup;
+    memcpy(bck->faceMaterial, G_currentCtx->faceMaterial, 2 * sizeof(PFImaterial));
+    memcpy(bck->currentTexcoord, G_currentCtx->currentTexcoord, sizeof(PFMvec2));
+    memcpy(bck->currentNormal, G_currentCtx->currentNormal, sizeof(PFMvec3));
+    bck->currentColor = G_currentCtx->currentColor;
+    bck->currentTexture = G_currentCtx->currentTexture;
+    bck->state = G_currentCtx->state;
+}
+
+void pfiRestoreContext(void)
+{
+    PFIctxbackup *bck = &G_currentCtx->ctxBackup;
+    memcpy(G_currentCtx->faceMaterial, bck->faceMaterial, 2 * sizeof(PFImaterial));
+    memcpy(G_currentCtx->currentTexcoord, bck->currentTexcoord, sizeof(PFMvec2));
+    memcpy(G_currentCtx->currentNormal, bck->currentNormal, sizeof(PFMvec3));
+    G_currentCtx->currentColor = bck->currentColor;
+    G_currentCtx->currentTexture = bck->currentTexture;
+    G_currentCtx->state = bck->state;
+}
+
 /* Internal vertex processing function definitions */
 
-void pfiHomogeneousToScreen(PFvertex* v)
+void pfiHomogeneousToScreen(PFIvertex* v)
 {
     // NOTE: We add 0.5 to the screen coordinates to round them to the nearest integer
     // when they are converted to integer coordinates. This adjustment was added because

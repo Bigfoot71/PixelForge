@@ -36,7 +36,7 @@ PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelforma
         return NULL;
     }
 
-    struct PFtex * texture = PF_MALLOC(sizeof(struct PFtex));
+    struct PFItex * texture = PF_MALLOC(sizeof(struct PFItex));
 
     if (texture == NULL) {
         if (G_currentCtx) {
@@ -70,7 +70,7 @@ PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelforma
 
 void pfDeleteTexture(PFtexture* texture, PFboolean freeBuffer)
 {
-    struct PFtex* tex = *texture;
+    struct PFItex* tex = *texture;
     if (tex) {
         if (freeBuffer && tex->pixels) {
             PF_FREE(tex->pixels);
@@ -82,7 +82,7 @@ void pfDeleteTexture(PFtexture* texture, PFboolean freeBuffer)
 
 PFboolean pfIsValidTexture(const PFtexture texture)
 {
-    const struct PFtex* tex = texture;
+    const struct PFItex* tex = texture;
     PFboolean result = PF_FALSE;
     if (tex) {
         result = tex->pixels &&
@@ -94,7 +94,7 @@ PFboolean pfIsValidTexture(const PFtexture texture)
 
 void pfTextureParameter(PFtexture texture, PFtexturewrap wrapMode, PFtexturefilter filterMode)
 {
-    struct PFtex* tex = texture;
+    struct PFItex* tex = texture;
 
     if (!pfiIsTextureParameterValid(wrapMode, filterMode)) {
         if (G_currentCtx) G_currentCtx->errCode = PF_INVALID_ENUM;
@@ -110,7 +110,7 @@ void pfTextureParameter(PFtexture texture, PFtexturewrap wrapMode, PFtexturefilt
 
 void* pfGetTexturePixels(const PFtexture texture, PFsizei* width, PFsizei* height, PFpixelformat* format, PFdatatype* type)
 {
-    const struct PFtex* tex = texture;
+    const struct PFItex* tex = texture;
     void* pixels = NULL;
     if (tex) {
         if (width) *width = tex->w;

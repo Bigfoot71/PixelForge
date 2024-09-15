@@ -22,19 +22,19 @@
 
 /* Internal point processing functions declarations */
 
-static PFboolean Process_ProjectPoint(PFvertex* v);
+static PFboolean Process_ProjectPoint(PFIvertex* v);
 
 /* Internal point rasterizer function declarations */
 
-static void Rasterize_Point_NODEPTH(const PFvertex* point);
-static void Rasterize_Point_DEPTH(const PFvertex* point);
+static void Rasterize_Point_NODEPTH(const PFIvertex* point);
+static void Rasterize_Point_DEPTH(const PFIvertex* point);
 
 
 /* Point Process And Rasterize Functions */
 
 void pfiProcessRasterize_POINT(void)
 {
-    PFvertex *processed = G_currentCtx->vertexBuffer;
+    PFIvertex *processed = G_currentCtx->vertexBuffer;
 
     if (Process_ProjectPoint(processed)) {
         (G_currentCtx->state & PF_DEPTH_TEST ?
@@ -45,7 +45,7 @@ void pfiProcessRasterize_POINT(void)
 void pfiProcessRasterize_POLY_POINTS(int_fast8_t vertexCount)
 {
     for (int_fast8_t i = 0; i < vertexCount; i++) {
-        PFvertex *processed = G_currentCtx->vertexBuffer + i;
+        PFIvertex *processed = G_currentCtx->vertexBuffer + i;
         if (Process_ProjectPoint(processed)) {
             (G_currentCtx->state & PF_DEPTH_TEST ?
                 Rasterize_Point_DEPTH : Rasterize_Point_NODEPTH)(processed);
@@ -56,7 +56,7 @@ void pfiProcessRasterize_POLY_POINTS(int_fast8_t vertexCount)
 
 /* Internal point processing functions definitions */
 
-PFboolean Process_ProjectPoint(PFvertex* v)
+PFboolean Process_ProjectPoint(PFIvertex* v)
 {
     memcpy(v->homogeneous, v->position, sizeof(PFMvec4));
     pfmVec4Transform(v->homogeneous, v->homogeneous, G_currentCtx->matMVP);
@@ -82,15 +82,15 @@ PFboolean Process_ProjectPoint(PFvertex* v)
 
 /* Internal point rasterizer function definitions */
 
-void Rasterize_Point_NODEPTH(const PFvertex* point)
+void Rasterize_Point_NODEPTH(const PFIvertex* point)
 {
     PFframebuffer *fbDst = G_currentCtx->currentFramebuffer;
-    struct PFtex *texDst = G_currentCtx->currentFramebuffer->texture;
+    struct PFItex *texDst = G_currentCtx->currentFramebuffer->texture;
 
-    PFpixelsetter setter = texDst->setter;
-    PFpixelgetter getter = texDst->getter;
+    PFIpixelsetter setter = texDst->setter;
+    PFIpixelgetter getter = texDst->getter;
 
-    PFblendfunc blendFunc = G_currentCtx->state & PF_BLEND ?
+    PFIblendfunc blendFunc = G_currentCtx->state & PF_BLEND ?
         G_currentCtx->blendFunction : NULL;
 
     void *pbDst = texDst->pixels;
@@ -130,15 +130,15 @@ void Rasterize_Point_NODEPTH(const PFvertex* point)
     }
 }
 
-void Rasterize_Point_DEPTH(const PFvertex* point)
+void Rasterize_Point_DEPTH(const PFIvertex* point)
 {
     PFframebuffer *fbDst = G_currentCtx->currentFramebuffer;
-    struct PFtex *texDst = G_currentCtx->currentFramebuffer->texture;
+    struct PFItex *texDst = G_currentCtx->currentFramebuffer->texture;
 
-    PFpixelsetter setter = texDst->setter;
-    PFpixelgetter getter = texDst->getter;
+    PFIpixelsetter setter = texDst->setter;
+    PFIpixelgetter getter = texDst->getter;
 
-    PFblendfunc blendFunc = G_currentCtx->state & PF_BLEND ?
+    PFIblendfunc blendFunc = G_currentCtx->state & PF_BLEND ?
         G_currentCtx->blendFunction : NULL;
 
     void *pbDst = texDst->pixels;
