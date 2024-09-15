@@ -37,39 +37,39 @@
 
 #define PF_COLOR_RGB_NORMALIZE(color)       \
     {                                       \
-        (PFfloat)color.r*INV_255,           \
-        (PFfloat)color.g*INV_255,           \
-        (PFfloat)color.b*INV_255            \
+        color.r*(PFfloat)INV_255,           \
+        color.g*(PFfloat)INV_255,           \
+        color.b*(PFfloat)INV_255            \
     }
 
 #define PF_COLOR_BGR_NORMALIZE(color)       \
     {                                       \
-        (PFfloat)color.b*INV_255,           \
-        (PFfloat)color.g*INV_255,           \
-        (PFfloat)color.r*INV_255            \
+        color.b*(PFfloat)INV_255,           \
+        color.g*(PFfloat)INV_255,           \
+        color.r*(PFfloat)INV_255            \
     }
 
 #define PF_COLOR_RGBA_NORMALIZE(color)      \
     {                                       \
-        (PFfloat)color.r*INV_255,           \
-        (PFfloat)color.g*INV_255,           \
-        (PFfloat)color.b*INV_255,           \
-        (PFfloat)color.a*INV_255            \
+        color.r*(PFfloat)INV_255,           \
+        color.g*(PFfloat)INV_255,           \
+        color.b*(PFfloat)INV_255,           \
+        color.a*(PFfloat)INV_255            \
     }
 
 #define PF_COLOR_BGRA_NORMALIZE(color)      \
     {                                       \
-        (PFfloat)color.r*INV_255,           \
-        (PFfloat)color.g*INV_255,           \
-        (PFfloat)color.b*INV_255,           \
-        (PFfloat)color.a*INV_255            \
+        color.r*(PFfloat)INV_255,           \
+        color.g*(PFfloat)INV_255,           \
+        color.b*(PFfloat)INV_255,           \
+        color.a*(PFfloat)INV_255            \
     }
 
 #define PF_COLOR_GARYSCALE(color)           \
     (                                       \
-        (PFfloat)color.r*INV_255*0.299f +   \
-        (PFfloat)color.g*INV_255*0.587f +   \
-        (PFfloat)color.b*INV_255*0.114f     \
+        color.r*(PFfloat)INV_255*0.299f +   \
+        color.g*(PFfloat)INV_255*0.587f +   \
+        color.b*(PFfloat)INV_255*0.114f     \
     )
 
 /* SET LUMINANCE */
@@ -103,7 +103,7 @@ pfiPixelSet_Luminance_Alpha_UBYTE(void* pixels, PFsizei offset, PFcolor color)
 {
     // NOTE: Calculate Grayscale equivalent color
     PFubyte *pixel = (PFubyte*)pixels + 2*offset;
-    pixel[0] = 255*PF_COLOR_GARYSCALE(color);
+    pixel[0] = (PFubyte)(255 * PF_COLOR_GARYSCALE(color));
     pixel[1] = color.a;
 }
 
@@ -113,7 +113,7 @@ pfiPixelSet_Luminance_Alpha_HALF(void* pixels, PFsizei offset, PFcolor color)
     // NOTE: Calculate Grayscale equivalent color
     PFushort *pixel = (PFushort*)pixels + 2*offset;
     pixel[0] = pfmFloatToHalf(PF_COLOR_GARYSCALE(color));
-    pixel[1] = pfmFloatToHalf(color.a*INV_255);
+    pixel[1] = pfmFloatToHalf(color.a*(PFfloat)INV_255);
 }
 
 static inline void
@@ -122,7 +122,7 @@ pfiPixelSet_Luminance_Alpha_FLOAT(void* pixels, PFsizei offset, PFcolor color)
     // NOTE: Calculate Grayscale equivalent color
     PFfloat *pixel = (PFfloat*)pixels + 2*offset;
     pixel[0] = PF_COLOR_GARYSCALE(color);
-    pixel[1] = color.a*INV_255;
+    pixel[1] = color.a*(PFfloat)INV_255;
 }
 
 /* SET RED/GREEN/BLUE/ALPHA */
@@ -416,14 +416,14 @@ pfiPixelGet_Luminance_UBYTE(const void* pixels, PFsizei offset)
 static inline PFcolor
 pfiPixelGet_Luminance_HALF(const void* pixels, PFsizei offset)
 {
-    PFubyte gray = 255*pfmHalfToFloat(((PFushort*)pixels)[offset]);
+    PFubyte gray = (PFubyte)(255 * pfmHalfToFloat(((PFushort*)pixels)[offset]));
     return (PFcolor) { gray, gray, gray, 255 };
 }
 
 static inline PFcolor
 pfiPixelGet_Luminance_FLOAT(const void* pixels, PFsizei offset)
 {
-    PFubyte gray = 255*((PFfloat*)pixels)[offset];
+    PFubyte gray = (PFubyte)(255 * ((PFfloat*)pixels)[offset]);
     return (PFcolor) { gray, gray, gray, 255 };
 }
 
@@ -441,16 +441,17 @@ static inline PFcolor
 pfiPixelGet_Luminance_Alpha_HALF(const void* pixels, PFsizei offset)
 {
     const PFushort *pixel = (PFushort*)pixels + offset*2;
-    PFubyte gray = 255*pfmHalfToFloat(pixel[0]);
-    PFubyte alpha = 255*pfmHalfToFloat(pixel[1]);
+    PFubyte gray = (PFubyte)(255 * pfmHalfToFloat(pixel[0]));
+    PFubyte alpha = (PFubyte)(255 * pfmHalfToFloat(pixel[1]));
     return (PFcolor) { gray, gray, gray, alpha };
 }
 
 static inline PFcolor
 pfiPixelGet_Luminance_Alpha_FLOAT(const void* pixels, PFsizei offset)
 {
-    const PFushort *pixel = (PFushort*)pixels + offset*2;
-    PFubyte gray = 255*pixel[0], alpha = 255*pixel[1];
+    const PFfloat *pixel = (PFfloat*)pixels + offset*2;
+    PFubyte gray = (PFubyte)(255 * pixel[0]);
+    PFubyte alpha = (PFubyte)(255 * pixel[1]);
     return (PFcolor) { gray, gray, gray, alpha };
 }
 
@@ -590,9 +591,9 @@ pfiPixelGet_RGB_HALF(const void* pixels, PFsizei offset)
     const PFushort *pixel = (PFushort*)pixels + offset*3;
 
     return (PFcolor) {
-        (PFubyte)(pfmHalfToFloat(pixel[0]*255.0f)),
-        (PFubyte)(pfmHalfToFloat(pixel[1]*255.0f)),
-        (PFubyte)(pfmHalfToFloat(pixel[2]*255.0f)),
+        (PFubyte)(pfmHalfToFloat(pixel[0]) * 255.0f),
+        (PFubyte)(pfmHalfToFloat(pixel[1]) * 255.0f),
+        (PFubyte)(pfmHalfToFloat(pixel[2]) * 255.0f),
         255
     };
 }
@@ -603,9 +604,9 @@ pfiPixelGet_BGR_HALF(const void* pixels, PFsizei offset)
     const PFushort *pixel = (PFushort*)pixels + offset*3;
 
     return (PFcolor) {
-        (PFubyte)(pfmHalfToFloat(pixel[2]*255.0f)),
-        (PFubyte)(pfmHalfToFloat(pixel[1]*255.0f)),
-        (PFubyte)(pfmHalfToFloat(pixel[0]*255.0f)),
+        (PFubyte)(pfmHalfToFloat(pixel[2]) * 255.0f),
+        (PFubyte)(pfmHalfToFloat(pixel[1]) * 255.0f),
+        (PFubyte)(pfmHalfToFloat(pixel[0]) * 255.0f),
         255
     };
 }
@@ -616,9 +617,9 @@ pfiPixelGet_RGB_FLOAT(const void* pixels, PFsizei offset)
     const PFfloat *pixel = (PFfloat*)pixels + offset*3;
 
     return (PFcolor) {
-        (PFubyte)(pixel[0]*255.0f),
-        (PFubyte)(pixel[1]*255.0f),
-        (PFubyte)(pixel[2]*255.0f),
+        (PFubyte)(pixel[0] * 255.0f),
+        (PFubyte)(pixel[1] * 255.0f),
+        (PFubyte)(pixel[2] * 255.0f),
         255
     };
 }
@@ -629,9 +630,9 @@ pfiPixelGet_BGR_FLOAT(const void* pixels, PFsizei offset)
     const PFfloat *pixel = (PFfloat*)pixels + offset*3;
 
     return (PFcolor) {
-        (PFubyte)(pixel[2]*255.0f),
-        (PFubyte)(pixel[1]*255.0f),
-        (PFubyte)(pixel[0]*255.0f),
+        (PFubyte)(pixel[2] * 255.0f),
+        (PFubyte)(pixel[1] * 255.0f),
+        (PFubyte)(pixel[0] * 255.0f),
         255
     };
 }
@@ -645,9 +646,9 @@ pfiPixelGet_RGBA_USHORT_5_5_5_1(const void* pixels, PFsizei offset)
     PFushort pixel = ((PFushort*)pixels)[offset];
 
     return (PFcolor) {
-        (PFubyte)((PFfloat)((pixel & 0xF800) >> 11)*(255.0f/31)),               // 0b1111100000000000
-        (PFubyte)((PFfloat)((pixel & 0x7C0) >> 6)*(255.0f/31)),                 // 0b0000011111000000
-        (PFubyte)((PFfloat)((pixel & 0x3E) >> 1)*(255.0f/31)),                  // 0b0000000000111110
+        (PFubyte)((PFfloat)((pixel & 0xF800) >> 11) * (255.0f/31)),             // 0b1111100000000000
+        (PFubyte)((PFfloat)((pixel & 0x7C0) >> 6) * (255.0f/31)),               // 0b0000011111000000
+        (PFubyte)((PFfloat)((pixel & 0x3E) >> 1) * (255.0f/31)),                // 0b0000000000111110
         (PFubyte)((pixel & 0x1)*255)                                            // 0b0000000000000001
     };
 }
@@ -658,9 +659,9 @@ pfiPixelGet_BGRA_USHORT_5_5_5_1(const void* pixels, PFsizei offset)
     PFushort pixel = ((PFushort*)pixels)[offset];
 
     return (PFcolor) {
-        (PFubyte)((PFfloat)((pixel & 0x3E) >> 1)*(255.0f/31)),                  // 0b0000000000111110
-        (PFubyte)((PFfloat)((pixel & 0x7C0) >> 6)*(255.0f/31)),                 // 0b0000011111000000
-        (PFubyte)((PFfloat)((pixel & 0xF800) >> 11)*(255.0f/31)),               // 0b1111100000000000
+        (PFubyte)((PFfloat)((pixel & 0x3E) >> 1) * (255.0f/31)),                // 0b0000000000111110
+        (PFubyte)((PFfloat)((pixel & 0x7C0) >> 6) * (255.0f/31)),               // 0b0000011111000000
+        (PFubyte)((PFfloat)((pixel & 0xF800) >> 11) * (255.0f/31)),             // 0b1111100000000000
         (PFubyte)((pixel & 0x1)*255)                                            // 0b0000000000000001
     };
 }
@@ -671,9 +672,9 @@ pfiPixelGet_RGBA_USHORT_4_4_4_4(const void* pixels, PFsizei offset)
     PFushort pixel = ((PFushort*)pixels)[offset];
 
     return (PFcolor) {
-        (PFubyte)((PFfloat)((pixel & 0xF000) >> 12)*(255.0f/15)),               // 0b1111000000000000
-        (PFubyte)((PFfloat)((pixel & 0xF00) >> 8)*(255.0f/15)),                 // 0b0000111100000000
-        (PFubyte)((PFfloat)((pixel & 0xF0) >> 4)*(255.0f/15)),                  // 0b0000000011110000
+        (PFubyte)((PFfloat)((pixel & 0xF000) >> 12) * (255.0f/15)),             // 0b1111000000000000
+        (PFubyte)((PFfloat)((pixel & 0xF00) >> 8) * (255.0f/15)),               // 0b0000111100000000
+        (PFubyte)((PFfloat)((pixel & 0xF0) >> 4) * (255.0f/15)),                // 0b0000000011110000
         (PFubyte)((PFfloat)(pixel & 0xF)*(255.0f/15))                           // 0b0000000000001111
     };
 }
@@ -684,9 +685,9 @@ pfiPixelGet_BGRA_USHORT_4_4_4_4(const void* pixels, PFsizei offset)
     PFushort pixel = ((PFushort*)pixels)[offset];
 
     return (PFcolor) {
-        (PFubyte)((PFfloat)((pixel & 0xF0) >> 4)*(255.0f/15)),                  // 0b0000000011110000
-        (PFubyte)((PFfloat)((pixel & 0xF00) >> 8)*(255.0f/15)),                 // 0b0000111100000000
-        (PFubyte)((PFfloat)((pixel & 0xF000) >> 12)*(255.0f/15)),               // 0b1111000000000000
+        (PFubyte)((PFfloat)((pixel & 0xF0) >> 4) * (255.0f/15)),                // 0b0000000011110000
+        (PFubyte)((PFfloat)((pixel & 0xF00) >> 8) * (255.0f/15)),               // 0b0000111100000000
+        (PFubyte)((PFfloat)((pixel & 0xF000) >> 12) * (255.0f/15)),             // 0b1111000000000000
         (PFubyte)((PFfloat)(pixel & 0xF)*(255.0f/15))                           // 0b0000000000001111
     };
 }
@@ -710,10 +711,10 @@ pfiPixelGet_RGBA_HALF(const void* pixels, PFsizei offset)
     const PFushort *pixel = (PFushort*)pixels + offset*4;
 
     return (PFcolor) {
-        (PFubyte)(pfmHalfToFloat(pixel[0]*255.0f)),
-        (PFubyte)(pfmHalfToFloat(pixel[1]*255.0f)),
-        (PFubyte)(pfmHalfToFloat(pixel[2]*255.0f)),
-        (PFubyte)(pfmHalfToFloat(pixel[3]*255.0f))
+        (PFubyte)(pfmHalfToFloat(pixel[0]) * 255.0f),
+        (PFubyte)(pfmHalfToFloat(pixel[1]) * 255.0f),
+        (PFubyte)(pfmHalfToFloat(pixel[2]) * 255.0f),
+        (PFubyte)(pfmHalfToFloat(pixel[3]) * 255.0f)
     };
 }
 
@@ -723,10 +724,10 @@ pfiPixelGet_BGRA_HALF(const void* pixels, PFsizei offset)
     const PFushort *pixel = (PFushort*)pixels + offset*4;
 
     return (PFcolor) {
-        (PFubyte)(pfmHalfToFloat(pixel[2]*255.0f)),
-        (PFubyte)(pfmHalfToFloat(pixel[1]*255.0f)),
-        (PFubyte)(pfmHalfToFloat(pixel[0]*255.0f)),
-        (PFubyte)(pfmHalfToFloat(pixel[3]*255.0f))
+        (PFubyte)(pfmHalfToFloat(pixel[2]) * 255.0f),
+        (PFubyte)(pfmHalfToFloat(pixel[1]) * 255.0f),
+        (PFubyte)(pfmHalfToFloat(pixel[0]) * 255.0f),
+        (PFubyte)(pfmHalfToFloat(pixel[3]) * 255.0f)
     };
 }
 
@@ -736,10 +737,10 @@ pfiPixelGet_RGBA_FLOAT(const void* pixels, PFsizei offset)
     const PFfloat *pixel = (PFfloat*)pixels + offset*4;
 
     return (PFcolor) {
-        (PFubyte)(pixel[0]*255.0f),
-        (PFubyte)(pixel[1]*255.0f),
-        (PFubyte)(pixel[2]*255.0f),
-        (PFubyte)(pixel[3]*255.0f)
+        (PFubyte)(pixel[0] * 255.0f),
+        (PFubyte)(pixel[1] * 255.0f),
+        (PFubyte)(pixel[2] * 255.0f),
+        (PFubyte)(pixel[3] * 255.0f)
     };
 }
 
@@ -749,10 +750,10 @@ pfiPixelGet_BGRA_FLOAT(const void* pixels, PFsizei offset)
     const PFfloat *pixel = (PFfloat*)pixels + offset*4;
 
     return (PFcolor) {
-        (PFubyte)(pixel[2]*255.0f),
-        (PFubyte)(pixel[1]*255.0f),
-        (PFubyte)(pixel[0]*255.0f),
-        (PFubyte)(pixel[3]*255.0f)
+        (PFubyte)(pixel[2] * 255.0f),
+        (PFubyte)(pixel[1] * 255.0f),
+        (PFubyte)(pixel[0] * 255.0f),
+        (PFubyte)(pixel[3] * 255.0f)
     };
 }
 

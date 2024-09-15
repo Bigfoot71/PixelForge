@@ -99,8 +99,8 @@ void Rasterize_Point_NODEPTH(const PFvertex* point)
     PFsizei wDst = texDst->w;
     PFsizei hDst = texDst->h;
 
-    PFint cx = point->screen[0];
-    PFint cy = point->screen[1];
+    PFint cx = (PFint)point->screen[0];
+    PFint cy = (PFint)point->screen[1];
     PFfloat z = point->homogeneous[2];
     PFcolor color = point->color;
 
@@ -115,8 +115,8 @@ void Rasterize_Point_NODEPTH(const PFvertex* point)
     PFfloat r = G_currentCtx->pointSize*0.5f;
     PFfloat rSq = r*r;
 
-    for (PFint y = -r; y <= r; y++) {
-        for (PFint x = -r; x <= r; x++) {
+    for (PFint y = -(PFint)r; y <= (PFint)r; y++) {
+        for (PFint x = -(PFint)r; x <= (PFint)r; x++) {
             if (y*y + x*x <= rSq) {
                 PFsizei px = cx + x, py = cy + y;
                 if (px < wDst && py < hDst) {
@@ -147,8 +147,8 @@ void Rasterize_Point_DEPTH(const PFvertex* point)
     PFsizei wDst = texDst->w;
     PFsizei hDst = texDst->h;
 
-    PFint cx = point->screen[0];
-    PFint cy = point->screen[1];
+    PFint cx = (PFint)point->screen[0];
+    PFint cy = (PFint)point->screen[1];
     PFfloat z = point->homogeneous[2];
     PFcolor color = point->color;
 
@@ -165,8 +165,8 @@ void Rasterize_Point_DEPTH(const PFvertex* point)
     PFfloat r = G_currentCtx->pointSize*0.5f;
     PFfloat rSq = r*r;
 
-    for (PFint y = -r; y <= r; y++) {
-        for (PFint x = -r; x <= r; x++) {
+    for (PFint y = -(PFint)r; y <= (PFint)r; y++) {
+        for (PFint x = -(PFint)r; x <= (PFint)r; x++) {
             if (y*y + x*x <= rSq) {
                 PFsizei px = cx + x, py = cy + y;
                 if (px < wDst && py < hDst) {

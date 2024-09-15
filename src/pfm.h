@@ -58,6 +58,16 @@ PFM_API float rsqrtf(float x)
 }
 #endif //PFM_FISR
 
+/* Platform Specific */
+
+#ifndef PFM_RESTRICT
+#   ifdef _MSC_VER
+#       define PFM_RESTRICT __restrict
+#   else //ANY_PLATFORM
+#       define PFM_RESTRICT restrict
+#   endif //PLATFORM
+#endif //PFM_RESTRICT
+
 /* SISD types definitions */
 
 typedef float PFMvec2[2];
@@ -154,13 +164,13 @@ pfmVec2Set(PFMvec2 dst, float x, float y)
 }
 
 PFM_API void
-pfmVec2Copy(aPFMvec2 restrict dst, const aPFMvec2 restrict src)
+pfmVec2Copy(aPFMvec2 PFM_RESTRICT dst, const aPFMvec2 PFM_RESTRICT src)
 {
     memcpy(dst, src, sizeof(PFMvec2));
 }
 
 PFM_API void
-pfmVec2Swap(aPFMvec2 restrict a, aPFMvec2 restrict b)
+pfmVec2Swap(aPFMvec2 PFM_RESTRICT a, aPFMvec2 PFM_RESTRICT b)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         float tmp = a[i];
@@ -178,7 +188,7 @@ pfmVec2Neg(PFMvec2 dst, const PFMvec2 v)
 }
 
 PFM_API void
-pfmVec2NegR(aPFMvec2 restrict dst, const PFMvec2 v)
+pfmVec2NegR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = -v[i];
@@ -194,7 +204,7 @@ pfmVec2Add(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
 }
 
 PFM_API void
-pfmVec2AddR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
+pfmVec2AddR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = v1[i] + v2[i];
@@ -210,7 +220,7 @@ pfmVec2Sub(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
 }
 
 PFM_API void
-pfmVec2SubR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
+pfmVec2SubR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = v1[i] - v2[i];
@@ -226,7 +236,7 @@ pfmVec2Mul(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
 }
 
 PFM_API void
-pfmVec2MulR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
+pfmVec2MulR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = v1[i]*v2[i];
@@ -242,7 +252,7 @@ pfmVec2Div(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
 }
 
 PFM_API void
-pfmVec2DivR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
+pfmVec2DivR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = v1[i]/v2[i];
@@ -258,7 +268,7 @@ pfmVec2Offset(PFMvec2 dst, const PFMvec2 v, float scalar)
 }
 
 PFM_API void
-pfmVec2OffsetR(aPFMvec2 restrict dst, const PFMvec2 v, float scalar)
+pfmVec2OffsetR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v, float scalar)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = v[i] + scalar;
@@ -274,7 +284,7 @@ pfmVec2Scale(PFMvec2 dst, const PFMvec2 v, float scalar)
 }
 
 PFM_API void
-pfmVec2ScaleR(aPFMvec2 restrict dst, const PFMvec2 v, float scalar)
+pfmVec2ScaleR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v, float scalar)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = v[i]*scalar;
@@ -294,7 +304,7 @@ pfmVec2Normalize(PFMvec2 dst, const PFMvec2 v)
 }
 
 PFM_API void
-pfmVec2NormalizeR(aPFMvec2 restrict dst, const PFMvec2 v)
+pfmVec2NormalizeR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v)
 {
     float squaredLength = v[0]*v[0] + v[1]*v[1];
     if (squaredLength == 0.0f) return;
@@ -373,7 +383,7 @@ pfmVec2Direction(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2)
 }
 
 PFM_API void
-pfmVec2DirectionR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2)
+pfmVec2DirectionR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2 v2)
 {
     float lengthSq = 0.0f;
 
@@ -404,7 +414,7 @@ pfmVec2Lerp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, float t)
 }
 
 PFM_API void
-pfmVec2LerpR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2, float t)
+pfmVec2LerpR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2 v2, float t)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = v1[i] + t*(v2[i]-v1[i]);
@@ -420,7 +430,7 @@ pfmVec2BaryInterp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2
 }
 
 PFM_API void
-pfmVec2BaryInterpR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, float w1, float w2, float w3)
+pfmVec2BaryInterpR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, float w1, float w2, float w3)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = w1*v1[i] + w2*v2[i] + w3*v3[i];
@@ -436,7 +446,7 @@ pfmVec2BaryInterpV(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec
 }
 
 PFM_API void
-pfmVec2BaryInterpVR(aPFMvec2 restrict dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, const PFMvec3 w)
+pfmVec2BaryInterpVR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, const PFMvec3 w)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = w[0]*v1[i] + w[1]*v2[i] + w[2]*v3[i];
@@ -455,7 +465,7 @@ pfmVec2Transform(PFMvec2 dst, const PFMvec2 v, const PFMmat4 mat)
 }
 
 PFM_API void
-pfmVec2TransformR(aPFMvec2 restrict dst, const PFMvec2 v, const PFMmat4 mat)
+pfmVec2TransformR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v, const PFMmat4 mat)
 {
     dst[0] = mat[0]*v[0] + mat[4]*v[1] + mat[12];
     dst[1] = mat[1]*v[0] + mat[5]*v[1] + mat[13];
@@ -473,7 +483,7 @@ pfmVec2TransformWT(PFMvec2 dst, const PFMvec2 v, float wTranslation, const PFMma
 }
 
 PFM_API void
-pfmVec2TransformWTR(aPFMvec2 restrict dst, const PFMvec2 v, float wTranslation, const PFMmat4 mat)
+pfmVec2TransformWTR(aPFMvec2 PFM_RESTRICT dst, const PFMvec2 v, float wTranslation, const PFMmat4 mat)
 {
     dst[0] = mat[0]*v[0] + mat[4]*v[1] + wTranslation*mat[12];
     dst[1] = mat[1]*v[0] + mat[5]*v[1] + wTranslation*mat[13];
@@ -500,13 +510,13 @@ pfmVec3Set(PFMvec3 dst, float x, float y, float z)
 }
 
 PFM_API void
-pfmVec3Copy(aPFMvec3 restrict dst, const aPFMvec3 restrict src)
+pfmVec3Copy(aPFMvec3 PFM_RESTRICT dst, const aPFMvec3 PFM_RESTRICT src)
 {
     memcpy(dst, src, sizeof(PFMvec3));
 }
 
 PFM_API void
-pfmVec3Swap(aPFMvec3 restrict a, aPFMvec3 restrict b)
+pfmVec3Swap(aPFMvec3 PFM_RESTRICT a, aPFMvec3 PFM_RESTRICT b)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -530,7 +540,7 @@ pfmVec3Neg(PFMvec3 dst, const PFMvec3 v)
 }
 
 PFM_API void
-pfmVec3NegR(aPFMvec3 restrict dst, const PFMvec3 v)
+pfmVec3NegR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -552,7 +562,7 @@ pfmVec3Add(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 }
 
 PFM_API void
-pfmVec3AddR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+pfmVec3AddR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -574,7 +584,7 @@ pfmVec3Sub(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 }
 
 PFM_API void
-pfmVec3SubR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+pfmVec3SubR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -596,7 +606,7 @@ pfmVec3Mul(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 }
 
 PFM_API void
-pfmVec3MulR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+pfmVec3MulR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -618,7 +628,7 @@ pfmVec3Div(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 }
 
 PFM_API void
-pfmVec3DivR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+pfmVec3DivR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -640,7 +650,7 @@ pfmVec3Offset(PFMvec3 dst, const PFMvec3 v, float scalar)
 }
 
 PFM_API void
-pfmVec3OffsetR(aPFMvec3 restrict dst, const PFMvec3 v, float scalar)
+pfmVec3OffsetR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v, float scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -662,7 +672,7 @@ pfmVec3Scale(PFMvec3 dst, const PFMvec3 v, float scalar)
 }
 
 PFM_API void
-pfmVec3ScaleR(aPFMvec3 restrict dst, const PFMvec3 v, float scalar)
+pfmVec3ScaleR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v, float scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -689,7 +699,7 @@ pfmVec3Normalize(PFMvec3 dst, const PFMvec3 v)
 }
 
 PFM_API void
-pfmVec3NormalizeR(aPFMvec3 restrict dst, const PFMvec3 v)
+pfmVec3NormalizeR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v)
 {
     float squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2];
     if (squaredLength == 0.0f) return;
@@ -744,7 +754,7 @@ pfmVec3Cross(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 }
 
 PFM_API void
-pfmVec3CrossR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+pfmVec3CrossR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2)
 {
     dst[0] = v1[1]*v2[2] - v1[2]*v2[1];
     dst[1] = v1[2]*v2[0] - v1[0]*v2[2];
@@ -812,7 +822,7 @@ pfmVec3Direction(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2)
 }
 
 PFM_API void
-pfmVec3DirectionR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2)
+pfmVec3DirectionR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2)
 {
     float lengthSq = 0.0f;
 
@@ -846,7 +856,7 @@ pfmVec3Lerp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, float t)
 }
 
 PFM_API void
-pfmVec3LerpR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2, float t)
+pfmVec3LerpR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2, float t)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -868,7 +878,7 @@ pfmVec3BaryInterp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3
 }
 
 PFM_API void
-pfmVec3BaryInterpR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, float w1, float w2, float w3)
+pfmVec3BaryInterpR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, float w1, float w2, float w3)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -890,7 +900,7 @@ pfmVec3BaryInterpV(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec
 }
 
 PFM_API void
-pfmVec3BaryInterpVR(aPFMvec3 restrict dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, const PFMvec3 w)
+pfmVec3BaryInterpVR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, const PFMvec3 w)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -913,7 +923,7 @@ pfmVec3Transform(PFMvec3 dst, const PFMvec3 v, const PFMmat4 mat)
 }
 
 PFM_API void
-pfmVec3TransformR(aPFMvec3 restrict dst, const PFMvec3 v, const PFMmat4 mat)
+pfmVec3TransformR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v, const PFMmat4 mat)
 {
     dst[0] = mat[0]*v[0] + mat[4]*v[1] + mat[8]*v[2] + mat[12];
     dst[1] = mat[1]*v[0] + mat[5]*v[1] + mat[9]*v[2] + mat[13];
@@ -933,7 +943,7 @@ pfmVec3TransformWT(PFMvec3 dst, const PFMvec3 v, float wTranslation, const PFMma
 }
 
 PFM_API void
-pfmVec3TransformWTR(aPFMvec3 restrict dst, const PFMvec3 v, float wTranslation, const PFMmat4 mat)
+pfmVec3TransformWTR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 v, float wTranslation, const PFMmat4 mat)
 {
     dst[0] = mat[0]*v[0] + mat[4]*v[1] + mat[8]*v[2] + wTranslation*mat[12];
     dst[1] = mat[1]*v[0] + mat[5]*v[1] + mat[9]*v[2] + wTranslation*mat[13];
@@ -963,7 +973,7 @@ pfmVec3Reflect(PFMvec3 dst, const PFMvec3 incident, const PFMvec3 normal)
 }
 
 PFM_API void
-pfmVec3ReflectR(aPFMvec3 restrict dst, const PFMvec3 incident, const PFMvec3 normal)
+pfmVec3ReflectR(aPFMvec3 PFM_RESTRICT dst, const PFMvec3 incident, const PFMvec3 normal)
 {
     float dotProduct = 0.0f;
 
@@ -1005,13 +1015,13 @@ pfmVec4Set(PFMvec4 dst, float x, float y, float z, float w)
 }
 
 PFM_API void
-pfmVec4Copy(aPFMvec4 restrict dst, const aPFMvec4 restrict src)
+pfmVec4Copy(aPFMvec4 PFM_RESTRICT dst, const aPFMvec4 PFM_RESTRICT src)
 {
     memcpy(dst, src, sizeof(PFMvec4));
 }
 
 PFM_API void
-pfmVec4Swap(aPFMvec4 restrict a, aPFMvec4 restrict b)
+pfmVec4Swap(aPFMvec4 PFM_RESTRICT a, aPFMvec4 PFM_RESTRICT b)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1035,7 +1045,7 @@ pfmVec4Neg(PFMvec4 dst, const PFMvec4 v)
 }
 
 PFM_API void
-pfmVec4NegR(aPFMvec4 restrict dst, const PFMvec4 v)
+pfmVec4NegR(aPFMvec4 PFM_RESTRICT dst, const PFMvec4 v)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1057,7 +1067,7 @@ pfmVec4Add(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 }
 
 PFM_API void
-pfmVec4AddR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
+pfmVec4AddR(aPFMvec4 PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1079,7 +1089,7 @@ pfmVec4Sub(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 }
 
 PFM_API void
-pfmVec4SubR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
+pfmVec4SubR(aPFMvec4 PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1101,7 +1111,7 @@ pfmVec4Mul(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 }
 
 PFM_API void
-pfmVec4MulR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
+pfmVec4MulR(aPFMvec4 PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1123,7 +1133,7 @@ pfmVec4Div(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2)
 }
 
 PFM_API void
-pfmVec4DivR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2)
+pfmVec4DivR(aPFMvec4 PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1145,7 +1155,7 @@ pfmVec4Offset(PFMvec4 dst, const PFMvec4 v, float scalar)
 }
 
 PFM_API void
-pfmVec4OffsetR(aPFMvec4 restrict dst, const PFMvec4 v, float scalar)
+pfmVec4OffsetR(aPFMvec4 PFM_RESTRICT dst, const PFMvec4 v, float scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1167,7 +1177,7 @@ pfmVec4Scale(PFMvec4 dst, const PFMvec4 v, float scalar)
 }
 
 PFM_API void
-pfmVec4ScaleR(aPFMvec4 restrict dst, const PFMvec4 v, float scalar)
+pfmVec4ScaleR(aPFMvec4 PFM_RESTRICT dst, const PFMvec4 v, float scalar)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1194,7 +1204,7 @@ pfmVec4Normalize(PFMvec4 dst, const PFMvec4 v)
 }
 
 PFM_API void
-pfmVec4NormalizeR(aPFMvec4 restrict dst, const PFMvec4 v)
+pfmVec4NormalizeR(aPFMvec4 PFM_RESTRICT dst, const PFMvec4 v)
 {
     float squaredLength = v[0]*v[0] + v[1]*v[1] + v[2]*v[2] + v[3]*v[3];
     if (squaredLength == 0.0f) return;
@@ -1239,7 +1249,7 @@ pfmVec4Lerp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, float t)
 }
 
 PFM_API void
-pfmVec4LerpR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2, float t)
+pfmVec4LerpR(aPFMvec4 PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, float t)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1261,7 +1271,7 @@ pfmVec4BaryInterp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4
 }
 
 PFM_API void
-pfmVec4BaryInterpR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
+pfmVec4BaryInterpR(aPFMvec4 PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1283,7 +1293,7 @@ pfmVec4BaryInterpV(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec
 }
 
 PFM_API void
-pfmVec4BaryInterpVR(aPFMvec4 restrict dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
+pfmVec4BaryInterpVR(aPFMvec4 PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1307,7 +1317,7 @@ pfmVec4Transform(PFMvec4 dst, const PFMvec4 v, const PFMmat4 mat)
 }
 
 PFM_API void
-pfmVec4TransformR(aPFMvec4 restrict dst, const PFMvec4 v, const PFMmat4 mat)
+pfmVec4TransformR(aPFMvec4 PFM_RESTRICT dst, const PFMvec4 v, const PFMmat4 mat)
 {
     dst[0] = mat[0]*v[0] + mat[4]*v[1] + mat[8]*v[2] + mat[12]*v[3];
     dst[1] = mat[1]*v[0] + mat[5]*v[1] + mat[9]*v[2] + mat[13]*v[3];
@@ -1318,7 +1328,7 @@ pfmVec4TransformR(aPFMvec4 restrict dst, const PFMvec4 v, const PFMmat4 mat)
 /* Matrix 4x4 function definitions */
 
 PFM_API void
-pfmMat4Copy(aPFMmat4 restrict dst, const aPFMmat4 restrict src)
+pfmMat4Copy(aPFMmat4 PFM_RESTRICT dst, const aPFMmat4 PFM_RESTRICT src)
 {
     memcpy(dst, src, sizeof(PFMmat4));
 }
@@ -1367,7 +1377,7 @@ pfmMat4Transpose(PFMmat4 dst, const PFMmat4 src)
 }
 
 PFM_API void
-pfmMat4TransposeR(aPFMmat4 restrict dst, const PFMmat4 src)
+pfmMat4TransposeR(aPFMmat4 PFM_RESTRICT dst, const PFMmat4 src)
 {
     // NOTE 1: Seems more optimized in O3 by GCC 13 without "omp simd collapse(2)"
     // NOTE 2: Also using "omp simd" produces exactly the same code in O3 with GCC 13.
@@ -1441,7 +1451,7 @@ pfmMat4Add(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
 }
 
 PFM_API void
-pfmMat4AddR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat4 right)
+pfmMat4AddR(aPFMmat4 PFM_RESTRICT dst, const PFMmat4 left, const PFMmat4 right)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1463,7 +1473,7 @@ pfmMat4Sub(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
 }
 
 PFM_API void
-pfmMat4SubR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat4 right)
+pfmMat4SubR(aPFMmat4 PFM_RESTRICT dst, const PFMmat4 left, const PFMmat4 right)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1479,7 +1489,7 @@ pfmMat4Mul(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
     PFMmat4 result;
 
 #   ifdef _OPENMP
-#       pragma omp simd collapse(2)
+#       pragma omp simd
 #   endif
     for (int_fast8_t i = 0; i < 4; i++) {
         for (int_fast8_t j = 0; j < 4; j++)
@@ -1499,10 +1509,10 @@ pfmMat4Mul(PFMmat4 dst, const PFMmat4 left, const PFMmat4 right)
 }
 
 PFM_API void
-pfmMat4MulR(aPFMmat4 restrict dst, const PFMmat4 left, const PFMmat4 right)
+pfmMat4MulR(aPFMmat4 PFM_RESTRICT dst, const PFMmat4 left, const PFMmat4 right)
 {
 #   ifdef _OPENMP
-#       pragma omp simd collapse(2)
+#       pragma omp simd
 #   endif
     for (int_fast8_t i = 0; i < 4; i++) {
         for (int_fast8_t j = 0; j < 4; j++) {
@@ -1698,7 +1708,7 @@ pfmMat4Perspective(PFMmat4 dst, float fovY, float aspect, float nearPlane, float
 {
     memset(dst, 0, sizeof(PFMmat4));
 
-    float top = nearPlane*tan(fovY*0.5);
+    float top = nearPlane*tanf(fovY*0.5f);
     float bottom = -top;
     float right = top*aspect;
     float left = -right;

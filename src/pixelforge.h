@@ -22,6 +22,8 @@
 
 #include <stdint.h>
 
+/* Platform Specific */
+
 #ifndef PF_API
 #   if defined(_WIN32)
 #       if defined(__TINYC__)
@@ -60,6 +62,16 @@
 #ifndef PF_CTX_DECL
 #   define PF_CTX_DECL
 #endif //PF_CTX_DECL
+
+#ifndef PF_RESTRICT
+#   ifdef _MSC_VER
+#       define PF_RESTRICT __restrict
+#   else //ANY_PLATFORM
+#       define PF_RESTRICT restrict
+#   endif //PLATFORM
+#endif //PF_RESTRICT
+
+/* Helper Macros */
 
 #ifndef PF_MALLOC
 #   define PF_MALLOC(size) malloc(size)
@@ -678,7 +690,7 @@ PF_API void pfMultMatrixf(const PFfloat* mat);
  * @param znear  Distance to the near depth clipping plane.
  * @param zfar   Distance to the far depth clipping plane.
  */
-PF_API void pfFrustum(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar);
+PF_API void pfFrustum(PFfloat left, PFfloat right, PFfloat bottom, PFfloat top, PFfloat znear, PFfloat zfar);
 
 /**
  * @brief Sets up an orthographic projection matrix.
@@ -692,7 +704,7 @@ PF_API void pfFrustum(PFdouble left, PFdouble right, PFdouble bottom, PFdouble t
  * @param znear  Distance to the near depth clipping plane.
  * @param zfar   Distance to the far depth clipping plane.
  */
-PF_API void pfOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar);
+PF_API void pfOrtho(PFfloat left, PFfloat right, PFfloat bottom, PFfloat top, PFfloat znear, PFfloat zfar);
 
 
 

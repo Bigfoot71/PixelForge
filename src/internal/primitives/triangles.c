@@ -783,9 +783,9 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
 
     /* Cache screen coordinates, depths and colors of vertices */
 
-    PFint x1 = v1->screen[0], y1 = v1->screen[1];
-    PFint x2 = v2->screen[0], y2 = v2->screen[1];
-    PFint x3 = v3->screen[0], y3 = v3->screen[1];
+    PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
+    PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
+    PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
 
     PFfloat z1 = v1->homogeneous[2];
     PFfloat z2 = v2->homogeneous[2];
@@ -855,10 +855,10 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
         PFMvec3 nA, nB;
 
         if (y < y2) { // First half
-            xA = x1 + (x3 - x1)*alpha;
-            xB = x1 + (x2 - x1)*beta1;
-            zA = z1 + (z3 - z1)*alpha;
-            zB = z1 + (z2 - z1)*beta1;
+            xA = (PFint)(x1 + (x3 - x1) * alpha);
+            xB = (PFint)(x1 + (x2 - x1) * beta1);
+            zA = (PFint)(z1 + (z3 - z1) * alpha);
+            zB = (PFint)(z1 + (z2 - z1) * beta1);
             cA = interpolateColor(c1, c3, alpha);
             cB = interpolateColor(c1, c2, beta1);
             if (texSampler) {
@@ -872,10 +872,10 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFvertex* v1,
                 pfmVec3LerpR(nB, v1->normal, v2->normal, beta1);
             }
         } else { // Second half
-            xA = x1 + (x3 - x1)*alpha;
-            xB = x2 + (x3 - x2)*beta2;
-            zA = z1 + (z3 - z1)*alpha;
-            zB = z2 + (z3 - z2)*beta2;
+            xA = (PFint)(x1 + (x3 - x1) * alpha);
+            xB = (PFint)(x2 + (x3 - x2) * beta2);
+            zA = (PFint)(z1 + (z3 - z1) * alpha);
+            zB = (PFint)(z2 + (z3 - z2) * beta2);
             cA = interpolateColor(c1, c3, alpha);
             cB = interpolateColor(c2, c3, beta2);
             if (texSampler) {

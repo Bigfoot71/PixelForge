@@ -172,16 +172,16 @@ PFboolean Process_ClipLine2D(PFvertex* restrict v1, PFvertex* restrict v2)
 
         if (code0 & CLIP_LEFT) {
             v1->screen[1] += (G_currentCtx->vpMin[0] - v1->screen[0])*m;
-            v1->screen[0] = G_currentCtx->vpMin[0];
+            v1->screen[0] = (PFfloat)G_currentCtx->vpMin[0];
         } else if (code0 & CLIP_RIGHT) {
             v1->screen[1] += (G_currentCtx->vpMax[0] - v1->screen[0])*m;
-            v1->screen[0] = G_currentCtx->vpMax[0];
+            v1->screen[0] = (PFfloat)G_currentCtx->vpMax[0];
         } else if (code0 & CLIP_BOTTOM) {
             if (m) v1->screen[0] += (G_currentCtx->vpMin[1] - v1->screen[1]) / m;
-            v1->screen[1] = G_currentCtx->vpMin[1];
+            v1->screen[1] = (PFfloat)G_currentCtx->vpMin[1];
         } else if (code0 & CLIP_TOP) {
             if (m) v1->screen[0] += (G_currentCtx->vpMax[1] - v1->screen[1]) / m;
-            v1->screen[1] = G_currentCtx->vpMax[1];
+            v1->screen[1] = (PFfloat)G_currentCtx->vpMax[1];
         }
     }
 
@@ -274,8 +274,10 @@ void Rasterize_Line_NODEPTH(const PFvertex* v1, const PFvertex* v2)
     void *bufDst = texDst->pixels;
     PFsizei wDst = texDst->w;
 
-    PFint x1 = v1->screen[0], y1 = v1->screen[1];
-    PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    PFint x1 = (PFint)v1->screen[0];
+    PFint y1 = (PFint)v1->screen[1];
+    PFint x2 = (PFint)v2->screen[0];
+    PFint y2 = (PFint)v2->screen[1];
     PFfloat z1 = v1->homogeneous[2];
     PFfloat z2 = v2->homogeneous[2];
     PFcolor c1 = v1->color;
@@ -365,8 +367,10 @@ void Rasterize_Line_DEPTH(const PFvertex* v1, const PFvertex* v2)
     void *bufDst = texDst->pixels;
     PFsizei wDst = texDst->w;
 
-    PFint x1 = v1->screen[0], y1 = v1->screen[1];
-    PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    PFint x1 = (PFint)v1->screen[0];
+    PFint y1 = (PFint)v1->screen[1];
+    PFint x2 = (PFint)v2->screen[0];
+    PFint y2 = (PFint)v2->screen[1];
     PFfloat z1 = v1->homogeneous[2];
     PFfloat z2 = v2->homogeneous[2];
     PFcolor c1 = v1->color;
@@ -444,17 +448,18 @@ void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2)
 {
     PFvertex tv1, tv2;
 
-    PFint x1 = v1->screen[0], y1 = v1->screen[1];
-    PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    PFint x1 = (PFint)v1->screen[0];
+    PFint y1 = (PFint)v1->screen[1];
+    PFint x2 = (PFint)v2->screen[0];
+    PFint y2 = (PFint)v2->screen[1];
 
     PFint dx = x2 - x1, dy = y2 - y1;
-
-    PFint thickness = (PFint)(G_currentCtx->lineWidth + 0.5f);
 
     Rasterize_Line_DEPTH(v1, v2);
 
     if (dx != 0 && abs(dy / dx) < 1) {
-        PFint wy = (thickness - 1)*sqrtf(dx*dx + dy*dy) / (2*abs(dx));
+        PFint wy = (PFint)((G_currentCtx->lineWidth - 1.0f) * rsqrtf(dx * dx + dy * dy) * (PFfloat)abs(dx));
+        wy >>= 1; // Division by 2 via bit shift
 
         for (PFint i = 1; i <= wy; i++) {
             tv1 = *v1, tv2 = *v2;
@@ -468,7 +473,8 @@ void Rasterize_Line_THICK_NODEPTH(const PFvertex* v1, const PFvertex* v2)
             Rasterize_Line_NODEPTH(&tv1, &tv2);
         }
     } else if (dy != 0) {
-        PFint wx = (thickness - 1)*sqrtf(dx*dx + dy*dy) / (2*abs(dy));
+        PFint wx = (PFint)((G_currentCtx->lineWidth - 1.0f) * rsqrtf(dx * dx + dy * dy) * (PFfloat)abs(dy));
+        wx >>= 1; // Division by 2 via bit shift
 
         for (PFint i = 1; i <= wx; i++) {
             tv1 = *v1, tv2 = *v2;
@@ -487,18 +493,18 @@ void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2)
 {
     PFvertex tv1, tv2;
 
-    PFint x1 = v1->screen[0], y1 = v1->screen[1];
-    PFint x2 = v2->screen[0], y2 = v2->screen[1];
+    PFint x1 = (PFint)v1->screen[0];
+    PFint y1 = (PFint)v1->screen[1];
+    PFint x2 = (PFint)v2->screen[0];
+    PFint y2 = (PFint)v2->screen[1];
 
     PFint dx = x2 - x1, dy = y2 - y1;
 
-    PFint thickness = (PFint)(G_currentCtx->lineWidth + 0.5f);
-
     Rasterize_Line_DEPTH(v1, v2);
 
-    if (dx != 0 && abs(dy / dx) < 1)
-    {
-        PFint wy = (thickness - 1)*sqrtf(dx*dx + dy*dy) / (2*abs(dx));
+    if (dx != 0 && abs(dy / dx) < 1) {
+        PFint wy = (PFint)((G_currentCtx->lineWidth - 1.0f) * rsqrtf(dx * dx + dy * dy) * (PFfloat)abs(dx));
+        wy >>= 1; // Division by 2 via bit shift
 
         for (PFint i = 1; i <= wy; i++) {
             tv1 = *v1, tv2 = *v2;
@@ -509,10 +515,9 @@ void Rasterize_Line_THICK_DEPTH(const PFvertex* v1, const PFvertex* v2)
             tv1.screen[1] += i, tv2.screen[1] += i;
             Rasterize_Line_DEPTH(&tv1, &tv2);
         }
-    }
-    else if (dy != 0)
-    {
-        PFint wx = (thickness - 1)*sqrtf(dx*dx + dy*dy) / (2*abs(dy));
+    } else if (dy != 0) {
+        PFint wx = (PFint)((G_currentCtx->lineWidth - 1.0f) * rsqrtf(dx * dx + dy * dy) * (PFfloat)abs(dy));
+        wx >>= 1; // Division by 2 via bit shift
 
         for (PFint i = 1; i <= wx; i++) {
             tv1 = *v1, tv2 = *v2;

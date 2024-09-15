@@ -145,8 +145,8 @@ void pfGetIntegerv(PFenum pname, PFint* params)
         //  break;
 
         case PF_CURRENT_RASTER_POSITION:
-            params[0] = G_currentCtx->rasterPos[0];
-            params[1] = G_currentCtx->rasterPos[1];
+            params[0] = (PFint)G_currentCtx->rasterPos[0];
+            params[1] = (PFint)G_currentCtx->rasterPos[1];
             break;
 
         case PF_POLYGON_MODE:
@@ -245,10 +245,10 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
     switch (pname)
     {
         case PF_COLOR_CLEAR_VALUE:
-            params[0] = G_currentCtx->clearColor.r*INV_255;
-            params[1] = G_currentCtx->clearColor.g*INV_255;
-            params[2] = G_currentCtx->clearColor.b*INV_255;
-            params[3] = G_currentCtx->clearColor.a*INV_255;
+            params[0] = G_currentCtx->clearColor.r*(PFfloat)INV_255;
+            params[1] = G_currentCtx->clearColor.g*(PFfloat)INV_255;
+            params[2] = G_currentCtx->clearColor.b*(PFfloat)INV_255;
+            params[3] = G_currentCtx->clearColor.a*(PFfloat)INV_255;
             break;
 
         case PF_DEPTH_CLEAR_VALUE:
@@ -256,10 +256,10 @@ void pfGetFloatv(PFenum pname, PFfloat* params)
             break;
 
         case PF_CURRENT_COLOR:
-            params[0] = G_currentCtx->currentColor.r*INV_255;
-            params[1] = G_currentCtx->currentColor.g*INV_255;
-            params[2] = G_currentCtx->currentColor.b*INV_255;
-            params[3] = G_currentCtx->currentColor.a*INV_255;
+            params[0] = G_currentCtx->currentColor.r*(PFfloat)INV_255;
+            params[1] = G_currentCtx->currentColor.g*(PFfloat)INV_255;
+            params[2] = G_currentCtx->currentColor.b*(PFfloat)INV_255;
+            params[3] = G_currentCtx->currentColor.a*(PFfloat)INV_255;
             break;
 
         case PF_CURRENT_NORMAL:

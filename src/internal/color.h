@@ -29,10 +29,10 @@ static inline PFcolor
 pfiColorLerpSmooth(PFcolor a, PFcolor b, PFfloat t)
 {
     return (PFcolor) {
-        a.r + t*(b.r - a.r),
-        a.g + t*(b.g - a.g),
-        a.b + t*(b.b - a.b),
-        a.a + t*(b.a - a.a)
+        (PFubyte)(a.r + t * (b.r - a.r)),
+        (PFubyte)(a.g + t * (b.g - a.g)),
+        (PFubyte)(a.b + t * (b.b - a.b)),
+        (PFubyte)(a.a + t * (b.a - a.a))
     };
 }
 
@@ -45,9 +45,9 @@ pfiColorLerpFlat(PFcolor v1, PFcolor v2, PFfloat t)
 static inline PFcolor
 pfiColorBarySmooth(PFcolor v1, PFcolor v2, PFcolor v3, PFfloat w1, PFfloat w2, PFfloat w3)
 {
-    PFubyte uW1 = 255*w1;
-    PFubyte uW2 = 255*w2;
-    PFubyte uW3 = 255*w3;
+    PFubyte uW1 = (PFubyte)(255 * w1);
+    PFubyte uW2 = (PFubyte)(255 * w2);
+    PFubyte uW3 = (PFubyte)(255 * w3);
 
     return (PFcolor) {
         ((uW1*v1.r) + (uW2*v2.r) + (uW3*v3.r))/255,
