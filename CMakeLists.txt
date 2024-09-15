@@ -24,7 +24,11 @@ file(GLOB_RECURSE SRCS ${PF_ROOT_PATH}/src/*.c)
 file(GLOB HDRS ${PF_ROOT_PATH}/src/*.h)
 
 # Common compilation options
-add_compile_options(-Wall -Wextra -pedantic)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    add_compile_options(-Wall -Wextra -Wpedantic)
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    add_compile_options(/W4)
+endif()
 
 # Adding source files to the target based on the chosen option (shared or static)
 if(PF_BUILD_SHARED)
@@ -59,9 +63,13 @@ else()
 endif()
 
 # Check for OpenMP support
-find_package(OpenMP)
-if (OPENMP_FOUND)
-    target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_C)
+if (NOT "${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+    find_package(OpenMP)
+    if (OPENMP_FOUND)
+        target_link_libraries(${PROJECT_NAME} PUBLIC OpenMP::OpenMP_C)
+    endif()
+else()
+    message(STATUS "OpenMP not used with MSVC")
 endif()
 
 # Installation if option is enabled

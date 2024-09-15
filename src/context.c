@@ -188,8 +188,8 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
         ctx->lights[i] = (PFlight) {
             .position = { 0 },
             .direction = { 0 },
-            .innerCutOff = M_PI,
-            .outerCutOff = M_PI,
+            .innerCutOff = (PFfloat)M_PI,
+            .outerCutOff = (PFfloat)M_PI,
             .attConstant = 1,
             .attLinear = 0,
             .attQuadratic = 0,
@@ -548,14 +548,14 @@ void pfMultMatrixf(const PFfloat* mat)
     pfmMat4Mul(*G_currentCtx->currentMatrix, *G_currentCtx->currentMatrix, mat);
 }
 
-void pfFrustum(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar)
+void pfFrustum(PFfloat left, PFfloat right, PFfloat bottom, PFfloat top, PFfloat znear, PFfloat zfar)
 {
     PFMmat4 frustum;
     pfmMat4Frustum(frustum, left, right, bottom, top, znear, zfar);
     pfmMat4Mul(*G_currentCtx->currentMatrix, *G_currentCtx->currentMatrix, frustum);
 }
 
-void pfOrtho(PFdouble left, PFdouble right, PFdouble bottom, PFdouble top, PFdouble znear, PFdouble zfar)
+void pfOrtho(PFfloat left, PFfloat right, PFfloat bottom, PFfloat top, PFfloat znear, PFfloat zfar)
 {
     PFMmat4 ortho;
     pfmMat4Ortho(ortho, left, right, bottom, top, znear, zfar);
@@ -869,8 +869,8 @@ PFboolean pfIsEnabledLight(PFsizei light)
 
     PFlight *desiredLight = G_currentCtx->lights + light;
 
-    for (PFlight *light = G_currentCtx->activeLights; light != NULL; light = light->next) {
-        if (light == desiredLight) return PF_TRUE;
+    for (PFlight *l = G_currentCtx->activeLights; l != NULL; l = l->next) {
+        if (l == desiredLight) return PF_TRUE;
     }
 
     return PF_FALSE;
@@ -1676,19 +1676,11 @@ void pfVertex4fv(const PFfloat* v)
 //       when the `PF_COLOR_MATERIAL` state is enabled.
 static void pfiSetMaterialColor(PFcolor color)
 {
-    PFmaterial *m1 = NULL, *m2 = NULL;
+    PFmaterial *m1 = &G_currentCtx->faceMaterial[PF_FRONT];
+    PFmaterial *m2 = &G_currentCtx->faceMaterial[PF_BACK];
 
-    switch (G_currentCtx->materialColorFollowing.face) {
-        case PF_BACK:
-        case PF_FRONT:
-            m1 = m2 = &G_currentCtx->faceMaterial
-                [G_currentCtx->materialColorFollowing.face];
-            break;
-        case PF_FRONT_AND_BACK:
-            m1 = &G_currentCtx->faceMaterial[PF_FRONT];
-            m2 = &G_currentCtx->faceMaterial[PF_BACK];
-            break;
-    }
+    if (G_currentCtx->materialColorFollowing.face == PF_FRONT) m2 = m1;
+    else if (G_currentCtx->materialColorFollowing.face == PF_BACK) m1 = m2;
 
     switch (G_currentCtx->materialColorFollowing.mode) {
         case PF_AMBIENT_AND_DIFFUSE:
@@ -1911,22 +1903,22 @@ void pfNormal3fv(const PFfloat* v)
 
 void pfRects(PFshort x1, PFshort y1, PFshort x2, PFshort y2)
 {
-    pfRectf(x1, y1, x2, y2);
+    pfRectf((PFfloat)x1, (PFfloat)y1, (PFfloat)x2, (PFfloat)y2);
 }
 
 void pfRectsv(const PFshort* v1, const PFshort* v2)
 {
-    pfRectf(v1[0], v1[1], v2[0], v2[1]);
+    pfRectf((PFfloat)v1[0], (PFfloat)v1[1], (PFfloat)v2[0], (PFfloat)v2[1]);
 }
 
 void pfRecti(PFint x1, PFint y1, PFint x2, PFint y2)
 {
-    pfRectf(x1, y1, x2, y2);
+    pfRectf((PFfloat)x1, (PFfloat)y1, (PFfloat)x2, (PFfloat)y2);
 }
 
 void pfRectiv(const PFint* v1, const PFint* v2)
 {
-    pfRectf(v1[0], v1[1], v2[0], v2[1]);
+    pfRectf((PFfloat)v1[0], (PFfloat)v1[1], (PFfloat)v2[0], (PFfloat)v2[1]);
 }
 
 void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2)
@@ -1961,10 +1953,12 @@ void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2)
     PFcolor color = G_currentCtx->currentColor;
 
     // Draw rectangle
+#   ifdef _OPENMP
+#       pragma omp for collapse(2)
+#   endif //_OPENMP
     for (PFint y = iY1; y <= iY2; y++) {
-        PFsizei yOffset = y * tex->w;
         for (PFint x = iX1; x <= iX2; x++) {
-            tex->setter(tex->pixels, yOffset + x, color);
+            tex->setter(tex->pixels, y * tex->w + x, color);
         }
     }
 }
@@ -2168,10 +2162,10 @@ void pfFogi(PFfogparam pname, PFint param)
             }
             break;
         case PF_FOG_START:
-            G_currentCtx->fog.start = param;
+            G_currentCtx->fog.start = (PFfloat)param;
             break;
         case PF_FOG_END:
-            G_currentCtx->fog.end = param;
+            G_currentCtx->fog.end = (PFfloat)param;
             break;
         default:
             G_currentCtx->errCode = PF_INVALID_ENUM;
@@ -2219,16 +2213,16 @@ void pfFogiv(PFfogparam pname, PFint* param)
             }
             break;
         case PF_FOG_START:
-            G_currentCtx->fog.start = *param;
+            G_currentCtx->fog.start = (PFfloat)(*param);
             break;
         case PF_FOG_END:
-            G_currentCtx->fog.end = *param;
+            G_currentCtx->fog.end = (PFfloat)(*param);
             break;
         case PF_FOG_COLOR:
-            G_currentCtx->fog.color.r = param[0];
-            G_currentCtx->fog.color.g = param[1];
-            G_currentCtx->fog.color.b = param[2];
-            G_currentCtx->fog.color.a = param[3];
+            G_currentCtx->fog.color.r = (PFubyte)(param[0]);
+            G_currentCtx->fog.color.g = (PFubyte)(param[1]);
+            G_currentCtx->fog.color.b = (PFubyte)(param[2]);
+            G_currentCtx->fog.color.a = (PFubyte)(param[3]);
             break;
         default:
             G_currentCtx->errCode = PF_INVALID_ENUM;
@@ -2253,10 +2247,10 @@ void pfFogfv(PFfogparam pname, PFfloat* param)
             G_currentCtx->fog.end = *param;
             break;
         case PF_FOG_COLOR:
-            G_currentCtx->fog.color.r = 255*param[0];
-            G_currentCtx->fog.color.g = 255*param[1];
-            G_currentCtx->fog.color.b = 255*param[2];
-            G_currentCtx->fog.color.a = 255*param[3];
+            G_currentCtx->fog.color.r = (PFubyte)(255 * param[0]);
+            G_currentCtx->fog.color.g = (PFubyte)(255 * param[1]);
+            G_currentCtx->fog.color.b = (PFubyte)(255 * param[2]);
+            G_currentCtx->fog.color.a = (PFubyte)(255 * param[3]);
             break;
         default:
             G_currentCtx->errCode = PF_INVALID_ENUM;
@@ -2321,10 +2315,10 @@ void pfFogProcess(void)
                     t = (depth - start)*invLen;
                     break;
                 case PF_EXP:
-                    t = 1.0f - exp(-density*(depth - start));
+                    t = 1.0f - expf(-density*(depth - start));
                     break;
                 case PF_EXP2:
-                    t = 1.0f - exp2(-density*(depth - start));
+                    t = 1.0f - exp2f(-density*(depth - start));
                     break;
             }
             fogColor.a = (PFubyte)(t * alpha);

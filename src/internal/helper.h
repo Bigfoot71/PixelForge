@@ -42,7 +42,7 @@ static inline PFvertex pfiLerpVertex(const PFvertex* start, const PFvertex* end,
     const PFubyte *startCol = (const PFubyte*)(&start->color);
     const PFubyte *endCol = (const PFubyte*)(&end->color);
     PFubyte *resultCol = (PFubyte*)(&result.color);
-    PFubyte uT = 255*t;
+    PFubyte uT = (PFubyte)(255 * t);
 
 #   ifdef _OPENMP
 #       pragma omp simd

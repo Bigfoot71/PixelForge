@@ -74,7 +74,7 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
 
             PFfloat theta = pfmVec3Dot(L, negLightDir);
             PFfloat epsilon = light->innerCutOff - light->outerCutOff;
-            intensity = CLAMP((PFint)(255*(theta - light->outerCutOff)/epsilon), 0, 255);
+            intensity = (PFubyte)CLAMP((PFint)(255*(theta - light->outerCutOff)/epsilon), 0, 255);
 
             if (intensity == 0)
                 goto apply_light_contribution;
@@ -83,9 +83,12 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
         // Attenuation
         PFubyte attenuation = 255;
         if (light->attLinear || light->attQuadratic) {
-            attenuation = 255/(light->attConstant +
-                light->attLinear*lightToFragPosDist +
-                light->attQuadratic*lightToFragPosDistSq);
+            attenuation = (PFubyte)(255 /
+                (
+                    light->attConstant +
+                    light->attLinear * lightToFragPosDist +
+                    light->attQuadratic * lightToFragPosDistSq
+                ));
 
             if (attenuation == 0)
                 goto apply_light_contribution;
@@ -96,7 +99,7 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
 
         // Diffuse component
         // Calculate the diffuse reflection of the light
-        PFubyte diff = MAX((PFint)(255*pfmVec3Dot(N, L)), 0);
+        PFubyte diff = (PFubyte)MAX((PFint)(255*pfmVec3Dot(N, L)), 0);
         lR = MIN_255(lR + (diffuse.r*light->diffuse.r*diff)/(255*255));
         lG = MIN_255(lG + (diffuse.g*light->diffuse.g*diff)/(255*255));
         lB = MIN_255(lB + (diffuse.b*light->diffuse.b*diff)/(255*255));
@@ -107,7 +110,7 @@ PFcolor pfiLightingProcess(const PFlight* activeLights, const PFmaterial* materi
             PFMvec3 halfWayDir;
             pfmVec3AddR(halfWayDir, L, V);
             pfmVec3Normalize(halfWayDir, halfWayDir);
-            PFubyte spec = 255*powf(fmaxf(pfmVec3Dot(N, halfWayDir), 0.0f), shininess);
+            PFubyte spec = (PFubyte)(255 * powf(fmaxf(pfmVec3Dot(N, halfWayDir), 0.0f), shininess));
 #       else
             // Phong
             PFMvec3 reflectDir;
