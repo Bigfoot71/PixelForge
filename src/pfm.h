@@ -265,13 +265,14 @@ PFM_API uint64_t
 pfmNextPOT(uint64_t x)
 {
     if (x == 0) return 1;
+    if ((x & (x - 1)) == 0) return x << 1; // (x * 2)
     x--;
     x |= x >> 1;
     x |= x >> 2;
     x |= x >> 4;
     x |= x >> 8;
     x |= x >> 16;
-    x |= x >> 32;
+    x |= x >> 32; //< Only for 64 bits
     x++;
     return x;
 }
@@ -280,12 +281,13 @@ PFM_API uint64_t
 pfmPreviousPOT(uint64_t x)
 {
     if (x == 0) return 0;
+    if ((x & (x - 1)) == 0) return x >> 1; // (x / 2)
     x |= x >> 1;
     x |= x >> 2;
     x |= x >> 4;
     x |= x >> 8;
     x |= x >> 16;
-    x |= x >> 32;
+    x |= x >> 32; //< Only for 64 bits
     return x - (x >> 1);
 }
 
