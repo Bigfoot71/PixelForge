@@ -117,7 +117,7 @@ PFcolor pfiLightingProcess(const PFIlight* activeLights, const PFImaterial* mate
             PFMvec3 negLightDir;
             pfmVec3NegR(negLightDir, L);
             pfmVec3ReflectR(reflectDir, negLightDir, N);
-            PFubyte spec = 255*powf(fmaxf(pfmVec3Dot(reflectDir, V), 0.0f), shininess);
+            PFubyte spec = (PFubyte)(255 * powf(fmaxf(pfmVec3Dot(reflectDir, V), 0.0f), shininess));
 #       endif
 
         lR = PF_MIN_255(lR + (specular.r*light->specular.r*spec)/(255*255));
@@ -196,22 +196,18 @@ void pfiSimdLightingProcess(PFcolor_simd fragments, const PFIlight* activeLights
 
         // Specular component
         PFsimdv3f specular; {
-            PFsimdv3f negL;
-            pfiVec3NegR_simd(negL, L);
-
 #       ifndef PF_PHONG_REFLECTION
             PFsimdv3f halfWayDir;
             pfiVec3AddR_simd(halfWayDir, L, V);
             pfiVec3Normalize_simd(halfWayDir, halfWayDir);
             PFIsimdvf spec = pfiSimdMax_F32(pfiVec3Dot_simd(N, halfWayDir), pfiSimdSetZero_F32());
 #       else
-            PFsimdv3f reflectDir;
-            pfiVec3ReflectR_simd(reflectDir, negL, N);
-            PFIsimdvf spec = pfiSimdMax_F32(pfiVec3Dot_simd(V, reflectDir), pfiSimdSetZero_F32());
+            PFsimdv3f negL, reflect;
+            pfiVec3NegR_simd(negL, L);
+            pfiVec3ReflectR_simd(reflect, negL, N);
+            PFIsimdvf spec = pfiSimdMax_F32(pfiVec3Dot_simd(V, reflect), pfiSimdSetZero_F32());
 #       endif
-
             spec = pfiSimdPow_F32(spec, material->shininess);
-
             pfiVec3ScaleR_simd(specular, lightSpecular, spec);
             pfiVec3Mul_simd(specular, specular, colSpecular);
         }
