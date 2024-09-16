@@ -415,6 +415,8 @@ void pfiMakeContextBackup(void);
 void pfiRestoreContext(void);
 
 void pfiHomogeneousToScreen(PFIvertex* v);
+PFIvertex pfiLerpVertex(const PFIvertex* start, const PFIvertex* end, PFfloat t);
+
 void pfiProcessAndRasterize(void);
 
 

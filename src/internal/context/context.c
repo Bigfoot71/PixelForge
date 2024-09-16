@@ -22,7 +22,8 @@
 
 /* Backup context functions */
 
-void pfiMakeContextBackup(void)
+void
+pfiMakeContextBackup(void)
 {
     PFIctxbackup *bck = &G_currentCtx->ctxBackup;
     memcpy(bck->faceMaterial, G_currentCtx->faceMaterial, 2 * sizeof(PFImaterial));
@@ -33,7 +34,8 @@ void pfiMakeContextBackup(void)
     bck->state = G_currentCtx->state;
 }
 
-void pfiRestoreContext(void)
+void
+pfiRestoreContext(void)
 {
     PFIctxbackup *bck = &G_currentCtx->ctxBackup;
     memcpy(G_currentCtx->faceMaterial, bck->faceMaterial, 2 * sizeof(PFImaterial));
@@ -46,7 +48,8 @@ void pfiRestoreContext(void)
 
 /* Internal vertex processing function definitions */
 
-void pfiHomogeneousToScreen(PFIvertex* v)
+void
+pfiHomogeneousToScreen(PFIvertex* v)
 {
     // NOTE: We add 0.5 to the screen coordinates to round them to the nearest integer
     // when they are converted to integer coordinates. This adjustment was added because
@@ -61,9 +64,35 @@ void pfiHomogeneousToScreen(PFIvertex* v)
     v->screen[1] = (G_currentCtx->vpPos[1] + (1.0f - v->homogeneous[1]) * 0.5f * G_currentCtx->vpDim[1]) + 0.5f;
 }
 
+PFIvertex
+pfiLerpVertex(const PFIvertex* start, const PFIvertex* end, PFfloat t)
+{
+    PFIvertex result = { 0 };
+
+    const PFubyte *startCol = (const PFubyte*)(&start->color);
+    const PFubyte *endCol = (const PFubyte*)(&end->color);
+    PFubyte *resultCol = (PFubyte*)(&result.color);
+    PFubyte uT = (PFubyte)(255 * t);
+
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif
+    for (int_fast8_t i = 0; i < 4; i++) {
+        result.homogeneous[i] = start->homogeneous[i] + t*(end->homogeneous[i] - start->homogeneous[i]);
+        result.position[i] = start->position[i] + t*(end->position[i] - start->position[i]);
+        resultCol[i] = startCol[i] + (uT*((PFint)endCol[i] - startCol[i]))/255;
+
+        if (i < 2) result.texcoord[i] = start->texcoord[i] + t*(end->texcoord[i] - start->texcoord[i]);
+        if (i < 3) result.normal[i] = start->normal[i] + t*(end->normal[i] - start->normal[i]);
+    }
+
+    return result;
+}
+
 /* Internal processing and rasterization function definitions */
 
-void pfiProcessAndRasterize(void)
+void
+pfiProcessAndRasterize(void)
 {
     switch (G_currentCtx->currentDrawMode) {
         case PF_POINTS:

@@ -2,11 +2,12 @@
 #define PF_INTERNAL_VECTOR_H
 
 #include "../pixelforge.h"
+#include "../pfm.h"
 
 #include <string.h>
 #include <stdlib.h>
 
-typedef struct {
+typedef struct PFIvector {
     void *data;         // Pointer to vector elements
     PFsizei size;       // Number of elements currently in the vector
     PFsizei capacity;   // Total vector capacity (allocated space)
@@ -141,7 +142,7 @@ pfiInsertToVector(PFIvector* vec, PFsizei index, const void* elements, PFsizei c
     PFsizei new_size = vec->size + count;
 
     if (new_size > vec->capacity) {
-        if (pfiResizeVector(vec, pfiNextPot(new_size)) != 0) {
+        if (pfiResizeVector(vec, (PFsizei)pfmNextPOT(new_size)) != 0) {
             return -2;
         }
     }
@@ -162,23 +163,36 @@ pfiInsertToVector(PFIvector* vec, PFsizei index, const void* elements, PFsizei c
     return 0;
 }
 
-static inline void*
-pfiBeginVector(PFIvector* vec)
-{
-    return vec->data;
-}
-
 static inline const void*
 pfiEndVector(const PFIvector* vec)
 {
     return (const PFbyte*)vec->data + vec->size * vec->elemSize;
 }
 
+static inline void*
+pfiBackVector(PFIvector* vec)
+{
+    return (PFbyte*)vec->data + (vec->size - 1) * vec->elemSize;
+}
+
+static inline void*
+pfiFrontVector(PFIvector* vec)
+{
+    return vec->data;
+}
+
+static inline void*
+pfiAtVector(PFIvector* vec, PFsizei index)
+{
+    if (index >= vec->size) return NULL;
+    return (PFbyte*)vec->data + index * vec->elemSize;
+}
+
 static inline PFint
 pfiPushBackVector(PFIvector* vec, const void *element)
 {
     if (vec->size >= vec->capacity) {
-        if (pfiResizeVector(vec, pfiNextPot(vec->capacity)) != 0) {
+        if (pfiResizeVector(vec, (PFsizei)pfmNextPOT(vec->capacity)) != 0) {
             return -1;
         }
     }
@@ -194,7 +208,7 @@ static inline PFint
 pfiPushFrontVector(PFIvector* vec, const void *element)
 {
     if (vec->size >= vec->capacity) {
-        if (pfiResizeVector(vec, pfiNextPot(vec->capacity)) != 0) {
+        if (pfiResizeVector(vec, (PFsizei)pfmNextPOT(vec->capacity)) != 0) {
             return -1;
         }
     }
@@ -222,7 +236,7 @@ pfiPushAtVector(PFIvector* vec, PFsizei index, const void* element)
     }
 
     if (vec->size >= vec->capacity) {
-        if (pfiResizeVector(vec, pfiNextPot(vec->capacity)) != 0) {
+        if (pfiResizeVector(vec, (PFsizei)pfmNextPOT(vec->capacity)) != 0) {
             return -2;
         }
     }
@@ -306,13 +320,6 @@ pfiPopAtVector(PFIvector* vec, PFsizei index, void* element)
     vec->size--;
 
     return 0;
-}
-
-static inline void*
-pfiAtVector(PFIvector* vec, PFsizei index)
-{
-    if (index >= vec->size) return NULL;
-    return (PFbyte*)vec->data + index * vec->elemSize;
 }
 
 #endif //VEC_H

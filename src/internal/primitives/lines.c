@@ -18,7 +18,6 @@
  */
 
 #include "../context/context.h"
-#include "../helper.h"
 #include <stdlib.h>
 
 /* Enums for internal use */
@@ -166,8 +165,8 @@ PFboolean Process_ClipLine2D(PFIvertex* restrict v1, PFIvertex* restrict v2)
         if (code0 & code1) break;
 
         if (code0 == CLIP_INSIDE) {
-            pfiSwapByte(&code0, &code1);
-            pfiSwapVertex(v1, v2);
+            PFubyte ctmp = code0; code0 = code1; code1 = ctmp;
+            PFIvertex vtmp = *v1; *v1 = *v2; *v2 = vtmp;
         }
 
         if (code0 & CLIP_LEFT) {

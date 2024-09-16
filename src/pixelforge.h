@@ -444,7 +444,9 @@ extern "C" {
  *
  * @return Pointer to the created rendering context. Returns NULL if context creation fails.
  */
-PF_API PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
+PF_API PFcontext
+pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height,
+                PFpixelformat format, PFdatatype type);
 
 /**
  * @brief Deletes a rendering context.
@@ -455,7 +457,8 @@ PF_API PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei heig
  *
  * @note After calling this function, the `ctx` pointer should not be used to access the rendering context.
  */
-PF_API void pfDeleteContext(PFcontext ctx);
+PF_API void
+pfDeleteContext(PFcontext ctx);
 
 /**
  * @brief Sets the main buffer for rendering.
@@ -475,7 +478,9 @@ PF_API void pfDeleteContext(PFcontext ctx);
  *       The previous buffer is not freed by this function; you are responsible for managing its lifespan.
  *       If an auxiliary buffer is defined, it will be automatically deactivated when changing the main buffer.
  */
-PF_API void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
+PF_API void
+pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height,
+                PFpixelformat format, PFdatatype type);
 
 /**
  * @brief Sets the auxiliary buffer for rendering.
@@ -486,14 +491,16 @@ PF_API void pfSetMainBuffer(void* targetBuffer, PFsizei width, PFsizei height, P
  *
  * @param auxFramebuffer Pointer to the auxiliary buffer.
  */
-PF_API void pfSetAuxBuffer(void *auxFramebuffer);
+PF_API void
+pfSetAuxBuffer(void *auxFramebuffer);
 
 /**
  * @brief Swaps the front and back buffers.
  *
  * @warning This function needs a context to be defined.
  */
-PF_API void pfSwapBuffers(void);
+PF_API void
+pfSwapBuffers(void);
 
 /**
  * @brief Retrieves the current rendering context.
@@ -502,7 +509,8 @@ PF_API void pfSwapBuffers(void);
  *
  * @return Pointer to the current rendering context.
  */
-PF_API PFcontext pfGetCurrentContext(void);
+PF_API PFcontext
+pfGetCurrentContext(void);
 
 /**
  * @brief Sets the current rendering context.
@@ -511,7 +519,8 @@ PF_API PFcontext pfGetCurrentContext(void);
  *
  * @param ctx Pointer to the rendering context to be made current.
  */
-PF_API void pfMakeCurrent(PFcontext ctx);
+PF_API void
+pfMakeCurrent(PFcontext ctx);
 
 /**
  * @brief Checks if a rendering state is enabled.
@@ -522,7 +531,8 @@ PF_API void pfMakeCurrent(PFcontext ctx);
  *
  * @return PF_TRUE if the state is enabled, otherwise PF_FALSE.
  */
-PF_API PFboolean pfIsEnabled(PFstate state);
+PF_API PFboolean
+pfIsEnabled(PFstate state);
 
 /**
  * @brief Enables a rendering state.
@@ -531,7 +541,8 @@ PF_API PFboolean pfIsEnabled(PFstate state);
  *
  * @param state The rendering state to enable.
  */
-PF_API void pfEnable(PFstate state);
+PF_API void
+pfEnable(PFstate state);
 
 /**
  * @brief Disables a rendering state.
@@ -540,8 +551,8 @@ PF_API void pfEnable(PFstate state);
  *
  * @param state The rendering state to disable.
  */
-PF_API void pfDisable(PFstate state);
-
+PF_API void
+pfDisable(PFstate state);
 
 
 /* Getter API functions */
@@ -554,7 +565,8 @@ PF_API void pfDisable(PFstate state);
  * @param pname  The name of the parameter to retrieve.
  * @param params Pointer to an array where the parameter value will be stored.
  */
-PF_API void pfGetBooleanv(PFenum pname, PFboolean* params);
+PF_API void
+pfGetBooleanv(PFenum pname, PFboolean* params);
 
 /**
  * @brief Retrieves an integer parameter value.
@@ -564,7 +576,8 @@ PF_API void pfGetBooleanv(PFenum pname, PFboolean* params);
  * @param pname  The name of the parameter to retrieve.
  * @param params Pointer to an array where the parameter value will be stored.
  */
-PF_API void pfGetIntegerv(PFenum pname, PFint* params);
+PF_API void
+pfGetIntegerv(PFenum pname, PFint* params);
 
 /**
  * @brief Retrieves a floating-point parameter value.
@@ -574,7 +587,8 @@ PF_API void pfGetIntegerv(PFenum pname, PFint* params);
  * @param pname  The name of the parameter to retrieve.
  * @param params Pointer to an array where the parameter value will be stored.
  */
-PF_API void pfGetFloatv(PFenum pname, PFfloat* params);
+PF_API void
+pfGetFloatv(PFenum pname, PFfloat* params);
 
 /**
  * @brief Retrieves a double-precision floating-point parameter value.
@@ -584,7 +598,8 @@ PF_API void pfGetFloatv(PFenum pname, PFfloat* params);
  * @param pname  The name of the parameter to retrieve.
  * @param params Pointer to an array where the parameter value will be stored.
  */
-PF_API void pfGetDoublev(PFenum pname, PFdouble* params);
+PF_API void
+pfGetDoublev(PFenum pname, PFdouble* params);
 
 /**
  * @brief Retrieves a pointer parameter value.
@@ -594,7 +609,8 @@ PF_API void pfGetDoublev(PFenum pname, PFdouble* params);
  * @param pname  The name of the parameter to retrieve.
  * @param params Pointer to a pointer where the parameter value will be stored.
  */
-PF_API void pfGetPointerv(PFenum pname, const void** params);
+PF_API void
+pfGetPointerv(PFenum pname, const void** params);
 
 /**
  * @brief Retrieves the error code for the last rendering operation.
@@ -603,8 +619,8 @@ PF_API void pfGetPointerv(PFenum pname, const void** params);
  *
  * @return Error code for the last rendering operation.
  */
-PF_API PFerrcode pfGetError(void);
-
+PF_API PFerrcode
+pfGetError(void);
 
 
 /* Matrix management API functions */
@@ -616,28 +632,32 @@ PF_API PFerrcode pfGetError(void);
  *
  * @param mode The matrix mode to set.
  */
-PF_API void pfMatrixMode(PFmatrixmode mode);
+PF_API void
+pfMatrixMode(PFmatrixmode mode);
 
 /**
  * @brief Pushes the current matrix onto the matrix stack.
  *
  * @warning This function needs a context to be defined.
  */
-PF_API void pfPushMatrix(void);
+PF_API void
+pfPushMatrix(void);
 
 /**
  * @brief Pops the top matrix from the matrix stack.
  *
  * @warning This function needs a context to be defined.
  */
-PF_API void pfPopMatrix(void);
+PF_API void
+pfPopMatrix(void);
 
 /**
  * @brief Loads the identity matrix onto the current matrix.
  *
  * @warning This function needs a context to be defined.
  */
-PF_API void pfLoadIdentity(void);
+PF_API void
+pfLoadIdentity(void);
 
 /**
  * @brief Translates the current matrix by the specified translation vector.
@@ -648,7 +668,8 @@ PF_API void pfLoadIdentity(void);
  * @param y Translation along the y-axis.
  * @param z Translation along the z-axis.
  */
-PF_API void pfTranslatef(PFfloat x, PFfloat y, PFfloat z);
+PF_API void
+pfTranslatef(PFfloat x, PFfloat y, PFfloat z);
 
 /**
  * @brief Rotates the current matrix by the specified angle around the specified axis.
@@ -660,7 +681,8 @@ PF_API void pfTranslatef(PFfloat x, PFfloat y, PFfloat z);
  * @param y     Y-coordinate of the rotation axis.
  * @param z     Z-coordinate of the rotation axis.
  */
-PF_API void pfRotatef(PFfloat angle, PFfloat x, PFfloat y, PFfloat z);
+PF_API void
+pfRotatef(PFfloat angle, PFfloat x, PFfloat y, PFfloat z);
 
 /**
  * @brief Scales the current matrix by the specified scaling factors.
@@ -671,7 +693,8 @@ PF_API void pfRotatef(PFfloat angle, PFfloat x, PFfloat y, PFfloat z);
  * @param y Scaling factor along the y-axis.
  * @param z Scaling factor along the z-axis.
  */
-PF_API void pfScalef(PFfloat x, PFfloat y, PFfloat z);
+PF_API void
+pfScalef(PFfloat x, PFfloat y, PFfloat z);
 
 /**
  * @brief Multiplies the current matrix by the specified matrix.
@@ -680,7 +703,8 @@ PF_API void pfScalef(PFfloat x, PFfloat y, PFfloat z);
  *
  * @param mat Pointer to the 16-element floating-point array representing the matrix to multiply by.
  */
-PF_API void pfMultMatrixf(const PFfloat* mat);
+PF_API void
+pfMultMatrixf(const PFfloat* mat);
 
 /**
  * @brief Sets up a perspective projection matrix.
@@ -694,7 +718,10 @@ PF_API void pfMultMatrixf(const PFfloat* mat);
  * @param znear  Distance to the near depth clipping plane.
  * @param zfar   Distance to the far depth clipping plane.
  */
-PF_API void pfFrustum(PFfloat left, PFfloat right, PFfloat bottom, PFfloat top, PFfloat znear, PFfloat zfar);
+PF_API void
+pfFrustum(PFfloat left, PFfloat right,
+          PFfloat bottom, PFfloat top,
+          PFfloat znear, PFfloat zfar);
 
 /**
  * @brief Sets up an orthographic projection matrix.
@@ -708,8 +735,10 @@ PF_API void pfFrustum(PFfloat left, PFfloat right, PFfloat bottom, PFfloat top, 
  * @param znear  Distance to the near depth clipping plane.
  * @param zfar   Distance to the far depth clipping plane.
  */
-PF_API void pfOrtho(PFfloat left, PFfloat right, PFfloat bottom, PFfloat top, PFfloat znear, PFfloat zfar);
-
+PF_API void
+pfOrtho(PFfloat left, PFfloat right,
+        PFfloat bottom, PFfloat top,
+        PFfloat znear, PFfloat zfar);
 
 
 /* Render configuration API functions */
@@ -724,7 +753,8 @@ PF_API void pfOrtho(PFfloat left, PFfloat right, PFfloat bottom, PFfloat top, PF
  * @param width  Width of the viewport.
  * @param height Height of the viewport.
  */
-PF_API void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height);
+PF_API void
+pfViewport(PFint x, PFint y, PFsizei width, PFsizei height);
 
 /**
  * @brief Specifies the drawing mode for polygons.
@@ -738,7 +768,8 @@ PF_API void pfViewport(PFint x, PFint y, PFsizei width, PFsizei height);
  * @param face The face to set the drawing mode for (front or back).
  * @param mode The drawing mode for the specified face.
  */
-PF_API void pfPolygonMode(PFface face, PFpolygonmode mode);
+PF_API void
+pfPolygonMode(PFface face, PFpolygonmode mode);
 
 /**
  * @brief Specifies the shading mode for rendering.
@@ -751,7 +782,8 @@ PF_API void pfPolygonMode(PFface face, PFpolygonmode mode);
  *
  * @param mode The shading mode to set.
  */
-PF_API void pfShadeModel(PFshademode mode);
+PF_API void
+pfShadeModel(PFshademode mode);
 
 /**
  * @brief Sets the line width for rasterized lines.
@@ -760,7 +792,8 @@ PF_API void pfShadeModel(PFshademode mode);
  *
  * @param width The width of lines, in pixels.
  */
-PF_API void pfLineWidth(PFfloat width);
+PF_API void
+pfLineWidth(PFfloat width);
 
 /**
  * @brief Sets the size of rasterized points.
@@ -769,7 +802,8 @@ PF_API void pfLineWidth(PFfloat width);
  *
  * @param size The size of points, in pixels.
  */
-PF_API void pfPointSize(PFfloat size);
+PF_API void
+pfPointSize(PFfloat size);
 
 /**
  * @brief Specifies which faces to cull (front or back) during polygon rasterization.
@@ -778,7 +812,8 @@ PF_API void pfPointSize(PFfloat size);
  *
  * @param face The face to cull.
  */
-PF_API void pfCullFace(PFface face);
+PF_API void
+pfCullFace(PFface face);
 
 /**
  * @brief Specifies the blending function used for color blending.
@@ -787,7 +822,8 @@ PF_API void pfCullFace(PFface face);
  *
  * @param mode The blending mode to use.
  */
-PF_API void pfBlendFunc(PFblendmode mode);
+PF_API void
+pfBlendFunc(PFblendmode mode);
 
 /**
  * @brief Specifies the depth testing function.
@@ -796,7 +832,8 @@ PF_API void pfBlendFunc(PFblendmode mode);
  *
  * @param mode The depth testing mode to use.
  */
-PF_API void pfDepthFunc(PFdepthmode mode);
+PF_API void
+pfDepthFunc(PFdepthmode mode);
 
 /**
  * @brief Binds the specified framebuffer for subsequent rendering operations.
@@ -808,7 +845,8 @@ PF_API void pfDepthFunc(PFdepthmode mode);
  *
  * @param framebuffer Pointer to the framebuffer to bind.
  */
-PF_API void pfBindFramebuffer(PFframebuffer* framebuffer);
+PF_API void
+pfBindFramebuffer(PFframebuffer* framebuffer);
 
 /**
  * @brief Binds the specified texture for subsequent rendering operations.
@@ -820,7 +858,8 @@ PF_API void pfBindFramebuffer(PFframebuffer* framebuffer);
  *
  * @param texture Pointer to the texture to bind.
  */
-PF_API void pfBindTexture(PFtexture texture);
+PF_API void
+pfBindTexture(PFtexture texture);
 
 /**
  * @brief Clears the specified buffers of the current framebuffer.
@@ -829,7 +868,8 @@ PF_API void pfBindTexture(PFtexture texture);
  *
  * @param flag Bitwise OR of values specifying which buffers to clear (e.g., PF_COLOR_BUFFER_BIT, PF_DEPTH_BUFFER_BIT).
  */
-PF_API void pfClear(PFclearflag flag);
+PF_API void
+pfClear(PFclearflag flag);
 
 /**
  * @brief Sets the clear depth value for the depth buffer of the current framebuffer.
@@ -838,7 +878,8 @@ PF_API void pfClear(PFclearflag flag);
  *
  * @param depth The depth value to clear to.
  */
-PF_API void pfClearDepth(PFfloat depth);
+PF_API void
+pfClearDepth(PFfloat depth);
 
 /**
  * @brief Sets the clear color for the color buffer of the current framebuffer.
@@ -850,8 +891,8 @@ PF_API void pfClearDepth(PFfloat depth);
  * @param b Blue component of the clear color.
  * @param a Alpha component of the clear color.
  */
-PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
-
+PF_API void
+pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
 
 
 /* Light management API functions */
@@ -863,7 +904,8 @@ PF_API void pfClearColor(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
  *
  * @param light Index of the light source to enable.
  */
-PF_API void pfEnableLight(PFsizei light);
+PF_API void
+pfEnableLight(PFsizei light);
 
 /**
  * @brief Disables the specified light source.
@@ -872,7 +914,8 @@ PF_API void pfEnableLight(PFsizei light);
  *
  * @param light Index of the light source to disable.
  */
-PF_API void pfDisableLight(PFsizei light);
+PF_API void
+pfDisableLight(PFsizei light);
 
 /**
  * @brief Checks if the specified light source is enabled.
@@ -882,7 +925,8 @@ PF_API void pfDisableLight(PFsizei light);
  * @param light Index of the light source to check.
  * @return PFboolean True if the light source is enabled, false otherwise.
  */
-PF_API PFboolean pfIsEnabledLight(PFsizei light);
+PF_API PFboolean
+pfIsEnabledLight(PFsizei light);
 
 /**
  * @brief Sets a float parameter for the specified light source.
@@ -893,7 +937,8 @@ PF_API PFboolean pfIsEnabledLight(PFsizei light);
  * @param param Parameter to set (e.g., PF_LIGHT_POSITION, PF_LIGHT_DIFFUSE).
  * @param value Value to set for the parameter.
  */
-PF_API void pfLightf(PFsizei light, PFenum param, PFfloat value);
+PF_API void
+pfLightf(PFsizei light, PFenum param, PFfloat value);
 
 /**
  * @brief Sets a float vector parameter for the specified light source.
@@ -904,7 +949,8 @@ PF_API void pfLightf(PFsizei light, PFenum param, PFfloat value);
  * @param param Parameter to set (e.g., PF_LIGHT_POSITION, PF_LIGHT_DIFFUSE).
  * @param value Pointer to the value array to set for the parameter.
  */
-PF_API void pfLightfv(PFsizei light, PFenum param, const void* value);
+PF_API void
+pfLightfv(PFsizei light, PFenum param, const void* value);
 
 /**
  * @brief Sets a float parameter for the specified face material.
@@ -915,7 +961,8 @@ PF_API void pfLightfv(PFsizei light, PFenum param, const void* value);
  * @param param Parameter to set (e.g., PF_MATERIAL_AMBIENT, PF_MATERIAL_SPECULAR).
  * @param value Value to set for the parameter.
  */
-PF_API void pfMaterialf(PFface face, PFenum param, PFfloat value);
+PF_API void
+pfMaterialf(PFface face, PFenum param, PFfloat value);
 
 /**
  * @brief Sets a float vector parameter for the specified face material.
@@ -926,7 +973,8 @@ PF_API void pfMaterialf(PFface face, PFenum param, PFfloat value);
  * @param param Parameter to set (e.g., PF_MATERIAL_AMBIENT, PF_MATERIAL_SPECULAR).
  * @param value Pointer to the value array to set for the parameter.
  */
-PF_API void pfMaterialfv(PFface face, PFenum param, const void* value);
+PF_API void
+pfMaterialfv(PFface face, PFenum param, const void* value);
 
 /**
  * @brief Sets the material color to follow the current color.
@@ -936,8 +984,8 @@ PF_API void pfMaterialfv(PFface face, PFenum param, const void* value);
  * @param face Face whose material color must follow the current color (PF_FRONT_FACE or PF_BACK_FACE).
  * @param mode Material color mode to set (e.g., PF_EMISSION, PF_AMBIENT).
  */
-PF_API void pfColorMaterial(PFface face, PFenum mode);
-
+PF_API void
+pfColorMaterial(PFface face, PFenum mode);
 
 
 /* Vertex array drawing API functions */
@@ -952,7 +1000,9 @@ PF_API void pfColorMaterial(PFface face, PFenum mode);
  * @param stride Byte offset between consecutive vertices.
  * @param pointer Pointer to the first coordinate of the first vertex.
  */
-PF_API void pfVertexPointer(PFint size, PFenum type, PFsizei stride, const void* pointer);
+PF_API void
+pfVertexPointer(PFint size, PFenum type,
+                PFsizei stride, const void* pointer);
 
 /**
  * @brief Specifies the location and data format of the normal array.
@@ -963,7 +1013,8 @@ PF_API void pfVertexPointer(PFint size, PFenum type, PFsizei stride, const void*
  * @param stride Byte offset between consecutive normals.
  * @param pointer Pointer to the first normal.
  */
-PF_API void pfNormalPointer(PFenum type, PFsizei stride, const void* pointer);
+PF_API void
+pfNormalPointer(PFenum type, PFsizei stride, const void* pointer);
 
 /**
  * @brief Specifies the location and data format of the texture coordinate array.
@@ -974,7 +1025,8 @@ PF_API void pfNormalPointer(PFenum type, PFsizei stride, const void* pointer);
  * @param stride Byte offset between consecutive texture coordinates.
  * @param pointer Pointer to the first texture coordinate.
  */
-PF_API void pfTexCoordPointer(PFenum type, PFsizei stride, const void* pointer);
+PF_API void
+pfTexCoordPointer(PFenum type, PFsizei stride, const void* pointer);
 
 /**
  * @brief Specifies the location and data format of the color array.
@@ -986,7 +1038,8 @@ PF_API void pfTexCoordPointer(PFenum type, PFsizei stride, const void* pointer);
  * @param stride Byte offset between consecutive colors.
  * @param pointer Pointer to the first color component.
  */
-PF_API void pfColorPointer(PFint size, PFenum type, PFsizei stride, const void* pointer);
+PF_API void
+pfColorPointer(PFint size, PFenum type, PFsizei stride, const void* pointer);
 
 /**
  * @brief Renders primitives from array data using indices.
@@ -998,7 +1051,9 @@ PF_API void pfColorPointer(PFint size, PFenum type, PFsizei stride, const void* 
  * @param type Data type of the element indices (e.g., PF_UNSIGNED_BYTE, PF_UNSIGNED_SHORT).
  * @param indices Pointer to the first index in the array of element indices.
  */
-PF_API void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, const void* indices);
+PF_API void
+pfDrawElements(PFdrawmode mode, PFsizei count,
+               PFdatatype type, const void* indices);
 
 /**
  * @brief Renders primitives from array data.
@@ -1009,8 +1064,8 @@ PF_API void pfDrawElements(PFdrawmode mode, PFsizei count, PFdatatype type, cons
  * @param first Index of the first vertex to render.
  * @param count Number of vertices to render.
  */
-PF_API void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count);
-
+PF_API void
+pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count);
 
 
 /* Primitives drawing API functions */
@@ -1022,14 +1077,16 @@ PF_API void pfDrawArrays(PFdrawmode mode, PFint first, PFsizei count);
  *
  * @param mode Type of primitives to be defined (e.g., PF_POINTS, PF_TRIANGLES).
  */
-PF_API void pfBegin(PFdrawmode mode);
+PF_API void
+pfBegin(PFdrawmode mode);
 
 /**
  * @brief Ends the definition of a primitive.
  *
  * @warning This function needs a context to be defined.
  */
-PF_API void pfEnd(void);
+PF_API void
+pfEnd(void);
 
 /**
  * @brief Specifies a 2D vertex with integer coordinates.
@@ -1039,7 +1096,8 @@ PF_API void pfEnd(void);
  * @param x X-coordinate of the vertex.
  * @param y Y-coordinate of the vertex.
  */
-PF_API void pfVertex2i(PFint x, PFint y);
+PF_API void
+pfVertex2i(PFint x, PFint y);
 
 /**
  * @brief Specifies a 2D vertex with floating-point coordinates.
@@ -1049,7 +1107,8 @@ PF_API void pfVertex2i(PFint x, PFint y);
  * @param x X-coordinate of the vertex.
  * @param y Y-coordinate of the vertex.
  */
-PF_API void pfVertex2f(PFfloat x, PFfloat y);
+PF_API void
+pfVertex2f(PFfloat x, PFfloat y);
 
 /**
  * @brief Specifies a 2D vertex with coordinates provided as an array.
@@ -1058,7 +1117,8 @@ PF_API void pfVertex2f(PFfloat x, PFfloat y);
  *
  * @param v Array containing the (x, y) coordinates of the vertex.
  */
-PF_API void pfVertex2fv(const PFfloat* v);
+PF_API void
+pfVertex2fv(const PFfloat* v);
 
 /**
  * @brief Specifies a 3D vertex with integer coordinates.
@@ -1069,7 +1129,8 @@ PF_API void pfVertex2fv(const PFfloat* v);
  * @param y Y-coordinate of the vertex.
  * @param z Z-coordinate of the vertex.
  */
-PF_API void pfVertex3i(PFint x, PFint y, PFint z);
+PF_API void
+pfVertex3i(PFint x, PFint y, PFint z);
 
 /**
  * @brief Specifies a 3D vertex with floating-point coordinates.
@@ -1080,7 +1141,8 @@ PF_API void pfVertex3i(PFint x, PFint y, PFint z);
  * @param y Y-coordinate of the vertex.
  * @param z Z-coordinate of the vertex.
  */
-PF_API void pfVertex3f(PFfloat x, PFfloat y, PFfloat z);
+PF_API void
+pfVertex3f(PFfloat x, PFfloat y, PFfloat z);
 
 /**
  * @brief Specifies a 3D vertex with coordinates provided as an array.
@@ -1089,7 +1151,8 @@ PF_API void pfVertex3f(PFfloat x, PFfloat y, PFfloat z);
  *
  * @param v Array containing the (x, y, z) coordinates of the vertex.
  */
-PF_API void pfVertex3fv(const PFfloat* v);
+PF_API void
+pfVertex3fv(const PFfloat* v);
 
 /**
  * @brief Specifies a 4D vertex with integer coordinates.
@@ -1101,7 +1164,8 @@ PF_API void pfVertex3fv(const PFfloat* v);
  * @param z Z-coordinate of the vertex.
  * @param w W-coordinate of the vertex.
  */
-PF_API void pfVertex4i(PFint x, PFint y, PFint z, PFint w);
+PF_API void
+pfVertex4i(PFint x, PFint y, PFint z, PFint w);
 
 /**
  * @brief Specifies a 4D vertex with floating-point coordinates.
@@ -1113,7 +1177,8 @@ PF_API void pfVertex4i(PFint x, PFint y, PFint z, PFint w);
  * @param z Z-coordinate of the vertex.
  * @param w W-coordinate of the vertex.
  */
-PF_API void pfVertex4f(PFfloat x, PFfloat y, PFfloat z, PFfloat w);
+PF_API void
+pfVertex4f(PFfloat x, PFfloat y, PFfloat z, PFfloat w);
 
 /**
  * @brief Specifies a 4D vertex with coordinates provided as an array.
@@ -1122,7 +1187,28 @@ PF_API void pfVertex4f(PFfloat x, PFfloat y, PFfloat z, PFfloat w);
  *
  * @param v Array containing the (x, y, z, w) coordinates of the vertex.
  */
-PF_API void pfVertex4fv(const PFfloat* v);
+PF_API void
+pfVertex4fv(const PFfloat* v);
+
+/**
+ * @brief Sets the current color using a `PFcolor` value.
+ *
+ * @warning This function needs a context to be defined.
+ *
+ * @param color The color value of type `PFcolor`.
+ */
+PF_API void
+pfColor(PFcolor color);
+
+/**
+ * @brief Sets the current color using an unsigned integer value.
+ *
+ * @warning This function needs a context to be defined.
+ *
+ * @param color The color value packed in an unsigned integer.
+ */
+PF_API void
+pfColor1ui(PFuint color);
 
 /**
  * @brief Specifies a color using unsigned byte components.
@@ -1133,7 +1219,8 @@ PF_API void pfVertex4fv(const PFfloat* v);
  * @param g Green component value (0-255).
  * @param b Blue component value (0-255).
  */
-PF_API void pfColor3ub(PFubyte r, PFubyte g, PFubyte b);
+PF_API void
+pfColor3ub(PFubyte r, PFubyte g, PFubyte b);
 
 /**
  * @brief Specifies a color using unsigned byte components provided as an array.
@@ -1142,7 +1229,8 @@ PF_API void pfColor3ub(PFubyte r, PFubyte g, PFubyte b);
  *
  * @param v Array containing the red, green, and blue components (0-255).
  */
-PF_API void pfColor3ubv(const PFubyte* v);
+PF_API void
+pfColor3ubv(const PFubyte* v);
 
 /**
  * @brief Specifies a color using unsigned short components.
@@ -1153,7 +1241,8 @@ PF_API void pfColor3ubv(const PFubyte* v);
  * @param g Green component value (0-65535).
  * @param b Blue component value (0-65535).
  */
-PF_API void pfColor3us(PFushort r, PFushort g, PFushort b);
+PF_API void
+pfColor3us(PFushort r, PFushort g, PFushort b);
 
 /**
  * @brief Specifies a color using unsigned short components provided as an array.
@@ -1162,7 +1251,8 @@ PF_API void pfColor3us(PFushort r, PFushort g, PFushort b);
  *
  * @param v Array containing the red, green, and blue components (0-65535).
  */
-PF_API void pfColor3usv(const PFushort* v);
+PF_API void
+pfColor3usv(const PFushort* v);
 
 /**
  * @brief Specifies a color using unsigned int components.
@@ -1173,7 +1263,8 @@ PF_API void pfColor3usv(const PFushort* v);
  * @param g Green component value (0-4294967295).
  * @param b Blue component value (0-4294967295).
  */
-PF_API void pfColor3ui(PFuint r, PFuint g, PFuint b);
+PF_API void
+pfColor3ui(PFuint r, PFuint g, PFuint b);
 
 /**
  * @brief Specifies a color using unsigned int components provided as an array.
@@ -1182,7 +1273,8 @@ PF_API void pfColor3ui(PFuint r, PFuint g, PFuint b);
  *
  * @param v Array containing the red, green, and blue components (0-4294967295).
  */
-PF_API void pfColor3uiv(const PFuint* v);
+PF_API void
+pfColor3uiv(const PFuint* v);
 
 /**
  * @brief Specifies a color using floating-point components.
@@ -1193,7 +1285,8 @@ PF_API void pfColor3uiv(const PFuint* v);
  * @param g Green component value (0.0-1.0).
  * @param b Blue component value (0.0-1.0).
  */
-PF_API void pfColor3f(PFfloat r, PFfloat g, PFfloat b);
+PF_API void
+pfColor3f(PFfloat r, PFfloat g, PFfloat b);
 
 /**
  * @brief Specifies a color using floating-point components provided as an array.
@@ -1202,7 +1295,8 @@ PF_API void pfColor3f(PFfloat r, PFfloat g, PFfloat b);
  *
  * @param v Array containing the red, green, and blue components (0.0-1.0).
  */
-PF_API void pfColor3fv(const PFfloat* v);
+PF_API void
+pfColor3fv(const PFfloat* v);
 
 /**
  * @brief Specifies a color with alpha using unsigned byte components.
@@ -1214,7 +1308,8 @@ PF_API void pfColor3fv(const PFfloat* v);
  * @param b Blue component value (0-255).
  * @param a Alpha component value (0-255).
  */
-PF_API void pfColor4ub(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
+PF_API void
+pfColor4ub(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
 
 /**
  * @brief Specifies a color with alpha using unsigned byte components provided as an array.
@@ -1223,7 +1318,8 @@ PF_API void pfColor4ub(PFubyte r, PFubyte g, PFubyte b, PFubyte a);
  *
  * @param v Array containing the red, green, blue, and alpha components (0-255).
  */
-PF_API void pfColor4ubv(const PFubyte* v);
+PF_API void
+pfColor4ubv(const PFubyte* v);
 
 /**
  * @brief Specifies a color with alpha using unsigned short components.
@@ -1235,7 +1331,8 @@ PF_API void pfColor4ubv(const PFubyte* v);
  * @param b Blue component value (0-65535).
  * @param a Alpha component value (0-65535).
  */
-PF_API void pfColor4us(PFushort r, PFushort g, PFushort b, PFushort a);
+PF_API void
+pfColor4us(PFushort r, PFushort g, PFushort b, PFushort a);
 
 /**
  * @brief Specifies a color with alpha using unsigned short components provided as an array.
@@ -1244,7 +1341,8 @@ PF_API void pfColor4us(PFushort r, PFushort g, PFushort b, PFushort a);
  *
  * @param v Array containing the red, green, blue, and alpha components (0-65535).
  */
-PF_API void pfColor4usv(const PFushort* v);
+PF_API void
+pfColor4usv(const PFushort* v);
 
 /**
  * @brief Specifies a color with alpha using unsigned int components.
@@ -1256,7 +1354,8 @@ PF_API void pfColor4usv(const PFushort* v);
  * @param b Blue component value (0-4294967295).
  * @param a Alpha component value (0-4294967295).
  */
-PF_API void pfColor4ui(PFuint r, PFuint g, PFuint b, PFuint a);
+PF_API void
+pfColor4ui(PFuint r, PFuint g, PFuint b, PFuint a);
 
 /**
  * @brief Specifies a color with alpha using unsigned int components provided as an array.
@@ -1265,7 +1364,8 @@ PF_API void pfColor4ui(PFuint r, PFuint g, PFuint b, PFuint a);
  *
  * @param v Array containing the red, green, blue, and alpha components (0-4294967295).
  */
-PF_API void pfColor4uiv(const PFuint* v);
+PF_API void
+pfColor4uiv(const PFuint* v);
 
 /**
  * @brief Specifies a color with alpha using floating-point components.
@@ -1277,7 +1377,8 @@ PF_API void pfColor4uiv(const PFuint* v);
  * @param b Blue component value (0.0-1.0).
  * @param a Alpha component value (0.0-1.0).
  */
-PF_API void pfColor4f(PFfloat r, PFfloat g, PFfloat b, PFfloat a);
+PF_API void
+pfColor4f(PFfloat r, PFfloat g, PFfloat b, PFfloat a);
 
 /**
  * @brief Specifies a color with alpha using floating-point components provided as an array.
@@ -1286,7 +1387,8 @@ PF_API void pfColor4f(PFfloat r, PFfloat g, PFfloat b, PFfloat a);
  *
  * @param v Array containing the red, green, blue, and alpha components (0.0-1.0).
  */
-PF_API void pfColor4fv(const PFfloat* v);
+PF_API void
+pfColor4fv(const PFfloat* v);
 
 /**
  * @brief Specifies 2D texture coordinates using floating-point components.
@@ -1296,7 +1398,8 @@ PF_API void pfColor4fv(const PFfloat* v);
  * @param u U texture coordinate value (0.0-1.0).
  * @param v V texture coordinate value (0.0-1.0).
  */
-PF_API void pfTexCoord2f(PFfloat u, PFfloat v);
+PF_API void
+pfTexCoord2f(PFfloat u, PFfloat v);
 
 /**
  * @brief Specifies 2D texture coordinates using floating-point components provided as an array.
@@ -1305,7 +1408,8 @@ PF_API void pfTexCoord2f(PFfloat u, PFfloat v);
  *
  * @param v Array containing the U and V texture coordinates (0.0-1.0).
  */
-PF_API void pfTexCoordfv(const PFfloat* v);
+PF_API void
+pfTexCoordfv(const PFfloat* v);
 
 /**
  * @brief Specifies a normal vector using floating-point components.
@@ -1316,7 +1420,8 @@ PF_API void pfTexCoordfv(const PFfloat* v);
  * @param y Y component of the normal vector.
  * @param z Z component of the normal vector.
  */
-PF_API void pfNormal3f(PFfloat x, PFfloat y, PFfloat z);
+PF_API void
+pfNormal3f(PFfloat x, PFfloat y, PFfloat z);
 
 /**
  * @brief Specifies a normal vector using floating-point components provided as an array.
@@ -1325,8 +1430,8 @@ PF_API void pfNormal3f(PFfloat x, PFfloat y, PFfloat z);
  *
  * @param v Array containing the X, Y, and Z components of the normal vector.
  */
-PF_API void pfNormal3fv(const PFfloat* v);
-
+PF_API void
+pfNormal3fv(const PFfloat* v);
 
 
 /* Supplementary primitive drawing API functions */
@@ -1341,7 +1446,8 @@ PF_API void pfNormal3fv(const PFfloat* v);
  * @param x2 X coordinate of the second corner.
  * @param y2 Y coordinate of the second corner.
  */
-PF_API void pfRects(PFshort x1, PFshort y1, PFshort x2, PFshort y2);
+PF_API void
+pfRects(PFshort x1, PFshort y1, PFshort x2, PFshort y2);
 
 /**
  * @brief Draws a rectangle with integer coordinates provided as arrays.
@@ -1351,7 +1457,8 @@ PF_API void pfRects(PFshort x1, PFshort y1, PFshort x2, PFshort y2);
  * @param v1 Array containing the X and Y coordinates of the first corner.
  * @param v2 Array containing the X and Y coordinates of the second corner.
  */
-PF_API void pfRectsv(const PFshort* v1, const PFshort* v2);
+PF_API void
+pfRectsv(const PFshort* v1, const PFshort* v2);
 
 /**
  * @brief Draws a rectangle with floating-point coordinates.
@@ -1363,7 +1470,8 @@ PF_API void pfRectsv(const PFshort* v1, const PFshort* v2);
  * @param x2 X coordinate of the second corner.
  * @param y2 Y coordinate of the second corner.
  */
-PF_API void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2);
+PF_API void
+pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2);
 
 /**
  * @brief Draws a rectangle with floating-point coordinates provided as arrays.
@@ -1374,7 +1482,6 @@ PF_API void pfRectf(PFfloat x1, PFfloat y1, PFfloat x2, PFfloat y2);
  * @param v2 Array containing the X and Y coordinates of the second corner.
  */
 PF_API void pfRectfv(const PFfloat* v1, const PFfloat* v2);
-
 
 
 /* Drawing pixels API functions */
@@ -1389,7 +1496,10 @@ PF_API void pfRectfv(const PFfloat* v1, const PFfloat* v2);
  * @param format Pixel format of the data.
  * @param pixels Pointer to the pixel data.
  */
-PF_API void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type, const void* pixels);
+PF_API void
+pfDrawPixels(PFsizei width, PFsizei height,
+             PFpixelformat format, PFdatatype type,
+             const void* pixels);
 
 /**
  * @brief Sets the zoom factor for pixel drawing.
@@ -1399,7 +1509,8 @@ PF_API void pfDrawPixels(PFsizei width, PFsizei height, PFpixelformat format, PF
  * @param xfactor Zoom factor along the X-axis.
  * @param yfactor Zoom factor along the Y-axis.
  */
-PF_API void pfPixelZoom(PFfloat xfactor, PFfloat yfactor);
+PF_API void
+pfPixelZoom(PFfloat xfactor, PFfloat yfactor);
 
 /**
  * @brief Sets the current raster position using integer coordinates.
@@ -1409,7 +1520,8 @@ PF_API void pfPixelZoom(PFfloat xfactor, PFfloat yfactor);
  * @param x X coordinate of the raster position.
  * @param y Y coordinate of the raster position.
  */
-PF_API void pfRasterPos2i(PFint x, PFint y);
+PF_API void
+pfRasterPos2i(PFint x, PFint y);
 
 /**
  * @brief Sets the current raster position using floating-point coordinates.
@@ -1419,7 +1531,8 @@ PF_API void pfRasterPos2i(PFint x, PFint y);
  * @param x X coordinate of the raster position.
  * @param y Y coordinate of the raster position.
  */
-PF_API void pfRasterPos2f(PFfloat x, PFfloat y);
+PF_API void
+pfRasterPos2f(PFfloat x, PFfloat y);
 
 /**
  * @brief Sets the current raster position using floating-point coordinates provided as an array.
@@ -1428,7 +1541,8 @@ PF_API void pfRasterPos2f(PFfloat x, PFfloat y);
  *
  * @param v Array containing the X and Y coordinates of the raster position.
  */
-PF_API void pfRasterPos2fv(const PFfloat* v);
+PF_API void
+pfRasterPos2fv(const PFfloat* v);
 
 /**
  * @brief Sets the current raster position using integer coordinates.
@@ -1439,7 +1553,8 @@ PF_API void pfRasterPos2fv(const PFfloat* v);
  * @param y Y coordinate of the raster position.
  * @param z Z coordinate of the raster position.
  */
-PF_API void pfRasterPos3i(PFint x, PFint y, PFint z);
+PF_API void
+pfRasterPos3i(PFint x, PFint y, PFint z);
 
 /**
  * @brief Sets the current raster position using floating-point coordinates.
@@ -1450,7 +1565,8 @@ PF_API void pfRasterPos3i(PFint x, PFint y, PFint z);
  * @param y Y coordinate of the raster position.
  * @param z Z coordinate of the raster position.
  */
-PF_API void pfRasterPos3f(PFfloat x, PFfloat y, PFfloat z);
+PF_API void
+pfRasterPos3f(PFfloat x, PFfloat y, PFfloat z);
 
 /**
  * @brief Sets the current raster position using floating-point coordinates provided as an array.
@@ -1459,7 +1575,8 @@ PF_API void pfRasterPos3f(PFfloat x, PFfloat y, PFfloat z);
  *
  * @param v Array containing the X, Y, and Z coordinates of the raster position.
  */
-PF_API void pfRasterPos3fv(const PFfloat* v);
+PF_API void
+pfRasterPos3fv(const PFfloat* v);
 
 /**
  * @brief Sets the current raster position using integer coordinates.
@@ -1471,7 +1588,8 @@ PF_API void pfRasterPos3fv(const PFfloat* v);
  * @param z Z coordinate of the raster position.
  * @param w W coordinate of the raster position.
  */
-PF_API void pfRasterPos4i(PFint x, PFint y, PFint z, PFint w);
+PF_API void
+pfRasterPos4i(PFint x, PFint y, PFint z, PFint w);
 
 /**
  * @brief Sets the current raster position using floating-point coordinates.
@@ -1483,7 +1601,8 @@ PF_API void pfRasterPos4i(PFint x, PFint y, PFint z, PFint w);
  * @param z Z coordinate of the raster position.
  * @param w W coordinate of the raster position.
  */
-PF_API void pfRasterPos4f(PFfloat x, PFfloat y, PFfloat z, PFfloat w);
+PF_API void
+pfRasterPos4f(PFfloat x, PFfloat y, PFfloat z, PFfloat w);
 
 /**
  * @brief Sets the current raster position using floating-point coordinates provided as an array.
@@ -1492,7 +1611,8 @@ PF_API void pfRasterPos4f(PFfloat x, PFfloat y, PFfloat z, PFfloat w);
  *
  * @param v Array containing the X, Y, Z, and W coordinates of the raster position.
  */
-PF_API void pfRasterPos4fv(const PFfloat* v);
+PF_API void
+pfRasterPos4fv(const PFfloat* v);
 
 
 /* Fog API functions */
@@ -1505,7 +1625,8 @@ PF_API void pfRasterPos4fv(const PFfloat* v);
  * @param pname The fog parameter name to set.
  * @param param The integer value to set for the specified parameter.
  */
-PF_API void pfFogi(PFfogparam pname, PFint param);
+PF_API void
+pfFogi(PFfogparam pname, PFint param);
 
 /**
  * @brief Set fog parameters for floating-point values.
@@ -1515,7 +1636,8 @@ PF_API void pfFogi(PFfogparam pname, PFint param);
  * @param pname The fog parameter name to set.
  * @param param The floating-point value to set for the specified parameter.
  */
-PF_API void pfFogf(PFfogparam pname, PFfloat param);
+PF_API void
+pfFogf(PFfogparam pname, PFfloat param);
 
 /**
  * @brief Get fog parameters for integer values.
@@ -1525,7 +1647,8 @@ PF_API void pfFogf(PFfogparam pname, PFfloat param);
  * @param pname The fog parameter name to retrieve.
  * @param param Pointer to an array to store the retrieved integer values.
  */
-PF_API void pfFogiv(PFfogparam pname, PFint* param);
+PF_API void
+pfFogiv(PFfogparam pname, PFint* param);
 
 /**
  * @brief Get fog parameters for floating-point values.
@@ -1535,14 +1658,16 @@ PF_API void pfFogiv(PFfogparam pname, PFint* param);
  * @param pname The fog parameter name to retrieve.
  * @param param Pointer to an array to store the retrieved floating-point values.
  */
-PF_API void pfFogfv(PFfogparam pname, PFfloat* param);
+PF_API void
+pfFogfv(PFfogparam pname, PFfloat* param);
 
 /**
  * @brief Process fog calculations.
  *
  * @warning This function needs a context to be defined.
  */
-PF_API void pfFogProcess(void);
+PF_API void
+pfFogProcess(void);
 
 
 /* Misc API functions */
@@ -1562,7 +1687,9 @@ PF_API void pfFogProcess(void);
  * @param format The pixel format of the framebuffer data.
  * @param pixels Pointer to the destination buffer where the pixel data will be copied.
  */
-PF_API void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type, void* pixels);
+PF_API void
+pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height,
+             PFpixelformat format, PFdatatype type, void* pixels);
 
 /**
  * @brief Applies a post-processing function to modify pixels in the current framebuffer.
@@ -1577,7 +1704,8 @@ PF_API void pfReadPixels(PFint x, PFint y, PFsizei width, PFsizei height, PFpixe
  *                            where x and y are the coordinates of the pixel, depth is the depth value of the pixel, and color is the original color of the pixel.
  *                            The function should return the modified color of the pixel.
  */
-PF_API void pfPostProcess(PFpostprocessfunc postProcessFunction);
+PF_API void
+pfPostProcess(PFpostprocessfunc postProcessFunction);
 
 
 /*
@@ -1609,7 +1737,8 @@ PF_API void pfPostProcess(PFpostprocessfunc postProcessFunction);
  * }
  * @endcode
  */
-PF_API PFrenderlist pfGenList(void);
+PF_API PFrenderlist
+pfGenList(void);
 
 /**
  * @brief Deletes an existing render list and frees associated resources.
@@ -1633,7 +1762,8 @@ PF_API PFrenderlist pfGenList(void);
  * // myList is now invalid and should not be used
  * @endcode
  */
-PF_API void pfDeleteList(PFrenderlist* renderList);
+PF_API void
+pfDeleteList(PFrenderlist* renderList);
 
 /**
  * @brief Starts recording commands into a render list.
@@ -1656,7 +1786,8 @@ PF_API void pfDeleteList(PFrenderlist* renderList);
  * pfEndList();
  * @endcode
  */
-PF_API void pfNewList(PFrenderlist renderList);
+PF_API void
+pfNewList(PFrenderlist renderList);
 
 /**
  * @brief Ends the recording of commands into the current render list.
@@ -1676,7 +1807,8 @@ PF_API void pfNewList(PFrenderlist renderList);
  * pfEndList();  // Finalize the list
  * @endcode
  */
-PF_API void pfEndList(void);
+PF_API void
+pfEndList(void);
 
 /**
  * @brief Executes the commands stored in a render list.
@@ -1704,7 +1836,8 @@ PF_API void pfEndList(void);
  * pfCallList(myList);
  * @endcode
  */
-PF_API void pfCallList(const PFrenderlist renderList);
+PF_API void
+pfCallList(const PFrenderlist renderList);
 
 
 /* Framebuffer functions */
@@ -1723,7 +1856,9 @@ PF_API void pfCallList(const PFrenderlist renderList);
  *
  * @return PFframebuffer The generated framebuffer object. Returns an invalid framebuffer object if creation fails.
  */
-PF_API PFframebuffer pfGenFramebuffer(PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
+PF_API PFframebuffer
+pfGenFramebuffer(PFsizei width, PFsizei height,
+                 PFpixelformat format, PFdatatype type);
 
 /**
  * @brief Deletes a framebuffer object.
@@ -1733,7 +1868,8 @@ PF_API PFframebuffer pfGenFramebuffer(PFsizei width, PFsizei height, PFpixelform
  *
  * @param framebuffer Pointer to the framebuffer object to delete.
  */
-PF_API void pfDeleteFramebuffer(PFframebuffer* framebuffer);
+PF_API void
+pfDeleteFramebuffer(PFframebuffer* framebuffer);
 
 /**
  * @brief Checks if a framebuffer object is valid.
@@ -1744,7 +1880,8 @@ PF_API void pfDeleteFramebuffer(PFframebuffer* framebuffer);
  * @param framebuffer Pointer to the framebuffer object to check.
  * @return PFboolean True if the framebuffer object is valid, false otherwise.
  */
-PF_API PFboolean pfIsValidFramebuffer(PFframebuffer* framebuffer);
+PF_API PFboolean
+pfIsValidFramebuffer(PFframebuffer* framebuffer);
 
 /**
  * @brief Clears the color and depth buffers of a framebuffer with the specified color and depth value.
@@ -1756,7 +1893,8 @@ PF_API PFboolean pfIsValidFramebuffer(PFframebuffer* framebuffer);
  * @param color The color to clear the framebuffer with.
  * @param depth The depth value to clear the depth buffer with.
  */
-PF_API void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color, PFfloat depth);
+PF_API void
+pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color, PFfloat depth);
 
 /**
  * @brief Retrieves the color value of a pixel from the framebuffer.
@@ -1769,7 +1907,8 @@ PF_API void pfClearFramebuffer(PFframebuffer* framebuffer, PFcolor color, PFfloa
  * @param y The Y coordinate of the pixel.
  * @return PFcolor The color value of the pixel.
  */
-PF_API PFcolor pfGetFramebufferPixel(const PFframebuffer* framebuffer, PFsizei x, PFsizei y);
+PF_API PFcolor
+pfGetFramebufferPixel(const PFframebuffer* framebuffer, PFsizei x, PFsizei y);
 
 /**
  * @brief Retrieves the depth value of a pixel from the framebuffer.
@@ -1782,7 +1921,8 @@ PF_API PFcolor pfGetFramebufferPixel(const PFframebuffer* framebuffer, PFsizei x
  * @param y The Y coordinate of the pixel.
  * @return PFfloat The depth value of the pixel.
  */
-PF_API PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x, PFsizei y);
+PF_API PFfloat
+pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x, PFsizei y);
 
 /**
  * @brief Sets the color and depth values of a pixel in the framebuffer, subject to depth testing.
@@ -1798,7 +1938,10 @@ PF_API PFfloat pfGetFramebufferDepth(const PFframebuffer* framebuffer, PFsizei x
  * @param color The color value of the pixel.
  * @param depthFunc The depth comparison function used for depth testing.
  */
-PF_API void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color, PFdepthmode depthMode);
+PF_API void
+pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer,
+                               PFsizei x, PFsizei y, PFfloat z,
+                               PFcolor color, PFdepthmode depthMode);
 
 /**
  * @brief Sets the color and depth values of a pixel in the framebuffer.
@@ -1812,7 +1955,10 @@ PF_API void pfSetFramebufferPixelDepthTest(PFframebuffer* framebuffer, PFsizei x
  * @param z The depth value of the pixel.
  * @param color The color value of the pixel.
  */
-PF_API void pfSetFramebufferPixelDepth(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFfloat z, PFcolor color);
+PF_API void
+pfSetFramebufferPixelDepth(PFframebuffer* framebuffer,
+                           PFsizei x, PFsizei y, PFfloat z,
+                           PFcolor color);
 
 /**
  * @brief Sets the color value of a pixel in the framebuffer without modifying its depth value.
@@ -1826,8 +1972,10 @@ PF_API void pfSetFramebufferPixelDepth(PFframebuffer* framebuffer, PFsizei x, PF
  * @param y The Y coordinate of the pixel.
  * @param color The color value of the pixel.
  */
-PF_API void pfSetFramebufferPixel(PFframebuffer* framebuffer, PFsizei x, PFsizei y, PFcolor color);
-
+PF_API void
+pfSetFramebufferPixel(PFframebuffer* framebuffer,
+                      PFsizei x, PFsizei y,
+                      PFcolor color);
 
 
 /* Texture functions */
@@ -1846,7 +1994,10 @@ PF_API void pfSetFramebufferPixel(PFframebuffer* framebuffer, PFsizei x, PFsizei
  *
  * @return PFtexture The generated texture object. Returns an invalid texture object if creation fails.
  */
-PF_API PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelformat format, PFdatatype type);
+PF_API PFtexture
+pfGenTexture(void* pixels,
+             PFsizei width, PFsizei height,
+             PFpixelformat format, PFdatatype type);
 
 /**
  * @brief Deletes a texture object and optionally frees its associated buffer.
@@ -1858,7 +2009,9 @@ PF_API PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpix
  * @param texture Pointer to the texture object to delete.
  * @param freeBuffer Boolean flag indicating whether to free the texture buffer.
  */
-PF_API void pfDeleteTexture(PFtexture* texture, PFboolean freeBuffer);
+PF_API void
+pfDeleteTexture(PFtexture* texture,
+                PFboolean freeBuffer);
 
 /**
  * @brief Checks if a texture object is valid.
@@ -1869,7 +2022,8 @@ PF_API void pfDeleteTexture(PFtexture* texture, PFboolean freeBuffer);
  * @param texture Pointer to the texture object to check.
  * @return PFboolean True if the texture object is valid, false otherwise.
  */
-PF_API PFboolean pfIsValidTexture(const PFtexture texture);
+PF_API PFboolean
+pfIsValidTexture(const PFtexture texture);
 
 /**
  * @brief Sets the texture parameters for wrapping and filtering modes.
@@ -1882,7 +2036,10 @@ PF_API PFboolean pfIsValidTexture(const PFtexture texture);
  * @param wrapMode The wrapping mode to be used (e.g., repeat, clamp).
  * @param filterMode The filtering mode to be used (e.g., nearest, linear).
  */
-PF_API void pfTextureParameter(PFtexture texture, PFtexturewrap wrapMode, PFtexturefilter filterMode);
+PF_API void
+pfTextureParameter(PFtexture texture,
+                   PFtexturewrap wrapMode,
+                   PFtexturefilter filterMode);
 
 /**
  * @brief Returns a pointer to the texels of the texture and retrieves texture details.
@@ -1898,7 +2055,10 @@ PF_API void pfTextureParameter(PFtexture texture, PFtexturewrap wrapMode, PFtext
  * @param type Pointer to store the data type of the texture (can be NULL).
  * @return Pointer to the texels of the texture.
  */
-PF_API void* pfGetTexturePixels(const PFtexture texture, PFsizei* width, PFsizei* height, PFpixelformat* format, PFdatatype* type);
+PF_API void*
+pfGetTexturePixels(const PFtexture texture,
+                   PFsizei* width, PFsizei* height,
+                   PFpixelformat* format, PFdatatype* type);
 
 #if defined(__cplusplus)
 }

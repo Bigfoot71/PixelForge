@@ -84,7 +84,7 @@ pfCallList(const PFrenderlist renderList)
         pfBindTexture(call->texture);
 
         pfBegin(call->drawMode);
-            for (int i = 0; i < call->positions.size; ++i) {
+            for (PFsizei i = 0; i < call->positions.size; ++i) {
                 pfColor4ubv((PFubyte*)(colors + i));
                 pfTexCoordfv(texcoords + 2 * i);
                 pfNormal3fv(normals + 3 * i);

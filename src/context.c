@@ -116,7 +116,7 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
 {
     /* Memory allocation for the context */
 
-    PFIctx *ctx = (PFIctx*)PF_CALLOC(sizeof(PFIctx), 1);
+    PFIctx *ctx = (PFIctx*)PF_CALLOC(1, sizeof(PFIctx));
     if (!ctx) return NULL;
 
     /* Initialization of the main framebuffer */
@@ -1678,9 +1678,7 @@ void pfVertex4fv(const PFfloat* v)
     }
 }
 
-// NOTE: Used by `pfColor` to assign material colors
-//       when the `PF_COLOR_MATERIAL` state is enabled.
-static inline void pfiSetCurrentColor(PFcolor color)
+void pfColor(PFcolor color)
 {
     if (G_currentCtx->state & PF_COLOR_MATERIAL) {
         PFImaterial *m1 = &G_currentCtx->faceMaterial[PF_FRONT];
@@ -1712,23 +1710,30 @@ static inline void pfiSetCurrentColor(PFcolor color)
     }
 }
 
+void pfColor1ui(PFuint color)
+{
+    pfColor(((union {
+        PFuint x; PFcolor r;
+    }) { .x = color }).r);
+}
+
 void pfColor3ub(PFubyte r, PFubyte g, PFubyte b)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         r, g, b, 255
     });
 }
 
 void pfColor3ubv(const PFubyte* v)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         v[0], v[1], v[2], 255
     });
 }
 
 void pfColor3us(PFushort r, PFushort g, PFushort b)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         (PFubyte)(r >> 8),
         (PFubyte)(g >> 8),
         (PFubyte)(b >> 8),
@@ -1738,7 +1743,7 @@ void pfColor3us(PFushort r, PFushort g, PFushort b)
 
 void pfColor3usv(const PFushort* v)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         (PFubyte)(v[0] >> 8),
         (PFubyte)(v[1] >> 8),
         (PFubyte)(v[2] >> 8),
@@ -1748,7 +1753,7 @@ void pfColor3usv(const PFushort* v)
 
 void pfColor3ui(PFuint r, PFuint g, PFuint b)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         (PFubyte)(r >> 24),
         (PFubyte)(g >> 24),
         (PFubyte)(b >> 24),
@@ -1758,7 +1763,7 @@ void pfColor3ui(PFuint r, PFuint g, PFuint b)
 
 void pfColor3uiv(const PFuint* v)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         (PFubyte)(v[0] >> 24),
         (PFubyte)(v[1] >> 24),
         (PFubyte)(v[2] >> 24),
@@ -1768,7 +1773,7 @@ void pfColor3uiv(const PFuint* v)
 
 void pfColor3f(PFfloat r, PFfloat g, PFfloat b)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         (PFubyte)(r*255),
         (PFubyte)(g*255),
         (PFubyte)(b*255),
@@ -1778,7 +1783,7 @@ void pfColor3f(PFfloat r, PFfloat g, PFfloat b)
 
 void pfColor3fv(const PFfloat* v)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         (PFubyte)(v[0]*255),
         (PFubyte)(v[1]*255),
         (PFubyte)(v[2]*255),
@@ -1788,21 +1793,21 @@ void pfColor3fv(const PFfloat* v)
 
 void pfColor4ub(PFubyte r, PFubyte g, PFubyte b, PFubyte a)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         r, g, b, a
     });
 }
 
 void pfColor4ubv(const PFubyte* v)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         v[0], v[1], v[2], v[3]
     });
 }
 
 void pfColor4us(PFushort r, PFushort g, PFushort b, PFushort a)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         (PFubyte)(r >> 8),
         (PFubyte)(g >> 8),
         (PFubyte)(b >> 8),
@@ -1812,7 +1817,7 @@ void pfColor4us(PFushort r, PFushort g, PFushort b, PFushort a)
 
 void pfColor4usv(const PFushort* v)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         (PFubyte)(v[0] >> 8),
         (PFubyte)(v[1] >> 8),
         (PFubyte)(v[2] >> 8),
@@ -1822,7 +1827,7 @@ void pfColor4usv(const PFushort* v)
 
 void pfColor4ui(PFuint r, PFuint g, PFuint b, PFuint a)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         (PFubyte)(r >> 24),
         (PFubyte)(g >> 24),
         (PFubyte)(b >> 24),
@@ -1832,7 +1837,7 @@ void pfColor4ui(PFuint r, PFuint g, PFuint b, PFuint a)
 
 void pfColor4uiv(const PFuint* v)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         (PFubyte)(v[0] >> 24),
         (PFubyte)(v[1] >> 24),
         (PFubyte)(v[2] >> 24),
@@ -1842,7 +1847,7 @@ void pfColor4uiv(const PFuint* v)
 
 void pfColor4f(PFfloat r, PFfloat g, PFfloat b, PFfloat a)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         (PFubyte)(r*255),
         (PFubyte)(g*255),
         (PFubyte)(b*255),
@@ -1852,7 +1857,7 @@ void pfColor4f(PFfloat r, PFfloat g, PFfloat b, PFfloat a)
 
 void pfColor4fv(const PFfloat* v)
 {
-    pfiSetCurrentColor((PFcolor) {
+    pfColor((PFcolor) {
         (PFubyte)(v[0]*255),
         (PFubyte)(v[1]*255),
         (PFubyte)(v[2]*255),

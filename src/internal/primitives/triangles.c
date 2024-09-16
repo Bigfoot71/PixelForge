@@ -20,7 +20,6 @@
 #include "../lighting/lighting.h"
 #include "../context/context.h"
 #include "../../pfm.h"
-#include "../helper.h"
 #include "../color.h"
 #include "../blend.h"
 
