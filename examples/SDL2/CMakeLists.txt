@@ -3,17 +3,21 @@ cmake_minimum_required(VERSION 3.21)
 # Path to example resources
 add_definitions(-DRESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../resources/")
 
-# Basic 2D example
-add_executable(SDL2_2D ${PF_ROOT_PATH}/examples/SDL2/SDL2_2D.c)
-target_link_libraries(SDL2_2D PRIVATE pixelforge SDL2 m)
-target_include_directories(SDL2_2D PRIVATE ${PF_ROOT_PATH}/src)
+# Function to link all libraries accordingly to the compiler / target platform
+function(link_libraries_sdl2 target)
+    target_link_libraries(${target} PRIVATE pixelforge SDL2)
+    if(NOT "${CMAKE_C_COMPILER_ID}" STREQUAL "MSVC")
+        target_link_libraries(${target} PRIVATE m)
+    endif()
+endfunction()
 
-# Basic 3D example
-add_executable(SDL2_3D ${PF_ROOT_PATH}/examples/SDL2/SDL2_3D.c)
-target_link_libraries(SDL2_3D PRIVATE pixelforge SDL2 m)
-target_include_directories(SDL2_3D PRIVATE ${PF_ROOT_PATH}/src)
+# Get all .c files in the SDL2 examples directory
+file(GLOB SDL2_EXAMPLES_SOURCES "${PF_ROOT_PATH}/examples/SDL2/*.c")
 
-# Gears example
-add_executable(SDL2_Gears ${PF_ROOT_PATH}/examples/SDL2/SDL2_Gears.c)
-target_link_libraries(SDL2_Gears PRIVATE pixelforge SDL2 m)
-target_include_directories(SDL2_Gears PRIVATE ${PF_ROOT_PATH}/src)
+# Loop over each .c file and create an executable for each one
+foreach(SOURCE_FILE ${SDL2_EXAMPLES_SOURCES})
+    get_filename_component(EXECUTABLE_NAME ${SOURCE_FILE} NAME_WE)
+    add_executable(${EXECUTABLE_NAME} ${SOURCE_FILE})
+    link_libraries_sdl2(${EXECUTABLE_NAME})
+    target_include_directories(${EXECUTABLE_NAME} PRIVATE ${PF_ROOT_PATH}/src)
+endforeach()

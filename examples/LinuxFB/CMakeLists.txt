@@ -3,17 +3,18 @@ cmake_minimum_required(VERSION 3.21)
 # Path to example resources
 add_definitions(-DRESOURCES_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../resources/")
 
-# Basic 2D example
-add_executable(LinuxFB_2D ${PF_ROOT_PATH}/examples/LinuxFB/LinuxFB_2D.c)
-target_link_libraries(LinuxFB_2D PRIVATE pixelforge m)
-target_include_directories(LinuxFB_2D PRIVATE ${PF_ROOT_PATH}/src)
+# Function to link all libraries accordingly to the compiler / target platform
+function(link_libraries_linuxfb target)
+    target_link_libraries(${target} PRIVATE pixelforge m)
+endfunction()
 
-# Basic 3D example
-add_executable(LinuxFB_3D ${PF_ROOT_PATH}/examples/LinuxFB/LinuxFB_3D.c)
-target_link_libraries(LinuxFB_3D PRIVATE pixelforge m)
-target_include_directories(LinuxFB_3D PRIVATE ${PF_ROOT_PATH}/src)
+# Get all .c files in the LinuxFB examples directory
+file(GLOB LINUXFB_EXAMPLES_SOURCES "${PF_ROOT_PATH}/examples/LinuxFB/*.c")
 
-# Gears example
-add_executable(LinuxFB_Gears ${PF_ROOT_PATH}/examples/LinuxFB/LinuxFB_Gears.c)
-target_link_libraries(LinuxFB_Gears PRIVATE pixelforge m)
-target_include_directories(LinuxFB_Gears PRIVATE ${PF_ROOT_PATH}/src)
+# Loop over each .c file and create an executable for each one
+foreach(SOURCE_FILE ${LINUXFB_EXAMPLES_SOURCES})
+    get_filename_component(EXECUTABLE_NAME ${SOURCE_FILE} NAME_WE)
+    add_executable(${EXECUTABLE_NAME} ${SOURCE_FILE})
+    link_libraries_linuxfb(${EXECUTABLE_NAME})
+    target_include_directories(${EXECUTABLE_NAME} PRIVATE ${PF_ROOT_PATH}/src)
+endforeach()
