@@ -92,6 +92,11 @@ typedef float* PFMvec3_ptr;
 typedef float* PFMvec4_ptr;
 typedef float* PFMmat4_ptr;
 
+typedef float const* PFMvec2_cptr;
+typedef float const* PFMvec3_cptr;
+typedef float const* PFMvec4_cptr;
+typedef float const* PFMmat4_cptr;
+
 /* Conversion Helpers */
 
 /**
@@ -2209,6 +2214,89 @@ pfmMat4LookAt(PFMmat4 dst, const PFMvec3 eye, const PFMvec3 target, const PFMvec
     dst[13] = -(vy[0]*eye[0] + vy[1]*eye[1] + vy[2]*eye[2]);   // pfVec3Dot(vy, eye)
     dst[14] = -(vz[0]*eye[0] + vz[1]*eye[1] + vz[2]*eye[2]);   // pfVec3Dot(vz, eye)
     dst[15] = 1.0f;
+}
+
+/* 2D Geometric functions */
+
+PFM_API int
+pfmGeo2DSegmentIntersection(const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 q1, const PFMvec2 q2, PFMvec2 intersection)
+{
+    PFMvec2 r = { p2[0] - p1[0], p2[1] - p1[1] };
+    PFMvec2 s = { q2[0] - q1[0], q2[1] - q1[1] };
+    float rxs = r[0] * s[1] - r[1] * s[0];
+    PFMvec2 qp = { q1[0] - p1[0], q1[1] - p1[1] };
+    float t = (qp[0] * s[1] - qp[1] * s[0]) / rxs;
+    float u = (qp[0] * r[1] - qp[1] * r[0]) / rxs;
+
+    if (fabs(rxs) < 1e-6f) {
+        return 0; // Parallel or collinear segments
+    }
+    if (t >= 0.0f && t <= 1.0f && u >= 0.0f && u <= 1.0f) {
+        intersection[0] = p1[0] + t * r[0];
+        intersection[1] = p1[1] + t * r[1];
+        return 1;
+    }
+    return 0;
+}
+
+PFM_API void
+pfmGeo2DProjectPointOntoLine(const PFMvec2 pt, const PFMvec2 p1, const PFMvec2 p2, PFMvec2 projection)
+{
+    PFMvec2 line = { p2[0] - p1[0], p2[1] - p1[1] };
+    PFMvec2 ptLine = { pt[0] - p1[0], pt[1] - p1[1] };
+    float t = (ptLine[0] * line[0] + ptLine[1] * line[1]) / (line[0] * line[0] + line[1] * line[1]);
+    
+    projection[0] = p1[0] + t * line[0];
+    projection[1] = p1[1] + t * line[1];
+}
+
+PFM_API void
+pfmGeo2DTriangleCentroid(const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 p3, PFMvec2 centroid)
+{
+    centroid[0] = (p1[0] + p2[0] + p3[0]) / 3.0f;
+    centroid[1] = (p1[1] + p2[1] + p3[1]) / 3.0f;
+}
+
+PFM_API float
+pfmGeo2DSignedTriangleArea(const PFMvec2 p1, const PFMvec2 p2, const PFMvec3 p3)
+{
+    return (p2[0] - p1[0]) * (p3[1] - p1[1]) - (p3[0] - p1[0]) * (p2[1] - p1[1]);
+}
+
+PFM_API int
+pfmGeo2DPointInTriangle(const PFMvec2 pt, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3)
+{
+    float areaT = pfmGeo2DSignedTriangleArea(v1, v2, v3);
+    float area1 = pfmGeo2DSignedTriangleArea(pt, v2, v3);
+    float area2 = pfmGeo2DSignedTriangleArea(v1, pt, v3);
+    float area3 = pfmGeo2DSignedTriangleArea(v1, v2, pt);
+
+    return (fabsf(areaT - (area1 + area2 + area3)) < 1e-6f);
+}
+
+PFM_API float
+pfmGeoQuadrilateralArea(const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 p3, const PFMvec2 p4)
+{
+    float area1 = fabsf(pfmGeo2DSignedTriangleArea(p1, p2, p3));
+    float area2 = fabsf(pfmGeo2DSignedTriangleArea(p1, p3, p4));
+    return area1 + area2;
+}
+
+PFM_API float
+pfmPolygonArea2D(const PFMvec2* vertices, int vertexCount)
+{
+    float area = 0.0f;
+
+#   ifdef _OPENMP
+#       pragma omp simd
+#   endif //_OPENMP
+    for (int i = 0; i < vertexCount; i++) {
+        const PFMvec2_cptr p1 = vertices[i];
+        const PFMvec2_cptr p2 = vertices[(i + 1) % vertexCount];
+        area += (p1[0] * p2[1]) - (p2[0] * p1[1]);
+    }
+
+    return 0.5f * fabs(area);
 }
 
 #endif //PFM_H
