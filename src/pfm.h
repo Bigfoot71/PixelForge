@@ -24,27 +24,11 @@
 #include <string.h>
 #include <math.h>
 
-/* Defines and Macros */
+/* Customizable macros and definitions */
 
 #ifndef PFM_API
 #   define PFM_API static inline
 #endif //PFM_API
-
-#ifndef PFM_PI
-#   define PFM_PI 3.14159265358979323846
-#endif //PFM_PI
-
-#ifndef PFM_TAU
-#   define PFM_TAU (2.0 * PFM_PI)
-#endif //PFM_PI
-
-#ifndef PFM_DEG2RAD
-#   define PFM_DEG2RAD (PFM_PI / 180.0)
-#endif //PFM_DEG2RAD
-
-#ifndef PFM_RAD2DEG
-#   define PFM_RAD2DEG (180.0 / PFM_PI)
-#endif //PFM_RAD2DEG
 
 #ifndef PFM_FISR
 #   define rsqrtf(x) (1.0f / sqrtf(x))
@@ -62,6 +46,26 @@ PFM_API float rsqrtf(float x)
 }
 #endif //PFM_FISR
 
+#ifndef PFM_FX32_FRACTIONAL_BITS
+#   define PFM_FX32_FRACTIONAL_BITS 16
+#endif //PFM_FX32_FRACTIONAL_BITS
+
+#ifndef PFM_FX16_FRACTIONAL_BITS
+#   define PFM_FX16_FRACTIONAL_BITS 8
+#endif //PFM_FX16_FRACTIONAL_BITS
+
+/* Constant macros and definitions */
+
+#define PFM_PI 3.14159265358979323846
+#define PFM_TAU (2.0 * PFM_PI)
+
+#define PFM_DEG2RAD (PFM_PI / 180.0)
+#define PFM_RAD2DEG (180.0 / PFM_PI)
+
+#define PFM_FX32_ONE (1 << PFM_FX32_FRACTIONAL_BITS)
+#define PFM_FX16_ONE (1 << PFM_FX16_FRACTIONAL_BITS)
+#define PFM_FRACT16_ONE 0xFFFF
+
 /* Platform Specific */
 
 #ifndef PFM_RESTRICT
@@ -72,7 +76,11 @@ PFM_API float rsqrtf(float x)
 #   endif //PLATFORM
 #endif //PFM_RESTRICT
 
-/* SISD types definitions */
+/* Types definitions */
+
+typedef int32_t PFMfx32;
+typedef int16_t PFMfx16;
+typedef uint16_t PFMfract16;
 
 typedef float PFMvec2[2];
 typedef float PFMvec3[3];
@@ -145,6 +153,238 @@ pfmHalfToFloat(uint16_t y)
     union { float f; uint32_t i; } v;
     v.i = pfmHalfToFloatI(y);
     return v.f;
+}
+
+/* Fixed point 32 bits */
+
+PFM_API PFMfx32
+pfmFloatToFX32(float x)
+{
+    return (PFMfx32)(x * (1 << PFM_FX32_FRACTIONAL_BITS));
+}
+
+PFM_API float
+pfmFX32ToFloat(PFMfx32 x)
+{
+    return (float)x / (1 << PFM_FX32_FRACTIONAL_BITS);
+}
+
+PFM_API PFMfx32
+pfmIntToFX32(int x)
+{
+    return (PFMfx32)(x << PFM_FX32_FRACTIONAL_BITS);
+}
+
+PFM_API int
+pfmFX32ToInt(PFMfx32 x)
+{
+    return (int)(x >> PFM_FX32_FRACTIONAL_BITS);
+}
+
+PFM_API PFMfx32
+pfmFX32Abs(PFMfx32 x)
+{
+    return x < 0 ? -x : x;
+}
+
+PFM_API PFMfx32
+pfmFX32Round(PFMfx32 x)
+{
+    PFMfx32 fractionalPart = x & ((1 << PFM_FX32_FRACTIONAL_BITS) - 1);
+    if (fractionalPart >= (1 << (PFM_FX32_FRACTIONAL_BITS - 1))) {
+        return (x >> PFM_FX32_FRACTIONAL_BITS) + 1;
+    } else {
+        return x >> PFM_FX32_FRACTIONAL_BITS;
+    }
+}
+
+PFM_API PFMfx32
+pfmFX32Floor(PFMfx32 x)
+{
+    return x & ~((1 << PFM_FX32_FRACTIONAL_BITS) - 1);
+}
+
+PFM_API PFMfx32
+pfmFX32Fract(PFMfx32 x)
+{
+    return x & ((1 << PFM_FX32_FRACTIONAL_BITS) - 1);
+}
+
+PFM_API PFMfx32
+pfmFX32Mul(PFMfx32 x, PFMfx32 y)
+{
+    return (PFMfx32)(((int64_t)x * y) >> PFM_FX32_FRACTIONAL_BITS);
+}
+
+PFM_API PFMfx32
+pfmFX32Div(PFMfx32 x, PFMfx32 y)
+{
+    return (PFMfx32)(((int64_t)x << PFM_FX32_FRACTIONAL_BITS) / y);
+}
+
+PFM_API PFMfx32 pfmFX32Sqrt(PFMfx32 x)
+{
+    if (x <= 0) return 0;
+
+    // Initial estimate
+    PFMfx32 r = (x >> 1) + (1 << (PFM_FX32_FRACTIONAL_BITS - 1));
+
+    r = (r + pfmFX32Div(x, r)) >> 1; // An iteration of Newton-Raphson
+    r = (r + pfmFX32Div(x, r)) >> 1; // Second iteration for more precision
+
+    return r;
+}
+
+PFM_API PFMfx32 pfmFX32RSqrt(PFMfx32 x)
+{
+    if (x <= 0) return 0;
+
+    // Initial estimate based on the "Fast Inverse Square Root" algorithm
+    int32_t i = 0x5f3759df - (x >> 1);
+    PFMfx32 r = *(PFMfx32*)&i;
+
+    // An iteration of Newton-Raphson
+    PFMfx32 halfx = x >> 1;
+    r = pfmFX32Mul(r, 0x30000000 - pfmFX32Mul(halfx, pfmFX32Mul(r, r)));
+
+    // Second iteration for more precision
+    r = pfmFX32Mul(r, 0x30000000 - pfmFX32Mul(halfx, pfmFX32Mul(r, r)));
+
+    return r;
+}
+
+/* Fixed point - 16 bits */
+
+PFM_API PFMfx16
+pfmFloatToFX16(float x)
+{
+    return (PFMfx16)(x * (1 << PFM_FX16_FRACTIONAL_BITS));
+}
+
+PFM_API float
+pfmFX16ToFloat(PFMfx16 x)
+{
+    return (float)x / (1 << PFM_FX16_FRACTIONAL_BITS);
+}
+
+PFM_API PFMfx16
+pfmIntToFX16(int x)
+{
+    return (PFMfx32)(x << PFM_FX16_FRACTIONAL_BITS);
+}
+
+PFM_API int
+pfmFX16ToInt(PFMfx16 x)
+{
+    return (int)(x >> PFM_FX16_FRACTIONAL_BITS);
+}
+
+PFM_API PFMfx16
+pfmFX16Abs(PFMfx16 x)
+{
+    return x < 0 ? -x : x;
+}
+
+PFM_API PFMfx16
+pfmFX16Round(PFMfx16 x)
+{
+    PFMfx16 fractionalPart = x & ((1 << PFM_FX16_FRACTIONAL_BITS) - 1);
+    if (fractionalPart >= (1 << (PFM_FX16_FRACTIONAL_BITS - 1))) {
+        return (x >> PFM_FX16_FRACTIONAL_BITS) + 1;
+    } else {
+        return x >> PFM_FX16_FRACTIONAL_BITS;
+    }
+}
+
+PFM_API PFMfx16
+pfmFX16Floor(PFMfx16 x)
+{
+    return x & ~((1 << PFM_FX16_FRACTIONAL_BITS) - 1);
+}
+
+PFM_API PFMfx16
+pfmFX16Fract(PFMfx16 x)
+{
+    return x & ((1 << PFM_FX16_FRACTIONAL_BITS) - 1);
+}
+
+PFM_API PFMfx16
+pfmFX16Add(PFMfx16 x, PFMfx16 y)
+{
+    return x + y;
+}
+
+PFM_API PFMfx16
+pfmFX16Sub(PFMfx16 x, PFMfx16 y)
+{
+    return x - y;
+}
+
+PFM_API PFMfx16
+pfmFX16Mul(PFMfx16 x, PFMfx16 y)
+{
+    return (PFMfx16)(((int32_t)x * y) >> PFM_FX16_FRACTIONAL_BITS);
+}
+
+PFM_API PFMfx16
+pfmFX16Div(PFMfx16 x, PFMfx16 y)
+{
+    return (PFMfx16)(((int32_t)x << PFM_FX16_FRACTIONAL_BITS) / y);
+}
+
+/* Fract type 16 bits */
+
+PFM_API PFMfract16
+pfmFloatToFract16(float x)
+{
+    if (x <= 0.0f) return 0;
+    if (x >= 1.0f) return PFM_FRACT16_ONE;
+    return (PFMfract16)(x * PFM_FRACT16_ONE + 0.5f);
+}
+
+PFM_API float
+pfmFract16ToFloat(PFMfract16 x)
+{
+    return (float)x / PFM_FRACT16_ONE;
+}
+
+PFM_API PFMfract16
+pfmFX16ToFract16(PFMfx16 x)
+{
+    if (x <= 0) return 0;
+    if (x >= (1 << PFM_FX16_FRACTIONAL_BITS)) return PFM_FRACT16_ONE;
+    return (PFMfract16)((uint32_t)x * PFM_FRACT16_ONE >> PFM_FX16_FRACTIONAL_BITS);
+}
+
+PFM_API PFMfx16
+pfmFract16ToFX16(PFMfract16 x)
+{
+    return (PFMfx16)((uint32_t)x * (1 << PFM_FX16_FRACTIONAL_BITS) / PFM_FRACT16_ONE);
+}
+
+PFM_API PFMfract16
+pfmFract16Add(PFMfract16 x, PFMfract16 y)
+{
+    uint32_t result = (uint32_t)x + y;
+    return (result > PFM_FRACT16_ONE) ? PFM_FRACT16_ONE : (PFMfract16)result;
+}
+
+PFM_API PFMfract16
+pfmFract16Sub(PFMfract16 x, PFMfract16 y)
+{
+    return (x > y) ? (x - y) : 0;
+}
+
+PFM_API PFMfract16
+pfmFract16Mul(PFMfract16 x, PFMfract16 y)
+{
+    return (PFMfract16)(((uint32_t)x * y + PFM_FRACT16_ONE / 2) >> 16);
+}
+
+PFM_API PFMfract16
+pfmFract16Div(PFMfract16 x, PFMfract16 y)
+{
+    return (PFMfract16)(((uint32_t)x << 16) / y);
 }
 
 /* Scalar functions */
