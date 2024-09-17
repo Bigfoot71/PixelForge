@@ -396,6 +396,7 @@ typedef struct {
     PFboolean modelMatrixUsed;                              ///< Flag indicating if the model matrix is used
 
     PFshademode shadingMode;                                ///< Type of shading (e.g., flat, smooth)
+    PFlightmode lightingMode;                               ///< Type of lighting (e.g. gouraud, phong)
     PFface cullFace;                                        ///< Faces to cull
 
     PFerrcode errCode;                                      ///< Last error code

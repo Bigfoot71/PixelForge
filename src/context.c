@@ -242,6 +242,7 @@ PFcontext pfCreateContext(void* targetBuffer, PFsizei width, PFsizei height, PFp
 
     ctx->state |= PF_CULL_FACE;
     ctx->shadingMode = PF_SMOOTH;
+    ctx->lightingMode = PF_GOURAUD;
     ctx->cullFace = PF_BACK;
     ctx->errCode = PF_NO_ERROR;
 
@@ -599,6 +600,11 @@ void pfPolygonMode(PFface face, PFpolygonmode mode)
 void pfShadeModel(PFshademode mode)
 {
     G_currentCtx->shadingMode = mode;
+}
+
+void pfLightModel(PFlightmode mode)
+{
+    G_currentCtx->lightingMode = mode;
 }
 
 void pfLineWidth(PFfloat width)

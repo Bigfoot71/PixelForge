@@ -325,6 +325,11 @@ typedef enum {
     PF_SMOOTH
 } PFshademode;
 
+typedef enum {
+    PF_GOURAUD,
+    PF_PHONG
+} PFlightmode;
+
 typedef enum {                  // NOTE 1: PF_FRONT and PF_BACK are used as indices internally for `ctx->polygonMode`.
     PF_FRONT            = 0,    // NOTE 2: Also, we can invert PF_FRONT in code using '!' to obtain PF_BACK.
     PF_BACK             = 1,    // NOTE 3: Similarly, this can be done for PF_BACK to obtain PF_FRONT.
@@ -784,6 +789,28 @@ pfPolygonMode(PFface face, PFpolygonmode mode);
  */
 PF_API void
 pfShadeModel(PFshademode mode);
+
+/**
+ * @brief Specifies the lighting model for rendering.
+ *
+ * This function sets the lighting model used for rendering, similar to OpenGL's lighting models.
+ * It accepts two modes:
+ * - PF_GOURAUD: This mode uses Gouraud shading, where lighting is calculated at each vertex and
+ *   then interpolated across the surface of the polygons. This provides a smooth gradient of colors
+ *   and is generally more efficient in terms of performance. It may not capture detailed lighting effects
+ *   as precisely as other methods.
+ * - PF_PHONG: This mode uses Phong shading, where lighting is calculated per fragment (pixel) rather
+ *   than per vertex. This allows for more detailed and accurate lighting effects, including specular
+ *   highlights, resulting in a more realistic appearance. However, it has a higher performance cost.
+ *
+ * By default, each rendering context is initialized with the PF_GOURAUD mode.
+ *
+ * @warning This function requires a defined context.
+ *
+ * @param mode The lighting model to set. Use PF_GOURAUD for Gouraud shading or PF_PHONG for Phong shading.
+ */
+PF_API void
+pfLightModel(PFlightmode mode);
 
 /**
  * @brief Sets the line width for rasterized lines.

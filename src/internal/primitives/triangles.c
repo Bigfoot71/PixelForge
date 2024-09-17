@@ -76,29 +76,39 @@ static void pfiProcessRasterize_TRIANGLE_IMPL(PFface faceToRender, PFIvertex pro
 
     // Performs certain operations that must be done before
     // processing the vertices in case of light management
+
+    PFMvec3 viewPos = { 0 };
+
     if (lighting) {
+        // Get camera position
+        PFMmat4 invMatView;
+        pfmMat4Invert(invMatView, G_currentCtx->matView);
+        pfmVec3Copy(viewPos, invMatView + 12);
+
         // Transform normals
         // And multiply vertex color with diffuse color
         for (int_fast8_t i = 0; i < processedCounter; i++) {
             pfmVec3Transform(processed[i].normal, processed[i].normal, G_currentCtx->matNormal);
             pfmVec3Normalize(processed[i].normal, processed[i].normal); // REVIEW: Only with PF_NORMALIZE state??
-            processed[i].color = pfiBlendMultiplicative(processed[i].color,
-                G_currentCtx->faceMaterial[faceToRender].diffuse);
+            processed[i].color = pfiBlendMultiplicative(processed[i].color, G_currentCtx->faceMaterial[faceToRender].diffuse);
+
+            if (G_currentCtx->lightingMode == PF_GOURAUD) {
+                PFfloat NdotV = pfmVec3Dot(processed[i].normal, G_currentCtx->matView + 8);
+                processed[i].color = pfiLightingProcess(G_currentCtx->activeLights,
+                    &G_currentCtx->faceMaterial[(NdotV < 0) ? PF_FRONT : PF_BACK],
+                    processed[i].color, viewPos,
+                    processed[i].position,
+                    processed[i].normal);
+            }
         }
     }
 
     // Process vertices
+
     PFboolean is3D = Process_ProjectAndClipTriangle(processed, &processedCounter);
     if (processedCounter < 3) return;
 
     // Rasterize filled triangles
-    PFMvec3 viewPos = { 0 };
-
-    if (lighting) {
-        PFMmat4 invMatView;
-        pfmMat4Invert(invMatView, G_currentCtx->matView);
-        pfmVec3Copy(viewPos, invMatView + 12);
-    }
 
     for (int_fast8_t i = 0; i < processedCounter - 2; i++) {
         Rasterize_Triangle(faceToRender, is3D, &processed[0], &processed[i + 1], &processed[i + 2], viewPos);
@@ -381,10 +391,10 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
     InterpolateColorSimdFunc interpolateColor = (G_currentCtx->shadingMode == PF_SMOOTH)
         ? pfiColorBarySmooth_simd : pfiColorBaryFlat_simd;
 
-    PFIlight *lights = (G_currentCtx->state & PF_LIGHTING) ? G_currentCtx->activeLights : NULL;
     PFIblendfunc_simd blendFunction = (G_currentCtx->state & PF_BLEND) ? G_currentCtx->blendSimdFunction : NULL;
     PFIdepthfunc_simd depthFunction = (G_currentCtx->state & PF_DEPTH_TEST) ? G_currentCtx->depthSimdFunction : NULL;
     PFItexturesampler_simd texSampler = ((G_currentCtx->state & PF_TEXTURE_2D) && texSrc) ? texSrc->samplerSimd : NULL;
+    const PFIlight *lights = ((G_currentCtx->state & PF_LIGHTING) && G_currentCtx->lightingMode == PF_PHONG) ? G_currentCtx->activeLights : NULL;
 
     /* Loop macro definition */
 
@@ -601,11 +611,11 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
     struct PFItex *texSrc = G_currentCtx->currentTexture;
     PFfloat *zbDst = G_currentCtx->currentFramebuffer->zbuffer;
     struct PFItex *texDst = G_currentCtx->currentFramebuffer->texture;
-    PFIlight *lights = (G_currentCtx->state & PF_LIGHTING) ? G_currentCtx->activeLights : NULL;
     PFIblendfunc blendFunction = (G_currentCtx->state & PF_BLEND) ? G_currentCtx->blendFunction : NULL;
     PFIdepthfunc depthFunction = (G_currentCtx->state & PF_DEPTH_TEST) ? G_currentCtx->depthFunction : NULL;
     PFItexturesampler texSampler = ((G_currentCtx->state & PF_TEXTURE_2D) && texSrc) ? texSrc->sampler : NULL;
     InterpolateColorFunc interpolateColor = (G_currentCtx->shadingMode == PF_SMOOTH) ? pfiColorLerpSmooth : pfiColorLerpFlat;
+    const PFIlight *lights = ((G_currentCtx->state & PF_LIGHTING) && G_currentCtx->lightingMode == PF_PHONG) ? G_currentCtx->activeLights : NULL;
 
     /*  */
 

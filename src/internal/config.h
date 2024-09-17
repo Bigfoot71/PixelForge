@@ -21,7 +21,6 @@
 #define PF_CONFIG_H
 
 //#define PF_PHONG_REFLECTION           // Disable the Blinn-Phong reflection model for Phong
-//#define PF_GOURAUD_SHADING            // Enable vertex shading for lighting instead of per-fragment shading
 
 #ifndef PF_MAX_PROJECTION_STACK_SIZE
 #   define PF_MAX_PROJECTION_STACK_SIZE 2
