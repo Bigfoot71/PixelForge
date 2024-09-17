@@ -23,16 +23,12 @@
 #include "../color.h"
 #include "../blend.h"
 
-#define PF_TRIANGLE_RASTER_BARYCENTRIC_SIMD     1       ///< Can also use OpenMP (if available) in addition to SIMD support
-#define PF_TRIANGLE_RASTER_BARYCENTRIC_OMP      2       ///< Only uses OpenMP if SIMD support is not available
-#define PF_TRIANGLE_RASTER_SCANLINES            3       ///< Uses neither OpenMP nor SIMD support.
+#define PF_TRIANGLE_RASTER_BARYCENTRIC  1   ///< Can also use OpenMP (if available) in addition to SIMD support
+#define PF_TRIANGLE_RASTER_SCANLINES    2   ///< Can use OpenMP but not SIMD.
 
 #if PF_SIMD_SUPPORT
 #   define PF_TRIANGLE_RASTER_MODE \
-        PF_TRIANGLE_RASTER_BARYCENTRIC_SIMD
-#elif defined(_OPENMP)
-#   define PF_TRIANGLE_RASTER_MODE \
-        PF_TRIANGLE_RASTER_BARYCENTRIC_OMP
+        PF_TRIANGLE_RASTER_BARYCENTRIC
 #else
 #   define PF_TRIANGLE_RASTER_MODE \
         PF_TRIANGLE_RASTER_SCANLINES
@@ -40,20 +36,11 @@
 
 /* Internal typedefs */
 
-#if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC_SIMD
+#if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC
 typedef void (*InterpolateColorSimdFunc)(PFcolor_simd, const PFcolor_simd, const PFcolor_simd, const PFcolor_simd, PFIsimdvf, PFIsimdvf, PFIsimdvf);
-#elif PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC_OMP
-typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFcolor, PFfloat, PFfloat, PFfloat);
 #elif PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_SCANLINES
 typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFfloat);
 #endif //PF_RASTER_MODE
-
-/* Internal helper function declarations */
-
-#if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_SCANLINES
-static PFboolean Helper_FaceCanBeRendered(PFface faceToRender, PFfloat* area, const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 p3);
-static void Helper_SortVertices(const PFIvertex** v1, const PFIvertex** v2, const PFIvertex** v3);
-#endif //PF_TRIANGLE_RASTER_SCANLINES
 
 /* Internal triangle processing functions declarations */
 
@@ -154,31 +141,6 @@ void pfiProcessRasterize_TRIANGLE_STRIP(PFface faceToRender, int_fast8_t numTria
     }
 }
 
-
-/* Internal helper function definitions */
-
-#if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_SCANLINES
-
-PFboolean Helper_FaceCanBeRendered(PFface faceToRender, PFfloat* area, const PFMvec2 p1, const PFMvec2 p2, const PFMvec2 p3)
-{
-    PFfloat signedArea = (p2[0] - p1[0])*(p3[1] - p1[1]) - (p3[0] - p1[0])*(p2[1] - p1[1]);
-    if ((faceToRender == PF_FRONT && signedArea < 0) || (faceToRender == PF_BACK && signedArea > 0)) {
-        *area = fabsf(signedArea)*0.5f;
-        return PF_TRUE;
-    }
-    return PF_FALSE;
-}
-
-void Helper_SortVertices(const PFIvertex** v1, const PFIvertex** v2, const PFIvertex** v3)
-{
-    // Sort vertices in ascending order of y coordinates
-    const PFIvertex* vTmp;
-    if ((*v2)->screen[1] < (*v1)->screen[1]) { vTmp = *v1; *v1 = *v2; *v2 = vTmp; }
-    if ((*v3)->screen[1] < (*v1)->screen[1]) { vTmp = *v1; *v1 = *v3; *v3 = vTmp; }
-    if ((*v3)->screen[1] < (*v2)->screen[1]) { vTmp = *v2; *v2 = *v3; *v3 = vTmp; }
-}
-
-#endif //PF_TRIANGLE_RASTER_SCANLINES
 
 /* Internal triangle processing functions definitions */
 
@@ -310,7 +272,7 @@ PFboolean Process_ProjectAndClipTriangle(PFIvertex* polygon, int_fast8_t* vertex
 
 /* Triangle rasterization functions */
 
-#if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC_SIMD
+#if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC
 
 void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1, const PFIvertex* v2, const PFIvertex* v3, const PFMvec3 viewPos)
 {
@@ -588,203 +550,43 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
     }
 }
 
-#elif PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC_OMP
-
-void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1, const PFIvertex* v2, const PFIvertex* v3, const PFMvec3 viewPos)
-{
-    PFsizei xMin, yMin, xMax, yMax;
-    PFint w1Row, w2Row, w3Row;
-    PFint w1XStep, w1YStep;
-    PFint w2XStep, w2YStep;
-    PFint w3XStep, w3YStep;
-    PFfloat wInvSum;
-    {
-        /* Get integer 2D position coordinates */
-
-        PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
-        PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
-        PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
-
-        /* Check if the desired face can be rendered */
-
-        PFfloat signedArea = (x2 - x1)*(y3 - y1) - (x3 - x1)*(y2 - y1);
-
-        if ((faceToRender == PF_FRONT && signedArea >= 0)
-         || (faceToRender == PF_BACK  && signedArea <= 0)) {
-            return;
-        }
-
-        /* Calculate the 2D bounding box of the triangle */
-
-        xMin = (PFsizei)PF_MIN(x1, PF_MIN(x2, x3));
-        yMin = (PFsizei)PF_MIN(y1, PF_MIN(y2, y3));
-        xMax = (PFsizei)PF_MAX(x1, PF_MAX(x2, x3));
-        yMax = (PFsizei)PF_MAX(y1, PF_MAX(y2, y3));
-
-        if (!is3D) {
-            xMin = (PFsizei)PF_CLAMP((PFint)xMin, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
-            yMin = (PFsizei)PF_CLAMP((PFint)yMin, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
-            xMax = (PFsizei)PF_CLAMP((PFint)xMax, G_currentCtx->vpMin[0], G_currentCtx->vpMax[0]);
-            yMax = (PFsizei)PF_CLAMP((PFint)yMax, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
-        }
-
-        /* Barycentric interpolation */
-
-        w1XStep = y3 - y2, w1YStep = x2 - x3;
-        w2XStep = y1 - y3, w2YStep = x3 - x1;
-        w3XStep = y2 - y1, w3YStep = x1 - x2;
-
-        if (faceToRender == PF_BACK) {
-            w1XStep = -w1XStep, w1YStep = -w1YStep;
-            w2XStep = -w2XStep, w2YStep = -w2YStep;
-            w3XStep = -w3XStep, w3YStep = -w3YStep;
-        }
-
-        w1Row = (xMin - x2)*w1XStep + w1YStep*(yMin - y2);
-        w2Row = (xMin - x3)*w2XStep + w2YStep*(yMin - y3);
-        w3Row = (xMin - x1)*w3XStep + w3YStep*(yMin - y1);
-
-        /*
-            Finally, we calculate the inverse of the sum of
-            the barycentric coordinates for the top-left point; this
-            sum always remains the same, regardless of the coordinate
-            within the triangle.
-        */
-
-        wInvSum = 1.0f/(w1Row + w2Row + w3Row);
-    }
-
-    /* Get some contextual values */
-
-    struct PFItex *texDst = G_currentCtx->currentFramebuffer->texture;
-    struct PFItex *texSrc = G_currentCtx->currentTexture;
-
-    PFfloat *zbDst = G_currentCtx->currentFramebuffer->zbuffer;
-
-    PFIpixelgetter getter = texDst->getter;
-    PFIpixelsetter setter = texDst->setter;
-    PFsizei widthDst = texDst->w;
-    void *pbDst = texDst->pixels;
-
-    PFfloat z1 = v1->homogeneous[2];
-    PFfloat z2 = v2->homogeneous[2];
-    PFfloat z3 = v3->homogeneous[2];
-
-    InterpolateColorFunc interpolateColor = (G_currentCtx->shadingMode == PF_SMOOTH)
-        ? pfiColorBarySmooth : pfiColorBaryFlat;
-
-    PFIlight *lights = (G_currentCtx->state & PF_LIGHTING) ? G_currentCtx->activeLights : NULL;
-    PFIblendfunc blendFunction = (G_currentCtx->state & PF_BLEND) ? G_currentCtx->blendFunction : NULL;
-    PFIdepthfunc depthFunction = (G_currentCtx->state & PF_DEPTH_TEST) ? G_currentCtx->depthFunction : NULL;
-    PFItexturesampler texSampler = ((G_currentCtx->state & PF_TEXTURE_2D) && texSrc) ? texSrc->sampler : NULL;
-
-    /* Loop macro definition */
-
-#   define PF_TRIANGLE_TRAVEL(PIXEL_CODE)                                           \
-    _Pragma("omp parallel for schedule(dynamic, PF_OPENMP_TRIANGLE_ROW_PER_THREAD)  \
-        if((yMax - yMin)*(xMax - xMin) >= PF_OPENMP_RASTER_THRESHOLD_AREA)")        \
-    for (PFsizei y = yMin; y <= yMax; y++) {                                        \
-        const PFsizei yOffset = y*widthDst;                                         \
-        PFint w1 = w1Row + (y - yMin)*w1YStep;                                      \
-        PFint w2 = w2Row + (y - yMin)*w2YStep;                                      \
-        PFint w3 = w3Row + (y - yMin)*w3YStep;                                      \
-        for (PFsizei x = xMin; x <= xMax; x++) {                                    \
-            if ((w1 | w2 | w3) >= 0) {                                              \
-                PFsizei xyOffset = yOffset + x;                                     \
-                PFfloat w1Norm = w1*wInvSum;                                        \
-                PFfloat w2Norm = w2*wInvSum;                                        \
-                PFfloat w3Norm = w3*wInvSum;                                        \
-                PFfloat z = 1.0f/(w1Norm*z1 + w2Norm*z2 + w3Norm*z3);               \
-                if (!depthFunction || depthFunction(z, zbDst[xyOffset])) {          \
-                    PIXEL_CODE                                                      \
-                }                                                                   \
-            }                                                                       \
-            w1 += w1XStep;                                                          \
-            w2 += w2XStep;                                                          \
-            w3 += w3XStep;                                                          \
-        }                                                                           \
-    }
-
-    /* Processing macro definitions */
-
-#   define GET_FRAG() \
-    PFcolor fragment = interpolateColor( \
-        v1->color, v2->color, v3->color, \
-        w1Norm, w2Norm, w3Norm);
-
-#   define TEXTURING() \
-    { \
-        PFMvec2 texcoord; \
-        pfmVec2BaryInterpR(texcoord, v1->texcoord, v2->texcoord, v3->texcoord, w1Norm, w2Norm, w3Norm); \
-        if (is3D) texcoord[0] *= z, texcoord[1] *= z; /* Perspective correct */ \
-        PFcolor texel = texSrc->sampler(texSrc, texcoord[0], texcoord[1]); \
-        fragment = pfiBlendMultiplicative(texel, fragment); \
-    }
-
-#   define LIGHTING() \
-    { \
-        PFMvec3 normal, position; \
-        pfmVec3BaryInterpR(normal, v1->normal, v2->normal, v3->normal, w1Norm, w2Norm, w3Norm); \
-        pfmVec3BaryInterpR(position, v1->position, v2->position, v3->position, w1Norm, w2Norm, w3Norm); \
-        fragment = pfiLightingProcess(lights, &G_currentCtx->faceMaterial[faceToRender], fragment, viewPos, position, normal); \
-    }
-
-#   define SET_FRAG() \
-        PFcolor finalColor = blendFunction ? blendFunction(fragment, getter(pbDst, xyOffset)) : fragment; \
-        setter(pbDst, xyOffset, finalColor); \
-        zbDst[xyOffset] = z;
-
-    /* Loop rasterization */
-
-    if (texSampler && lights) {
-        PF_TRIANGLE_TRAVEL({
-            GET_FRAG();
-            TEXTURING();
-            LIGHTING();
-            SET_FRAG();
-        })
-    } else if (texSampler) {
-        PF_TRIANGLE_TRAVEL({
-            GET_FRAG();
-            TEXTURING();
-            SET_FRAG();
-        })
-    } else if (lights) {
-        PF_TRIANGLE_TRAVEL({
-            GET_FRAG();
-            LIGHTING();
-            SET_FRAG();
-        })
-    } else {
-        PF_TRIANGLE_TRAVEL({
-            GET_FRAG();
-            SET_FRAG();
-        })
-    }
-}
-
 #else // PF_TRIANGLE_RASTER_MODE == PR_TRIANGLE_RASTER_SCANLINES
 
-// TODO: Performed the interpolations by increments
-// TODO: Find a maintainable way to reduce conditionality in loops
 void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1, const PFIvertex* v2, const PFIvertex* v3, const PFMvec3 viewPos)
 {
     /* Check if the face can be rendered, if not, skip */
-
-    PFfloat area;
-    if (!Helper_FaceCanBeRendered(faceToRender, &area, v1->screen, v2->screen, v3->screen)) {
-        return;
+    {
+        PFfloat signedArea = pfmGeo2DSignedTriangleArea(v1->screen, v2->screen, v3->screen);
+        if ((faceToRender == PF_FRONT && signedArea > 0) || (faceToRender == PF_BACK && signedArea < 0)) {
+            return;
+        }
     }
 
-    /* Sort vertices by their y-coordinates */
+    /* Sort vertices in ascending order of y coordinates */
+    {
+        const PFIvertex* vTmp;
+        if (v2->screen[1] < v1->screen[1]) { vTmp = v1; v1 = v2; v2 = vTmp; }
+        if (v3->screen[1] < v1->screen[1]) { vTmp = v1; v1 = v3; v3 = vTmp; }
+        if (v3->screen[1] < v2->screen[1]) { vTmp = v2; v2 = v3; v3 = vTmp; }
+    }
 
-    Helper_SortVertices(&v1, &v2, &v3);
-
-    /* Cache screen coordinates, depths and colors of vertices */
+    /* Cache vertex data */
 
     PFint x1 = (PFint)v1->screen[0], y1 = (PFint)v1->screen[1];
     PFint x2 = (PFint)v2->screen[0], y2 = (PFint)v2->screen[1];
     PFint x3 = (PFint)v3->screen[0], y3 = (PFint)v3->screen[1];
+
+    const PFMvec2_cptr uv1 = v1->texcoord;
+    const PFMvec2_cptr uv2 = v2->texcoord;
+    const PFMvec2_cptr uv3 = v3->texcoord;
+
+    const PFMvec3_cptr p1 = v1->position;
+    const PFMvec3_cptr p2 = v2->position;
+    const PFMvec3_cptr p3 = v3->position;
+    
+    const PFMvec3_cptr n1 = v1->normal;
+    const PFMvec3_cptr n2 = v2->normal;
+    const PFMvec3_cptr n3 = v3->normal;
 
     PFfloat z1 = v1->homogeneous[2];
     PFfloat z2 = v2->homogeneous[2];
@@ -794,31 +596,16 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
     PFcolor c2 = v2->color;
     PFcolor c3 = v3->color;
 
-    /* Precompute inverse heights for interpolation */
-
-    PFfloat invTotalHeight = 1.0f/(y3 - y1 + 1);
-    PFfloat invSegmentHeight21 = 1.0f/(y2 - y1 + 1);
-    PFfloat invSegmentHeight32 = 1.0f/(y3 - y2 + 1);
-
     /* Get some contextual values */
 
-    struct PFItex *texDst = G_currentCtx->currentFramebuffer->texture;
     struct PFItex *texSrc = G_currentCtx->currentTexture;
-
     PFfloat *zbDst = G_currentCtx->currentFramebuffer->zbuffer;
-
-    PFIpixelgetter getter = texDst->getter;
-    PFIpixelsetter setter = texDst->setter;
-    PFsizei widthDst = texDst->w;
-    void *pbDst = texDst->pixels;
-
-    InterpolateColorFunc interpolateColor = (G_currentCtx->shadingMode == PF_SMOOTH)
-        ? pfiColorLerpSmooth : pfiColorLerpFlat;
-
+    struct PFItex *texDst = G_currentCtx->currentFramebuffer->texture;
     PFIlight *lights = (G_currentCtx->state & PF_LIGHTING) ? G_currentCtx->activeLights : NULL;
     PFIblendfunc blendFunction = (G_currentCtx->state & PF_BLEND) ? G_currentCtx->blendFunction : NULL;
     PFIdepthfunc depthFunction = (G_currentCtx->state & PF_DEPTH_TEST) ? G_currentCtx->depthFunction : NULL;
     PFItexturesampler texSampler = ((G_currentCtx->state & PF_TEXTURE_2D) && texSrc) ? texSrc->sampler : NULL;
+    InterpolateColorFunc interpolateColor = (G_currentCtx->shadingMode == PF_SMOOTH) ? pfiColorLerpSmooth : pfiColorLerpFlat;
 
     /*  */
 
@@ -830,17 +617,21 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
         yMax = PF_CLAMP(yMax, G_currentCtx->vpMin[1], G_currentCtx->vpMax[1]);
     }
 
-    PFsizei yOffset = yMin*widthDst;
+    PFsizei yOffset = yMin * texDst->w;
 
     /*  */
 
-    PFfloat alpha = invTotalHeight*(yMin - y1);
-    PFfloat beta1 = invSegmentHeight21*(yMin - y1);   // First half
-    PFfloat beta2 = invSegmentHeight32*(yMin - y2);   // Second half
+    PFfloat invTotalHeight = 1.0f / (y3 - y1 + 1);
+    PFfloat invSegmentHeight21 = 1.0f / (y2 - y1 + 1);
+    PFfloat invSegmentHeight32 = 1.0f / (y3 - y2 + 1);
+
+    PFfloat alpha = invTotalHeight * (yMin - y1);
+    PFfloat beta1 = invSegmentHeight21 * (yMin - y1);   // First half
+    PFfloat beta2 = invSegmentHeight32 * (yMin - y2);   // Second half
 
     /* Travel the triangle from top to bottom */
 
-    for (PFint y = yMin; y <= yMax; y++, yOffset += widthDst) {
+    for (PFint y = yMin; y <= yMax; y++, yOffset += texDst->w) {
         alpha += invTotalHeight;
         beta1 += invSegmentHeight21;
         beta2 += invSegmentHeight32;
@@ -848,44 +639,42 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
         PFint xA, xB;
         PFfloat zA, zB;
         PFcolor cA, cB;
-
         PFMvec2 uvA, uvB;
-        PFMvec3 pA, pB;
-        PFMvec3 nA, nB;
+        PFMvec3 pA, pB, nA, nB;
 
         if (y < y2) { // First half
             xA = (PFint)(x1 + (x3 - x1) * alpha);
             xB = (PFint)(x1 + (x2 - x1) * beta1);
-            zA = (PFint)(z1 + (z3 - z1) * alpha);
-            zB = (PFint)(z1 + (z2 - z1) * beta1);
+            zA = z1 + (z3 - z1) * alpha;
+            zB = z1 + (z2 - z1) * beta1;
             cA = interpolateColor(c1, c3, alpha);
             cB = interpolateColor(c1, c2, beta1);
             if (texSampler) {
-                pfmVec2LerpR(uvA, v1->texcoord, v3->texcoord, alpha);
-                pfmVec2LerpR(uvB, v1->texcoord, v2->texcoord, beta1);
+                pfmVec2LerpR(uvA, uv1, uv3, alpha);
+                pfmVec2LerpR(uvB, uv1, uv2, beta1);
             }
             if (lights) {
-                pfmVec3LerpR(pA, v1->position, v3->position, alpha);
-                pfmVec3LerpR(pB, v1->position, v2->position, beta1);
-                pfmVec3LerpR(nA, v1->normal, v3->normal, alpha);
-                pfmVec3LerpR(nB, v1->normal, v2->normal, beta1);
+                pfmVec3LerpR(pA, p1, p3, alpha);
+                pfmVec3LerpR(pB, p1, p2, beta1);
+                pfmVec3LerpR(nA, n1, n3, alpha);
+                pfmVec3LerpR(nB, n1, n2, beta1);
             }
         } else { // Second half
             xA = (PFint)(x1 + (x3 - x1) * alpha);
             xB = (PFint)(x2 + (x3 - x2) * beta2);
-            zA = (PFint)(z1 + (z3 - z1) * alpha);
-            zB = (PFint)(z2 + (z3 - z2) * beta2);
+            zA = z1 + (z3 - z1) * alpha;
+            zB = z2 + (z3 - z2) * beta2;
             cA = interpolateColor(c1, c3, alpha);
             cB = interpolateColor(c2, c3, beta2);
             if (texSampler) {
-                pfmVec2LerpR(uvA, v1->texcoord, v3->texcoord, alpha);
-                pfmVec2LerpR(uvB, v2->texcoord, v3->texcoord, beta2);
+                pfmVec2LerpR(uvA, uv1, uv3, alpha);
+                pfmVec2LerpR(uvB, uv2, uv3, beta2);
             }
             if (lights) {
-                pfmVec3LerpR(pA, v1->position, v3->position, alpha);
-                pfmVec3LerpR(pB, v2->position, v3->position, beta2);
-                pfmVec3LerpR(nA, v1->normal, v3->normal, alpha);
-                pfmVec3LerpR(nB, v2->normal, v3->normal, beta2);
+                pfmVec3LerpR(pA, p1, p3, alpha);
+                pfmVec3LerpR(pB, p2, p3, beta2);
+                pfmVec3LerpR(nA, n1, n3, alpha);
+                pfmVec3LerpR(nB, n2, n3, beta2);
             }
         }
 
@@ -895,7 +684,6 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
             PFint iTmp = xA; xA = xB; xB = iTmp;
             PFfloat fTmp = zA; zA = zB; zB = fTmp;
             PFcolor cTmp = cA; cA = cB; cB = cTmp;
-
             pfmVec2Swap(uvA, uvB);
             pfmVec3Swap(pA, pB);
             pfmVec3Swap(nA, nB);
@@ -915,48 +703,30 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
 
         /*  */
 
-        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f/(xB - xA);
-        PFfloat gamma = xInvLen*(xMin - xA);
+        PFfloat xInvLen = (xA == xB) ? 0.0f : 1.0f / (xB - xA);
+        PFfloat gamma = xInvLen * (xMin - xA);
 
         /* Draw Horizontal Line */
 
         for (PFint x = xMin; x <= xMax; x++, xyOffset++, gamma += xInvLen) {
-            /* Calculate current depth */
-
-            PFfloat z = 1.0f/(zA + (zB - zA)*gamma);
-
-            /* Perform depth test */
-
+            PFfloat z = 1.0f / (zA + (zB - zA) * gamma);
             if (!depthFunction || depthFunction(z, zbDst[xyOffset])) {
-                /* Obtain fragment color */
-
                 PFcolor fragment = interpolateColor(cA, cB, gamma);
-
-                /* Blend with corresponding texture sample */
-
                 if (texSampler) {
                     PFMvec2 uv; pfmVec2LerpR(uv, uvA, uvB, gamma);
                     if (is3D) pfmVec2Scale(uv, uv, z); // Perspective correct
-
                     PFcolor texel = texSampler(texSrc, uv[0], uv[1]);
                     fragment = pfiBlendMultiplicative(texel, fragment);
                 }
-
-                /* Compute lighting */
-
                 if (lights) {
                     PFMvec3 position; pfmVec3LerpR(position, pA, pB, gamma);
                     PFMvec3 normal; pfmVec3LerpR(normal, nA, nB, gamma);
-
                     fragment = pfiLightingProcess(G_currentCtx->activeLights,
                         &G_currentCtx->faceMaterial[faceToRender], fragment,
                         viewPos, position, normal);
                 }
-
-                /* Apply final color and depth */
-
-                if (blendFunction) fragment = blendFunction(fragment, getter(pbDst, xyOffset));
-                setter(pbDst, xyOffset, fragment);
+                if (blendFunction) fragment = blendFunction(fragment, texDst->getter(texDst->pixels, xyOffset));
+                texDst->setter(texDst->pixels, xyOffset, fragment);
                 zbDst[xyOffset] = z;
             }
         }
