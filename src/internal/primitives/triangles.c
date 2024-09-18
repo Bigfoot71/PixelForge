@@ -506,7 +506,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
         PFIsimdv2f texcoords; \
         { \
             PFIsimdv2f zeroV2; pfiVec2Zero_simd(zeroV2); \
-            pfiVec2BaryInterpR_simd(texcoords, tc1V, tc2V, tc3V, w1NormV, w2NormV, w3NormV); \
+            pfiVec2BaryInterpSmoothR_simd(texcoords, tc1V, tc2V, tc3V, w1NormV, w2NormV, w3NormV); \
             if (is3D) pfiVec2Scale_simd(texcoords, texcoords, zV); /* Perspective correct */ \
             pfiVec2Blend_simd(texcoords, zeroV2, texcoords, pfiSimdCast_I32_F32(mask)); \
             PFcolor_simd texels; pfiColorUnpack_simd(texels, texSampler(texSrc, texcoords)); \
@@ -516,8 +516,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
 #   define LIGHTING() \
     { \
         PFIsimdv3f normals, positions; \
-        pfiVec3BaryInterpR_simd(normals, n1V, n2V, n3V, w1NormV, w2NormV, w3NormV); \
-        pfiVec3BaryInterpR_simd(positions, p1V, p2V, p3V, w1NormV, w2NormV, w3NormV); \
+        pfiVec3BaryInterpSmoothR_simd(normals, n1V, n2V, n3V, w1NormV, w2NormV, w3NormV); \
+        pfiVec3BaryInterpSmoothR_simd(positions, p1V, p2V, p3V, w1NormV, w2NormV, w3NormV); \
         pfiSimdLightingProcess(fragments, lights, &G_currentCtx->faceMaterial[faceToRender], viewPosV, positions, normals); \
     }
 

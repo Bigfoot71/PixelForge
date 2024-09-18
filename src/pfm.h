@@ -865,7 +865,6 @@ pfmVec2BaryInterpFlat(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFM
     // Determine which weight is the maximum
     int_fast8_t isW1Max = (maxWeight == w1);
     int_fast8_t isW2Max = (maxWeight == w2);
-    int_fast8_t isW3Max = (maxWeight == w3);
 
     // Select the corresponding color based on the maximum weight
     for (int_fast8_t i = 0; i < 2; ++i) {
@@ -1419,7 +1418,6 @@ pfmVec3BaryInterpFlat(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFM
     // Determine which weight is the maximum
     int_fast8_t isW1Max = (maxWeight == w1);
     int_fast8_t isW2Max = (maxWeight == w2);
-    int_fast8_t isW3Max = (maxWeight == w3);
 
     // Select the corresponding color based on the maximum weight
     for (int_fast8_t i = 0; i < 3; ++i) {
@@ -1909,7 +1907,6 @@ pfmVec4BaryInterpFlat(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFM
     // Determine which weight is the maximum
     int_fast8_t isW1Max = (maxWeight == w1);
     int_fast8_t isW2Max = (maxWeight == w2);
-    int_fast8_t isW3Max = (maxWeight == w3);
 
     // Select the corresponding color based on the maximum weight
     for (int_fast8_t i = 0; i < 4; ++i) {
