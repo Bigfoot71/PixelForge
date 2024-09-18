@@ -134,83 +134,131 @@ static const PFIblendfunc GC_blendFuncs[8] = {
 
 #if PF_SIMD_SUPPORT
 
-static inline void
-pfiBlendAverage_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
+static inline PFIsimdvi
+pfiBlendAverage_simd(const PFIsimdvi src, const PFIsimdvi dst)
 {
-    out[0] = pfiSimdShr_I32(pfiSimdAdd_I32(src[0], dst[0]), 1);
-    out[1] = pfiSimdShr_I32(pfiSimdAdd_I32(src[1], dst[1]), 1);
-    out[2] = pfiSimdShr_I32(pfiSimdAdd_I32(src[2], dst[2]), 1);
-    out[3] = pfiSimdShr_I32(pfiSimdAdd_I32(src[3], dst[3]), 1);
+    PFIsimdvi srcV[4], dstV[4], outV[4];
+    pfiColorSIMDToVecI_simd(srcV, src, 4);
+    pfiColorSIMDToVecI_simd(dstV, dst, 4);
+
+    outV[0] = pfiSimdShr_I32(pfiSimdAdd_I32(srcV[0], dstV[0]), 1);
+    outV[1] = pfiSimdShr_I32(pfiSimdAdd_I32(srcV[1], dstV[1]), 1);
+    outV[2] = pfiSimdShr_I32(pfiSimdAdd_I32(srcV[2], dstV[2]), 1);
+    outV[3] = pfiSimdShr_I32(pfiSimdAdd_I32(srcV[3], dstV[3]), 1);
+
+    return pfiColorSIMDFromVecI_simd(outV, 4);
 }
 
-static inline void
-pfiBlendAlpha_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
+static inline PFIsimdvi
+pfiBlendAlpha_simd(const PFIsimdvi src, const PFIsimdvi dst)
 {
-    PFIsimdvi alpha = pfiSimdAdd_I32(src[3], *(PFIsimdvi*)GC_simd_i32_1);
+    PFIsimdvi srcV[4], dstV[4], outV[4];
+    pfiColorSIMDToVecI_simd(srcV, src, 4);
+    pfiColorSIMDToVecI_simd(dstV, dst, 4);
+
+    PFIsimdvi alpha = pfiSimdAdd_I32(srcV[3], *(PFIsimdvi*)GC_simd_i32_1);
     PFIsimdvi invAlpha = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_256, alpha);
-    out[0] = pfiSimdShr_I32(pfiSimdAdd_I32(pfiSimdMullo_I32(src[0], alpha), pfiSimdMullo_I32(dst[0], invAlpha)), 8);
-    out[1] = pfiSimdShr_I32(pfiSimdAdd_I32(pfiSimdMullo_I32(src[1], alpha), pfiSimdMullo_I32(dst[1], invAlpha)), 8);
-    out[2] = pfiSimdShr_I32(pfiSimdAdd_I32(pfiSimdMullo_I32(src[2], alpha), pfiSimdMullo_I32(dst[2], invAlpha)), 8);
-    out[3] = pfiSimdShr_I32(pfiSimdAdd_I32(pfiSimdMullo_I32(*(PFIsimdvi*)GC_simd_i32_255, alpha), pfiSimdMullo_I32(dst[3], invAlpha)), 8);
+    outV[0] = pfiSimdShr_I32(pfiSimdAdd_I32(pfiSimdMullo_I32(srcV[0], alpha), pfiSimdMullo_I32(dstV[0], invAlpha)), 8);
+    outV[1] = pfiSimdShr_I32(pfiSimdAdd_I32(pfiSimdMullo_I32(srcV[1], alpha), pfiSimdMullo_I32(dstV[1], invAlpha)), 8);
+    outV[2] = pfiSimdShr_I32(pfiSimdAdd_I32(pfiSimdMullo_I32(srcV[2], alpha), pfiSimdMullo_I32(dstV[2], invAlpha)), 8);
+    outV[3] = pfiSimdShr_I32(pfiSimdAdd_I32(pfiSimdMullo_I32(*(PFIsimdvi*)GC_simd_i32_255, alpha), pfiSimdMullo_I32(dstV[3], invAlpha)), 8);
+
+    return pfiColorSIMDFromVecI_simd(outV, 4);
 }
 
-static inline void
-pfiBlendAdditive_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
+static inline PFIsimdvi
+pfiBlendAdditive_simd(const PFIsimdvi src, const PFIsimdvi dst)
 {
-    out[0] = pfiSimdMin_I32(pfiSimdAdd_I32(src[0], dst[0]), *(PFIsimdvi*)GC_simd_i32_255);
-    out[1] = pfiSimdMin_I32(pfiSimdAdd_I32(src[1], dst[1]), *(PFIsimdvi*)GC_simd_i32_255);
-    out[2] = pfiSimdMin_I32(pfiSimdAdd_I32(src[2], dst[2]), *(PFIsimdvi*)GC_simd_i32_255);
-    out[3] = pfiSimdMin_I32(pfiSimdAdd_I32(src[3], dst[3]), *(PFIsimdvi*)GC_simd_i32_255);
+    PFIsimdvi srcV[4], dstV[4], outV[4];
+    pfiColorSIMDToVecI_simd(srcV, src, 4);
+    pfiColorSIMDToVecI_simd(dstV, dst, 4);
+
+    outV[0] = pfiSimdMin_I32(pfiSimdAdd_I32(srcV[0], dstV[0]), *(PFIsimdvi*)GC_simd_i32_255);
+    outV[1] = pfiSimdMin_I32(pfiSimdAdd_I32(srcV[1], dstV[1]), *(PFIsimdvi*)GC_simd_i32_255);
+    outV[2] = pfiSimdMin_I32(pfiSimdAdd_I32(srcV[2], dstV[2]), *(PFIsimdvi*)GC_simd_i32_255);
+    outV[3] = pfiSimdMin_I32(pfiSimdAdd_I32(srcV[3], dstV[3]), *(PFIsimdvi*)GC_simd_i32_255);
+
+    return pfiColorSIMDFromVecI_simd(outV, 4);
 }
 
-static inline void
-pfiBlendSubtractive_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
+static inline PFIsimdvi
+pfiBlendSubtractive_simd(const PFIsimdvi src, const PFIsimdvi dst)
 {
-    out[0] = pfiSimdMax_I32(pfiSimdAdd_I32(src[0], dst[0]), *(PFIsimdvi*)GC_simd_i32_0);
-    out[1] = pfiSimdMax_I32(pfiSimdAdd_I32(src[1], dst[1]), *(PFIsimdvi*)GC_simd_i32_0);
-    out[2] = pfiSimdMax_I32(pfiSimdAdd_I32(src[2], dst[2]), *(PFIsimdvi*)GC_simd_i32_0);
-    out[3] = pfiSimdMax_I32(pfiSimdAdd_I32(src[3], dst[3]), *(PFIsimdvi*)GC_simd_i32_0);
+    PFIsimdvi srcV[4], dstV[4], outV[4];
+    pfiColorSIMDToVecI_simd(srcV, src, 4);
+    pfiColorSIMDToVecI_simd(dstV, dst, 4);
+
+    outV[0] = pfiSimdMax_I32(pfiSimdAdd_I32(srcV[0], dstV[0]), *(PFIsimdvi*)GC_simd_i32_0);
+    outV[1] = pfiSimdMax_I32(pfiSimdAdd_I32(srcV[1], dstV[1]), *(PFIsimdvi*)GC_simd_i32_0);
+    outV[2] = pfiSimdMax_I32(pfiSimdAdd_I32(srcV[2], dstV[2]), *(PFIsimdvi*)GC_simd_i32_0);
+    outV[3] = pfiSimdMax_I32(pfiSimdAdd_I32(srcV[3], dstV[3]), *(PFIsimdvi*)GC_simd_i32_0);
+
+    return pfiColorSIMDFromVecI_simd(outV, 4);
 }
 
-static inline void
-pfiBlendMultiplicative_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
+static inline PFIsimdvi
+pfiBlendMultiplicative_simd(const PFIsimdvi src, const PFIsimdvi dst)
 {
-    out[0] = pfiSimdShr_I32(pfiSimdMullo_I32(src[0], dst[0]), 8);
-    out[1] = pfiSimdShr_I32(pfiSimdMullo_I32(src[1], dst[1]), 8);
-    out[2] = pfiSimdShr_I32(pfiSimdMullo_I32(src[2], dst[2]), 8);
-    out[3] = pfiSimdShr_I32(pfiSimdMullo_I32(src[3], dst[3]), 8);
+    PFIsimdvi srcV[4], dstV[4], outV[4];
+    pfiColorSIMDToVecI_simd(srcV, src, 4);
+    pfiColorSIMDToVecI_simd(dstV, dst, 4);
+
+    outV[0] = pfiSimdShr_I32(pfiSimdMullo_I32(srcV[0], dstV[0]), 8);
+    outV[1] = pfiSimdShr_I32(pfiSimdMullo_I32(srcV[1], dstV[1]), 8);
+    outV[2] = pfiSimdShr_I32(pfiSimdMullo_I32(srcV[2], dstV[2]), 8);
+    outV[3] = pfiSimdShr_I32(pfiSimdMullo_I32(srcV[3], dstV[3]), 8);
+
+    return pfiColorSIMDFromVecI_simd(outV, 4);
 }
 
-static inline void
-pfiBlendScreen_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
+static inline PFIsimdvi
+pfiBlendScreen_simd(const PFIsimdvi src, const PFIsimdvi dst)
 {
-    PFIsimdvi inv_src_r = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_255, src[0]);
-    PFIsimdvi inv_src_g = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_255, src[1]);
-    PFIsimdvi inv_src_b = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_255, src[2]);
-    PFIsimdvi inv_src_a = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_255, src[3]);
+    PFIsimdvi srcV[4], dstV[4], outV[4];
+    pfiColorSIMDToVecI_simd(srcV, src, 4);
+    pfiColorSIMDToVecI_simd(dstV, dst, 4);
 
-    out[0] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dst[0], inv_src_r), 8), src[0]), *(PFIsimdvi*)GC_simd_i32_255);
-    out[1] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dst[1], inv_src_g), 8), src[1]), *(PFIsimdvi*)GC_simd_i32_255);
-    out[2] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dst[2], inv_src_b), 8), src[2]), *(PFIsimdvi*)GC_simd_i32_255);
-    out[3] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dst[3], inv_src_a), 8), src[3]), *(PFIsimdvi*)GC_simd_i32_255);
+    PFIsimdvi inv_src_r = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_255, srcV[0]);
+    PFIsimdvi inv_src_g = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_255, srcV[1]);
+    PFIsimdvi inv_src_b = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_255, srcV[2]);
+    PFIsimdvi inv_src_a = pfiSimdSub_I32(*(PFIsimdvi*)GC_simd_i32_255, srcV[3]);
+
+    outV[0] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dstV[0], inv_src_r), 8), srcV[0]), *(PFIsimdvi*)GC_simd_i32_255);
+    outV[1] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dstV[1], inv_src_g), 8), srcV[1]), *(PFIsimdvi*)GC_simd_i32_255);
+    outV[2] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dstV[2], inv_src_b), 8), srcV[2]), *(PFIsimdvi*)GC_simd_i32_255);
+    outV[3] = pfiSimdMin_I32(pfiSimdAdd_I32(pfiSimdShr_I32(pfiSimdMullo_I32(dstV[3], inv_src_a), 8), srcV[3]), *(PFIsimdvi*)GC_simd_i32_255);
+
+    return pfiColorSIMDFromVecI_simd(outV, 4);
 }
 
-static inline void
-pfiBlendLighten_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
+static inline PFIsimdvi
+pfiBlendLighten_simd(const PFIsimdvi src, const PFIsimdvi dst)
 {
-    out[0] = pfiSimdMax_I32(src[0], dst[0]);
-    out[1] = pfiSimdMax_I32(src[1], dst[1]);
-    out[2] = pfiSimdMax_I32(src[2], dst[2]);
-    out[3] = pfiSimdMax_I32(src[3], dst[3]);
+    PFIsimdvi srcV[4], dstV[4], outV[4];
+    pfiColorSIMDToVecI_simd(srcV, src, 4);
+    pfiColorSIMDToVecI_simd(dstV, dst, 4);
+
+    outV[0] = pfiSimdMax_I32(srcV[0], dstV[0]);
+    outV[1] = pfiSimdMax_I32(srcV[1], dstV[1]);
+    outV[2] = pfiSimdMax_I32(srcV[2], dstV[2]);
+    outV[3] = pfiSimdMax_I32(srcV[3], dstV[3]);
+
+    return pfiColorSIMDFromVecI_simd(outV, 4);
 }
 
-static inline void
-pfiBlendDarken_simd(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst)
+static inline PFIsimdvi
+pfiBlendDarken_simd(const PFIsimdvi src, const PFIsimdvi dst)
 {
-    out[0] = pfiSimdMin_I32(src[0], dst[0]);
-    out[1] = pfiSimdMin_I32(src[1], dst[1]);
-    out[2] = pfiSimdMin_I32(src[2], dst[2]);
-    out[3] = pfiSimdMin_I32(src[3], dst[3]);
+    PFIsimdvi srcV[4], dstV[4], outV[4];
+    pfiColorSIMDToVecI_simd(srcV, src, 4);
+    pfiColorSIMDToVecI_simd(dstV, dst, 4);
+
+    outV[0] = pfiSimdMin_I32(srcV[0], dstV[0]);
+    outV[1] = pfiSimdMin_I32(srcV[1], dstV[1]);
+    outV[2] = pfiSimdMin_I32(srcV[2], dstV[2]);
+    outV[3] = pfiSimdMin_I32(srcV[3], dstV[3]);
+
+    return pfiColorSIMDFromVecI_simd(outV, 4);
 }
 
 #define ENTRY(MODE, FUNC) [MODE] = FUNC

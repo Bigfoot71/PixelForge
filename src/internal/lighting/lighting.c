@@ -18,10 +18,12 @@
  */
 
 #include "./lighting.h"
+#include "../color.h"
 
-PFcolor pfiLightingProcess(const PFIlight* activeLights, const PFImaterial* material,
-                                   PFcolor diffuse, const PFMvec3 viewPos,
-                                   const PFMvec3 fragPos, const PFMvec3 N)
+PFcolor
+pfiLightingProcess(const PFIlight* activeLights, const PFImaterial* material,
+                   PFcolor diffuse, const PFMvec3 viewPos,
+                   const PFMvec3 fragPos, const PFMvec3 N)
 {
     // Final color
     // Calculate the emission component of the final color
@@ -143,18 +145,19 @@ PFcolor pfiLightingProcess(const PFIlight* activeLights, const PFImaterial* mate
 
 #if PF_SIMD_SUPPORT
 
-void pfiSimdLightingProcess(PFcolor_simd fragments, const PFIlight* activeLights,
-                                    const PFImaterial* material,
-                                    const PFIsimdv3f viewPos,
-                                    const PFIsimdv3f fragPos,
-                                    const PFIsimdv3f N)
+PFIsimdvi
+pfiSimdLightingProcess(PFIsimdvi fragments, const PFIlight* activeLights,
+                       const PFImaterial* material,
+                       const PFIsimdv3f viewPos,
+                       const PFIsimdv3f fragPos,
+                       const PFIsimdv3f N)
 {
     // Load and normalize material colors
     PFIsimdv3f colDiffuse, colAmbient, colSpecular, colEmission;
-    pfiColorUnpackedToVec_simd(colDiffuse, fragments, 3);
-    pfiColorSisdToVec_simd(colAmbient, material->ambient, 3);
-    pfiColorSisdToVec_simd(colSpecular, material->specular, 3);
-    pfiColorSisdToVec_simd(colEmission, material->emission, 3);
+    pfiColorSIMDToVecF_simd(colDiffuse, fragments, 3);
+    pfiColorSISDToVecF_simd(colAmbient, material->ambient, 3);
+    pfiColorSISDToVecF_simd(colSpecular, material->specular, 3);
+    pfiColorSISDToVecF_simd(colEmission, material->emission, 3);
 
     // Normalize ambient color by diffuse color
     pfiVec3Mul_simd(colAmbient, colAmbient, colDiffuse);
@@ -175,9 +178,9 @@ void pfiSimdLightingProcess(PFcolor_simd fragments, const PFIlight* activeLights
         pfiVec3Load_simd(lightDir, light->direction);
 
         PFIsimdv3f lightAmbient, lightDiffuse, lightSpecular;
-        pfiColorSisdToVec_simd(lightAmbient, light->ambient, 3);
-        pfiColorSisdToVec_simd(lightDiffuse, light->diffuse, 3);
-        pfiColorSisdToVec_simd(lightSpecular, light->specular, 3);
+        pfiColorSISDToVecF_simd(lightAmbient, light->ambient, 3);
+        pfiColorSISDToVecF_simd(lightDiffuse, light->diffuse, 3);
+        pfiColorSISDToVecF_simd(lightSpecular, light->specular, 3);
 
         // Compute the light direction from fragment position
         PFIsimdv3f L;
@@ -250,8 +253,8 @@ void pfiSimdLightingProcess(PFcolor_simd fragments, const PFIlight* activeLights
         pfiVec3Add_simd(lightContribution, lightContribution, specular);
     }
 
-    // Store the result
-    pfiColorUnpackedFromVec_simd(fragments, lightContribution, 3);
+    // Pack and return lighting contribution
+    return pfiColorSIMDFromVecF_simd(lightContribution, 3);
 }
 
 #endif //PF_SIMD_SUPPORT

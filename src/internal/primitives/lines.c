@@ -18,6 +18,7 @@
  */
 
 #include "../context/context.h"
+#include "../color.h"
 #include <stdlib.h>
 
 /* Enums for internal use */

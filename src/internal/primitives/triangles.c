@@ -37,7 +37,7 @@
 /* Internal typedefs */
 
 #if PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_BARYCENTRIC
-typedef void (*InterpolateColorSimdFunc)(PFcolor_simd, const PFcolor_simd, const PFcolor_simd, const PFcolor_simd, PFIsimdvf, PFIsimdvf, PFIsimdvf);
+typedef PFIsimdvi (*InterpolateColorSimdFunc)(PFIsimdvi, PFIsimdvi, PFIsimdvi, PFIsimdvf, PFIsimdvf, PFIsimdvf);
 #elif PF_TRIANGLE_RASTER_MODE == PF_TRIANGLE_RASTER_SCANLINES
 typedef PFcolor (*InterpolateColorFunc)(PFcolor, PFcolor, PFfloat);
 #endif //PF_RASTER_MODE
@@ -349,10 +349,9 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
     PFIsimdvf wInvSumV = pfiSimdSet1_F32(1.0f/(w1Row + w2Row + w3Row));
 
     // Load vertices data into SIMD registers
-    PFcolor_simd c1V, c2V, c3V;
-    pfiColorLoadUnpacked_simd(c1V, v1->color);
-    pfiColorLoadUnpacked_simd(c2V, v2->color);
-    pfiColorLoadUnpacked_simd(c3V, v3->color);
+    PFIsimdvi c1V = pfiColorLoad_simd(v1->color);
+    PFIsimdvi c2V = pfiColorLoad_simd(v2->color);
+    PFIsimdvi c3V = pfiColorLoad_simd(v3->color);
 
     PFIsimdv3f p1V, p2V, p3V;
     pfiVec3Load_simd(p1V, v1->position);
@@ -499,8 +498,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
     /* Processing macro definitions */
 
 #   define GET_FRAG() \
-        PFcolor_simd fragments; \
-        interpolateColor(fragments, c1V, c2V, c3V, w1NormV, w2NormV, w3NormV);
+        PFIsimdvi fragments = interpolateColor( \
+            c1V, c2V, c3V, w1NormV, w2NormV, w3NormV);
 
 #   define TEXTURING() \
         PFIsimdv2f texcoords; \
@@ -509,8 +508,8 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
             pfiVec2BaryInterpSmoothR_simd(texcoords, tc1V, tc2V, tc3V, w1NormV, w2NormV, w3NormV); \
             if (is3D) pfiVec2Scale_simd(texcoords, texcoords, zV); /* Perspective correct */ \
             pfiVec2Blend_simd(texcoords, zeroV2, texcoords, pfiSimdCast_I32_F32(mask)); \
-            PFcolor_simd texels; pfiColorUnpack_simd(texels, texSampler(texSrc, texcoords)); \
-            pfiBlendMultiplicative_simd(fragments, texels, fragments); \
+            PFIsimdvi texels = texSampler(texSrc, texcoords); \
+            fragments = pfiBlendMultiplicative_simd(texels, fragments); \
         }
 
 #   define LIGHTING() \
@@ -518,17 +517,15 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
         PFIsimdv3f normals, positions; \
         pfiVec3BaryInterpSmoothR_simd(normals, n1V, n2V, n3V, w1NormV, w2NormV, w3NormV); \
         pfiVec3BaryInterpSmoothR_simd(positions, p1V, p2V, p3V, w1NormV, w2NormV, w3NormV); \
-        pfiSimdLightingProcess(fragments, lights, &G_currentCtx->faceMaterial[faceToRender], viewPosV, positions, normals); \
+        fragments = pfiSimdLightingProcess(fragments, lights, &G_currentCtx->faceMaterial[faceToRender], viewPosV, positions, normals); \
     }
 
 #   define SET_FRAG() \
         if (blendFunction) { \
-            PFcolor_simd dstCol; \
-            pfiColorUnpack_simd(dstCol, fbGetter(pbDst, \
-                pfiSimdAdd_I32(pfiSimdSet1_I32(yOffset + x), pixOffsetV))); \
-            blendFunction(fragments, fragments, dstCol); \
+            PFIsimdvi dstCol = fbGetter(pbDst, pfiSimdAdd_I32(pfiSimdSet1_I32(yOffset + x), pixOffsetV)); \
+            fragments = blendFunction(fragments, dstCol); \
         } \
-        fbSetter(pbDst, yOffset + x, pfiColorPack_simd(fragments), mask); \
+        fbSetter(pbDst, yOffset + x, fragments, mask); \
         pfiSimdStore_F32(zbDst + yOffset + x, pfiSimdBlendV_F32(depths, zV, pfiSimdCast_I32_F32(mask)));
 
     /* Loop rasterization */

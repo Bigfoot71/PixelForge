@@ -21,6 +21,7 @@
 #define PF_INTERNAL_SAMPLER_H
 
 #include "./context/context.h"
+#include "./color.h"
 
 /* Texture2D Mapper Functions */
 
@@ -201,12 +202,15 @@ static const PFItexturesampler GC_textureSamplers[2][3] = {
 static inline void
 pfiTexture2DMap_REPEAT_simd(const struct PFItex* tex, PFIsimdvi* xOut, PFIsimdvi* yOut, const PFIsimdv2f texcoords)
 {
-    PFIsimdvf u = pfiSimdMul_F32(
-        pfiSimdSub_F32(texcoords[0], pfiSimdRound_F32(u, _MM_FROUND_TO_ZERO)),
+    PFIsimdvf u = texcoords[0];
+    PFIsimdvf v = texcoords[1];
+    
+    u = pfiSimdMul_F32(
+        pfiSimdSub_F32(u, pfiSimdRound_F32(u, _MM_FROUND_TO_ZERO)),
         pfiSimdSet1_F32(tex->w - 1));
 
-    PFIsimdvf v = pfiSimdMul_F32(
-        pfiSimdSub_F32(texcoords[1], pfiSimdRound_F32(v, _MM_FROUND_TO_ZERO)),
+    v = pfiSimdMul_F32(
+        pfiSimdSub_F32(v, pfiSimdRound_F32(v, _MM_FROUND_TO_ZERO)),
         pfiSimdSet1_F32(tex->h - 1));
 
     *xOut = pfiSimdAbs_I32(pfiSimdConvert_F32_I32(u));

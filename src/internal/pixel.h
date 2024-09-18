@@ -22,6 +22,7 @@
 
 #include "./context/context.h"
 #include "./config.h"
+#include "./color.h"
 #include "../pfm.h"
 #include <stdint.h>
 

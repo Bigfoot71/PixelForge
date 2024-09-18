@@ -24,7 +24,6 @@
 #include "../config.h"
 #include "../vector.h"
 #include "../../pfm.h"
-#include "../color.h"
 #include "../simd.h"
 
 /*
@@ -96,20 +95,17 @@ typedef PFcolor (*PFItexturesampler)(const struct PFItex* tex, PFfloat u, PFfloa
 /**
  * @brief Defines a function pointer type for SIMD color blending functions.
  *
- * This function pointer type is used to specify a function that blends multiple colors together
- * using SIMD operations. It processes arrays of colors efficiently
- * in parallel.
+ * This function pointer type is used to specify a function that blends two SIMD color vectors together
+ * using SIMD operations. It processes the vectors efficiently in parallel.
  *
- * @param[out] out The output color array where the resulting blended colors will be stored.
- * @param[in] src The source color array to blend. This is the array of colors that will be blended with
- *                the destination color array.
- * @param[in] dst The destination color array to blend with. This is the array of colors that will be
- *                blended with the source color array.
+ * @param[in] src The source SIMD vector to blend. This vector contains the source colors that will be
+ *                blended with the destination vector.
+ * @param[in] dst The destination SIMD vector to blend with. This vector contains the destination colors
+ *                that will be blended with the source vector.
  *
- * @return void This function does not return a value; instead, it writes the blended results directly
- *               to the `out` array.
+ * @return PFIsimdvi The function returns the resulting blended SIMD color vector.
  */
-typedef void (*PFIblendfunc_simd)(PFcolor_simd out, const PFcolor_simd src, const PFcolor_simd dst);
+typedef PFIsimdvi (*PFIblendfunc_simd)(PFIsimdvi src, PFIsimdvi dst);
 
 /**
  * @brief Function pointer type for SIMD depth testing.
