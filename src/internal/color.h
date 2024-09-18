@@ -127,8 +127,8 @@ pfiColorSIMDFromVecF_simd(const PFIsimdvf* in, int vecSize)
     PFIsimdvi packed = pfiSimdSetZero_I32();
 
     for (int_fast8_t i = 0; i < vecSize; ++i) {
-        PFIsimdvi comp = pfiSimdMul_F32(pfiSimdClamp_F32(in[i], *(PFIsimdvf*)GC_simd_f32_0, *(PFIsimdvf*)GC_simd_f32_1), *(PFIsimdvf*)GC_simd_f32_255);
-        packed = pfiSimdOr_I32(packed, pfiSimdShl_I32(comp, i * 8));
+        PFIsimdvf comp = pfiSimdMul_F32(pfiSimdClamp_F32(in[i], *(PFIsimdvf*)GC_simd_f32_0, *(PFIsimdvf*)GC_simd_f32_1), *(PFIsimdvf*)GC_simd_f32_255);
+        packed = pfiSimdOr_I32(packed, pfiSimdShl_I32(pfiSimdConvert_F32_I32(comp), i * 8));
     }
 
     return packed;
