@@ -106,6 +106,7 @@ pfiTexture2DSampler_BILINEAR_REPEAT(const struct PFItex* tex, PFfloat u, PFfloat
     pfiTexture2DMap_REPEAT(tex, &x1, &y1, u + tex->tx, v + tex->ty);
 
     // Calculate fractions fx, fy
+    // REVIEW: It seems strange to me to have to clamp here, but the result is incorrect otherwise...
     fx = PF_CLAMP(u * tex->w - x0, 0.0f, 1.0f);
     fy = PF_CLAMP(v * tex->h - y0, 0.0f, 1.0f);
 
@@ -133,6 +134,7 @@ pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT(const struct PFItex* tex, PFfloat u
     pfiTexture2DMap_MIRRORED_REPEAT(tex, &x1, &y1, u + tex->tx, v + tex->ty);
 
     // Calculate fractions fx, fy
+    // REVIEW: It seems strange to me to have to clamp here, but the result is incorrect otherwise...
     fx = PF_CLAMP(u * tex->w - x0, 0.0f, 1.0f);
     fy = PF_CLAMP(v * tex->h - y0, 0.0f, 1.0f);
 
@@ -160,6 +162,7 @@ pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE(const struct PFItex* tex, PFfloat u, 
     pfiTexture2DMap_CLAMP_TO_EDGE(tex, &x1, &y1, u + tex->tx, v + tex->ty);
 
     // Calculate fractions fx, fy
+    // REVIEW: It seems strange to me to have to clamp here, but the result is incorrect otherwise...
     fx = PF_CLAMP(u * tex->w - x0, 0.0f, 1.0f);
     fy = PF_CLAMP(v * tex->h - y0, 0.0f, 1.0f);
 
@@ -304,6 +307,7 @@ pfiTexture2DSampler_BILINEAR_REPEAT_simd(const struct PFItex* tex, const PFIsimd
     pfiTexture2DMap_REPEAT_simd(tex, &x1, &y1, texcoords2);
 
     // Calculate fractions fx, fy
+    // REVIEW: It seems strange to me to have to clamp here, but the result is incorrect otherwise...
     fx = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[0], pfiSimdSet1_F32(tex->w)), pfiSimdConvert_I32_F32(x0));
     fy = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[1], pfiSimdSet1_F32(tex->h)), pfiSimdConvert_I32_F32(y0));
     fx = pfiSimdClamp_F32(fx, pfiSimdSetZero_F32(), *(PFIsimdvf*)GC_simd_f32_1);
@@ -341,8 +345,11 @@ pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT_simd(const struct PFItex* tex, cons
     pfiTexture2DMap_MIRRORED_REPEAT_simd(tex, &x1, &y1, texcoords2);
 
     // Calculate fractions fx, fy
+    // REVIEW: It seems strange to me to have to clamp here, but the result is incorrect otherwise...
     fx = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[0], pfiSimdSet1_F32(tex->w)), pfiSimdConvert_I32_F32(x0));
     fy = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[1], pfiSimdSet1_F32(tex->h)), pfiSimdConvert_I32_F32(y0));
+    fx = pfiSimdClamp_F32(fx, pfiSimdSetZero_F32(), *(PFIsimdvf*)GC_simd_f32_1);
+    fy = pfiSimdClamp_F32(fy, pfiSimdSetZero_F32(), *(PFIsimdvf*)GC_simd_f32_1);
 
     // Get the colors of the four pixels
     PFIsimdvi c00 = tex->getterSimd(tex->pixels, y0 * tex->w + x0);
@@ -376,8 +383,11 @@ pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE_simd(const struct PFItex* tex, const 
     pfiTexture2DMap_CLAMP_TO_EDGE_simd(tex, &x1, &y1, texcoords2);
 
     // Calculate fractions fx, fy
+    // REVIEW: It seems strange to me to have to clamp here, but the result is incorrect otherwise...
     fx = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[0], pfiSimdSet1_F32(tex->w)), pfiSimdConvert_I32_F32(x0));
     fy = pfiSimdSub_F32(pfiSimdMul_F32(texcoords[1], pfiSimdSet1_F32(tex->h)), pfiSimdConvert_I32_F32(y0));
+    fx = pfiSimdClamp_F32(fx, pfiSimdSetZero_F32(), *(PFIsimdvf*)GC_simd_f32_1);
+    fy = pfiSimdClamp_F32(fy, pfiSimdSetZero_F32(), *(PFIsimdvf*)GC_simd_f32_1);
 
     // Get the colors of the four pixels
     PFIsimdvi c00 = tex->getterSimd(tex->pixels, y0 * tex->w + x0);
