@@ -99,26 +99,39 @@ pfiColorPack_simd(const PFcolor_simd unpacked)
             unpacked[0]));
 }
 
-static inline void
-pfiColorLerpSmooth_simd(PFcolor_simd out, const PFcolor_simd a, const PFcolor_simd b, PFIsimdvf t)
+static inline PFIsimdvi
+pfiColorLerpSmooth_simd(const PFIsimdvi a, const PFIsimdvi b, PFIsimdvf t)
 {
-    PFIsimdvi uT = pfiSimdConvert_F32_I32(pfiSimdMul_F32(t, *(PFIsimdvf*)GC_simd_f32_255));
-    out[0] = pfiSimdAdd_I32(a[0], pfiSimdShr_I32(pfiSimdMullo_I32(uT, pfiSimdSub_I32(b[0], a[0])), 8));
-    out[1] = pfiSimdAdd_I32(a[1], pfiSimdShr_I32(pfiSimdMullo_I32(uT, pfiSimdSub_I32(b[1], a[1])), 8));
-    out[2] = pfiSimdAdd_I32(a[2], pfiSimdShr_I32(pfiSimdMullo_I32(uT, pfiSimdSub_I32(b[2], a[2])), 8));
-    out[3] = pfiSimdAdd_I32(a[3], pfiSimdShr_I32(pfiSimdMullo_I32(uT, pfiSimdSub_I32(b[3], a[3])), 8));
+    // Unpack the RGBA components of 'a'
+    PFIsimdv4f aV4;
+    aV4[0] = pfiSimdConvert_I32_F32(pfiSimdUnpackLo_I16(pfiSimdUnpackLo_I8(a, pfiSimdSetZero_I32()), pfiSimdSetZero_I32()));
+    aV4[1] = pfiSimdConvert_I32_F32(pfiSimdUnpackHi_I16(pfiSimdUnpackLo_I8(a, pfiSimdSetZero_I32()), pfiSimdSetZero_I32()));
+    aV4[2] = pfiSimdConvert_I32_F32(pfiSimdUnpackLo_I16(pfiSimdUnpackHi_I8(a, pfiSimdSetZero_I32()), pfiSimdSetZero_I32()));
+    aV4[3] = pfiSimdConvert_I32_F32(pfiSimdUnpackHi_I16(pfiSimdUnpackHi_I8(a, pfiSimdSetZero_I32()), pfiSimdSetZero_I32()));
+
+    // Unpack the RGBA components of 'b'
+    PFIsimdv4f bV4;
+    bV4[0] = pfiSimdConvert_I32_F32(pfiSimdUnpackLo_I16(pfiSimdUnpackLo_I8(b, pfiSimdSetZero_I32()), pfiSimdSetZero_I32()));
+    bV4[1] = pfiSimdConvert_I32_F32(pfiSimdUnpackHi_I16(pfiSimdUnpackLo_I8(b, pfiSimdSetZero_I32()), pfiSimdSetZero_I32()));
+    bV4[2] = pfiSimdConvert_I32_F32(pfiSimdUnpackLo_I16(pfiSimdUnpackHi_I8(b, pfiSimdSetZero_I32()), pfiSimdSetZero_I32()));
+    bV4[3] = pfiSimdConvert_I32_F32(pfiSimdUnpackHi_I16(pfiSimdUnpackHi_I8(b, pfiSimdSetZero_I32()), pfiSimdSetZero_I32()));
+
+    // Perform the interpolation
+    PFIsimdv4f rV4; pfiVec4LerpR_simd(rV4, aV4, bV4, t);
+
+    // Convert values to 32-bit integers and pack components into 16-bit
+    PFIsimdvi RG = pfiSimdPackS_I32_I16(pfiSimdConvert_F32_I32(rV4[0]), pfiSimdConvert_F32_I32(rV4[1]));
+    PFIsimdvi BA = pfiSimdPackS_I32_I16(pfiSimdConvert_F32_I32(rV4[2]), pfiSimdConvert_F32_I32(rV4[3]));
+
+    // Pack into 8 bits
+    return pfiSimdPackU_I16_I8(RG, BA);
 }
 
-static inline void
-pfiColorLerpFlat_simd(PFcolor_simd out, const PFcolor_simd a, const PFcolor_simd b, PFIsimdvf t)
+static inline PFIsimdvi
+pfiColorLerpFlat_simd(const PFIsimdvi a, const PFIsimdvi b, PFIsimdvf t)
 {
-    PFIsimdvi mask = pfiSimdCast_F32_I32(
-        pfiSimdCmpLT_F32(t, *(PFIsimdvf*)GC_simd_f32_0p5));
-    
-    out[0] = pfiSimdBlendV_I8(b[0], a[0], mask);
-    out[1] = pfiSimdBlendV_I8(b[1], a[1], mask);
-    out[2] = pfiSimdBlendV_I8(b[2], a[2], mask);
-    out[3] = pfiSimdBlendV_I8(b[3], a[3], mask);
+    PFIsimdvi mask = pfiSimdCast_F32_I32(pfiSimdCmpLT_F32(t, *(PFIsimdvf*)GC_simd_f32_0p5));
+    return pfiSimdBlendV_I8(b, a, mask);
 }
 
 static inline void

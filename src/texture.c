@@ -52,8 +52,8 @@ PFtexture pfGenTexture(void* pixels, PFsizei width, PFsizei height, PFpixelforma
     texture->w = width;
     texture->h = height;
 
-    texture->tx = 1.0f/width;
-    texture->ty = 1.0f/height;
+    texture->tx = 1.0f / width;
+    texture->ty = 1.0f / height;
 
     texture->getter = GC_pixelGetters[format][type];
     texture->setter = GC_pixelSetters[format][type];

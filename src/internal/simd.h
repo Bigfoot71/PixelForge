@@ -619,6 +619,22 @@ pfiSimdSetZero_F32(void)
         _mm_round_ps(x, imm)
 #endif
 
+#if defined(__AVX2__)
+#   define pfiSimdFloor_F32(x) \
+        _mm256_floor_ps(x)
+#elif defined(__SSE2__)
+#   define pfiSimdRound_F32(x) \
+        _mm_floor_ps(x)
+#endif
+
+#if defined(__AVX2__)
+#   define pfiSimdCeil_F32(x) \
+        _mm256_ceil_ps(x)
+#elif defined(__SSE2__)
+#   define pfiSimdRound_F32(x) \
+        _mm_ceil_ps(x)
+#endif
+
 static inline PFIsimdvi
 pfiSimdAbs_I32(PFIsimdvi x)
 {
@@ -658,6 +674,26 @@ pfiSimdUnpackLo_I16(PFIsimdvi x, PFIsimdvi y)
     return _mm256_unpacklo_epi16(x, y);
 #elif defined(__SSE2__)
     return _mm_unpacklo_epi16(x, y);
+#endif
+}
+
+static inline PFIsimdvi
+pfiSimdUnpackHi_I8(PFIsimdvi x, PFIsimdvi y)
+{
+#if defined(__AVX2__)
+    return _mm256_unpackhi_epi8(x, y);
+#elif defined(__SSE2__)
+    return _mm_unpackhi_epi8(x, y);
+#endif
+}
+
+static inline PFIsimdvi
+pfiSimdUnpackHi_I16(PFIsimdvi x, PFIsimdvi y)
+{
+#if defined(__AVX2__)
+    return _mm256_unpackhi_epi16(x, y);
+#elif defined(__SSE2__)
+    return _mm_unpackhi_epi16(x, y);
 #endif
 }
 
@@ -800,7 +836,7 @@ pfiSimdExtractVarIdx_I32(PFIsimdvi x, int32_t index)
 #endif
 
 static inline PFIsimdvi
-pfiSimdPackus_I16_I8(PFIsimdvi x, PFIsimdvi y)
+pfiSimdPackU_I16_I8(PFIsimdvi x, PFIsimdvi y)
 {
 #if defined(__AVX2__)
     return _mm256_packus_epi16(x, y);
@@ -810,12 +846,22 @@ pfiSimdPackus_I16_I8(PFIsimdvi x, PFIsimdvi y)
 }
 
 static inline PFIsimdvi
-pfiSimdPackus_I32_I16(PFIsimdvi x, PFIsimdvi y)
+pfiSimdPackU_I32_I16(PFIsimdvi x, PFIsimdvi y)
 {
 #if defined(__AVX2__)
     return _mm256_packus_epi32(x, y);
 #elif defined(__SSE2__)
     return _mm_packus_epi32(x, y);
+#endif
+}
+
+static inline PFIsimdvi
+pfiSimdPackS_I32_I16(PFIsimdvi x, PFIsimdvi y)
+{
+#if defined(__AVX2__)
+    return _mm256_packs_epi32(x, y);
+#elif defined(__SSE2__)
+    return _mm_packs_epi32(x, y);
 #endif
 }
 
