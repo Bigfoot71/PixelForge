@@ -50,9 +50,9 @@ typedef __m128 PFIsimdvf;
 typedef __m128i PFIsimdvi;
 #endif
 
-typedef PFIsimdvf PFsimdv2f[2];
-typedef PFIsimdvf PFsimdv3f[3];
-typedef PFIsimdvf PFsimdv4f[4];
+typedef PFIsimdvf PFIsimdv2f[2];
+typedef PFIsimdvf PFIsimdv3f[3];
+typedef PFIsimdvf PFIsimdv4f[4];
 
 typedef PFIsimdvf* PFIsimdvf_ptr;
 
@@ -1525,28 +1525,28 @@ pfiSimdCmpGE_F32(PFIsimdvf x, PFIsimdvf y)
 /* 2D SIMD Vector function definitions */
 
 static inline void
-pfiVec2Zero_simd(PFsimdv2f dst)
+pfiVec2Zero_simd(PFIsimdv2f dst)
 {
     dst[0] = pfiSimdSetZero_F32();
     dst[1] = pfiSimdSetZero_F32();
 }
 
 static inline void
-pfiVec2One_simd(PFsimdv2f dst, float v)
+pfiVec2One_simd(PFIsimdv2f dst, float v)
 {
     dst[0] = pfiSimdSet1_F32(v);
     dst[1] = pfiSimdSet1_F32(v);
 }
 
 static inline void
-pfiVec2Set_simd(PFsimdv2f dst, float x, float y)
+pfiVec2Set_simd(PFIsimdv2f dst, float x, float y)
 {
     dst[0] = pfiSimdSet1_F32(x);
     dst[1] = pfiSimdSet1_F32(y);
 }
 
 static inline void
-pfiVec2Load_simd(PFsimdv2f dst, const PFMvec2 src)
+pfiVec2Load_simd(PFIsimdv2f dst, const PFMvec2 src)
 {
     dst[0] = pfiSimdSet1_F32(src[0]);
     dst[1] = pfiSimdSet1_F32(src[1]);
@@ -1555,7 +1555,7 @@ pfiVec2Load_simd(PFsimdv2f dst, const PFMvec2 src)
 static inline void
 pfiVec2Copy_simd(PFIsimdvf_ptr restrict dst, const PFIsimdvf_ptr restrict src)
 {
-    memcpy(dst, src, sizeof(PFsimdv2f));
+    memcpy(dst, src, sizeof(PFIsimdv2f));
 }
 
 static inline void
@@ -1569,7 +1569,7 @@ pfiVec2Swap_simd(PFIsimdvf_ptr restrict a, PFIsimdvf_ptr restrict b)
 }
 
 static inline void
-pfiVec2Blend_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2, PFIsimdvf mask)
+pfiVec2Blend_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2, PFIsimdvf mask)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdBlendV_F32(v1[i], v2[i], mask);
@@ -1577,7 +1577,7 @@ pfiVec2Blend_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2, PFIsimd
 }
 
 static inline void
-pfiVec2BlendR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2f v2, PFIsimdvf mask)
+pfiVec2BlendR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2, PFIsimdvf mask)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdBlendV_F32(v1[i], v2[i], mask);
@@ -1585,7 +1585,7 @@ pfiVec2BlendR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv
 }
 
 static inline void
-pfiVec2Neg_simd(PFsimdv2f dst, const PFsimdv2f v)
+pfiVec2Neg_simd(PFIsimdv2f dst, const PFIsimdv2f v)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdNeg_F32(v[i]);
@@ -1593,7 +1593,7 @@ pfiVec2Neg_simd(PFsimdv2f dst, const PFsimdv2f v)
 }
 
 static inline void
-pfiVec2NegR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v)
+pfiVec2NegR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdNeg_F32(v[i]);
@@ -1601,7 +1601,7 @@ pfiVec2NegR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v)
 }
 
 static inline void
-pfiVec2Add_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2)
+pfiVec2Add_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdAdd_F32(v1[i], v2[i]);
@@ -1609,7 +1609,7 @@ pfiVec2Add_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2)
 }
 
 static inline void
-pfiVec2AddR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2f v2)
+pfiVec2AddR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdAdd_F32(v1[i], v2[i]);
@@ -1617,7 +1617,7 @@ pfiVec2AddR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2f
 }
 
 static inline void
-pfiVec2Sub_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2)
+pfiVec2Sub_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdSub_F32(v1[i], v2[i]);
@@ -1625,7 +1625,7 @@ pfiVec2Sub_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2)
 }
 
 static inline void
-pfiVec2SubR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2f v2)
+pfiVec2SubR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdSub_F32(v1[i], v2[i]);
@@ -1633,7 +1633,7 @@ pfiVec2SubR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2f
 }
 
 static inline void
-pfiVec2Mul_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2)
+pfiVec2Mul_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdMul_F32(v1[i], v2[i]);
@@ -1641,7 +1641,7 @@ pfiVec2Mul_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2)
 }
 
 static inline void
-pfiVec2MulR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2f v2)
+pfiVec2MulR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdMul_F32(v1[i], v2[i]);
@@ -1649,7 +1649,7 @@ pfiVec2MulR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2f
 }
 
 static inline void
-pfiVec2Div_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2)
+pfiVec2Div_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdDiv_F32(v1[i], v2[i]);
@@ -1657,7 +1657,7 @@ pfiVec2Div_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2)
 }
 
 static inline void
-pfiVec2DivR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2f v2)
+pfiVec2DivR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdDiv_F32(v1[i], v2[i]);
@@ -1665,7 +1665,7 @@ pfiVec2DivR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2f
 }
 
 static inline void
-pfiVec2Offset_simd(PFsimdv2f dst, const PFsimdv2f v, PFIsimdvf offset)
+pfiVec2Offset_simd(PFIsimdv2f dst, const PFIsimdv2f v, PFIsimdvf offset)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdAdd_F32(v[i], offset);
@@ -1673,7 +1673,7 @@ pfiVec2Offset_simd(PFsimdv2f dst, const PFsimdv2f v, PFIsimdvf offset)
 }
 
 static inline void
-pfiVec2OffsetR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v, PFIsimdvf offset)
+pfiVec2OffsetR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v, PFIsimdvf offset)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdAdd_F32(v[i], offset);
@@ -1681,7 +1681,7 @@ pfiVec2OffsetR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v, PFIsimdvf off
 }
 
 static inline void
-pfiVec2Scale_simd(PFsimdv2f dst, const PFsimdv2f v, PFIsimdvf scale)
+pfiVec2Scale_simd(PFIsimdv2f dst, const PFIsimdv2f v, PFIsimdvf scale)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdMul_F32(v[i], scale);
@@ -1689,7 +1689,7 @@ pfiVec2Scale_simd(PFsimdv2f dst, const PFsimdv2f v, PFIsimdvf scale)
 }
 
 static inline void
-pfiVec2ScaleR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v, PFIsimdvf scale)
+pfiVec2ScaleR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v, PFIsimdvf scale)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = pfiSimdMul_F32(v[i], scale);
@@ -1697,7 +1697,7 @@ pfiVec2ScaleR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v, PFIsimdvf scal
 }
 
 static inline void
-pfiVec2Normalize_simd(PFsimdv2f dst, const PFsimdv2f v)
+pfiVec2Normalize_simd(PFIsimdv2f dst, const PFIsimdv2f v)
 {
     // Calculate the sum of squares of elements
     PFIsimdvf squaredLength = pfiSimdAdd_F32(
@@ -1713,7 +1713,7 @@ pfiVec2Normalize_simd(PFsimdv2f dst, const PFsimdv2f v)
 }
 
 static inline void
-pfiVec2NormalizeR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v)
+pfiVec2NormalizeR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v)
 {
     // Calculate the sum of squares of elements
     PFIsimdvf squaredLength = pfiSimdAdd_F32(
@@ -1729,7 +1729,7 @@ pfiVec2NormalizeR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v)
 }
 
 static inline PFIsimdvf
-pfiVec2Length_simd(const PFsimdv2f v)
+pfiVec2Length_simd(const PFIsimdv2f v)
 {
     return pfiSimdSqrt_F32(pfiSimdAdd_F32(
         pfiSimdMul_F32(v[0], v[0]),
@@ -1737,7 +1737,7 @@ pfiVec2Length_simd(const PFsimdv2f v)
 }
 
 static inline PFIsimdvf
-pfiVec2LengthSq_simd(const PFsimdv2f v)
+pfiVec2LengthSq_simd(const PFIsimdv2f v)
 {
     return pfiSimdAdd_F32(
         pfiSimdMul_F32(v[0], v[0]),
@@ -1745,7 +1745,7 @@ pfiVec2LengthSq_simd(const PFsimdv2f v)
 }
 
 static inline PFIsimdvf
-pfiVec2Dot_simd(const PFsimdv2f v1, const PFsimdv2f v2)
+pfiVec2Dot_simd(const PFIsimdv2f v1, const PFIsimdv2f v2)
 {
     return pfiSimdAdd_F32(
         pfiSimdMul_F32(v1[0], v2[0]),
@@ -1753,7 +1753,7 @@ pfiVec2Dot_simd(const PFsimdv2f v1, const PFsimdv2f v2)
 }
 
 static inline PFIsimdvf
-pfiVec2Distance_simd(const PFsimdv2f v1, const PFsimdv2f v2)
+pfiVec2Distance_simd(const PFIsimdv2f v1, const PFIsimdv2f v2)
 {
     // Calculate the differences between corresponding elements of the vectors
     PFIsimdvf dt0 = pfiSimdSub_F32(v1[0], v2[0]);
@@ -1771,7 +1771,7 @@ pfiVec2Distance_simd(const PFsimdv2f v1, const PFsimdv2f v2)
 }
 
 static inline PFIsimdvf
-pfiVec2DistanceSq_simd(const PFsimdv2f v1, const PFsimdv2f v2)
+pfiVec2DistanceSq_simd(const PFIsimdv2f v1, const PFIsimdv2f v2)
 {
     // Calculate the differences between corresponding elements of the vectors
     PFIsimdvf dt0 = pfiSimdSub_F32(v1[0], v2[0]);
@@ -1786,7 +1786,7 @@ pfiVec2DistanceSq_simd(const PFsimdv2f v1, const PFsimdv2f v2)
 }
 
 static inline void
-pfiVec2Direction_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2)
+pfiVec2Direction_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2)
 {
     // Calculate the differences between the elements of the two vectors
     PFIsimdvf tmp0 = pfiSimdSub_F32(v1[0], v2[0]);
@@ -1804,7 +1804,7 @@ pfiVec2Direction_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2)
 }
 
 static inline void
-pfiVec2DirectionR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2f v2)
+pfiVec2DirectionR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2)
 {
     // Calculate the differences between the elements of the two vectors
     dst[0] = pfiSimdSub_F32(v1[0], v2[0]);
@@ -1822,14 +1822,14 @@ pfiVec2DirectionR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFs
 }
 
 static inline void
-pfiVec2Lerp_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2, PFIsimdvf t)
+pfiVec2Lerp_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2, PFIsimdvf t)
 {
     dst[0] = pfiSimdAdd_F32(v1[0], pfiSimdMul_F32(t, pfiSimdSub_F32(v2[0], v1[0])));
     dst[1] = pfiSimdAdd_F32(v1[1], pfiSimdMul_F32(t, pfiSimdSub_F32(v2[1], v1[1])));
 }
 
 static inline void
-pfiVec2LerpR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2f v2, PFIsimdvf t)
+pfiVec2LerpR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2, PFIsimdvf t)
 {
     // Calculate the difference (v2 - v1)
     PFIsimdvf diff0 = pfiSimdSub_F32(v2[0], v1[0]);
@@ -1845,7 +1845,7 @@ pfiVec2LerpR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2
 }
 
 static inline void
-pfiVec2BaryInterp_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2, const PFsimdv2f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
+pfiVec2BaryInterpSmooth_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         PFIsimdvf v1_w1 = pfiSimdMul_F32(v1[i], w1);
@@ -1856,7 +1856,7 @@ pfiVec2BaryInterp_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2, co
 }
 
 static inline void
-pfiVec2BaryInterpR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2f v2, const PFsimdv2f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
+pfiVec2BaryInterpSmoothR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         PFIsimdvf v1_w1 = pfiSimdMul_F32(v1[i], w1);
@@ -1867,7 +1867,7 @@ pfiVec2BaryInterpR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PF
 }
 
 static inline void
-pfiVec2BaryInterpV_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2, const PFsimdv2f v3, const PFsimdv3f w)
+pfiVec2BaryInterpSmoothV_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, const PFIsimdv3f w)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         PFIsimdvf v1_w1 = pfiSimdMul_F32(v1[i], w[0]);
@@ -1878,7 +1878,7 @@ pfiVec2BaryInterpV_simd(PFsimdv2f dst, const PFsimdv2f v1, const PFsimdv2f v2, c
 }
 
 static inline void
-pfiVec2BaryInterpVR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const PFsimdv2f v2, const PFsimdv2f v3, const PFsimdv3f w)
+pfiVec2BaryInterpSmoothVR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, const PFIsimdv3f w)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         PFIsimdvf v1_w1 = pfiSimdMul_F32(v1[i], w[0]);
@@ -1889,7 +1889,99 @@ pfiVec2BaryInterpVR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v1, const P
 }
 
 static inline void
-pfiVec2Transform_simd(PFsimdv2f dst, const PFsimdv2f v, const float mat[16])
+pfiVec2BaryInterpFlat_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
+{
+    // Compare the weights to find the index of the maximum weight
+    PFIsimdvf maxWeight = pfiSimdMax_F32(w1, pfiSimdMax_F32(w2, w3));
+    
+    // Compare maxWeight to each weight to find which one is the max
+    PFIsimdvf mask1 = pfiSimdCmpEQ_F32(maxWeight, w1);
+    PFIsimdvf mask2 = pfiSimdCmpEQ_F32(maxWeight, w2);
+    PFIsimdvf mask3 = pfiSimdCmpEQ_F32(maxWeight, w3);
+
+    // Use masks to select the corresponding color
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        dst[i] = pfiSimdOr_F32(
+            pfiSimdAnd_F32(mask1, v1[i]),
+            pfiSimdOr_F32(
+                pfiSimdAnd_F32(mask2, v2[i]),
+                pfiSimdAnd_F32(mask3, v3[i])
+            )
+        );
+    }
+}
+
+static inline void
+pfiVec2BaryInterpFlatR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
+{
+    // Compare the weights to find the index of the maximum weight
+    PFIsimdvf maxWeight = pfiSimdMax_F32(w1, pfiSimdMax_F32(w2, w3));
+    
+    // Compare maxWeight to each weight to find which one is the max
+    PFIsimdvf mask1 = pfiSimdCmpEQ_F32(maxWeight, w1);
+    PFIsimdvf mask2 = pfiSimdCmpEQ_F32(maxWeight, w2);
+    PFIsimdvf mask3 = pfiSimdCmpEQ_F32(maxWeight, w3);
+
+    // Use masks to select the corresponding color
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        dst[i] = pfiSimdOr_F32(
+            pfiSimdAnd_F32(mask1, v1[i]),
+            pfiSimdOr_F32(
+                pfiSimdAnd_F32(mask2, v2[i]),
+                pfiSimdAnd_F32(mask3, v3[i])
+            )
+        );
+    }
+}
+
+static inline void
+pfiVec2BaryInterpFlatV_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, const PFIsimdv3f w)
+{
+    // Compare the weights to find the index of the maximum weight
+    PFIsimdvf maxWeight = pfiSimdMax_F32(w[0], pfiSimdMax_F32(w[1], w[2]));
+    
+    // Compare maxWeight to each weight to find which one is the max
+    PFIsimdvf mask1 = pfiSimdCmpEQ_F32(maxWeight, w[0]);
+    PFIsimdvf mask2 = pfiSimdCmpEQ_F32(maxWeight, w[1]);
+    PFIsimdvf mask3 = pfiSimdCmpEQ_F32(maxWeight, w[2]);
+
+    // Use masks to select the corresponding color
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        dst[i] = pfiSimdOr_F32(
+            pfiSimdAnd_F32(mask1, v1[i]),
+            pfiSimdOr_F32(
+                pfiSimdAnd_F32(mask2, v2[i]),
+                pfiSimdAnd_F32(mask3, v3[i])
+            )
+        );
+    }
+}
+
+static inline void
+pfiVec2BaryInterpFlatVR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, const PFIsimdv3f w)
+{
+    // Compare the weights to find the index of the maximum weight
+    PFIsimdvf maxWeight = pfiSimdMax_F32(w[0], pfiSimdMax_F32(w[1], w[2]));
+    
+    // Compare maxWeight to each weight to find which one is the max
+    PFIsimdvf mask1 = pfiSimdCmpEQ_F32(maxWeight, w[0]);
+    PFIsimdvf mask2 = pfiSimdCmpEQ_F32(maxWeight, w[1]);
+    PFIsimdvf mask3 = pfiSimdCmpEQ_F32(maxWeight, w[2]);
+
+    // Use masks to select the corresponding color
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        dst[i] = pfiSimdOr_F32(
+            pfiSimdAnd_F32(mask1, v1[i]),
+            pfiSimdOr_F32(
+                pfiSimdAnd_F32(mask2, v2[i]),
+                pfiSimdAnd_F32(mask3, v3[i])
+            )
+        );
+    }
+}
+
+static inline void
+pfiVec2Transform_simd(PFIsimdv2f dst, const PFIsimdv2f v, const float mat[16])
 {
     // Load array elements into SIMD registers
     PFIsimdvf mat_col0 = pfiSimdSet1_F32(mat[0]);
@@ -1908,7 +2000,7 @@ pfiVec2Transform_simd(PFsimdv2f dst, const PFsimdv2f v, const float mat[16])
 }
 
 static inline void
-pfiVec2TransformR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v, const float mat[16])
+pfiVec2TransformR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v, const float mat[16])
 {
     // Load array elements into SIMD registers
     PFIsimdvf mat_col0 = pfiSimdSet1_F32(mat[0]);
@@ -1924,7 +2016,7 @@ pfiVec2TransformR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v, const floa
 }
 
 static inline void
-pfiVec2TransformWT_simd(PFsimdv2f dst, const PFsimdv2f v, float wTranslation, const float mat[16])
+pfiVec2TransformWT_simd(PFIsimdv2f dst, const PFIsimdv2f v, float wTranslation, const float mat[16])
 {
     // Load array elements into SIMD registers
     PFIsimdvf mat_col0 = pfiSimdSet1_F32(mat[0]);
@@ -1950,7 +2042,7 @@ pfiVec2TransformWT_simd(PFsimdv2f dst, const PFsimdv2f v, float wTranslation, co
 }
 
 static inline void
-pfiVec2TransformWTR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v, float wTranslation, const float mat[16])
+pfiVec2TransformWTR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v, float wTranslation, const float mat[16])
 {
     // Load array elements into SIMD registers
     PFIsimdvf mat_col0 = pfiSimdSet1_F32(mat[0]);
@@ -1975,7 +2067,7 @@ pfiVec2TransformWTR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv2f v, float wT
 /* 3D SIMD Vector function definitions */
 
 static inline void
-pfiVec3Zero_simd(PFsimdv3f dst)
+pfiVec3Zero_simd(PFIsimdv3f dst)
 {
     dst[0] = pfiSimdSetZero_F32();
     dst[1] = pfiSimdSetZero_F32();
@@ -1983,7 +2075,7 @@ pfiVec3Zero_simd(PFsimdv3f dst)
 }
 
 static inline void
-pfiVec3One_simd(PFsimdv3f dst, float v)
+pfiVec3One_simd(PFIsimdv3f dst, float v)
 {
     dst[0] = pfiSimdSet1_F32(v);
     dst[1] = pfiSimdSet1_F32(v);
@@ -1991,7 +2083,7 @@ pfiVec3One_simd(PFsimdv3f dst, float v)
 }
 
 static inline void
-pfiVec3Set_simd(PFsimdv3f dst, float x, float y, float z)
+pfiVec3Set_simd(PFIsimdv3f dst, float x, float y, float z)
 {
     dst[0] = pfiSimdSet1_F32(x);
     dst[1] = pfiSimdSet1_F32(y);
@@ -1999,7 +2091,7 @@ pfiVec3Set_simd(PFsimdv3f dst, float x, float y, float z)
 }
 
 static inline void
-pfiVec3Load_simd(PFsimdv3f dst, const PFMvec3 src)
+pfiVec3Load_simd(PFIsimdv3f dst, const PFMvec3 src)
 {
     dst[0] = pfiSimdSet1_F32(src[0]);
     dst[1] = pfiSimdSet1_F32(src[1]);
@@ -2009,7 +2101,7 @@ pfiVec3Load_simd(PFsimdv3f dst, const PFMvec3 src)
 static inline void
 pfiVec3Copy_simd(PFIsimdvf_ptr restrict dst, const PFIsimdvf_ptr restrict src)
 {
-    memcpy(dst, src, sizeof(PFsimdv3f));
+    memcpy(dst, src, sizeof(PFIsimdv3f));
 }
 
 static inline void
@@ -2023,7 +2115,7 @@ pfiVec3Swap_simd(PFIsimdvf_ptr restrict a, PFIsimdvf_ptr restrict b)
 }
 
 static inline void
-pfiVec3Blend_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2, PFIsimdvf mask)
+pfiVec3Blend_simd(PFIsimdv3f dst, const PFIsimdv3f v1, const PFIsimdv3f v2, PFIsimdvf mask)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdBlendV_F32(v1[i], v2[i], mask);
@@ -2031,7 +2123,7 @@ pfiVec3Blend_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2, PFIsimd
 }
 
 static inline void
-pfiVec3BlendR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f v2, PFIsimdvf mask)
+pfiVec3BlendR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v1, const PFIsimdv3f v2, PFIsimdvf mask)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdBlendV_F32(v1[i], v2[i], mask);
@@ -2039,7 +2131,7 @@ pfiVec3BlendR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv
 }
 
 static inline void
-pfiVec3Neg_simd(PFsimdv3f dst, const PFsimdv3f v)
+pfiVec3Neg_simd(PFIsimdv3f dst, const PFIsimdv3f v)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdNeg_F32(v[i]);
@@ -2047,7 +2139,7 @@ pfiVec3Neg_simd(PFsimdv3f dst, const PFsimdv3f v)
 }
 
 static inline void
-pfiVec3NegR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v)
+pfiVec3NegR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdNeg_F32(v[i]);
@@ -2055,7 +2147,7 @@ pfiVec3NegR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v)
 }
 
 static inline void
-pfiVec3Add_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3Add_simd(PFIsimdv3f dst, const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdAdd_F32(v1[i], v2[i]);
@@ -2063,7 +2155,7 @@ pfiVec3Add_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2)
 }
 
 static inline void
-pfiVec3AddR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3AddR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdAdd_F32(v1[i], v2[i]);
@@ -2071,7 +2163,7 @@ pfiVec3AddR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f
 }
 
 static inline void
-pfiVec3Sub_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3Sub_simd(PFIsimdv3f dst, const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdSub_F32(v1[i], v2[i]);
@@ -2079,7 +2171,7 @@ pfiVec3Sub_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2)
 }
 
 static inline void
-pfiVec3SubR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3SubR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdSub_F32(v1[i], v2[i]);
@@ -2087,7 +2179,7 @@ pfiVec3SubR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f
 }
 
 static inline void
-pfiVec3Mul_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3Mul_simd(PFIsimdv3f dst, const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdMul_F32(v1[i], v2[i]);
@@ -2095,7 +2187,7 @@ pfiVec3Mul_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2)
 }
 
 static inline void
-pfiVec3MulR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3MulR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdMul_F32(v1[i], v2[i]);
@@ -2103,7 +2195,7 @@ pfiVec3MulR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f
 }
 
 static inline void
-pfiVec3Div_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3Div_simd(PFIsimdv3f dst, const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdDiv_F32(v1[i], v2[i]);
@@ -2111,7 +2203,7 @@ pfiVec3Div_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2)
 }
 
 static inline void
-pfiVec3DivR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3DivR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdDiv_F32(v1[i], v2[i]);
@@ -2119,7 +2211,7 @@ pfiVec3DivR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f
 }
 
 static inline void
-pfiVec3Offset_simd(PFsimdv3f dst, const PFsimdv3f v, PFIsimdvf offset)
+pfiVec3Offset_simd(PFIsimdv3f dst, const PFIsimdv3f v, PFIsimdvf offset)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdAdd_F32(v[i], offset);
@@ -2127,7 +2219,7 @@ pfiVec3Offset_simd(PFsimdv3f dst, const PFsimdv3f v, PFIsimdvf offset)
 }
 
 static inline void
-pfiVec3OffsetR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v, PFIsimdvf offset)
+pfiVec3OffsetR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v, PFIsimdvf offset)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdAdd_F32(v[i], offset);
@@ -2135,7 +2227,7 @@ pfiVec3OffsetR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v, PFIsimdvf off
 }
 
 static inline void
-pfiVec3Scale_simd(PFsimdv3f dst, const PFsimdv3f v, PFIsimdvf scale)
+pfiVec3Scale_simd(PFIsimdv3f dst, const PFIsimdv3f v, PFIsimdvf scale)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdMul_F32(v[i], scale);
@@ -2143,7 +2235,7 @@ pfiVec3Scale_simd(PFsimdv3f dst, const PFsimdv3f v, PFIsimdvf scale)
 }
 
 static inline void
-pfiVec3ScaleR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v, PFIsimdvf scale)
+pfiVec3ScaleR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v, PFIsimdvf scale)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdMul_F32(v[i], scale);
@@ -2151,7 +2243,7 @@ pfiVec3ScaleR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v, PFIsimdvf scal
 }
 
 static inline void
-pfiVec3Normalize_simd(PFsimdv3f dst, const PFsimdv3f v)
+pfiVec3Normalize_simd(PFIsimdv3f dst, const PFIsimdv3f v)
 {
     // Calculate the sum of squares of elements
     PFIsimdvf squaredLength = pfiSimdAdd_F32(
@@ -2171,7 +2263,7 @@ pfiVec3Normalize_simd(PFsimdv3f dst, const PFsimdv3f v)
 }
 
 static inline void
-pfiVec3NormalizeR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v)
+pfiVec3NormalizeR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v)
 {
     // Calculate the sum of squares of elements
     PFIsimdvf squaredLength = pfiSimdAdd_F32(
@@ -2191,7 +2283,7 @@ pfiVec3NormalizeR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v)
 }
 
 static inline PFIsimdvf
-pfiVec3Length_simd(const PFsimdv3f v)
+pfiVec3Length_simd(const PFIsimdv3f v)
 {
     PFIsimdvf squaredLength = pfiSimdAdd_F32(
         pfiSimdMul_F32(v[0], v[0]),
@@ -2204,7 +2296,7 @@ pfiVec3Length_simd(const PFsimdv3f v)
 }
 
 static inline PFIsimdvf
-pfiVec3LengthSq_simd(const PFsimdv3f v)
+pfiVec3LengthSq_simd(const PFIsimdv3f v)
 {
     PFIsimdvf squaredLength = pfiSimdAdd_F32(
         pfiSimdMul_F32(v[0], v[0]),
@@ -2215,7 +2307,7 @@ pfiVec3LengthSq_simd(const PFsimdv3f v)
 }
 
 static inline PFIsimdvf
-pfiVec3Dot_simd(const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3Dot_simd(const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     PFIsimdvf dotProduct = pfiSimdAdd_F32(
         pfiSimdMul_F32(v1[0], v2[0]),
@@ -2226,9 +2318,9 @@ pfiVec3Dot_simd(const PFsimdv3f v1, const PFsimdv3f v2)
 }
 
 static inline void
-pfiVec3Cross_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3Cross_simd(PFIsimdv3f dst, const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
-    PFsimdv3f tmp = { 0 };
+    PFIsimdv3f tmp = { 0 };
 
     tmp[0] = pfiSimdSub_F32(
         pfiSimdMul_F32(v1[1], v2[2]),
@@ -2242,11 +2334,11 @@ pfiVec3Cross_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2)
         pfiSimdMul_F32(v1[0], v2[1]),
         pfiSimdMul_F32(v1[1], v2[0]));
 
-    memcpy(dst, tmp, sizeof(PFsimdv3f));
+    memcpy(dst, tmp, sizeof(PFIsimdv3f));
 }
 
 static inline void
-pfiVec3CrossR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3CrossR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     dst[0] = pfiSimdSub_F32(
         pfiSimdMul_F32(v1[1], v2[2]),
@@ -2262,7 +2354,7 @@ pfiVec3CrossR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv
 }
 
 static inline PFIsimdvf
-pfiVec3Distance_simd(const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3Distance_simd(const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     // Calculate the differences between corresponding elements of the vectors
     PFIsimdvf dt0 = pfiSimdSub_F32(v1[0], v2[0]);
@@ -2283,7 +2375,7 @@ pfiVec3Distance_simd(const PFsimdv3f v1, const PFsimdv3f v2)
 }
 
 static inline PFIsimdvf
-pfiVec3DistanceSq_simd(const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3DistanceSq_simd(const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     // Calculate the differences between corresponding elements of the vectors
     PFIsimdvf dt0 = pfiSimdSub_F32(v1[0], v2[0]);
@@ -2304,7 +2396,7 @@ pfiVec3DistanceSq_simd(const PFsimdv3f v1, const PFsimdv3f v2)
 }
 
 static inline void
-pfiVec3Direction_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3Direction_simd(PFIsimdv3f dst, const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     // Calculate the differences between the elements of the two vectors
     PFIsimdvf tmp0 = pfiSimdSub_F32(v1[0], v2[0]);
@@ -2328,7 +2420,7 @@ pfiVec3Direction_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2)
 }
 
 static inline void
-pfiVec3DirectionR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f v2)
+pfiVec3DirectionR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v1, const PFIsimdv3f v2)
 {
     // Calculate the differences between the elements of the two vectors
     dst[0] = pfiSimdSub_F32(v1[0], v2[0]);
@@ -2352,7 +2444,7 @@ pfiVec3DirectionR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFs
 }
 
 static inline void
-pfiVec3Lerp_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2, PFIsimdvf t)
+pfiVec3Lerp_simd(PFIsimdv3f dst, const PFIsimdv3f v1, const PFIsimdv3f v2, PFIsimdvf t)
 {
     dst[0] = pfiSimdAdd_F32(v1[0], pfiSimdMul_F32(t, pfiSimdSub_F32(v2[0], v1[0])));
     dst[1] = pfiSimdAdd_F32(v1[1], pfiSimdMul_F32(t, pfiSimdSub_F32(v2[1], v1[1])));
@@ -2360,7 +2452,7 @@ pfiVec3Lerp_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2, PFIsimdv
 }
 
 static inline void
-pfiVec3LerpR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f v2, PFIsimdvf t)
+pfiVec3LerpR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v1, const PFIsimdv3f v2, PFIsimdvf t)
 {
     dst[0] = pfiSimdAdd_F32(v1[0], pfiSimdMul_F32(t, pfiSimdSub_F32(v2[0], v1[0])));
     dst[1] = pfiSimdAdd_F32(v1[1], pfiSimdMul_F32(t, pfiSimdSub_F32(v2[1], v1[1])));
@@ -2368,7 +2460,7 @@ pfiVec3LerpR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3
 }
 
 static inline void
-pfiVec3BaryInterp_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2, const PFsimdv3f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
+pfiVec3BaryInterpSmooth_simd(PFIsimdv3f dst, const PFIsimdv3f v1, const PFIsimdv3f v2, const PFIsimdv3f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         PFIsimdvf v1_w1 = pfiSimdMul_F32(v1[i], w1);
@@ -2379,7 +2471,7 @@ pfiVec3BaryInterp_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2, co
 }
 
 static inline void
-pfiVec3BaryInterpR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f v2, const PFsimdv3f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
+pfiVec3BaryInterpSmoothR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v1, const PFIsimdv3f v2, const PFIsimdv3f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         PFIsimdvf v1_w1 = pfiSimdMul_F32(v1[i], w1);
@@ -2390,7 +2482,7 @@ pfiVec3BaryInterpR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PF
 }
 
 static inline void
-pfiVec3BaryInterpV_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2, const PFsimdv3f v3, const PFsimdv3f w)
+pfiVec3BaryInterpSmoothV_simd(PFIsimdv3f dst, const PFIsimdv3f v1, const PFIsimdv3f v2, const PFIsimdv3f v3, const PFIsimdv3f w)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         PFIsimdvf v1_w1 = pfiSimdMul_F32(v1[i], w[0]);
@@ -2401,7 +2493,7 @@ pfiVec3BaryInterpV_simd(PFsimdv3f dst, const PFsimdv3f v1, const PFsimdv3f v2, c
 }
 
 static inline void
-pfiVec3BaryInterpVR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const PFsimdv3f v2, const PFsimdv3f v3, const PFsimdv3f w)
+pfiVec3BaryInterpSmoothVR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v1, const PFIsimdv3f v2, const PFIsimdv3f v3, const PFIsimdv3f w)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         PFIsimdvf v1_w1 = pfiSimdMul_F32(v1[i], w[0]);
@@ -2412,7 +2504,99 @@ pfiVec3BaryInterpVR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v1, const P
 }
 
 static inline void
-pfiVec3Transform_simd(PFsimdv3f dst, const PFsimdv3f v, const float mat[16])
+pfiVec3BaryInterpFlat_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
+{
+    // Compare the weights to find the index of the maximum weight
+    PFIsimdvf maxWeight = pfiSimdMax_F32(w1, pfiSimdMax_F32(w2, w3));
+    
+    // Compare maxWeight to each weight to find which one is the max
+    PFIsimdvf mask1 = pfiSimdCmpEQ_F32(maxWeight, w1);
+    PFIsimdvf mask2 = pfiSimdCmpEQ_F32(maxWeight, w2);
+    PFIsimdvf mask3 = pfiSimdCmpEQ_F32(maxWeight, w3);
+
+    // Use masks to select the corresponding color
+    for (int_fast8_t i = 0; i < 3; ++i) {
+        dst[i] = pfiSimdOr_F32(
+            pfiSimdAnd_F32(mask1, v1[i]),
+            pfiSimdOr_F32(
+                pfiSimdAnd_F32(mask2, v2[i]),
+                pfiSimdAnd_F32(mask3, v3[i])
+            )
+        );
+    }
+}
+
+static inline void
+pfiVec3BaryInterpFlatR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
+{
+    // Compare the weights to find the index of the maximum weight
+    PFIsimdvf maxWeight = pfiSimdMax_F32(w1, pfiSimdMax_F32(w2, w3));
+    
+    // Compare maxWeight to each weight to find which one is the max
+    PFIsimdvf mask1 = pfiSimdCmpEQ_F32(maxWeight, w1);
+    PFIsimdvf mask2 = pfiSimdCmpEQ_F32(maxWeight, w2);
+    PFIsimdvf mask3 = pfiSimdCmpEQ_F32(maxWeight, w3);
+
+    // Use masks to select the corresponding color
+    for (int_fast8_t i = 0; i < 3; ++i) {
+        dst[i] = pfiSimdOr_F32(
+            pfiSimdAnd_F32(mask1, v1[i]),
+            pfiSimdOr_F32(
+                pfiSimdAnd_F32(mask2, v2[i]),
+                pfiSimdAnd_F32(mask3, v3[i])
+            )
+        );
+    }
+}
+
+static inline void
+pfiVec3BaryInterpFlatV_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, const PFIsimdv3f w)
+{
+    // Compare the weights to find the index of the maximum weight
+    PFIsimdvf maxWeight = pfiSimdMax_F32(w[0], pfiSimdMax_F32(w[1], w[2]));
+    
+    // Compare maxWeight to each weight to find which one is the max
+    PFIsimdvf mask1 = pfiSimdCmpEQ_F32(maxWeight, w[0]);
+    PFIsimdvf mask2 = pfiSimdCmpEQ_F32(maxWeight, w[1]);
+    PFIsimdvf mask3 = pfiSimdCmpEQ_F32(maxWeight, w[2]);
+
+    // Use masks to select the corresponding color
+    for (int_fast8_t i = 0; i < 3; ++i) {
+        dst[i] = pfiSimdOr_F32(
+            pfiSimdAnd_F32(mask1, v1[i]),
+            pfiSimdOr_F32(
+                pfiSimdAnd_F32(mask2, v2[i]),
+                pfiSimdAnd_F32(mask3, v3[i])
+            )
+        );
+    }
+}
+
+static inline void
+pfiVec3BaryInterpFlatVR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, const PFIsimdv3f w)
+{
+    // Compare the weights to find the index of the maximum weight
+    PFIsimdvf maxWeight = pfiSimdMax_F32(w[0], pfiSimdMax_F32(w[1], w[2]));
+    
+    // Compare maxWeight to each weight to find which one is the max
+    PFIsimdvf mask1 = pfiSimdCmpEQ_F32(maxWeight, w[0]);
+    PFIsimdvf mask2 = pfiSimdCmpEQ_F32(maxWeight, w[1]);
+    PFIsimdvf mask3 = pfiSimdCmpEQ_F32(maxWeight, w[2]);
+
+    // Use masks to select the corresponding color
+    for (int_fast8_t i = 0; i < 3; ++i) {
+        dst[i] = pfiSimdOr_F32(
+            pfiSimdAnd_F32(mask1, v1[i]),
+            pfiSimdOr_F32(
+                pfiSimdAnd_F32(mask2, v2[i]),
+                pfiSimdAnd_F32(mask3, v3[i])
+            )
+        );
+    }
+}
+
+static inline void
+pfiVec3Transform_simd(PFIsimdv3f dst, const PFIsimdv3f v, const float mat[16])
 {
     // Charger les éléments de la matrice dans les registres SIMD
     PFIsimdvf mat_col0 = pfiSimdSet1_F32(mat[0]);
@@ -2460,7 +2644,7 @@ pfiVec3Transform_simd(PFsimdv3f dst, const PFsimdv3f v, const float mat[16])
 }
 
 static inline void
-pfiVec3TransformR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v, const float mat[16])
+pfiVec3TransformR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v, const float mat[16])
 {
     PFIsimdvf mat_col0 = pfiSimdSet1_F32(mat[0]);
     PFIsimdvf mat_col1 = pfiSimdSet1_F32(mat[1]);
@@ -2501,7 +2685,7 @@ pfiVec3TransformR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v, const floa
 }
 
 static inline void
-pfiVec3TransformWT_simd(PFsimdv3f dst, const PFsimdv3f v, float wTranslation, const float mat[16])
+pfiVec3TransformWT_simd(PFIsimdv3f dst, const PFIsimdv3f v, float wTranslation, const float mat[16])
 {
     PFIsimdvf mat_col0 = pfiSimdSet1_F32(mat[0]);
     PFIsimdvf mat_col1 = pfiSimdSet1_F32(mat[1]);
@@ -2548,7 +2732,7 @@ pfiVec3TransformWT_simd(PFsimdv3f dst, const PFsimdv3f v, float wTranslation, co
 }
 
 static inline void
-pfiVec3TransformWTR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v, float wTranslation, const float mat[16])
+pfiVec3TransformWTR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f v, float wTranslation, const float mat[16])
 {
     PFIsimdvf mat_col0 = pfiSimdSet1_F32(mat[0]);
     PFIsimdvf mat_col1 = pfiSimdSet1_F32(mat[1]);
@@ -2591,7 +2775,7 @@ pfiVec3TransformWTR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f v, float wT
 }
 
 static inline void
-pfiVec3Reflect_simd(PFsimdv3f dst, const PFsimdv3f incident, const PFsimdv3f normal)
+pfiVec3Reflect_simd(PFIsimdv3f dst, const PFIsimdv3f incident, const PFIsimdv3f normal)
 {
     PFIsimdvf dotProduct = pfiSimdAdd_F32(
         pfiSimdAdd_F32(
@@ -2613,7 +2797,7 @@ pfiVec3Reflect_simd(PFsimdv3f dst, const PFsimdv3f incident, const PFsimdv3f nor
 }
 
 static inline void
-pfiVec3ReflectR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f incident, const PFsimdv3f normal)
+pfiVec3ReflectR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv3f incident, const PFIsimdv3f normal)
 {
     PFIsimdvf dotProduct = pfiSimdAdd_F32(
         pfiSimdAdd_F32(
@@ -2633,7 +2817,7 @@ pfiVec3ReflectR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv3f incident, const
 /* 4D SIMD Vector function definitions */
 
 static inline void
-pfiVec4Zero_simd(PFsimdv4f dst)
+pfiVec4Zero_simd(PFIsimdv4f dst)
 {
     dst[0] = pfiSimdSetZero_F32();
     dst[1] = pfiSimdSetZero_F32();
@@ -2642,7 +2826,7 @@ pfiVec4Zero_simd(PFsimdv4f dst)
 }
 
 static inline void
-pfiVec4One_simd(PFsimdv4f dst, float v)
+pfiVec4One_simd(PFIsimdv4f dst, float v)
 {
     dst[0] = pfiSimdSet1_F32(v);
     dst[1] = pfiSimdSet1_F32(v);
@@ -2651,7 +2835,7 @@ pfiVec4One_simd(PFsimdv4f dst, float v)
 }
 
 static inline void
-pfiVec4Set_simd(PFsimdv4f dst, float x, float y, float z, float w)
+pfiVec4Set_simd(PFIsimdv4f dst, float x, float y, float z, float w)
 {
     dst[0] = pfiSimdSet1_F32(x);
     dst[1] = pfiSimdSet1_F32(y);
@@ -2660,7 +2844,7 @@ pfiVec4Set_simd(PFsimdv4f dst, float x, float y, float z, float w)
 }
 
 static inline void
-pfiVec4Load_simd(PFsimdv4f dst, const PFMvec4 src)
+pfiVec4Load_simd(PFIsimdv4f dst, const PFMvec4 src)
 {
     dst[0] = pfiSimdSet1_F32(src[0]);
     dst[1] = pfiSimdSet1_F32(src[1]);
@@ -2671,7 +2855,7 @@ pfiVec4Load_simd(PFsimdv4f dst, const PFMvec4 src)
 static inline void
 pfiVec4Copy_simd(PFIsimdvf_ptr restrict dst, const PFIsimdvf_ptr restrict src)
 {
-    memcpy(dst, src, sizeof(PFsimdv4f));
+    memcpy(dst, src, sizeof(PFIsimdv4f));
 }
 
 static inline void
@@ -2685,7 +2869,7 @@ pfiVec4Swap_simd(PFIsimdvf_ptr restrict a, PFIsimdvf_ptr restrict b)
 }
 
 static inline void
-pfiVec4Blend_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2, PFIsimdvf mask)
+pfiVec4Blend_simd(PFIsimdv4f dst, const PFIsimdv4f v1, const PFIsimdv4f v2, PFIsimdvf mask)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         dst[i] = pfiSimdBlendV_F32(v1[i], v2[i], mask);
@@ -2693,7 +2877,7 @@ pfiVec4Blend_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2, PFIsimd
 }
 
 static inline void
-pfiVec4BlendR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv4f v2, PFIsimdvf mask)
+pfiVec4BlendR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv4f v1, const PFIsimdv4f v2, PFIsimdvf mask)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         dst[i] = pfiSimdBlendV_F32(v1[i], v2[i], mask);
@@ -2701,7 +2885,7 @@ pfiVec4BlendR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv
 }
 
 static inline void
-pfiVec4Neg_simd(PFsimdv4f dst, const PFsimdv4f v)
+pfiVec4Neg_simd(PFIsimdv4f dst, const PFIsimdv4f v)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         dst[i] = pfiSimdNeg_F32(v[i]);
@@ -2709,7 +2893,7 @@ pfiVec4Neg_simd(PFsimdv4f dst, const PFsimdv4f v)
 }
 
 static inline void
-pfiVec4NegR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v)
+pfiVec4NegR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv4f v)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         dst[i] = pfiSimdNeg_F32(v[i]);
@@ -2717,7 +2901,7 @@ pfiVec4NegR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v)
 }
 
 static inline void
-pfiVec4Add_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2)
+pfiVec4Add_simd(PFIsimdv4f dst, const PFIsimdv4f v1, const PFIsimdv4f v2)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         dst[i] = pfiSimdAdd_F32(v1[i], v2[i]);
@@ -2725,7 +2909,7 @@ pfiVec4Add_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2)
 }
 
 static inline void
-pfiVec4AddR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv4f v2)
+pfiVec4AddR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv4f v1, const PFIsimdv4f v2)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         dst[i] = pfiSimdAdd_F32(v1[i], v2[i]);
@@ -2733,7 +2917,7 @@ pfiVec4AddR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv4f
 }
 
 static inline void
-pfiVec4Sub_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2)
+pfiVec4Sub_simd(PFIsimdv4f dst, const PFIsimdv4f v1, const PFIsimdv4f v2)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         dst[i] = pfiSimdSub_F32(v1[i], v2[i]);
@@ -2741,7 +2925,7 @@ pfiVec4Sub_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2)
 }
 
 static inline void
-pfiVec4SubR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv4f v2)
+pfiVec4SubR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv4f v1, const PFIsimdv4f v2)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         dst[i] = pfiSimdSub_F32(v1[i], v2[i]);
@@ -2749,7 +2933,7 @@ pfiVec4SubR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv4f
 }
 
 static inline void
-pfiVec4Mul_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2)
+pfiVec4Mul_simd(PFIsimdv4f dst, const PFIsimdv4f v1, const PFIsimdv4f v2)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         dst[i] = pfiSimdMul_F32(v1[i], v2[i]);
@@ -2757,7 +2941,7 @@ pfiVec4Mul_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2)
 }
 
 static inline void
-pfiVec4MulR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv4f v2)
+pfiVec4MulR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv4f v1, const PFIsimdv4f v2)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         dst[i] = pfiSimdMul_F32(v1[i], v2[i]);
@@ -2765,7 +2949,7 @@ pfiVec4MulR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv4f
 }
 
 static inline void
-pfiVec4Div_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2)
+pfiVec4Div_simd(PFIsimdv4f dst, const PFIsimdv4f v1, const PFIsimdv4f v2)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         dst[i] = pfiSimdDiv_F32(v1[i], v2[i]);
@@ -2773,7 +2957,7 @@ pfiVec4Div_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2)
 }
 
 static inline void
-pfiVec4DivR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv4f v2)
+pfiVec4DivR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv4f v1, const PFIsimdv4f v2)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         dst[i] = pfiSimdDiv_F32(v1[i], v2[i]);
@@ -2781,7 +2965,7 @@ pfiVec4DivR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv4f
 }
 
 static inline void
-pfiVec4Offset_simd(PFsimdv4f dst, const PFsimdv4f v, PFIsimdvf offset)
+pfiVec4Offset_simd(PFIsimdv4f dst, const PFIsimdv4f v, PFIsimdvf offset)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdAdd_F32(v[i], offset);
@@ -2789,7 +2973,7 @@ pfiVec4Offset_simd(PFsimdv4f dst, const PFsimdv4f v, PFIsimdvf offset)
 }
 
 static inline void
-pfiVec4OffsetR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v, PFIsimdvf offset)
+pfiVec4OffsetR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv4f v, PFIsimdvf offset)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdAdd_F32(v[i], offset);
@@ -2797,7 +2981,7 @@ pfiVec4OffsetR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v, PFIsimdvf off
 }
 
 static inline void
-pfiVec4Scale_simd(PFsimdv4f dst, const PFsimdv4f v, PFIsimdvf scale)
+pfiVec4Scale_simd(PFIsimdv4f dst, const PFIsimdv4f v, PFIsimdvf scale)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdMul_F32(v[i], scale);
@@ -2805,7 +2989,7 @@ pfiVec4Scale_simd(PFsimdv4f dst, const PFsimdv4f v, PFIsimdvf scale)
 }
 
 static inline void
-pfiVec4ScaleR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v, PFIsimdvf scale)
+pfiVec4ScaleR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv4f v, PFIsimdvf scale)
 {
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = pfiSimdMul_F32(v[i], scale);
@@ -2813,7 +2997,7 @@ pfiVec4ScaleR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v, PFIsimdvf scal
 }
 
 static inline void
-pfiVec4Normalize_simd(PFsimdv4f dst, const PFsimdv4f v)
+pfiVec4Normalize_simd(PFIsimdv4f dst, const PFIsimdv4f v)
 {
     // Calculate the sum of squares of elements
     PFIsimdvf squaredLength = pfiSimdAdd_F32(
@@ -2837,7 +3021,7 @@ pfiVec4Normalize_simd(PFsimdv4f dst, const PFsimdv4f v)
 }
 
 static inline void
-pfiVec4NormalizeR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v)
+pfiVec4NormalizeR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv4f v)
 {
     // Calculate the sum of squares of elements
     PFIsimdvf squaredLength = pfiSimdAdd_F32(
@@ -2861,7 +3045,7 @@ pfiVec4NormalizeR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v)
 }
 
 static inline PFIsimdvf
-pfiVec4Length_simd(const PFsimdv4f v)
+pfiVec4Length_simd(const PFIsimdv4f v)
 {
     PFIsimdvf squaredLength = pfiSimdAdd_F32(
         pfiSimdMul_F32(v[0], v[0]),
@@ -2877,7 +3061,7 @@ pfiVec4Length_simd(const PFsimdv4f v)
 }
 
 static inline PFIsimdvf
-pfiVec4LengthSq_simd(const PFsimdv4f v)
+pfiVec4LengthSq_simd(const PFIsimdv4f v)
 {
     PFIsimdvf squaredLength = pfiSimdAdd_F32(
         pfiSimdMul_F32(v[0], v[0]),
@@ -2891,7 +3075,7 @@ pfiVec4LengthSq_simd(const PFsimdv4f v)
 }
 
 static inline PFIsimdvf
-pfiVec4Dot_simd(const PFsimdv4f v1, const PFsimdv4f v2)
+pfiVec4Dot_simd(const PFIsimdv4f v1, const PFIsimdv4f v2)
 {
     PFIsimdvf dotProduct = pfiSimdAdd_F32(
         pfiSimdMul_F32(v1[0], v2[0]),
@@ -2905,7 +3089,7 @@ pfiVec4Dot_simd(const PFsimdv4f v1, const PFsimdv4f v2)
 }
 
 static inline void
-pfiVec4Lerp_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2, PFIsimdvf t)
+pfiVec4Lerp_simd(PFIsimdv4f dst, const PFIsimdv4f v1, const PFIsimdv4f v2, PFIsimdvf t)
 {
     dst[0] = pfiSimdAdd_F32(v1[0], pfiSimdMul_F32(t, pfiSimdSub_F32(v2[0], v1[0])));
     dst[1] = pfiSimdAdd_F32(v1[1], pfiSimdMul_F32(t, pfiSimdSub_F32(v2[1], v1[1])));
@@ -2914,7 +3098,7 @@ pfiVec4Lerp_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2, PFIsimdv
 }
 
 static inline void
-pfiVec4LerpR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv4f v2, PFIsimdvf t)
+pfiVec4LerpR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv4f v1, const PFIsimdv4f v2, PFIsimdvf t)
 {
     dst[0] = pfiSimdAdd_F32(v1[0], pfiSimdMul_F32(t, pfiSimdSub_F32(v2[0], v1[0])));
     dst[1] = pfiSimdAdd_F32(v1[1], pfiSimdMul_F32(t, pfiSimdSub_F32(v2[1], v1[1])));
@@ -2923,7 +3107,7 @@ pfiVec4LerpR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv4
 }
 
 static inline void
-pfiVec4BaryInterp_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2, const PFsimdv4f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
+pfiVec4BaryInterpSmooth_simd(PFIsimdv4f dst, const PFIsimdv4f v1, const PFIsimdv4f v2, const PFIsimdv4f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         PFIsimdvf v1_w1 = pfiSimdMul_F32(v1[i], w1);
@@ -2934,7 +3118,7 @@ pfiVec4BaryInterp_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2, co
 }
 
 static inline void
-pfiVec4BaryInterpR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv4f v2, const PFsimdv4f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
+pfiVec4BaryInterpSmoothR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv4f v1, const PFIsimdv4f v2, const PFIsimdv4f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         PFIsimdvf v1_w1 = pfiSimdMul_F32(v1[i], w1);
@@ -2945,7 +3129,7 @@ pfiVec4BaryInterpR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PF
 }
 
 static inline void
-pfiVec4BaryInterpV_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2, const PFsimdv4f v3, const PFsimdv3f w)
+pfiVec4BaryInterpSmoothV_simd(PFIsimdv4f dst, const PFIsimdv4f v1, const PFIsimdv4f v2, const PFIsimdv4f v3, const PFIsimdv3f w)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         PFIsimdvf v1_w1 = pfiSimdMul_F32(v1[i], w[0]);
@@ -2956,7 +3140,7 @@ pfiVec4BaryInterpV_simd(PFsimdv4f dst, const PFsimdv4f v1, const PFsimdv4f v2, c
 }
 
 static inline void
-pfiVec4BaryInterpVR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const PFsimdv4f v2, const PFsimdv4f v3, const PFsimdv3f w)
+pfiVec4BaryInterpSmoothVR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv4f v1, const PFIsimdv4f v2, const PFIsimdv4f v3, const PFIsimdv3f w)
 {
     for (int_fast8_t i = 0; i < 4; i++) {
         PFIsimdvf v1_w1 = pfiSimdMul_F32(v1[i], w[0]);
@@ -2967,7 +3151,99 @@ pfiVec4BaryInterpVR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v1, const P
 }
 
 static inline void
-pfiVec4Transform_simd(PFsimdv4f dst, const PFsimdv4f v, const float mat[16])
+pfiVec4BaryInterpFlat_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
+{
+    // Compare the weights to find the index of the maximum weight
+    PFIsimdvf maxWeight = pfiSimdMax_F32(w1, pfiSimdMax_F32(w2, w3));
+    
+    // Compare maxWeight to each weight to find which one is the max
+    PFIsimdvf mask1 = pfiSimdCmpEQ_F32(maxWeight, w1);
+    PFIsimdvf mask2 = pfiSimdCmpEQ_F32(maxWeight, w2);
+    PFIsimdvf mask3 = pfiSimdCmpEQ_F32(maxWeight, w3);
+
+    // Use masks to select the corresponding color
+    for (int_fast8_t i = 0; i < 4; ++i) {
+        dst[i] = pfiSimdOr_F32(
+            pfiSimdAnd_F32(mask1, v1[i]),
+            pfiSimdOr_F32(
+                pfiSimdAnd_F32(mask2, v2[i]),
+                pfiSimdAnd_F32(mask3, v3[i])
+            )
+        );
+    }
+}
+
+static inline void
+pfiVec4BaryInterpFlatR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, PFIsimdvf w1, PFIsimdvf w2, PFIsimdvf w3)
+{
+    // Compare the weights to find the index of the maximum weight
+    PFIsimdvf maxWeight = pfiSimdMax_F32(w1, pfiSimdMax_F32(w2, w3));
+    
+    // Compare maxWeight to each weight to find which one is the max
+    PFIsimdvf mask1 = pfiSimdCmpEQ_F32(maxWeight, w1);
+    PFIsimdvf mask2 = pfiSimdCmpEQ_F32(maxWeight, w2);
+    PFIsimdvf mask3 = pfiSimdCmpEQ_F32(maxWeight, w3);
+
+    // Use masks to select the corresponding color
+    for (int_fast8_t i = 0; i < 4; ++i) {
+        dst[i] = pfiSimdOr_F32(
+            pfiSimdAnd_F32(mask1, v1[i]),
+            pfiSimdOr_F32(
+                pfiSimdAnd_F32(mask2, v2[i]),
+                pfiSimdAnd_F32(mask3, v3[i])
+            )
+        );
+    }
+}
+
+static inline void
+pfiVec4BaryInterpFlatV_simd(PFIsimdv2f dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, const PFIsimdv3f w)
+{
+    // Compare the weights to find the index of the maximum weight
+    PFIsimdvf maxWeight = pfiSimdMax_F32(w[0], pfiSimdMax_F32(w[1], w[2]));
+    
+    // Compare maxWeight to each weight to find which one is the max
+    PFIsimdvf mask1 = pfiSimdCmpEQ_F32(maxWeight, w[0]);
+    PFIsimdvf mask2 = pfiSimdCmpEQ_F32(maxWeight, w[1]);
+    PFIsimdvf mask3 = pfiSimdCmpEQ_F32(maxWeight, w[2]);
+
+    // Use masks to select the corresponding color
+    for (int_fast8_t i = 0; i < 4; ++i) {
+        dst[i] = pfiSimdOr_F32(
+            pfiSimdAnd_F32(mask1, v1[i]),
+            pfiSimdOr_F32(
+                pfiSimdAnd_F32(mask2, v2[i]),
+                pfiSimdAnd_F32(mask3, v3[i])
+            )
+        );
+    }
+}
+
+static inline void
+pfiVec4BaryInterpFlatVR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv2f v1, const PFIsimdv2f v2, const PFIsimdv2f v3, const PFIsimdv3f w)
+{
+    // Compare the weights to find the index of the maximum weight
+    PFIsimdvf maxWeight = pfiSimdMax_F32(w[0], pfiSimdMax_F32(w[1], w[2]));
+    
+    // Compare maxWeight to each weight to find which one is the max
+    PFIsimdvf mask1 = pfiSimdCmpEQ_F32(maxWeight, w[0]);
+    PFIsimdvf mask2 = pfiSimdCmpEQ_F32(maxWeight, w[1]);
+    PFIsimdvf mask3 = pfiSimdCmpEQ_F32(maxWeight, w[2]);
+
+    // Use masks to select the corresponding color
+    for (int_fast8_t i = 0; i < 4; ++i) {
+        dst[i] = pfiSimdOr_F32(
+            pfiSimdAnd_F32(mask1, v1[i]),
+            pfiSimdOr_F32(
+                pfiSimdAnd_F32(mask2, v2[i]),
+                pfiSimdAnd_F32(mask3, v3[i])
+            )
+        );
+    }
+}
+
+static inline void
+pfiVec4Transform_simd(PFIsimdv4f dst, const PFIsimdv4f v, const float mat[16])
 {
     PFIsimdvf mat_col0 = pfiSimdSet1_F32(mat[0]);
     PFIsimdvf mat_col1 = pfiSimdSet1_F32(mat[1]);
@@ -3009,7 +3285,7 @@ pfiVec4Transform_simd(PFsimdv4f dst, const PFsimdv4f v, const float mat[16])
 }
 
 static inline void
-pfiVec4TransformR_simd(PFIsimdvf_ptr restrict dst, const PFsimdv4f v, const float mat[16])
+pfiVec4TransformR_simd(PFIsimdvf_ptr restrict dst, const PFIsimdv4f v, const float mat[16])
 {
     PFIsimdvf mat_col0 = pfiSimdSet1_F32(mat[0]);
     PFIsimdvf mat_col1 = pfiSimdSet1_F32(mat[1]);

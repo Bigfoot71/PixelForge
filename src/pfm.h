@@ -823,7 +823,7 @@ pfmVec2LerpR(PFMvec2_ptr PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2 v2, f
 }
 
 PFM_API void
-pfmVec2BaryInterp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, float w1, float w2, float w3)
+pfmVec2BaryInterpSmooth(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, float w1, float w2, float w3)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = w1*v1[i] + w2*v2[i] + w3*v3[i];
@@ -831,7 +831,7 @@ pfmVec2BaryInterp(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2
 }
 
 PFM_API void
-pfmVec2BaryInterpR(PFMvec2_ptr PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, float w1, float w2, float w3)
+pfmVec2BaryInterpSmoothR(PFMvec2_ptr PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, float w1, float w2, float w3)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = w1*v1[i] + w2*v2[i] + w3*v3[i];
@@ -839,7 +839,7 @@ pfmVec2BaryInterpR(PFMvec2_ptr PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2
 }
 
 PFM_API void
-pfmVec2BaryInterpV(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, const PFMvec3 w)
+pfmVec2BaryInterpSmoothV(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, const PFMvec3 w)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = w[0]*v1[i] + w[1]*v2[i] + w[2]*v3[i];
@@ -847,10 +847,107 @@ pfmVec2BaryInterpV(PFMvec2 dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec
 }
 
 PFM_API void
-pfmVec2BaryInterpVR(PFMvec2_ptr PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, const PFMvec3 w)
+pfmVec2BaryInterpSmoothVR(PFMvec2_ptr PFM_RESTRICT dst, const PFMvec2 v1, const PFMvec2 v2, const PFMvec2 v3, const PFMvec3 w)
 {
     for (int_fast8_t i = 0; i < 2; i++) {
         dst[i] = w[0]*v1[i] + w[1]*v2[i] + w[2]*v3[i];
+    }
+}
+
+PFM_API void
+pfmVec2BaryInterpFlat(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
+{
+    // Find the maximum weight
+    float maxWeight = w1;
+    if (w2 > maxWeight) maxWeight = w2;
+    if (w3 > maxWeight) maxWeight = w3;
+
+    // Determine which weight is the maximum
+    int_fast8_t isW1Max = (maxWeight == w1);
+    int_fast8_t isW2Max = (maxWeight == w2);
+    int_fast8_t isW3Max = (maxWeight == w3);
+
+    // Select the corresponding color based on the maximum weight
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        if (isW1Max) {
+            dst[i] = v1[i];
+        } else if (isW2Max) {
+            dst[i] = v2[i];
+        } else {
+            dst[i] = v3[i];
+        }
+    }
+}
+
+PFM_API void
+pfmVec2BaryInterpFlatR(PFMvec4_ptr PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
+{
+    // Find the maximum weight
+    float maxWeight = w1;
+    if (w2 > maxWeight) maxWeight = w2;
+    if (w3 > maxWeight) maxWeight = w3;
+
+    // Determine which weight is the maximum
+    int_fast8_t isW1Max = (maxWeight == w1);
+    int_fast8_t isW2Max = (maxWeight == w2);
+
+    // Select the corresponding color based on the maximum weight
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        if (isW1Max) {
+            dst[i] = v1[i];
+        } else if (isW2Max) {
+            dst[i] = v2[i];
+        } else {
+            dst[i] = v3[i];
+        }
+    }
+}
+
+PFM_API void
+pfmVec2BaryInterpFlatV(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
+{
+    // Find the maximum weight
+    float maxWeight = w[0];
+    if (w[1] > maxWeight) maxWeight = w[1];
+    if (w[2] > maxWeight) maxWeight = w[2];
+
+    // Determine which weight is the maximum
+    int_fast8_t isW1Max = (maxWeight == w[0]);
+    int_fast8_t isW2Max = (maxWeight == w[1]);
+
+    // Select the corresponding color based on the maximum weight
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        if (isW1Max) {
+            dst[i] = v1[i];
+        } else if (isW2Max) {
+            dst[i] = v2[i];
+        } else {
+            dst[i] = v3[i];
+        }
+    }
+}
+
+PFM_API void
+pfmVec2BaryInterpFlatVR(PFMvec4_ptr PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
+{
+    // Find the maximum weight
+    float maxWeight = w[0];
+    if (w[1] > maxWeight) maxWeight = w[1];
+    if (w[2] > maxWeight) maxWeight = w[2];
+
+    // Determine which weight is the maximum
+    int_fast8_t isW1Max = (maxWeight == w[0]);
+    int_fast8_t isW2Max = (maxWeight == w[1]);
+
+    // Select the corresponding color based on the maximum weight
+    for (int_fast8_t i = 0; i < 2; ++i) {
+        if (isW1Max) {
+            dst[i] = v1[i];
+        } else if (isW2Max) {
+            dst[i] = v2[i];
+        } else {
+            dst[i] = v3[i];
+        }
     }
 }
 
@@ -1268,7 +1365,7 @@ pfmVec3LerpR(PFMvec3_ptr PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2, f
 }
 
 PFM_API void
-pfmVec3BaryInterp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, float w1, float w2, float w3)
+pfmVec3BaryInterpSmooth(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, float w1, float w2, float w3)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1279,7 +1376,7 @@ pfmVec3BaryInterp(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3
 }
 
 PFM_API void
-pfmVec3BaryInterpR(PFMvec3_ptr PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, float w1, float w2, float w3)
+pfmVec3BaryInterpSmoothR(PFMvec3_ptr PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, float w1, float w2, float w3)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1290,7 +1387,7 @@ pfmVec3BaryInterpR(PFMvec3_ptr PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3
 }
 
 PFM_API void
-pfmVec3BaryInterpV(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, const PFMvec3 w)
+pfmVec3BaryInterpSmoothV(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, const PFMvec3 w)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1301,13 +1398,110 @@ pfmVec3BaryInterpV(PFMvec3 dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec
 }
 
 PFM_API void
-pfmVec3BaryInterpVR(PFMvec3_ptr PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, const PFMvec3 w)
+pfmVec3BaryInterpSmoothVR(PFMvec3_ptr PFM_RESTRICT dst, const PFMvec3 v1, const PFMvec3 v2, const PFMvec3 v3, const PFMvec3 w)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
 #   endif
     for (int_fast8_t i = 0; i < 3; i++) {
         dst[i] = w[0]*v1[i] + w[1]*v2[i] + w[2]*v3[i];
+    }
+}
+
+PFM_API void
+pfmVec3BaryInterpFlat(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
+{
+    // Find the maximum weight
+    float maxWeight = w1;
+    if (w2 > maxWeight) maxWeight = w2;
+    if (w3 > maxWeight) maxWeight = w3;
+
+    // Determine which weight is the maximum
+    int_fast8_t isW1Max = (maxWeight == w1);
+    int_fast8_t isW2Max = (maxWeight == w2);
+    int_fast8_t isW3Max = (maxWeight == w3);
+
+    // Select the corresponding color based on the maximum weight
+    for (int_fast8_t i = 0; i < 3; ++i) {
+        if (isW1Max) {
+            dst[i] = v1[i];
+        } else if (isW2Max) {
+            dst[i] = v2[i];
+        } else {
+            dst[i] = v3[i];
+        }
+    }
+}
+
+PFM_API void
+pfmVec3BaryInterpFlatR(PFMvec4_ptr PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
+{
+    // Find the maximum weight
+    float maxWeight = w1;
+    if (w2 > maxWeight) maxWeight = w2;
+    if (w3 > maxWeight) maxWeight = w3;
+
+    // Determine which weight is the maximum
+    int_fast8_t isW1Max = (maxWeight == w1);
+    int_fast8_t isW2Max = (maxWeight == w2);
+
+    // Select the corresponding color based on the maximum weight
+    for (int_fast8_t i = 0; i < 3; ++i) {
+        if (isW1Max) {
+            dst[i] = v1[i];
+        } else if (isW2Max) {
+            dst[i] = v2[i];
+        } else {
+            dst[i] = v3[i];
+        }
+    }
+}
+
+PFM_API void
+pfmVec3BaryInterpFlatV(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
+{
+    // Find the maximum weight
+    float maxWeight = w[0];
+    if (w[1] > maxWeight) maxWeight = w[1];
+    if (w[2] > maxWeight) maxWeight = w[2];
+
+    // Determine which weight is the maximum
+    int_fast8_t isW1Max = (maxWeight == w[0]);
+    int_fast8_t isW2Max = (maxWeight == w[1]);
+
+    // Select the corresponding color based on the maximum weight
+    for (int_fast8_t i = 0; i < 3; ++i) {
+        if (isW1Max) {
+            dst[i] = v1[i];
+        } else if (isW2Max) {
+            dst[i] = v2[i];
+        } else {
+            dst[i] = v3[i];
+        }
+    }
+}
+
+PFM_API void
+pfmVec3BaryInterpFlatVR(PFMvec4_ptr PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
+{
+    // Find the maximum weight
+    float maxWeight = w[0];
+    if (w[1] > maxWeight) maxWeight = w[1];
+    if (w[2] > maxWeight) maxWeight = w[2];
+
+    // Determine which weight is the maximum
+    int_fast8_t isW1Max = (maxWeight == w[0]);
+    int_fast8_t isW2Max = (maxWeight == w[1]);
+
+    // Select the corresponding color based on the maximum weight
+    for (int_fast8_t i = 0; i < 3; ++i) {
+        if (isW1Max) {
+            dst[i] = v1[i];
+        } else if (isW2Max) {
+            dst[i] = v2[i];
+        } else {
+            dst[i] = v3[i];
+        }
     }
 }
 
@@ -1661,7 +1855,7 @@ pfmVec4LerpR(PFMvec4_ptr PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, f
 }
 
 PFM_API void
-pfmVec4BaryInterp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
+pfmVec4BaryInterpSmooth(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1672,7 +1866,7 @@ pfmVec4BaryInterp(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4
 }
 
 PFM_API void
-pfmVec4BaryInterpR(PFMvec4_ptr PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
+pfmVec4BaryInterpSmoothR(PFMvec4_ptr PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1683,7 +1877,7 @@ pfmVec4BaryInterpR(PFMvec4_ptr PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4
 }
 
 PFM_API void
-pfmVec4BaryInterpV(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
+pfmVec4BaryInterpSmoothV(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
@@ -1694,13 +1888,110 @@ pfmVec4BaryInterpV(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec
 }
 
 PFM_API void
-pfmVec4BaryInterpVR(PFMvec4_ptr PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
+pfmVec4BaryInterpSmoothVR(PFMvec4_ptr PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
 {
 #   ifdef _OPENMP
 #       pragma omp simd
 #   endif
     for (int_fast8_t i = 0; i < 4; i++) {
         dst[i] = w[0]*v1[i] + w[1]*v2[i] + w[2]*v3[i];
+    }
+}
+
+PFM_API void
+pfmVec4BaryInterpFlat(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
+{
+    // Find the maximum weight
+    float maxWeight = w1;
+    if (w2 > maxWeight) maxWeight = w2;
+    if (w3 > maxWeight) maxWeight = w3;
+
+    // Determine which weight is the maximum
+    int_fast8_t isW1Max = (maxWeight == w1);
+    int_fast8_t isW2Max = (maxWeight == w2);
+    int_fast8_t isW3Max = (maxWeight == w3);
+
+    // Select the corresponding color based on the maximum weight
+    for (int_fast8_t i = 0; i < 4; ++i) {
+        if (isW1Max) {
+            dst[i] = v1[i];
+        } else if (isW2Max) {
+            dst[i] = v2[i];
+        } else {
+            dst[i] = v3[i];
+        }
+    }
+}
+
+PFM_API void
+pfmVec4BaryInterpFlatR(PFMvec4_ptr PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, float w1, float w2, float w3)
+{
+    // Find the maximum weight
+    float maxWeight = w1;
+    if (w2 > maxWeight) maxWeight = w2;
+    if (w3 > maxWeight) maxWeight = w3;
+
+    // Determine which weight is the maximum
+    int_fast8_t isW1Max = (maxWeight == w1);
+    int_fast8_t isW2Max = (maxWeight == w2);
+
+    // Select the corresponding color based on the maximum weight
+    for (int_fast8_t i = 0; i < 4; ++i) {
+        if (isW1Max) {
+            dst[i] = v1[i];
+        } else if (isW2Max) {
+            dst[i] = v2[i];
+        } else {
+            dst[i] = v3[i];
+        }
+    }
+}
+
+PFM_API void
+pfmVec4BaryInterpFlatV(PFMvec4 dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
+{
+    // Find the maximum weight
+    float maxWeight = w[0];
+    if (w[1] > maxWeight) maxWeight = w[1];
+    if (w[2] > maxWeight) maxWeight = w[2];
+
+    // Determine which weight is the maximum
+    int_fast8_t isW1Max = (maxWeight == w[0]);
+    int_fast8_t isW2Max = (maxWeight == w[1]);
+
+    // Select the corresponding color based on the maximum weight
+    for (int_fast8_t i = 0; i < 4; ++i) {
+        if (isW1Max) {
+            dst[i] = v1[i];
+        } else if (isW2Max) {
+            dst[i] = v2[i];
+        } else {
+            dst[i] = v3[i];
+        }
+    }
+}
+
+PFM_API void
+pfmVec4BaryInterpFlatVR(PFMvec4_ptr PFM_RESTRICT dst, const PFMvec4 v1, const PFMvec4 v2, const PFMvec4 v3, const PFMvec3 w)
+{
+    // Find the maximum weight
+    float maxWeight = w[0];
+    if (w[1] > maxWeight) maxWeight = w[1];
+    if (w[2] > maxWeight) maxWeight = w[2];
+
+    // Determine which weight is the maximum
+    int_fast8_t isW1Max = (maxWeight == w[0]);
+    int_fast8_t isW2Max = (maxWeight == w[1]);
+
+    // Select the corresponding color based on the maximum weight
+    for (int_fast8_t i = 0; i < 4; ++i) {
+        if (isW1Max) {
+            dst[i] = v1[i];
+        } else if (isW2Max) {
+            dst[i] = v2[i];
+        } else {
+            dst[i] = v3[i];
+        }
     }
 }
 
