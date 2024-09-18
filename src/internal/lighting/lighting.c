@@ -145,12 +145,12 @@ PFcolor pfiLightingProcess(const PFIlight* activeLights, const PFImaterial* mate
 
 void pfiSimdLightingProcess(PFcolor_simd fragments, const PFIlight* activeLights,
                                     const PFImaterial* material,
-                                    const PFsimdv3f viewPos,
-                                    const PFsimdv3f fragPos,
-                                    const PFsimdv3f N)
+                                    const PFIsimdv3f viewPos,
+                                    const PFIsimdv3f fragPos,
+                                    const PFIsimdv3f N)
 {
     // Load and normalize material colors
-    PFsimdv3f colDiffuse, colAmbient, colSpecular, colEmission;
+    PFIsimdv3f colDiffuse, colAmbient, colSpecular, colEmission;
     pfiColorUnpackedToVec_simd(colDiffuse, fragments, 3);
     pfiColorSisdToVec_simd(colAmbient, material->ambient, 3);
     pfiColorSisdToVec_simd(colSpecular, material->specular, 3);
@@ -160,49 +160,49 @@ void pfiSimdLightingProcess(PFcolor_simd fragments, const PFIlight* activeLights
     pfiVec3Mul_simd(colAmbient, colAmbient, colDiffuse);
 
     // Compute the view direction from fragment position
-    PFsimdv3f V;
+    PFIsimdv3f V;
     pfiVec3DirectionR_simd(V, viewPos, fragPos);
 
     // Initialize light contribution
-    PFsimdv3f lightContribution;
+    PFIsimdv3f lightContribution;
     pfiVec3Zero_simd(lightContribution);
 
     // Process each light
     for (const PFIlight *light = activeLights; light != NULL; light = light->next) {
         // Load light data
-        PFsimdv3f lightPos, lightDir;
+        PFIsimdv3f lightPos, lightDir;
         pfiVec3Load_simd(lightPos, light->position);
         pfiVec3Load_simd(lightDir, light->direction);
 
-        PFsimdv3f lightAmbient, lightDiffuse, lightSpecular;
+        PFIsimdv3f lightAmbient, lightDiffuse, lightSpecular;
         pfiColorSisdToVec_simd(lightAmbient, light->ambient, 3);
         pfiColorSisdToVec_simd(lightDiffuse, light->diffuse, 3);
         pfiColorSisdToVec_simd(lightSpecular, light->specular, 3);
 
         // Compute the light direction from fragment position
-        PFsimdv3f L;
+        PFIsimdv3f L;
         pfiVec3DirectionR_simd(L, lightPos, fragPos);
 
         // Ambient component
-        PFsimdv3f ambient;
+        PFIsimdv3f ambient;
         pfiVec3MulR_simd(ambient, lightAmbient, colAmbient);
 
         // Diffuse component
-        PFsimdv3f diffuse; {
+        PFIsimdv3f diffuse; {
             PFIsimdvf diff = pfiSimdMax_F32(pfiVec3Dot_simd(N, L), pfiSimdSetZero_F32());
             pfiVec3ScaleR_simd(diffuse, lightDiffuse, diff);
             pfiVec3Mul_simd(diffuse, diffuse, colDiffuse);
         }
 
         // Specular component
-        PFsimdv3f specular; {
+        PFIsimdv3f specular; {
 #       ifndef PF_PHONG_REFLECTION
-            PFsimdv3f halfWayDir;
+            PFIsimdv3f halfWayDir;
             pfiVec3AddR_simd(halfWayDir, L, V);
             pfiVec3Normalize_simd(halfWayDir, halfWayDir);
             PFIsimdvf spec = pfiSimdMax_F32(pfiVec3Dot_simd(N, halfWayDir), pfiSimdSetZero_F32());
 #       else
-            PFsimdv3f negL, reflect;
+            PFIsimdv3f negL, reflect;
             pfiVec3NegR_simd(negL, L);
             pfiVec3ReflectR_simd(reflect, negL, N);
             PFIsimdvf spec = pfiSimdMax_F32(pfiVec3Dot_simd(V, reflect), pfiSimdSetZero_F32());
@@ -214,7 +214,7 @@ void pfiSimdLightingProcess(PFcolor_simd fragments, const PFIlight* activeLights
 
         // Spotlight (soft edges)
         if (light->innerCutOff < PFM_PI) {
-            PFsimdv3f negLightDir;
+            PFIsimdv3f negLightDir;
             pfiVec3NegR_simd(negLightDir, lightDir);
 
             PFIsimdvf theta = pfiVec3Dot_simd(L, negLightDir);

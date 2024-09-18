@@ -154,7 +154,7 @@ typedef void (*PFIpixelsetter_simd)(void* pixels, PFsizei offset, PFIsimdvi colo
  * @param texcoords A SIMD vector containing the texture coordinates.
  * @return The SIMD integer result sampled from the texture at the specified coordinates.
  */
-typedef PFIsimdvi (*PFItexturesampler_simd)(const struct PFItex* tex, const PFsimdv2f texcoords);
+typedef PFIsimdvi (*PFItexturesampler_simd)(const struct PFItex* tex, const PFIsimdv2f texcoords);
 
 #endif //PF_SIMD_SUPPORT
 

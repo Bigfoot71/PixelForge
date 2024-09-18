@@ -29,9 +29,9 @@ PFcolor pfiLightingProcess(const PFIlight* activeLights, const PFImaterial* mate
 #if PF_SIMD_SUPPORT
 void pfiSimdLightingProcess(PFcolor_simd fragments, const PFIlight* activeLights,
                                     const PFImaterial* material,
-                                    const PFsimdv3f viewPos,
-                                    const PFsimdv3f fragPos,
-                                    const PFsimdv3f N);
+                                    const PFIsimdv3f viewPos,
+                                    const PFIsimdv3f fragPos,
+                                    const PFIsimdv3f N);
 #endif //PF_SIMD_SUPPORT
 
 #endif //PF_INTERNAL_LIGHTING_H

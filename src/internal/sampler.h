@@ -196,7 +196,7 @@ static const PFItexturesampler GC_textureSamplers[2][3] = {
 /* SIMD - Texture2D Mapper Functions */
 
 static inline void
-pfiTexture2DMap_REPEAT_simd(const struct PFItex* tex, PFIsimdvi* xOut, PFIsimdvi* yOut, const PFsimdv2f texcoords)
+pfiTexture2DMap_REPEAT_simd(const struct PFItex* tex, PFIsimdvi* xOut, PFIsimdvi* yOut, const PFIsimdv2f texcoords)
 {
     PFIsimdvf u = texcoords[0];
     PFIsimdvf v = texcoords[1];
@@ -214,7 +214,7 @@ pfiTexture2DMap_REPEAT_simd(const struct PFItex* tex, PFIsimdvi* xOut, PFIsimdvi
 }
 
 static inline void
-pfiTexture2DMap_MIRRORED_REPEAT_simd(const struct PFItex* tex, PFIsimdvi* xOut, PFIsimdvi* yOut, const PFsimdv2f texcoords)
+pfiTexture2DMap_MIRRORED_REPEAT_simd(const struct PFItex* tex, PFIsimdvi* xOut, PFIsimdvi* yOut, const PFIsimdv2f texcoords)
 {
     PFIsimdvf u = texcoords[0];
     PFIsimdvf v = texcoords[1];
@@ -239,7 +239,7 @@ pfiTexture2DMap_MIRRORED_REPEAT_simd(const struct PFItex* tex, PFIsimdvi* xOut, 
 }
 
 static inline void
-pfiTexture2DMap_CLAMP_TO_EDGE_simd(const struct PFItex* tex, PFIsimdvi* xOut, PFIsimdvi* yOut, const PFsimdv2f texcoords)
+pfiTexture2DMap_CLAMP_TO_EDGE_simd(const struct PFItex* tex, PFIsimdvi* xOut, PFIsimdvi* yOut, const PFIsimdv2f texcoords)
 {
     PFIsimdvf u = texcoords[0];
     PFIsimdvf v = texcoords[1];
@@ -259,7 +259,7 @@ pfiTexture2DMap_CLAMP_TO_EDGE_simd(const struct PFItex* tex, PFIsimdvi* xOut, PF
 /* SIMD - Texture2D Sampler Functions */
 
 static inline PFIsimdvi
-pfiTexture2DSampler_NEAREST_REPEAT_simd(const struct PFItex* tex, const PFsimdv2f texcoords)
+pfiTexture2DSampler_NEAREST_REPEAT_simd(const struct PFItex* tex, const PFIsimdv2f texcoords)
 {
     PFIsimdvi x, y;
     pfiTexture2DMap_REPEAT_simd(
@@ -272,7 +272,7 @@ pfiTexture2DSampler_NEAREST_REPEAT_simd(const struct PFItex* tex, const PFsimdv2
 }
 
 static inline PFIsimdvi
-pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT_simd(const struct PFItex* tex, const PFsimdv2f texcoords)
+pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT_simd(const struct PFItex* tex, const PFIsimdv2f texcoords)
 {
     PFIsimdvi x, y;
     pfiTexture2DMap_MIRRORED_REPEAT_simd(
@@ -285,7 +285,7 @@ pfiTexture2DSampler_NEAREST_MIRRORED_REPEAT_simd(const struct PFItex* tex, const
 }
 
 static inline PFIsimdvi
-pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE_simd(const struct PFItex* tex, const PFsimdv2f texcoords)
+pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE_simd(const struct PFItex* tex, const PFIsimdv2f texcoords)
 {
     PFIsimdvi x, y;
     pfiTexture2DMap_CLAMP_TO_EDGE_simd(
@@ -298,15 +298,15 @@ pfiTexture2DSampler_NEAREST_CLAMP_TO_EDGE_simd(const struct PFItex* tex, const P
 }
 
 static inline PFIsimdvi
-pfiTexture2DSampler_BILINEAR_REPEAT_simd(const struct PFItex* tex, const PFsimdv2f texcoords)
+pfiTexture2DSampler_BILINEAR_REPEAT_simd(const struct PFItex* tex, const PFIsimdv2f texcoords)
 {
     PFIsimdvi x0, y0, x1, y1;
     PFIsimdvf fx, fy;
 
-    PFsimdv2f texelSize;
+    PFIsimdv2f texelSize;
     pfiVec2Set_simd(texelSize, tex->tx, tex->ty);
 
-    PFsimdv2f texcoords2;
+    PFIsimdv2f texcoords2;
     pfiVec2AddR_simd(texcoords2, texcoords, texelSize);
 
     pfiTexture2DMap_REPEAT_simd(tex, &x0, &y0, texcoords);
@@ -333,15 +333,15 @@ pfiTexture2DSampler_BILINEAR_REPEAT_simd(const struct PFItex* tex, const PFsimdv
 }
 
 static inline PFIsimdvi
-pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT_simd(const struct PFItex* tex, const PFsimdv2f texcoords)
+pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT_simd(const struct PFItex* tex, const PFIsimdv2f texcoords)
 {
     PFIsimdvi x0, y0, x1, y1;
     PFIsimdvf fx, fy;
 
-    PFsimdv2f texelSize;
+    PFIsimdv2f texelSize;
     pfiVec2Set_simd(texelSize, tex->tx, tex->ty);
 
-    PFsimdv2f texcoords2;
+    PFIsimdv2f texcoords2;
     pfiVec2AddR_simd(texcoords2, texcoords, texelSize);
 
     pfiTexture2DMap_MIRRORED_REPEAT_simd(tex, &x0, &y0, texcoords);
@@ -368,15 +368,15 @@ pfiTexture2DSampler_BILINEAR_MIRRORED_REPEAT_simd(const struct PFItex* tex, cons
 }
 
 static inline PFIsimdvi
-pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE_simd(const struct PFItex* tex, const PFsimdv2f texcoords)
+pfiTexture2DSampler_BILINEAR_CLAMP_TO_EDGE_simd(const struct PFItex* tex, const PFIsimdv2f texcoords)
 {
     PFIsimdvi x0, y0, x1, y1;
     PFIsimdvf fx, fy;
 
-    PFsimdv2f texelSize;
+    PFIsimdv2f texelSize;
     pfiVec2Set_simd(texelSize, tex->tx, tex->ty);
 
-    PFsimdv2f texcoords2;
+    PFIsimdv2f texcoords2;
     pfiVec2AddR_simd(texcoords2, texcoords, texelSize);
 
     pfiTexture2DMap_CLAMP_TO_EDGE_simd(tex, &x0, &y0, texcoords);

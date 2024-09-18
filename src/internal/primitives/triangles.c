@@ -354,17 +354,17 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
     pfiColorLoadUnpacked_simd(c2V, v2->color);
     pfiColorLoadUnpacked_simd(c3V, v3->color);
 
-    PFsimdv3f p1V, p2V, p3V;
+    PFIsimdv3f p1V, p2V, p3V;
     pfiVec3Load_simd(p1V, v1->position);
     pfiVec3Load_simd(p2V, v2->position);
     pfiVec3Load_simd(p3V, v3->position);
 
-    PFsimdv3f n1V, n2V, n3V;
+    PFIsimdv3f n1V, n2V, n3V;
     pfiVec3Load_simd(n1V, v1->normal);
     pfiVec3Load_simd(n2V, v2->normal);
     pfiVec3Load_simd(n3V, v3->normal);
 
-    PFsimdv2f tc1V, tc2V, tc3V;
+    PFIsimdv2f tc1V, tc2V, tc3V;
     pfiVec2Load_simd(tc1V, v1->texcoord);
     pfiVec2Load_simd(tc2V, v2->texcoord);
     pfiVec2Load_simd(tc3V, v3->texcoord);
@@ -385,7 +385,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
     PFIsimdvf z2V = pfiSimdSet1_F32(v2->homogeneous[2]);
     PFIsimdvf z3V = pfiSimdSet1_F32(v3->homogeneous[2]);
 
-    PFsimdv3f viewPosV;
+    PFIsimdv3f viewPosV;
     pfiVec3Load_simd(viewPosV, viewPos);
 
     InterpolateColorSimdFunc interpolateColor = (G_currentCtx->shadingMode == PF_SMOOTH)
@@ -503,9 +503,9 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
         interpolateColor(fragments, c1V, c2V, c3V, w1NormV, w2NormV, w3NormV);
 
 #   define TEXTURING() \
-        PFsimdv2f texcoords; \
+        PFIsimdv2f texcoords; \
         { \
-            PFsimdv2f zeroV2; pfiVec2Zero_simd(zeroV2); \
+            PFIsimdv2f zeroV2; pfiVec2Zero_simd(zeroV2); \
             pfiVec2BaryInterpR_simd(texcoords, tc1V, tc2V, tc3V, w1NormV, w2NormV, w3NormV); \
             if (is3D) pfiVec2Scale_simd(texcoords, texcoords, zV); /* Perspective correct */ \
             pfiVec2Blend_simd(texcoords, zeroV2, texcoords, pfiSimdCast_I32_F32(mask)); \
@@ -515,7 +515,7 @@ void Rasterize_Triangle(PFface faceToRender, PFboolean is3D, const PFIvertex* v1
 
 #   define LIGHTING() \
     { \
-        PFsimdv3f normals, positions; \
+        PFIsimdv3f normals, positions; \
         pfiVec3BaryInterpR_simd(normals, n1V, n2V, n3V, w1NormV, w2NormV, w3NormV); \
         pfiVec3BaryInterpR_simd(positions, p1V, p2V, p3V, w1NormV, w2NormV, w3NormV); \
         pfiSimdLightingProcess(fragments, lights, &G_currentCtx->faceMaterial[faceToRender], viewPosV, positions, normals); \
