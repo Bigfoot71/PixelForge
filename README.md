@@ -1,3 +1,7 @@
+# ⚠️ DON'T USE
+
+This repository is no longer maintained and contains issues that will never be fixed.
+
 ![PixelForge](examples/resources/images/PixelForge.png)
 
 # PixelForge
